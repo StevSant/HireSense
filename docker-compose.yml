@@ -1,0 +1,30 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: hiresense
+      POSTGRES_PASSWORD: hiresense
+      POSTGRES_DB: hiresense
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hiresense"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: ./backend
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./cvs:/app/cvs
+
+volumes:
+  pgdata:

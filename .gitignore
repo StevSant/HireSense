@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.eggs/
+*.egg
+.venv/
+venv/
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+*.pdf
+cvs/compiled/
+cvs/optimized/
+
+# Docker
+docker-compose.override.yml
+
+# Superpowers
+.superpowers/
+
+# Alembic
+alembic/versions/*.pyc

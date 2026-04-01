@@ -1,0 +1,59 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Job Ingestion</h1>
+    <button (click)="fetchJobs()" [disabled]="loading()" class="btn-primary">
+      @if (loading()) { Fetching... } @else { Fetch Jobs }
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (jobs().length > 0) {
+    <div class="stats">
+      <span class="stat">{{ jobs().length }} jobs found</span>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Company</th>
+            <th>Location</th>
+            <th>Source</th>
+            <th>Skills</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (job of jobs(); track job.id) {
+            <tr>
+              <td class="title">{{ job.title }}</td>
+              <td>{{ job.company }}</td>
+              <td>{{ job.location }}</td>
+              <td><span class="badge">{{ job.source }}</span></td>
+              <td>
+                <div class="skills">
+                  @for (skill of job.skills.slice(0, 3); track skill) {
+                    <span class="skill-tag">{{ skill }}</span>
+                  }
+                  @if (job.skills.length > 3) {
+                    <span class="skill-more">+{{ job.skills.length - 3 }}</span>
+                  }
+                </div>
+              </td>
+              <td>
+                <a [href]="job.url" target="_blank" class="link">View</a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!loading()) {
+    <div class="empty-state">
+      <p>No jobs loaded yet. Click "Fetch Jobs" to pull from configured sources.</p>
+    </div>
+  }
+</div>

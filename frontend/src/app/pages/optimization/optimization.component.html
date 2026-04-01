@@ -1,0 +1,71 @@
+<div class="page">
+  <h1>CV Optimization</h1>
+
+  @if (!result()) {
+    <div class="opt-form">
+      <div class="form-group">
+        <label>Job Description</label>
+        <textarea [ngModel]="jobDescription()" (ngModelChange)="jobDescription.set($event)" name="jobDesc" rows="3" placeholder="Target job description..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Required Skills (comma-separated)</label>
+          <input [ngModel]="jobSkills()" (ngModelChange)="jobSkills.set($event)" name="skills" placeholder="python, fastapi, kubernetes" />
+        </div>
+        <div class="form-group">
+          <label>Missing Skills (comma-separated)</label>
+          <input [ngModel]="missingSkills()" (ngModelChange)="missingSkills.set($event)" name="missing" placeholder="kubernetes, terraform" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Your LaTeX CV</label>
+        <textarea [ngModel]="originalTex()" (ngModelChange)="originalTex.set($event)" name="tex" rows="10" placeholder="Paste your .tex CV content..."></textarea>
+      </div>
+      @if (error()) {
+        <div class="alert alert-error">{{ error() }}</div>
+      }
+      <button (click)="optimize()" [disabled]="loading() || !originalTex().trim()" class="btn-primary">
+        @if (loading()) { Optimizing... } @else { Optimize CV }
+      </button>
+    </div>
+  } @else {
+    <div class="results">
+      <div class="results-header">
+        <h2>Optimization Results</h2>
+        <div class="actions">
+          <button (click)="downloadTex()" class="btn-primary">Download .tex</button>
+          <button (click)="result.set(null)" class="btn-secondary">New Optimization</button>
+        </div>
+      </div>
+
+      @if (result()!.improvement_summary) {
+        <div class="summary-card">
+          <h3>Summary</h3>
+          <p>{{ result()!.improvement_summary }}</p>
+        </div>
+      }
+
+      @if (result()!.changes.length > 0) {
+        <h3 class="section-title">Changes</h3>
+        @for (change of result()!.changes; track change.section_name) {
+          <div class="change-card">
+            <div class="change-header">
+              <span class="section-name">{{ change.section_name }}</span>
+              <span class="reason">{{ change.reason }}</span>
+            </div>
+            <div class="diff">
+              <div class="diff-side diff-original">
+                <span class="diff-label">Original</span>
+                <pre>{{ change.original }}</pre>
+              </div>
+              <div class="diff-side diff-optimized">
+                <span class="diff-label">Optimized</span>
+                <pre>{{ change.optimized }}</pre>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+</div>

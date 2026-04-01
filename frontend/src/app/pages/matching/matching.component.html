@@ -1,0 +1,129 @@
+<div class="page">
+  <h1>Job Matching</h1>
+
+  @if (!result()) {
+    <div class="match-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Job Description</label>
+          <textarea [ngModel]="jobDescription()" (ngModelChange)="jobDescription.set($event)" name="jobDesc" rows="4" placeholder="Paste job description..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>CV Summary</label>
+          <textarea [ngModel]="cvSummary()" (ngModelChange)="cvSummary.set($event)" name="cvSummary" rows="4" placeholder="Your professional summary..."></textarea>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Required Skills (comma-separated)</label>
+          <input [ngModel]="jobSkills()" (ngModelChange)="jobSkills.set($event)" name="jobSkills" placeholder="python, fastapi, kubernetes" />
+        </div>
+        <div class="form-group">
+          <label>Your Skills (comma-separated)</label>
+          <input [ngModel]="cvSkills()" (ngModelChange)="cvSkills.set($event)" name="cvSkills" placeholder="python, fastapi, django" />
+        </div>
+      </div>
+      @if (error()) {
+        <div class="alert alert-error">{{ error() }}</div>
+      }
+      <button (click)="analyze()" [disabled]="loading()" class="btn-primary">
+        @if (loading()) { Analyzing... } @else { Analyze Match }
+      </button>
+    </div>
+  } @else {
+    <div class="results">
+      <div class="results-header">
+        <h2>Match Results</h2>
+        <button (click)="result.set(null)" class="btn-secondary">New Analysis</button>
+      </div>
+
+      <div class="score-overview">
+        <div class="overall-score" [style.border-color]="scoreColor(result()!.overall_score)">
+          <span class="score-value" [style.color]="scoreColor(result()!.overall_score)">
+            {{ scorePercent(result()!.overall_score) }}%
+          </span>
+          <span class="score-label">Overall</span>
+        </div>
+        <div class="breakdown">
+          <div class="breakdown-item">
+            <span class="breakdown-label">Semantic</span>
+            <div class="bar">
+              <div class="bar-fill" [style.width.%]="result()!.breakdown.semantic_score * 100" [style.background]="scoreColor(result()!.breakdown.semantic_score)"></div>
+            </div>
+            <span class="breakdown-value">{{ scorePercent(result()!.breakdown.semantic_score) }}%</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="breakdown-label">Skills</span>
+            <div class="bar">
+              <div class="bar-fill" [style.width.%]="result()!.breakdown.skill_score * 100" [style.background]="scoreColor(result()!.breakdown.skill_score)"></div>
+            </div>
+            <span class="breakdown-value">{{ scorePercent(result()!.breakdown.skill_score) }}%</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="breakdown-label">Experience</span>
+            <div class="bar">
+              <div class="bar-fill" [style.width.%]="result()!.breakdown.experience_score * 100" [style.background]="scoreColor(result()!.breakdown.experience_score)"></div>
+            </div>
+            <span class="breakdown-value">{{ scorePercent(result()!.breakdown.experience_score) }}%</span>
+          </div>
+          <div class="breakdown-item">
+            <span class="breakdown-label">Language</span>
+            <div class="bar">
+              <div class="bar-fill" [style.width.%]="result()!.breakdown.language_score * 100" [style.background]="scoreColor(result()!.breakdown.language_score)"></div>
+            </div>
+            <span class="breakdown-value">{{ scorePercent(result()!.breakdown.language_score) }}%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="details-grid">
+        <div class="detail-card">
+          <h3>Matched Skills</h3>
+          <div class="tags">
+            @for (skill of result()!.matched_skills; track skill) {
+              <span class="tag tag-success">{{ skill }}</span>
+            }
+            @if (result()!.matched_skills.length === 0) {
+              <span class="no-data">None</span>
+            }
+          </div>
+        </div>
+        <div class="detail-card">
+          <h3>Missing Skills</h3>
+          <div class="tags">
+            @for (skill of result()!.missing_skills; track skill) {
+              <span class="tag tag-danger">{{ skill }}</span>
+            }
+            @if (result()!.missing_skills.length === 0) {
+              <span class="no-data">None</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="details-grid">
+        <div class="detail-card">
+          <h3>Strengths</h3>
+          <ul>
+            @for (pro of result()!.pros; track pro) { <li class="pro">{{ pro }}</li> }
+          </ul>
+        </div>
+        <div class="detail-card">
+          <h3>Weaknesses</h3>
+          <ul>
+            @for (con of result()!.cons; track con) { <li class="con">{{ con }}</li> }
+          </ul>
+        </div>
+      </div>
+
+      @if (result()!.recommendations.length > 0) {
+        <div class="recommendations">
+          <h3>Recommendations</h3>
+          <ul>
+            @for (rec of result()!.recommendations; track rec) { <li>{{ rec }}</li> }
+          </ul>
+        </div>
+      }
+    </div>
+  }
+</div>

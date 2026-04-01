@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     # Vector Store
     vector_store_provider: str = "pgvector"
 
+    # HTTP
+    http_timeout: float = 30.0
+
     # Ingestion
     ingestion_schedule: str = "0 */6 * * *"
     enabled_job_sources: list[str] = [

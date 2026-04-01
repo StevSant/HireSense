@@ -23,7 +23,11 @@ from hiresense.matching.domain.services import MatchingOrchestrator
 from hiresense.optimization.api.dependencies import get_cv_optimizer
 from hiresense.optimization.api.routes import router as optimization_router
 from hiresense.optimization.domain.services import CVOptimizer
+from hiresense.profile.api.dependencies import get_profile_service
 from hiresense.profile.api.routes import router as profile_router
+from hiresense.profile.domain.latex_parser import LaTeXParser
+from hiresense.profile.domain.services import ProfileService
+from hiresense.profile.domain.skill_extractor import SkillExtractor
 
 
 def create_app() -> FastAPI:
@@ -71,8 +75,10 @@ def create_app() -> FastAPI:
     app.include_router(ingestion_router)
 
     # --- Profile module ---
-    # Profile service will be wired when we have a full ProfileService class.
-    # For now, just include the router.
+    latex_parser = LaTeXParser()
+    skill_extractor = SkillExtractor()
+    profile_service = ProfileService(parser=latex_parser, skill_extractor=skill_extractor)
+    app.dependency_overrides[get_profile_service] = lambda: profile_service
     app.include_router(profile_router)
 
     # --- Matching module ---

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
+import httpx
 from fastapi import FastAPI
 
 from hiresense.adapters.event_bus.in_memory_bus import InMemoryEventBus
@@ -25,7 +28,14 @@ from hiresense.profile.api.routes import router as profile_router
 
 def create_app() -> FastAPI:
     settings = Settings()
-    app = FastAPI(title=settings.app_name, debug=settings.debug)
+    http_client = httpx.AsyncClient(timeout=settings.http_timeout)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        yield
+        await http_client.aclose()
+
+    app = FastAPI(title=settings.app_name, debug=settings.debug, lifespan=lifespan)
 
     # --- Shared infrastructure ---
     event_bus = InMemoryEventBus()
@@ -40,16 +50,14 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
 
     # --- Ingestion module ---
-    # NOTE: We're not creating real HTTP clients here — that would require httpx.
-    # For now, wire up with None clients; the real wiring will happen when we add httpx.
     sources = []
     normalizers = {}
     for source_name in settings.enabled_job_sources:
         if source_name == "remotive":
-            sources.append(RemotiveAdapter(http_client=None))
+            sources.append(RemotiveAdapter(http_client=http_client))
             normalizers["remotive"] = RemotiveNormalizer()
         elif source_name == "remoteok":
-            sources.append(RemoteOKAdapter(http_client=None))
+            sources.append(RemoteOKAdapter(http_client=http_client))
             normalizers["remoteok"] = RemoteOKNormalizer()
         elif source_name == "csv":
             sources.append(CSVImportAdapter())

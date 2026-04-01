@@ -1,0 +1,165 @@
+\documentclass[11pt, a4paper]{article}
+
+% ---------- PACKAGES ----------
+\usepackage[top=1.2cm, bottom=1.2cm, left=1.5cm, right=1.5cm]{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{fontspec}
+\usepackage{microtype}
+
+\usepackage[normalem]{ulem}  % For underline
+\setmainfont{Times New Roman}
+
+% ---------- COLORS (for links only) ----------
+\hypersetup{
+  colorlinks=true,
+  urlcolor=blue
+}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1.5pt}
+\setlength{\emergencystretch}{3em}  % Avoid overfull hbox
+\definecolor{sectiongray}{RGB}{60,60,60}
+
+
+% ---------- SECTION STYLE ----------
+\definecolor{sectiongray}{RGB}{60,60,60}
+
+\titleformat{\section}
+  {\large\bfseries\color{sectiongray}}
+  {}
+  {0em}
+  {}
+  [\vspace{2pt}\titlerule]
+
+\titlespacing{\section}{0pt}{10pt}{6pt}
+
+
+
+% ---------- LIST STYLE ----------
+\setlist[itemize]{
+    leftmargin=1.2em,
+    itemsep=1.5pt,
+    topsep=2pt,
+    parsep=0pt
+}
+
+% ---------- DOCUMENT ----------
+\begin{document}
+
+% ================= HEADER =================
+\begin{center}
+{\LARGE \textbf{BRYAN STEVEN MENOSCAL SANTANA}}
+\end{center}
+
+\vspace{6pt}
+
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l l}
+\textbf{Ubicación:} Ecuador, Manabí, Manta & \textbf{Teléfono:} +593 99 739 9441 \\
+\textbf{Correo:} \href{mailto:bryanmenoscal2005@gmail.com}{bryanmenoscal2005@gmail.com}
+& \textbf{Portafolio:} \href{https://stevsant.vercel.app?ref=cv-backend-es}{stevsant.vercel.app} \\
+\textbf{LinkedIn:} \href{https://linkedin.com/in/bryanmenoscal26}{linkedin.com/in/bryanmenoscal26}
+& \textbf{GitHub:} \href{https://github.com/StevSant}{github.com/StevSant} \\
+\end{tabular*}
+
+\vspace{6pt}
+\hrule
+\vspace{8pt}
+
+
+% ================= PERFIL =================
+\section*{PERFIL PROFESIONAL}
+
+Ingeniero Backend especializado en el diseño y desarrollo de sistemas distribuidos y APIs escalables con Python (FastAPI, Django REST). Experiencia construyendo arquitecturas basadas en microservicios y eventos (Kafka), aplicando principios de Clean Architecture y desplegando servicios en entornos cloud. Fuerte énfasis en calidad de software mediante estrategias de testing integral (unitarias, integración y E2E) con PyTest.
+% ================= IDIOMAS =================
+\section*{IDIOMAS}
+\vspace{-2pt}
+\begin{tabular}{p{0.25\textwidth} p{0.7\textwidth}}
+\textbf{Español:} & Nativo \\
+\textbf{Inglés:} & C1
+\end{tabular}
+\vspace{6pt}
+\hrule
+\vspace{8pt}
+
+% ================= SKILLS =================
+\section*{HABILIDADES TÉCNICAS}
+\vspace{-2pt}
+\begin{tabular}{p{0.25\textwidth} p{0.7\textwidth}}
+\textbf{Backend:} & Django, Django REST Framework, Flask, FastAPI, NestJS, Gin, Kafka, RabbitMQ, LangChain \\
+\textbf{Lenguajes:} & Python (principal), Golang (básico), TypeScript \\
+\textbf{Cloud \& DevOps:} & Docker, Google Cloud Run, Azure, Vercel \\
+\textbf{Frontend:} & Angular, React (conocimientos básicos) \\
+\textbf{Bases de datos:} & MySQL, PostgreSQL, MongoDB \\
+\textbf{Testing:} & PyTest, Pruebas Unitarias, Pruebas de Integración, Pruebas End-to-End (E2E) \\
+\textbf{Herramientas:} & Git, Docker, Kubernetes, GitHub / GitLab, Postman, Visual Studio Code \\
+\textbf{Metodologías:} & Scrum, Desarrollo Ágil, DevOps, TDD \\
+\end{tabular}
+\vspace{6pt}
+\hrule
+\vspace{8pt}
+
+% ================= PROYECTOS =================
+\section*{PROYECTOS Y EXPERIENCIA RELEVANTE}
+
+\textbf{SME RISK ASSESSMENT AGENT --- HACKATÓN VIAMATICA (2025)} \hfill Ecuador, Guayas, Guayaquil \\
+\textit{Backend \& AI Developer | Hackathon (460+ participantes, 3er lugar)} \hfill 2025
+
+\begin{itemize}
+\item Desarrollé el agente de IA con LangChain y la API REST con FastAPI para la comunicación con el frontend y la evaluación de riesgo crediticio en tiempo real para PYMES.
+\item Implementé pipelines de web scraping automatizado con Playwright para extraer datos financieros de la Superintendencia de Compañías y el SRI, además de datos de reputación digital de Twitter, Facebook, Instagram y LinkedIn.
+\item Diseñé un sistema de scoring de reputación digital que incorpora la presencia online de las PYMES en la evaluación crediticia, abordando sesgos en los métodos tradicionales de evaluación.
+\item Escribí pruebas unitarias y de integración con PyTest para validar respuestas del agente de IA, pipelines de scraping y endpoints de la API bajo escenarios de borde.
+\end{itemize}
+
+\vspace{4pt}
+
+\textbf{STREAMFLOWMUSIC} \hfill Proyecto Personal \\
+\textit{Backend Developer} \hfill 2025
+
+\begin{itemize}
+\item Desarrollé una API REST escalable utilizando Django REST Framework siguiendo principios de arquitectura limpia.
+\item Implementé tareas asíncronas en segundo plano para la ingesta de contenido usando la API de YouTube.
+\item Optimicé consultas a la base de datos para soportar más de 100 usuarios concurrentes con baja latencia.
+\item Implementé un suite de pruebas integral con PyTest cubriendo pruebas unitarias, de integración y E2E para endpoints de la API, tareas en segundo plano y operaciones de base de datos.
+\end{itemize}
+
+\vspace{4pt}
+
+\textbf{MESAYA} \hfill Proyecto Académico \\
+\textit{Backend Developer} \hfill 2025 -- 2026
+
+\begin{itemize}
+\item Diseñé una plataforma de reservas de restaurantes basada en microservicios con más de 7 servicios usando NestJS, FastAPI, Go y Python, siguiendo Clean Architecture y patrones orientados a eventos con Apache Kafka.
+\item Desarrollé autenticación (JWT), procesamiento de pagos con integración de Stripe, chatbot con IA usando LangChain/Groq, API GraphQL y servicio en tiempo real con WebSockets y webhooks B2B seguros (HMAC-SHA256).
+\item Diseñé una arquitectura escalable con PostgreSQL y Redis para manejar reservas concurrentes y flujos automatizados con n8n para notificaciones por correo e integraciones con APIs de terceros.
+\item Construí suites de pruebas E2E y de integración con PyTest a través de los microservicios, validando comunicación inter-servicios vía Kafka, flujos de pago y manejo de eventos WebSocket.
+\end{itemize}
+
+% ================= EDUCACION =================
+\section*{EDUCACIÓN}
+
+\textbf{UNIVERSIDAD LAICA ELOY ALFARO DE MANABÍ} \hfill Ecuador, Manabí, Manta \\
+\textit{Ingeniería de Software} \hfill 2023 -- Presente
+
+\begin{itemize}
+\item Desarrollo de proyectos académicos y personales utilizando Django REST, Flask, FastAPI, NestJS y Angular, enfocados en resolver problemas reales con soluciones escalables.
+\item Formación complementaria autodidacta en backend, frontend y metodologías ágiles (Scrum / Kanban), reforzada con experiencia práctica.
+\item \textbf{Cursos relevantes:} Estructuras de Datos, Arquitectura de Software, Bases de Datos, Desarrollo Backend, Testing de Software.
+\end{itemize}
+
+% ================= LIDERAZGO =================
+\section*{LIDERAZGO Y VOLUNTARIADO}
+
+\textbf{Artificial Intelligence Club -- ULEAM} \hfill Ecuador, Manabí, Manta \\
+\textit{Content Management Lead} \hfill 2024 -- Presente
+
+\begin{itemize}
+\item Planifiqué y estructuré programas de formación en inteligencia artificial para la comunidad universitaria.
+\item Apoyé la organización de charlas técnicas y talleres, fomentando el aprendizaje colaborativo.
+\end{itemize}
+
+\end{document}

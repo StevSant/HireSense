@@ -1,0 +1,154 @@
+\documentclass[11pt, a4paper]{article}
+
+% ---------- PACKAGES ----------
+\usepackage[top=1.2cm, bottom=1.2cm, left=1.5cm, right=1.5cm]{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{fontspec}
+\usepackage{microtype}
+
+\usepackage[normalem]{ulem}  % For underline
+\setmainfont{Times New Roman}
+
+% ---------- COLORS (for links only) ----------
+\hypersetup{
+  colorlinks=true,
+  urlcolor=blue
+}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1.5pt}
+\setlength{\emergencystretch}{3em}  % Avoid overfull hbox
+\definecolor{sectiongray}{RGB}{60,60,60}
+
+
+% ---------- SECTION STYLE ----------
+\definecolor{sectiongray}{RGB}{60,60,60}
+
+\titleformat{\section}
+  {\large\bfseries\color{sectiongray}}
+  {}
+  {0em}
+  {}
+  [\vspace{2pt}\titlerule]
+
+\titlespacing{\section}{0pt}{10pt}{6pt}
+
+
+
+% ---------- LIST STYLE ----------
+\setlist[itemize]{
+    leftmargin=1.2em,
+    itemsep=1.5pt,
+    topsep=2pt,
+    parsep=0pt
+}
+
+% ---------- DOCUMENT ----------
+\begin{document}
+
+% ================= HEADER =================
+\begin{center}
+{\LARGE \textbf{BRYAN STEVEN MENOSCAL SANTANA}}
+\end{center}
+
+\vspace{6pt}
+
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l l}
+\textbf{Location:} Ecuador, Manabí, Manta & \textbf{Phone:} +593 99 739 9441 \\
+\textbf{Email:} \href{mailto:bryanmenoscal2005@gmail.com}{bryanmenoscal2005@gmail.com}
+& \textbf{Portfolio:} \href{https://stevsant.vercel.app?ref=cv-en}{stevsant.vercel.app} \\
+\textbf{LinkedIn:} \href{https://linkedin.com/in/bryanmenoscal26}{linkedin.com/in/bryanmenoscal26}
+& \textbf{GitHub:} \href{https://github.com/StevSant}{github.com/StevSant} \\
+\end{tabular*}
+
+\vspace{6pt}
+\hrule
+\vspace{8pt}
+
+
+% ================= SUMMARY =================
+\section*{SUMMARY}
+
+Software Developer in training with a Fullstack focus (Python / Angular).
+3rd Place Winner at Viamatica Hackathon 2025 (among 450+ participants).
+Passionate about scalable software architecture and Artificial Intelligence.
+Advanced English proficiency (C1), self-taught, with proven ability to lead technical initiatives and solve problems under pressure.
+
+% ================= LANGUAGES =================
+\section*{LANGUAGES}
+\vspace{-2pt}
+\begin{tabular}{p{0.25\textwidth} p{0.7\textwidth}}
+\textbf{Spanish:} & Native \\
+\textbf{English:} & C1
+\end{tabular}
+\vspace{6pt}
+\hrule
+\vspace{8pt}
+
+% ================= SKILLS =================
+\section*{TECHNICAL SKILLS}
+\vspace{-2pt}
+\begin{tabular}{p{0.25\textwidth} p{0.7\textwidth}}
+\textbf{Backend:} & Django, Django REST Framework, Flask, FastAPI, NestJS \\
+\textbf{Frontend:} & Angular (primary), React (basic knowledge) \\
+\textbf{Mobile:} & Kotlin (Basic) \\
+\textbf{Languages:} & Python, JavaScript, TypeScript, Java / Kotlin (Basic) \\
+\textbf{Databases:} & MySQL, PostgreSQL, MongoDB \\
+\textbf{Tools:} & Git, Docker, GitHub / GitLab, Postman, Visual Studio Code \\
+\textbf{Cloud:} & Vercel, Azure, Google Cloud Run \\
+\textbf{Methodologies:} & Scrum, Agile Development, Continuous Integration (CI) \\
+\end{tabular}
+\vspace{6pt}
+\hrule
+\vspace{8pt}
+
+% ================= PROJECTS =================
+\section*{PROJECTS \& RELEVANT EXPERIENCE}
+
+\textbf{SME RISK ASSESSMENT AGENT --- HACKATÓN VIAMATICA (2025)} \hfill Ecuador, Guayas, Guayaquil \\
+\textit{Backend \& AI Developer | Hackathon Viamatica 2025 (460+ participants)} \hfill 2025
+
+\begin{itemize}
+\item \textbf{Achievement:} Awarded 3rd place among 460+ participants (teams of 3), delivering a functional MVP in under 3 days.
+\item \textbf{Development:} Built the AI agent (LangChain) and REST API (FastAPI) for credit risk evaluation, implementing automated web scraping with Playwright to extract data from Ecuador's Superintendencia de Compañías, SRI, and social media (Twitter, Facebook, Instagram, LinkedIn).
+\item \textbf{Impact:} Introduced a digital reputation score for SMEs, enabling fairer credit assessments by incorporating online presence data typically ignored in traditional evaluations.
+\end{itemize}
+
+\vspace{4pt}
+
+\textbf{STREAMFLOWMUSIC} \hfill Personal Project \\
+\textit{Backend Developer} \hfill 2025
+
+\begin{itemize}
+\item Designed and developed a scalable Spotify-like REST API using Django REST Framework and Supabase.
+\item Implemented a content ingestion system integrating the YouTube API to automate media downloading and cloud storage.
+\item \textbf{Load Testing:} Validated system robustness by simulating 100 concurrent users, optimizing database queries to maintain low latency.
+\end{itemize}
+
+% ================= EDUCATION =================
+\section*{EDUCATION}
+
+\textbf{UNIVERSIDAD LAICA ELOY ALFARO DE MANABÍ} \hfill Ecuador, Manabí, Manta \\
+\textit{BSc. in Software Engineering} \hfill 2023 -- Present
+
+\begin{itemize}
+\item Development of academic and personal projects using Django REST, Flask, FastAPI, NestJS, and Angular, focused on solving real-world problems with scalable solutions.
+\item Self-directed complementary training in backend, frontend, and Agile methodologies (Scrum / Kanban), reinforced through hands-on experience.
+\end{itemize}
+
+% ================= LEADERSHIP =================
+\section*{LEADERSHIP \& VOLUNTEERING}
+
+\textbf{Artificial Intelligence Club -- ULEAM} \hfill Manta, Manabí, Ecuador \\
+\textit{Content Management Lead} \hfill 2024 -- Present
+
+\begin{itemize}
+\item Planned and structured Artificial Intelligence training curricula for the university community.
+\item Supported the organization of tech talks and workshops, fostering collaborative and peer-driven learning.
+\end{itemize}
+
+\end{document}

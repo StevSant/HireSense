@@ -1,0 +1,31 @@
+<div class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="logo">
+      <h2>HireSense</h2>
+    </div>
+    <nav>
+      <a routerLink="ingestion" routerLinkActive="active">
+        <span class="icon">&#128269;</span>
+        <span>Job Ingestion</span>
+      </a>
+      <a routerLink="profile" routerLinkActive="active">
+        <span class="icon">&#128196;</span>
+        <span>My Profile</span>
+      </a>
+      <a routerLink="matching" routerLinkActive="active">
+        <span class="icon">&#127919;</span>
+        <span>Matching</span>
+      </a>
+      <a routerLink="optimization" routerLinkActive="active">
+        <span class="icon">&#9889;</span>
+        <span>Optimization</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button (click)="logout()" class="logout-btn">Sign Out</button>
+    </div>
+  </aside>
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

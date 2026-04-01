@@ -1,8 +1,58 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+import { environment } from '../../../environments/environment';
+
+interface CVSection {
+  name: string;
+  content: string;
+}
+
+interface CandidateProfile {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  location: string | null;
+  sections: CVSection[];
+  language: string;
+  skills: string[];
+}
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  template: '<p>profile page works!</p>',
+  imports: [FormsModule],
+  templateUrl: './profile.component.html',
+  styleUrl: './profile.component.scss',
 })
-export class ProfileComponent {}
+export class ProfileComponent {
+  texContent = signal('');
+  language = signal('en');
+  profile = signal<CandidateProfile | null>(null);
+  loading = signal(false);
+  error = signal('');
+
+  constructor(private http: HttpClient) {}
+
+  uploadCV(): void {
+    if (!this.texContent().trim()) return;
+    this.loading.set(true);
+    this.error.set('');
+    this.http
+      .post<CandidateProfile>(`${environment.apiUrl}/profile/upload`, {
+        tex_content: this.texContent(),
+        language: this.language(),
+      })
+      .subscribe({
+        next: (res) => {
+          this.profile.set(res);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.error.set(err.error?.detail || 'Failed to parse CV');
+          this.loading.set(false);
+        },
+      });
+  }
+}

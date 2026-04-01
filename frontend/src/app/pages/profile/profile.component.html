@@ -1,0 +1,82 @@
+<div class="page">
+  <h1>My Profile</h1>
+
+  @if (!profile()) {
+    <div class="upload-section">
+      <h2>Upload LaTeX CV</h2>
+      <div class="form-group">
+        <label for="language">Language</label>
+        <select id="language" [ngModel]="language()" (ngModelChange)="language.set($event)" name="language">
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="tex">Paste your .tex content</label>
+        <textarea
+          id="tex"
+          [ngModel]="texContent()"
+          (ngModelChange)="texContent.set($event)"
+          name="tex"
+          rows="12"
+          placeholder="Paste your LaTeX CV here..."
+        ></textarea>
+      </div>
+      @if (error()) {
+        <div class="alert alert-error">{{ error() }}</div>
+      }
+      <button (click)="uploadCV()" [disabled]="loading() || !texContent().trim()" class="btn-primary">
+        @if (loading()) { Parsing... } @else { Upload & Parse }
+      </button>
+    </div>
+  } @else {
+    <div class="profile-view">
+      <div class="profile-header">
+        <h2>{{ profile()!.name }}</h2>
+        <button (click)="profile.set(null)" class="btn-secondary">Upload New CV</button>
+      </div>
+      <div class="info-grid">
+        @if (profile()!.email) {
+          <div class="info-item">
+            <span class="label">Email</span>
+            <span>{{ profile()!.email }}</span>
+          </div>
+        }
+        @if (profile()!.phone) {
+          <div class="info-item">
+            <span class="label">Phone</span>
+            <span>{{ profile()!.phone }}</span>
+          </div>
+        }
+        @if (profile()!.location) {
+          <div class="info-item">
+            <span class="label">Location</span>
+            <span>{{ profile()!.location }}</span>
+          </div>
+        }
+        <div class="info-item">
+          <span class="label">Language</span>
+          <span>{{ profile()!.language.toUpperCase() }}</span>
+        </div>
+      </div>
+
+      @if (profile()!.skills.length > 0) {
+        <div class="section">
+          <h3>Skills</h3>
+          <div class="skills">
+            @for (skill of profile()!.skills; track skill) {
+              <span class="skill-tag">{{ skill }}</span>
+            }
+          </div>
+        </div>
+      }
+
+      @for (section of profile()!.sections; track section.name) {
+        <div class="section">
+          <h3>{{ section.name }}</h3>
+          <p class="section-content">{{ section.content }}</p>
+        </div>
+      }
+    </div>
+  }
+</div>

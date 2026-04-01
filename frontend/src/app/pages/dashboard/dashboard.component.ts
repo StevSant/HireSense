@@ -1,10 +1,18 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterOutlet],
-  template: '<router-outlet />',
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.scss',
 })
-export class DashboardComponent {}
+export class DashboardComponent {
+  constructor(private auth: AuthService) {}
+
+  logout(): void {
+    this.auth.logout();
+  }
+}

@@ -26,5 +26,12 @@ services:
     volumes:
       - ./cvs:/app/cvs
 
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    depends_on:
+      - app
+
 volumes:
   pgdata:

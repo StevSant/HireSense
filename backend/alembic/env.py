@@ -4,6 +4,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
 
+import hiresense.infrastructure.registry  # noqa: F401 — registers all ORM models
 from hiresense.infrastructure.database import Base
 
 config = context.config

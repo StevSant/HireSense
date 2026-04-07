@@ -1,0 +1,87 @@
+import pytest
+
+from hiresense.matching.domain.scorers.application_strength_scorer import ApplicationStrengthScorer
+
+
+class FakeLLM:
+    def __init__(self, response: str) -> None:
+        self._response = response
+        self.last_prompt: str = ""
+
+    async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+        self.last_prompt = prompt
+        return self._response
+
+
+class FakeProfile:
+    def __init__(self) -> None:
+        self.skills = ["Python", "FastAPI", "PostgreSQL"]
+        self.sections = [
+            type("S", (), {"name": "EXPERIENCE", "content": "Built APIs at Acme Corp"})()
+        ]
+
+
+JOB = {
+    "title": "Backend Engineer",
+    "company": "Tech Co",
+    "description": "Build scalable backend systems.",
+    "location": "Remote",
+    "salary_range": "$120k-$150k",
+    "skills": ["Python", "FastAPI", "PostgreSQL"],
+}
+
+
+@pytest.mark.asyncio
+async def test_application_strength_scorer_with_profile_returns_result() -> None:
+    llm = FakeLLM('{"score": 0.88, "rationale": "Strong skill match"}')
+    scorer = ApplicationStrengthScorer(llm=llm, weight=20)
+    profile = FakeProfile()
+    result = await scorer.score(JOB, profile)
+    assert result.score == 0.88
+    assert result.rationale == "Strong skill match"
+    assert result.dimension == "application_strength"
+    assert result.weight == 20
+
+
+@pytest.mark.asyncio
+async def test_application_strength_scorer_includes_skills_in_prompt() -> None:
+    llm = FakeLLM('{"score": 0.8, "rationale": "Good fit"}')
+    scorer = ApplicationStrengthScorer(llm=llm, weight=20)
+    profile = FakeProfile()
+    await scorer.score(JOB, profile)
+    assert "Python" in llm.last_prompt
+    assert "FastAPI" in llm.last_prompt
+    assert "PostgreSQL" in llm.last_prompt
+
+
+@pytest.mark.asyncio
+async def test_application_strength_scorer_includes_experience_in_prompt() -> None:
+    llm = FakeLLM('{"score": 0.8, "rationale": "Good fit"}')
+    scorer = ApplicationStrengthScorer(llm=llm, weight=20)
+    profile = FakeProfile()
+    await scorer.score(JOB, profile)
+    assert "Built APIs at Acme Corp" in llm.last_prompt
+
+
+@pytest.mark.asyncio
+async def test_application_strength_scorer_without_profile_returns_default() -> None:
+    llm = FakeLLM('{"score": 0.9, "rationale": "Would be great"}')
+    scorer = ApplicationStrengthScorer(llm=llm, weight=20)
+    result = await scorer.score(JOB, profile=None)
+    assert result.score == 0.5
+    assert result.rationale == "No CV provided for evaluation"
+    assert result.dimension == "application_strength"
+
+
+@pytest.mark.asyncio
+async def test_application_strength_scorer_without_profile_does_not_call_llm() -> None:
+    llm = FakeLLM('{"score": 0.9, "rationale": "Would be great"}')
+    scorer = ApplicationStrengthScorer(llm=llm, weight=20)
+    await scorer.score(JOB, profile=None)
+    assert llm.last_prompt == ""
+
+
+@pytest.mark.asyncio
+async def test_application_strength_scorer_dimension_name() -> None:
+    scorer = ApplicationStrengthScorer(llm=None, weight=20)
+    assert scorer.dimension_name == "application_strength"

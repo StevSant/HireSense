@@ -92,6 +92,9 @@ class Settings(BaseSettings):
     weight_application: int = 10
     weight_interview: int = 10
 
+    # Batch processing
+    batch_concurrency: int = 3
+
     @classmethod
     def settings_customise_sources(
         cls,

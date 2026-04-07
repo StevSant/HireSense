@@ -239,3 +239,25 @@ async def test_scan_no_event_when_no_new_jobs() -> None:
 
     assert result.new == 0
     assert bus.published == []
+
+
+@pytest.mark.asyncio
+async def test_scan_filters_by_keyword() -> None:
+    """Only jobs whose title or description match the keyword are included."""
+    raw_match = _make_raw("Backend Engineer", "Acme", "https://example.com/1")
+    raw_no_match = _make_raw("Designer", "Acme", "https://example.com/2")
+    adapter = FakeAdapter([raw_match, raw_no_match])
+
+    config = _make_config(
+        PortalEntry(name="Acme", platform="greenhouse", board_id="acme", categories=[]),
+    )
+    adapters = {"greenhouse": adapter}
+    normalizers = {"greenhouse": FakeNormalizer()}
+    bus = FakeEventBus()
+
+    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    result = await scanner.scan(ScanFilters(keyword="engineer"))
+
+    assert result.total_fetched == 2
+    assert result.new == 1
+    assert result.jobs[0].title == "Backend Engineer"

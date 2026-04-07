@@ -124,6 +124,41 @@
           </ul>
         </div>
       }
+
+      <!-- Evaluation Section -->
+      <section class="evaluation-section">
+        <button (click)="evaluate()" [disabled]="evaluating()">
+          {{ evaluating() ? 'Evaluating...' : 'Run 10-Dimension Evaluation' }}
+        </button>
+
+        @if (evaluationResult()) {
+          <div class="evaluation-results">
+            <div class="composite-score">
+              <span class="score-value">{{ (evaluationResult()!.composite_score * 100).toFixed(0) }}</span>
+              <span class="score-label">Composite Score</span>
+            </div>
+
+            <div class="dimensions-grid">
+              @for (dim of evaluationResult()!.dimensions; track dim.dimension) {
+                <div class="dimension-card">
+                  <div class="dimension-header">
+                    <span class="dimension-name">{{ dimensionLabel(dim.dimension) }}</span>
+                    <span class="dimension-score">{{ (dim.score * 100).toFixed(0) }}%</span>
+                  </div>
+                  <div class="dimension-bar">
+                    <div class="dimension-bar-fill"
+                         [style.width.%]="dim.score * 100"
+                         [style.background-color]="scoreColor(dim.score)">
+                    </div>
+                  </div>
+                  <p class="dimension-rationale">{{ dim.rationale }}</p>
+                  <span class="dimension-weight">Weight: {{ dim.weight }}%</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </section>
     </div>
   }
 </div>

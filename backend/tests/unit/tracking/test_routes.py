@@ -7,6 +7,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from hiresense.identity.api.dependencies import require_auth
 from hiresense.tracking.api.dependencies import get_tracking_service
 from hiresense.tracking.api.routes import router
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
@@ -90,6 +91,7 @@ class FakeTrackingService:
 def make_app(fake: FakeTrackingService) -> FastAPI:
     app = FastAPI()
     app.dependency_overrides[get_tracking_service] = lambda: fake
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
     return app
 

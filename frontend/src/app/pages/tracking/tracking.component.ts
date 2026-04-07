@@ -3,7 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { TitleCasePipe, DatePipe } from '@angular/common';
 import { environment } from '../../../environments/environment';
-import { TrackedApplication, ApplicationStatus } from '../../core/models/tracked-application.model';
+import { ApplicationStatus } from '../../core/models/application-status.model';
+import { TrackedApplication } from '../../core/models/tracked-application.model';
 import { CreateApplicationRequest } from '../../core/models/create-application-request.model';
 import { UpdateApplicationRequest } from '../../core/models/update-application-request.model';
 

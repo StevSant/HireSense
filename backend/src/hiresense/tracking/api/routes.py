@@ -4,6 +4,7 @@ import uuid as uuid_mod
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 
+from hiresense.identity.api.dependencies import require_auth
 from hiresense.tracking.api.dependencies import get_tracking_service
 from hiresense.tracking.api.schemas import (
     CreateApplicationRequest,
@@ -13,7 +14,7 @@ from hiresense.tracking.api.schemas import (
 from hiresense.tracking.domain.models import ApplicationStatus
 from hiresense.tracking.domain.services import TrackingService
 
-router = APIRouter(prefix="/tracking", tags=["tracking"])
+router = APIRouter(prefix="/tracking", tags=["tracking"], dependencies=[Depends(require_auth)])
 
 
 @router.post("", response_model=TrackedApplicationResponse, status_code=201)

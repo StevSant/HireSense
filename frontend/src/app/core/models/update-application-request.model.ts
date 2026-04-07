@@ -1,4 +1,4 @@
-import { ApplicationStatus } from './tracked-application.model';
+import { ApplicationStatus } from './application-status.model';
 
 export interface UpdateApplicationRequest {
   status?: ApplicationStatus;

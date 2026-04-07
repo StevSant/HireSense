@@ -80,11 +80,17 @@ class Settings(BaseSettings):
     lever_api_url: str = "https://api.lever.co/v0/postings"
     ashby_api_url: str = "https://api.ashbyhq.com/posting-api/job-board"
 
-    # Matching weights
-    weight_semantic: int = 30
-    weight_skill_match: int = 40
-    weight_experience: int = 20
-    weight_language: int = 10
+    # Matching weights (must sum to 100)
+    weight_semantic: int = 15
+    weight_skill_match: int = 20
+    weight_experience: int = 10
+    weight_language: int = 5
+    weight_seniority: int = 10
+    weight_compensation: int = 10
+    weight_growth: int = 5
+    weight_culture: int = 5
+    weight_application: int = 10
+    weight_interview: int = 10
 
     @classmethod
     def settings_customise_sources(

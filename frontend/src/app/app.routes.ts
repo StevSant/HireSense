@@ -14,6 +14,7 @@ export const routes: Routes = [
       { path: 'profile', loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent) },
       { path: 'matching', loadComponent: () => import('./pages/matching/matching.component').then(m => m.MatchingComponent) },
       { path: 'optimization', loadComponent: () => import('./pages/optimization/optimization.component').then(m => m.OptimizationComponent) },
+      { path: 'tracking', loadComponent: () => import('./pages/tracking/tracking.component').then(m => m.TrackingComponent) },
     ],
   },
   { path: '**', redirectTo: 'login' },

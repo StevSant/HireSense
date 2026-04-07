@@ -2,6 +2,8 @@ import { Component, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
+import { EvaluationResult } from '../../core/models/evaluation-result.model';
+import { EvaluateRequest } from '../../core/models/evaluate-request.model';
 
 interface ScoreBreakdown {
   semantic_score: number;
@@ -38,6 +40,8 @@ export class MatchingComponent {
   result = signal<MatchResult | null>(null);
   loading = signal(false);
   error = signal('');
+  evaluationResult = signal<EvaluationResult | null>(null);
+  evaluating = signal(false);
 
   constructor(private http: HttpClient) {}
 
@@ -62,6 +66,38 @@ export class MatchingComponent {
         this.loading.set(false);
       },
     });
+  }
+
+  evaluate(): void {
+    this.evaluating.set(true);
+    const req: EvaluateRequest = {
+      job_title: this.jobDescription().split('\n')[0] || 'Unknown',
+      company: 'Unknown',
+      description: this.jobDescription(),
+      skills: this.jobSkills().split(',').map(s => s.trim()).filter(Boolean),
+    };
+    this.http.post<EvaluationResult>(`${environment.apiUrl}/matching/evaluate`, req).subscribe({
+      next: (res) => {
+        this.evaluationResult.set(res);
+        this.evaluating.set(false);
+      },
+      error: (err) => {
+        this.error.set(err.error?.detail || 'Evaluation failed');
+        this.evaluating.set(false);
+      },
+    });
+  }
+
+  dimensionLabel(dimension: string): string {
+    const labels: Record<string, string> = {
+      seniority_fit: 'Seniority Fit',
+      compensation: 'Compensation',
+      growth_potential: 'Growth Potential',
+      culture_fit: 'Culture Fit',
+      application_strength: 'Application Strength',
+      interview_readiness: 'Interview Readiness',
+    };
+    return labels[dimension] || dimension.replace(/_/g, ' ');
   }
 
   scoreColor(score: number): string {

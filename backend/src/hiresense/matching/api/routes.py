@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from hiresense.matching.api.dependencies import get_matching_orchestrator
+from hiresense.matching.api.schemas import DimensionResultResponse, EvaluateRequest, EvaluationResponse
 from hiresense.matching.domain.models import MatchResult
 
 router = APIRouter(prefix="/matching", tags=["matching"])
@@ -20,6 +21,30 @@ class AnalyzeRequest(BaseModel):
     cv_skills: list[str]
     cv_embedding: list[float] | None = None
     job_embedding: list[float] | None = None
+
+
+@router.post("/evaluate", response_model=EvaluationResponse)
+async def evaluate_job(
+    body: EvaluateRequest,
+    orchestrator: Annotated[object, Depends(get_matching_orchestrator)],
+) -> EvaluationResponse:
+    job = {
+        "title": body.job_title or "",
+        "company": body.company or "",
+        "description": body.description or "",
+        "skills": body.skills,
+        "location": body.location or "",
+    }
+    result = await orchestrator.evaluate(job=job, profile=None)
+    return EvaluationResponse(
+        composite_score=result.composite_score,
+        job_title=result.job_title,
+        company=result.company,
+        dimensions=[
+            DimensionResultResponse(dimension=d.dimension, score=d.score, rationale=d.rationale, weight=d.weight)
+            for d in result.dimensions
+        ],
+    )
 
 
 @router.post("/analyze", response_model=MatchResult)

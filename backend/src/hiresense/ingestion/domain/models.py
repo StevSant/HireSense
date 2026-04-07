@@ -26,6 +26,7 @@ class NormalizedJob(BaseModel):
     language: str = "en"
     url: str
     posted_date: datetime | None = None
+    department: str | None = None
 
     def dedup_key(self) -> str:
         raw = f"{self.source}:{self.title.lower().strip()}:{self.company.lower().strip()}:{self.url}"

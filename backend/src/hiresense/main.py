@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import httpx
 from fastapi import FastAPI
@@ -10,12 +11,20 @@ from hiresense.config import Settings
 from hiresense.identity.api.dependencies import get_auth_service
 from hiresense.identity.api.routes import router as auth_router
 from hiresense.identity.services import AuthService
-from hiresense.ingestion.api.routes import get_ingestion_orchestrator
-from hiresense.ingestion.api.routes import router as ingestion_router
-from hiresense.ingestion.adapters.remotive import RemotiveAdapter
-from hiresense.ingestion.adapters.remoteok import RemoteOKAdapter
+from hiresense.ingestion.adapters.ashby_adapter import AshbyAdapter
 from hiresense.ingestion.adapters.csv_import import CSVImportAdapter
+from hiresense.ingestion.adapters.greenhouse_adapter import GreenhouseAdapter
+from hiresense.ingestion.adapters.lever_adapter import LeverAdapter
+from hiresense.ingestion.adapters.remoteok import RemoteOKAdapter
+from hiresense.ingestion.adapters.remotive import RemotiveAdapter
+from hiresense.ingestion.api.routes import get_ingestion_orchestrator, get_portal_scanner, get_portals_config
+from hiresense.ingestion.api.routes import router as ingestion_router
 from hiresense.ingestion.domain.normalizer import CSVNormalizer, RemoteOKNormalizer, RemotiveNormalizer
+from hiresense.ingestion.domain.normalizers.ashby_normalizer import AshbyNormalizer
+from hiresense.ingestion.domain.normalizers.greenhouse_normalizer import GreenhouseNormalizer
+from hiresense.ingestion.domain.normalizers.lever_normalizer import LeverNormalizer
+from hiresense.ingestion.domain.portal_config import load_portals_config
+from hiresense.ingestion.domain.portal_scanner import PortalScanner
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.matching.api.dependencies import get_matching_orchestrator
 from hiresense.matching.api.routes import router as matching_router
@@ -73,6 +82,44 @@ def create_app() -> FastAPI:
     )
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: ingestion_orchestrator
     app.include_router(ingestion_router)
+
+    # --- Portal scanning ---
+    portals_config_path = Path(__file__).parent / settings.portals_config_path
+    portals_config = load_portals_config(portals_config_path)
+
+    portal_adapters = {
+        "greenhouse": GreenhouseAdapter(
+            http_client=http_client,
+            base_url=settings.greenhouse_api_url,
+            timeout=settings.portal_scan_timeout,
+        ),
+        "lever": LeverAdapter(
+            http_client=http_client,
+            base_url=settings.lever_api_url,
+            timeout=settings.portal_scan_timeout,
+        ),
+        "ashby": AshbyAdapter(
+            http_client=http_client,
+            base_url=settings.ashby_api_url,
+            timeout=settings.portal_scan_timeout,
+        ),
+    }
+
+    portal_normalizers = {
+        "greenhouse": GreenhouseNormalizer(),
+        "lever": LeverNormalizer(),
+        "ashby": AshbyNormalizer(),
+    }
+
+    portal_scanner = PortalScanner(
+        config=portals_config,
+        adapters=portal_adapters,
+        normalizers=portal_normalizers,
+        event_bus=event_bus,
+    )
+
+    app.dependency_overrides[get_portal_scanner] = lambda: portal_scanner
+    app.dependency_overrides[get_portals_config] = lambda: portals_config
 
     # --- Profile module ---
     latex_parser = LaTeXParser()

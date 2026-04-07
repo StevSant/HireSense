@@ -34,6 +34,7 @@ class StoryRepository:
         with self._session_factory() as session:
             story = session.merge(story)
             session.commit()
+            session.refresh(story)
             return story
 
     def delete(self, id: uuid.UUID) -> bool:

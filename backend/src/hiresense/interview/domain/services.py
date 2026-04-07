@@ -91,6 +91,7 @@ class InterviewPrepService:
             )
 
         stories = self._story_repo.list_all()
+        valid_story_ids = {str(s.id) for s in stories}
         story_summaries = ""
         for i, s in enumerate(stories, 1):
             story_summaries += f"{i}. [{s.id}] \"{s.title}\" ({s.competency}) - {s.situation[:100]}\n"
@@ -123,6 +124,7 @@ class InterviewPrepService:
             matched = [
                 StoryMatch(story_id=m["story_id"], story_title=m["story_title"], relevance=m["relevance"])
                 for m in data.get("matched_stories", [])
+                if str(m.get("story_id", "")) in valid_story_ids
             ]
             return InterviewPrep(
                 job_title=title, company=company,
@@ -135,5 +137,5 @@ class InterviewPrepService:
             return InterviewPrep(
                 job_title=title, company=company,
                 matched_stories=[], competencies_to_probe=[],
-                technical_topics=[], negotiation_points=[f"Preparation failed: {exc}"],
+                technical_topics=[], negotiation_points=["Interview preparation is temporarily unavailable"],
             )

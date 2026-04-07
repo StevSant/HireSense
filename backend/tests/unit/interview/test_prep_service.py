@@ -85,4 +85,4 @@ async def test_prepare_llm_failure():
 
     service = InterviewPrepService(llm=FailingLLM(), story_repo=FakeStoryRepo())
     result = await service.prepare({"title": "SWE", "company": "X", "description": ""})
-    assert "failed" in result.negotiation_points[0].lower()
+    assert "unavailable" in result.negotiation_points[0].lower()

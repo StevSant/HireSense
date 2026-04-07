@@ -20,7 +20,7 @@ class LeverAdapter:
 
     async def fetch_jobs(self, board_id: str, company_name: str) -> list[RawJobListing]:
         url = f"{self._base_url}/{board_id}"
-        response = await self._http.get(url, params={"mode": "json"})
+        response = await self._http.get(url, params={"mode": "json"}, timeout=self._timeout)
         response.raise_for_status()
         postings = response.json()
         return [

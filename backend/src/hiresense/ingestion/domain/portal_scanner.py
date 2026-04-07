@@ -99,6 +99,11 @@ class PortalScanner:
                     source_type="api",
                     **normalized_data,
                 )
+                if filters.keyword:
+                    kw = filters.keyword.lower()
+                    if kw not in job.title.lower() and kw not in job.description.lower():
+                        continue
+
                 dedup_key = job.dedup_key()
                 if dedup_key not in seen_dedup_keys:
                     seen_dedup_keys.add(dedup_key)

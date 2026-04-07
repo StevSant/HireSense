@@ -20,7 +20,7 @@ class GreenhouseAdapter:
 
     async def fetch_jobs(self, board_id: str, company_name: str) -> list[RawJobListing]:
         url = f"{self._base_url}/{board_id}/jobs"
-        response = await self._http.get(url, params={"content": "true"})
+        response = await self._http.get(url, params={"content": "true"}, timeout=self._timeout)
         response.raise_for_status()
         data = response.json()
         return [

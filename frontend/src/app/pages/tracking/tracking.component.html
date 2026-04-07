@@ -1,0 +1,142 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Pipeline</h1>
+    <div class="header-actions">
+      <select (change)="onStatusFilterChange($event)" class="filter-select">
+        <option value="">All Statuses</option>
+        @for (s of statusOptions; track s) {
+          <option [value]="s">{{ s | titlecase }}</option>
+        }
+      </select>
+      <button (click)="toggleAddForm()" class="btn-secondary">
+        @if (showAddForm()) { Cancel } @else { + Add Application }
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (showAddForm()) {
+    <div class="add-form">
+      <h2>New Application</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="new-title">Title</label>
+          <input
+            id="new-title"
+            type="text"
+            [value]="newTitle()"
+            (input)="onNewTitleInput($event)"
+            placeholder="e.g. Senior Backend Engineer"
+            class="form-input"
+          />
+        </div>
+        <div class="form-group">
+          <label for="new-company">Company</label>
+          <input
+            id="new-company"
+            type="text"
+            [value]="newCompany()"
+            (input)="onNewCompanyInput($event)"
+            placeholder="e.g. Acme Corp"
+            class="form-input"
+          />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="new-url">URL</label>
+          <input
+            id="new-url"
+            type="url"
+            [value]="newUrl()"
+            (input)="onNewUrlInput($event)"
+            placeholder="https://..."
+            class="form-input"
+          />
+        </div>
+        <div class="form-group">
+          <label for="new-notes">Notes</label>
+          <textarea
+            id="new-notes"
+            [value]="newNotes()"
+            (input)="onNewNotesInput($event)"
+            placeholder="Any notes..."
+            class="form-input form-textarea"
+          ></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button (click)="addApplication()" [disabled]="adding()" class="btn-primary">
+          @if (adding()) { Saving... } @else { Save }
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="loading-state">Loading applications...</div>
+  } @else {
+    @if (applications().length > 0) {
+      <div class="stats">
+        <span class="stat">{{ applications().length }} application(s)</span>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Title</th>
+              <th>Status</th>
+              <th>Applied</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (app of applications(); track app.id) {
+              <tr>
+                <td class="company">{{ app.company }}</td>
+                <td class="title">
+                  @if (app.url) {
+                    <a [href]="app.url" target="_blank" class="link">{{ app.title }}</a>
+                  } @else {
+                    {{ app.title }}
+                  }
+                </td>
+                <td>
+                  <select
+                    [value]="app.status"
+                    (change)="updateStatus(app, $event)"
+                    class="status-select status-{{ app.status }}"
+                  >
+                    @for (s of statusOptions; track s) {
+                      <option [value]="s">{{ s | titlecase }}</option>
+                    }
+                  </select>
+                </td>
+                <td class="date">
+                  @if (app.applied_at) {
+                    {{ app.applied_at | date: 'MMM d, y' }}
+                  } @else {
+                    —
+                  }
+                </td>
+                <td class="notes">{{ app.notes || '—' }}</td>
+                <td>
+                  <button (click)="deleteApplication(app.id)" class="btn-danger">Delete</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <p>No applications tracked yet. Click "+ Add Application" to get started.</p>
+      </div>
+    }
+  }
+</div>

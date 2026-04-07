@@ -5,6 +5,7 @@ import { NormalizedJob } from '../../core/models/normalized-job.model';
 import { PortalEntry } from '../../core/models/portal-entry.model';
 import { ScanPortalsRequest } from '../../core/models/scan-portals-request.model';
 import { ScanError, ScanResult } from '../../core/models/scan-result.model';
+import { CreateApplicationRequest } from '../../core/models/create-application-request.model';
 
 interface FetchResponse {
   count: number;
@@ -22,6 +23,7 @@ export class IngestionComponent implements OnInit {
   jobs = signal<NormalizedJob[]>([]);
   loading = signal(false);
   error = signal('');
+  trackedJobIds = signal<Set<string>>(new Set());
 
   // Portal scanning state
   portals = signal<PortalEntry[]>([]);
@@ -125,5 +127,23 @@ export class IngestionComponent implements OnInit {
   onKeywordInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.scanKeyword.set(input.value);
+  }
+
+  trackJob(jobId: string): void {
+    const body: CreateApplicationRequest = { job_id: jobId };
+    this.http.post(`${environment.apiUrl}/tracking`, body).subscribe({
+      next: () => {
+        this.trackedJobIds.update((ids) => new Set([...ids, jobId]));
+      },
+      error: (err) => {
+        if (err.status === 409) {
+          this.trackedJobIds.update((ids) => new Set([...ids, jobId]));
+        }
+      },
+    });
+  }
+
+  isTracked(jobId: string): boolean {
+    return this.trackedJobIds().has(jobId);
   }
 }

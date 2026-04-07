@@ -73,3 +73,6 @@ class IngestionOrchestrator:
 
     def get_job_by_id(self, job_id: str) -> NormalizedJob | None:
         return self._jobs.get(job_id)
+
+    def list_jobs(self) -> list[NormalizedJob]:
+        return list(self._jobs.values())

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import enum
 import uuid as uuid_mod
+from datetime import datetime
 
 from sqlalchemy import DateTime, Index, String, Text, Uuid, event, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -36,13 +37,13 @@ class TrackedApplication(Base):
         String(20), default=ApplicationStatus.SAVED
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    applied_at: Mapped[None] = mapped_column(
+    applied_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    created_at: Mapped[None] = mapped_column(
+    created_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
-    updated_at: Mapped[None] = mapped_column(
+    updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 

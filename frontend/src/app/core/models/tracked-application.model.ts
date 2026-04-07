@@ -1,4 +1,4 @@
-export type ApplicationStatus = 'saved' | 'applied' | 'interviewing' | 'offered' | 'accepted' | 'rejected';
+import { ApplicationStatus } from './application-status.model';
 
 export interface TrackedApplication {
   id: string;

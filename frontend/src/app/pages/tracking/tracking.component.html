@@ -83,6 +83,11 @@
       <div class="stats">
         <span class="stat">{{ applications().length }} application(s)</span>
       </div>
+      <div class="batch-actions">
+        <button (click)="evaluateAll()" [disabled]="evaluating() || applications().length === 0" class="btn-primary">
+          @if (evaluating()) { Evaluating {{ applications().length }} jobs... } @else { Evaluate All }
+        </button>
+      </div>
       <div class="table-container">
         <table>
           <thead>
@@ -133,6 +138,44 @@
           </tbody>
         </table>
       </div>
+      @if (leaderboard().length > 0) {
+        <div class="leaderboard">
+          <h2>Leaderboard</h2>
+          <div class="leaderboard-list">
+            @for (result of leaderboard(); track result.source_id; let i = $index) {
+              <div class="leaderboard-card" (click)="toggleExpand(result.source_id)">
+                <div class="leaderboard-header">
+                  <span class="rank">#{{ i + 1 }}</span>
+                  <div class="leaderboard-info">
+                    <span class="leaderboard-title">{{ result.job_title }}</span>
+                    <span class="leaderboard-company">{{ result.company }}</span>
+                  </div>
+                  <span class="leaderboard-badge badge-{{ result.source }}">{{ result.source }}</span>
+                  <span class="leaderboard-score" [style.color]="scoreColor(result.composite_score)">
+                    {{ (result.composite_score * 100).toFixed(0) }}%
+                  </span>
+                </div>
+                @if (expandedResultId() === result.source_id) {
+                  <div class="leaderboard-dimensions">
+                    @for (dim of result.dimensions; track dim.dimension) {
+                      <div class="dim-row">
+                        <span class="dim-name">{{ dimensionLabel(dim.dimension) }}</span>
+                        <div class="dim-bar">
+                          <div class="dim-bar-fill"
+                               [style.width.%]="dim.score * 100"
+                               [style.background-color]="scoreColor(dim.score)">
+                          </div>
+                        </div>
+                        <span class="dim-score">{{ (dim.score * 100).toFixed(0) }}%</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
     } @else {
       <div class="empty-state">
         <p>No applications tracked yet. Click "+ Add Application" to get started.</p>

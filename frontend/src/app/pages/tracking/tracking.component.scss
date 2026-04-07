@@ -222,3 +222,126 @@ table {
   background: white;
   border-radius: 8px;
 }
+
+.batch-actions {
+  margin-bottom: 1rem;
+}
+
+.leaderboard {
+  margin-top: 2rem;
+
+  h2 {
+    font-size: 1.1rem;
+    color: #1a1a2e;
+    margin-bottom: 1rem;
+  }
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.leaderboard-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.leaderboard-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.rank {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #4f46e5;
+  min-width: 2rem;
+}
+
+.leaderboard-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.15rem;
+}
+
+.leaderboard-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.leaderboard-company {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.leaderboard-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  text-transform: capitalize;
+
+  &.badge-tracked  { background: #e0e7ff; color: #4338ca; }
+  &.badge-ingested { background: #d1fae5; color: #065f46; }
+}
+
+.leaderboard-score {
+  font-size: 1.1rem;
+  font-weight: 700;
+  min-width: 3.5rem;
+  text-align: right;
+}
+
+.leaderboard-dimensions {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dim-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dim-name {
+  font-size: 0.8rem;
+  color: #555;
+  min-width: 10rem;
+}
+
+.dim-bar {
+  flex: 1;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.dim-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.dim-score {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  min-width: 2.5rem;
+  text-align: right;
+}

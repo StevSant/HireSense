@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import uuid as uuid_mod
+
 from pydantic import BaseModel
 
 
@@ -25,3 +27,23 @@ class EvaluationResponse(BaseModel):
     job_title: str
     company: str
     dimensions: list[DimensionResultResponse]
+
+
+class BatchEvaluateRequest(BaseModel):
+    tracked_app_ids: list[uuid_mod.UUID] = []
+    include_ingested: bool = False
+
+
+class BatchResultResponse(BaseModel):
+    job_title: str
+    company: str
+    source: str
+    source_id: str
+    composite_score: float
+    dimensions: list[DimensionResultResponse]
+    failed: bool = False
+
+
+class BatchEvaluationResponse(BaseModel):
+    total_jobs: int
+    results: list[BatchResultResponse]

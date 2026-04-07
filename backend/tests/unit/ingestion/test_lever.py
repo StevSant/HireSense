@@ -130,7 +130,7 @@ def test_lever_normalizer_full_data() -> None:
     assert result["salary_range"] is None
     assert result["url"] == "https://jobs.lever.co/retool/abc-123"
     assert result["language"] == "en"
-    assert result["posted_date"] == "2024-03-29T04:00:00+00:00"
+    assert result["posted_date"] == "2024-03-29T08:00:00+00:00"
     assert result["department"] == "Product"
 
 

@@ -160,8 +160,7 @@ def create_app() -> FastAPI:
         InterviewReadinessScorer(llm=llm, weight=settings.weight_interview),
     ]
 
-    matching_orchestrator = MatchingOrchestrator(llm=llm, event_bus=event_bus)
-    matching_orchestrator._dimension_scorers = dimension_scorers
+    matching_orchestrator = MatchingOrchestrator(llm=llm, event_bus=event_bus, dimension_scorers=dimension_scorers)
     app.dependency_overrides[get_matching_orchestrator] = lambda: matching_orchestrator
     app.include_router(matching_router)
 

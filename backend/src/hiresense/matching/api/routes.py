@@ -35,10 +35,7 @@ async def evaluate_job(
         "skills": body.skills,
         "location": body.location or "",
     }
-    result = await orchestrator.evaluate(
-        job=job, profile=None,
-        dimension_scorers=getattr(orchestrator, "_dimension_scorers", []),
-    )
+    result = await orchestrator.evaluate(job=job, profile=None)
     return EvaluationResponse(
         composite_score=result.composite_score,
         job_title=result.job_title,

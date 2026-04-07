@@ -25,14 +25,15 @@ class EvaluationResult(BaseModel):
 
 
 class MatchingOrchestrator:
-    def __init__(self, llm: Any, event_bus: Any) -> None:
+    def __init__(self, llm: Any, event_bus: Any, dimension_scorers: list[Any] | None = None) -> None:
         self._llm = llm
         self._event_bus = event_bus
+        self._dimension_scorers = dimension_scorers or []
         self._semantic_scorer = SemanticScorer()
         self._skill_matcher = SkillMatcher()
 
     async def evaluate(self, job: Any, profile: Any | None = None, dimension_scorers: list[Any] | None = None) -> EvaluationResult:
-        scorers = dimension_scorers or []
+        scorers = dimension_scorers if dimension_scorers is not None else self._dimension_scorers
         title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
         company = job.get("company", "") if isinstance(job, dict) else getattr(job, "company", "")
 

@@ -15,6 +15,7 @@ export const routes: Routes = [
       { path: 'matching', loadComponent: () => import('./pages/matching/matching.component').then(m => m.MatchingComponent) },
       { path: 'optimization', loadComponent: () => import('./pages/optimization/optimization.component').then(m => m.OptimizationComponent) },
       { path: 'tracking', loadComponent: () => import('./pages/tracking/tracking.component').then(m => m.TrackingComponent) },
+      { path: 'interview', loadComponent: () => import('./pages/interview/interview.component').then(m => m.InterviewComponent) },
     ],
   },
   { path: '**', redirectTo: 'login' },

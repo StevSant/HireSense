@@ -1,16 +1,27 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import uuid
 from typing import Any
 
+from pydantic import BaseModel
+
 from hiresense.kernel.contracts.matching import MatchCompletedEvent
 from hiresense.matching.domain.models import MatchResult, ScoreBreakdown
+from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain.semantic_scorer import SemanticScorer
 from hiresense.matching.domain.skill_matcher import SkillMatcher
 
 logger = logging.getLogger(__name__)
+
+
+class EvaluationResult(BaseModel):
+    composite_score: float
+    job_title: str
+    company: str
+    dimensions: list[DimensionResult]
 
 
 class MatchingOrchestrator:
@@ -19,6 +30,24 @@ class MatchingOrchestrator:
         self._event_bus = event_bus
         self._semantic_scorer = SemanticScorer()
         self._skill_matcher = SkillMatcher()
+
+    async def evaluate(self, job: Any, profile: Any | None = None, dimension_scorers: list[Any] | None = None) -> EvaluationResult:
+        scorers = dimension_scorers or []
+        title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
+        company = job.get("company", "") if isinstance(job, dict) else getattr(job, "company", "")
+
+        async def safe_score(scorer: Any) -> DimensionResult:
+            try:
+                return await scorer.score(job, profile)
+            except Exception as exc:
+                return DimensionResult(dimension=scorer.dimension_name, score=0.5, rationale=f"Evaluation failed: {exc}", weight=scorer.weight)
+
+        results = await asyncio.gather(*[safe_score(s) for s in scorers])
+        dimensions = list(results)
+        total_weight = sum(d.weight for d in dimensions)
+        composite = sum(d.score * d.weight for d in dimensions) / total_weight if total_weight > 0 else 0.5
+
+        return EvaluationResult(composite_score=round(composite, 4), job_title=title, company=company, dimensions=dimensions)
 
     async def analyze(
         self,

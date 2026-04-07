@@ -5,8 +5,21 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from hiresense.matching.api.dependencies import get_matching_orchestrator
-from hiresense.matching.api.schemas import DimensionResultResponse, EvaluateRequest, EvaluationResponse
+from hiresense.identity.api.dependencies import require_auth
+from hiresense.matching.api.dependencies import (
+    get_batch_evaluation_service,
+    get_ingestion_orchestrator_for_matching,
+    get_matching_orchestrator,
+    get_tracking_service_for_matching,
+)
+from hiresense.matching.api.schemas import (
+    BatchEvaluateRequest,
+    BatchEvaluationResponse,
+    BatchResultResponse,
+    DimensionResultResponse,
+    EvaluateRequest,
+    EvaluationResponse,
+)
 from hiresense.matching.domain.models import MatchResult
 
 router = APIRouter(prefix="/matching", tags=["matching"])
@@ -61,4 +74,71 @@ async def analyze_match(
         cv_skills=body.cv_skills,
         cv_embedding=body.cv_embedding,
         job_embedding=body.job_embedding,
+    )
+
+
+@router.post("/batch-evaluate", response_model=BatchEvaluationResponse, dependencies=[Depends(require_auth)])
+async def batch_evaluate(
+    body: BatchEvaluateRequest,
+    batch_service: Annotated[object, Depends(get_batch_evaluation_service)],
+    tracking_service: Annotated[object, Depends(get_tracking_service_for_matching)],
+    ingestion_orchestrator: Annotated[object, Depends(get_ingestion_orchestrator_for_matching)],
+) -> BatchEvaluationResponse:
+    jobs: list[dict] = []
+
+    if body.tracked_app_ids:
+        for app_id in body.tracked_app_ids:
+            try:
+                app = tracking_service.get(app_id)
+                jobs.append({
+                    "title": app.title,
+                    "company": app.company,
+                    "description": "",
+                    "source": "tracked",
+                    "source_id": str(app.id),
+                })
+            except ValueError:
+                continue
+    else:
+        for app in tracking_service.list():
+            jobs.append({
+                "title": app.title,
+                "company": app.company,
+                "description": "",
+                "source": "tracked",
+                "source_id": str(app.id),
+            })
+
+    if body.include_ingested:
+        for job in ingestion_orchestrator.list_jobs():
+            jobs.append({
+                "title": job.title,
+                "company": job.company,
+                "description": getattr(job, "description", ""),
+                "skills": getattr(job, "skills", []),
+                "location": getattr(job, "location", ""),
+                "source": "ingested",
+                "source_id": str(job.id),
+            })
+
+    results = await batch_service.evaluate_batch(jobs)
+
+    return BatchEvaluationResponse(
+        total_jobs=len(results),
+        results=[
+            BatchResultResponse(
+                job_title=r.job_title,
+                company=r.company,
+                source=r.source,
+                source_id=r.source_id,
+                composite_score=r.composite_score,
+                dimensions=[
+                    DimensionResultResponse(
+                        dimension=d.dimension, score=d.score, rationale=d.rationale, weight=d.weight,
+                    )
+                    for d in r.dimensions
+                ],
+            )
+            for r in results
+        ],
     )

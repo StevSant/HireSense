@@ -30,6 +30,12 @@ from hiresense.ingestion.domain.portal_scanner import PortalScanner
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.matching.api.dependencies import get_matching_orchestrator
 from hiresense.matching.api.routes import router as matching_router
+from hiresense.matching.domain.scorers.application_strength_scorer import ApplicationStrengthScorer
+from hiresense.matching.domain.scorers.compensation_scorer import CompensationScorer
+from hiresense.matching.domain.scorers.culture_scorer import CultureScorer
+from hiresense.matching.domain.scorers.growth_scorer import GrowthScorer
+from hiresense.matching.domain.scorers.interview_readiness_scorer import InterviewReadinessScorer
+from hiresense.matching.domain.scorers.seniority_scorer import SeniorityScorer
 from hiresense.matching.domain.services import MatchingOrchestrator
 from hiresense.optimization.api.dependencies import get_cv_optimizer
 from hiresense.optimization.api.routes import router as optimization_router
@@ -135,8 +141,27 @@ def create_app() -> FastAPI:
     app.include_router(profile_router)
 
     # --- Matching module ---
-    # LLM adapter placeholder — real adapter needs API keys
-    matching_orchestrator = MatchingOrchestrator(llm=None, event_bus=event_bus)
+    llm = None
+    if settings.llm_api_key:
+        try:
+            from anthropic import AsyncAnthropic
+            from hiresense.adapters.llm.anthropic_adapter import AnthropicLLMAdapter
+            anthropic_client = AsyncAnthropic(api_key=settings.llm_api_key)
+            llm = AnthropicLLMAdapter(client=anthropic_client, model=settings.llm_model)
+        except ImportError:
+            pass
+
+    dimension_scorers = [
+        SeniorityScorer(llm=llm, weight=settings.weight_seniority),
+        CompensationScorer(llm=llm, weight=settings.weight_compensation),
+        GrowthScorer(llm=llm, weight=settings.weight_growth),
+        CultureScorer(llm=llm, weight=settings.weight_culture),
+        ApplicationStrengthScorer(llm=llm, weight=settings.weight_application),
+        InterviewReadinessScorer(llm=llm, weight=settings.weight_interview),
+    ]
+
+    matching_orchestrator = MatchingOrchestrator(llm=llm, event_bus=event_bus)
+    matching_orchestrator._dimension_scorers = dimension_scorers
     app.dependency_overrides[get_matching_orchestrator] = lambda: matching_orchestrator
     app.include_router(matching_router)
 

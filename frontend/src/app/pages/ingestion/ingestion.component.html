@@ -10,6 +10,88 @@
     <div class="alert alert-error">{{ error() }}</div>
   }
 
+  <!-- Portal Scanning Section -->
+  <div class="section">
+    <div class="section-header">
+      <h2>Portal Scanning</h2>
+      <div class="section-actions">
+        <button (click)="toggleFilters()" class="btn-secondary">
+          @if (showFilters()) { Hide Filters } @else { Show Filters }
+        </button>
+        <button (click)="scanPortals()" [disabled]="scanning()" class="btn-primary">
+          @if (scanning()) { Scanning... } @else { Scan Portals }
+        </button>
+      </div>
+    </div>
+
+    @if (showFilters()) {
+      <div class="filter-panel">
+        <div class="filter-group">
+          <label for="category-select">Categories</label>
+          <select
+            id="category-select"
+            multiple
+            (change)="onCategoryChange($event)"
+            class="filter-select"
+          >
+            @for (cat of availableCategories(); track cat) {
+              <option [value]="cat">{{ cat }}</option>
+            }
+          </select>
+          @if (availableCategories().length === 0) {
+            <span class="filter-hint">No categories available</span>
+          }
+        </div>
+
+        <div class="filter-group">
+          <label for="company-select">Companies</label>
+          <select
+            id="company-select"
+            multiple
+            (change)="onCompanyChange($event)"
+            class="filter-select"
+          >
+            @for (portal of portals(); track portal.name) {
+              <option [value]="portal.name">{{ portal.name }}</option>
+            }
+          </select>
+          @if (portals().length === 0) {
+            <span class="filter-hint">No portals loaded</span>
+          }
+        </div>
+
+        <div class="filter-group">
+          <label for="keyword-input">Keyword</label>
+          <input
+            id="keyword-input"
+            type="text"
+            [value]="scanKeyword()"
+            (input)="onKeywordInput($event)"
+            placeholder="e.g. React, Python, remote..."
+            class="filter-input"
+          />
+        </div>
+      </div>
+    }
+
+    @if (scanSummary()) {
+      <div class="alert alert-info">{{ scanSummary() }}</div>
+    }
+
+    @if (scanErrors().length > 0) {
+      <details class="scan-errors">
+        <summary>{{ scanErrors().length }} portal error(s)</summary>
+        <ul>
+          @for (err of scanErrors(); track err.portal) {
+            <li>
+              <strong>{{ err.portal }}</strong> ({{ err.platform }}): {{ err.error }}
+            </li>
+          }
+        </ul>
+      </details>
+    }
+  </div>
+
   @if (jobs().length > 0) {
     <div class="stats">
       <span class="stat">{{ jobs().length }} jobs found</span>

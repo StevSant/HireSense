@@ -21,6 +21,7 @@ class IngestionOrchestrator:
         self._sources = sources
         self._normalizers = normalizers
         self._event_bus = event_bus
+        self._jobs: dict[str, NormalizedJob] = {}
 
     async def run(
         self,
@@ -54,6 +55,7 @@ class IngestionOrchestrator:
                 if dedup not in seen_dedup_keys:
                     seen_dedup_keys.add(dedup)
                     all_jobs.append(job)
+                    self._jobs[job.id] = job
 
         if all_jobs:
             event = JobsIngestedEvent(
@@ -65,3 +67,9 @@ class IngestionOrchestrator:
             await self._event_bus.publish(event)
 
         return all_jobs
+
+    def store_job(self, job: NormalizedJob) -> None:
+        self._jobs[job.id] = job
+
+    def get_job_by_id(self, job_id: str) -> NormalizedJob | None:
+        return self._jobs.get(job_id)

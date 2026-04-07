@@ -1,0 +1,265 @@
+<div class="page">
+
+  <!-- Story Bank Section -->
+  <section class="section">
+    <div class="section-header">
+      <h1>Story Bank</h1>
+      <button (click)="toggleAddStoryForm()" class="btn-secondary">
+        @if (showAddStoryForm()) { Cancel } @else { + Add Story }
+      </button>
+    </div>
+
+    @if (storiesError()) {
+      <div class="alert alert-error">{{ storiesError() }}</div>
+    }
+
+    @if (showAddStoryForm()) {
+      <div class="add-form">
+        <h2>New Story</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="story-title">Title</label>
+            <input
+              id="story-title"
+              type="text"
+              [value]="newTitle()"
+              (input)="onNewTitleInput($event)"
+              placeholder="e.g. Led team through critical migration"
+              class="form-input"
+            />
+          </div>
+          <div class="form-group">
+            <label for="story-competency">Competency</label>
+            <select
+              id="story-competency"
+              [value]="newCompetency()"
+              (change)="onNewCompetencyChange($event)"
+              class="form-input"
+            >
+              @for (c of competencyOptions; track c) {
+                <option [value]="c">{{ c | titlecase }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="story-situation">Situation</label>
+          <textarea
+            id="story-situation"
+            [value]="newSituation()"
+            (input)="onNewSituationInput($event)"
+            placeholder="Describe the situation or context..."
+            class="form-input form-textarea"
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label for="story-task">Task</label>
+          <textarea
+            id="story-task"
+            [value]="newTask()"
+            (input)="onNewTaskInput($event)"
+            placeholder="What was your responsibility?"
+            class="form-input form-textarea"
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label for="story-action">Action</label>
+          <textarea
+            id="story-action"
+            [value]="newAction()"
+            (input)="onNewActionInput($event)"
+            placeholder="What specific steps did you take?"
+            class="form-input form-textarea"
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label for="story-result">Result</label>
+          <textarea
+            id="story-result"
+            [value]="newResult()"
+            (input)="onNewResultInput($event)"
+            placeholder="What was the outcome?"
+            class="form-input form-textarea"
+          ></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="story-reflection">Reflection <span class="optional">(optional)</span></label>
+            <textarea
+              id="story-reflection"
+              [value]="newReflection()"
+              (input)="onNewReflectionInput($event)"
+              placeholder="What did you learn?"
+              class="form-input form-textarea"
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="story-tags">Tags <span class="optional">(optional)</span></label>
+            <input
+              id="story-tags"
+              type="text"
+              [value]="newTags()"
+              (input)="onNewTagsInput($event)"
+              placeholder="e.g. startup, remote, agile"
+              class="form-input"
+            />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button (click)="addStory()" [disabled]="addingStory()" class="btn-primary">
+            @if (addingStory()) { Saving... } @else { Save Story }
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (storiesLoading()) {
+      <div class="loading-state">Loading stories...</div>
+    } @else {
+      @if (stories().length > 0) {
+        <div class="stats">
+          <span class="stat">{{ stories().length }} story(s) in bank</span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Competency</th>
+                <th>Situation</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (story of stories(); track story.id) {
+                <tr>
+                  <td class="story-title">{{ story.title }}</td>
+                  <td>
+                    <span class="competency-badge competency-{{ story.competency }}">
+                      {{ story.competency | titlecase }}
+                    </span>
+                  </td>
+                  <td class="situation-preview">{{ story.situation }}</td>
+                  <td>
+                    <button (click)="deleteStory(story.id)" class="btn-danger">Delete</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <p>No stories yet. Click "+ Add Story" to build your story bank.</p>
+        </div>
+      }
+    }
+  </section>
+
+  <!-- Interview Prep Section -->
+  <section class="section">
+    <div class="section-header">
+      <h1>Prepare for Interview</h1>
+    </div>
+
+    @if (prepError()) {
+      <div class="alert alert-error">{{ prepError() }}</div>
+    }
+
+    <div class="prep-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="prep-job-title">Job Title</label>
+          <input
+            id="prep-job-title"
+            type="text"
+            [value]="prepJobTitle()"
+            (input)="onPrepJobTitleInput($event)"
+            placeholder="e.g. Senior Backend Engineer"
+            class="form-input"
+          />
+        </div>
+        <div class="form-group">
+          <label for="prep-company">Company</label>
+          <input
+            id="prep-company"
+            type="text"
+            [value]="prepCompany()"
+            (input)="onPrepCompanyInput($event)"
+            placeholder="e.g. Acme Corp"
+            class="form-input"
+          />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="prep-description">Job Description</label>
+        <textarea
+          id="prep-description"
+          [value]="prepDescription()"
+          (input)="onPrepDescriptionInput($event)"
+          placeholder="Paste the job description here..."
+          class="form-input form-textarea form-textarea-lg"
+        ></textarea>
+      </div>
+      <div class="form-actions">
+        <button (click)="generatePrep()" [disabled]="preparing()" class="btn-primary">
+          @if (preparing()) { Generating... } @else { Generate Prep }
+        </button>
+      </div>
+    </div>
+
+    @if (prepResult(); as prep) {
+      <div class="prep-results">
+        <h2>Interview Prep for {{ prep.job_title }} at {{ prep.company }}</h2>
+
+        @if (prep.matched_stories.length > 0) {
+          <div class="prep-card">
+            <h3>Matched Stories</h3>
+            <ul class="prep-list">
+              @for (match of prep.matched_stories; track match.story_id) {
+                <li>
+                  <span class="match-title">{{ match.story_title }}</span>
+                  <span class="match-relevance">{{ match.relevance }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
+        @if (prep.competencies_to_probe.length > 0) {
+          <div class="prep-card">
+            <h3>Competencies to Probe</h3>
+            <div class="tag-list">
+              @for (c of prep.competencies_to_probe; track c) {
+                <span class="tag tag-competency">{{ c }}</span>
+              }
+            </div>
+          </div>
+        }
+
+        @if (prep.technical_topics.length > 0) {
+          <div class="prep-card">
+            <h3>Technical Topics to Review</h3>
+            <div class="tag-list">
+              @for (t of prep.technical_topics; track t) {
+                <span class="tag tag-technical">{{ t }}</span>
+              }
+            </div>
+          </div>
+        }
+
+        @if (prep.negotiation_points.length > 0) {
+          <div class="prep-card">
+            <h3>Negotiation Points</h3>
+            <ul class="prep-list">
+              @for (point of prep.negotiation_points; track point) {
+                <li>{{ point }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+</div>

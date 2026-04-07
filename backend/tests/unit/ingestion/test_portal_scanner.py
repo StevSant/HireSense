@@ -4,12 +4,11 @@ from typing import Any
 
 import pytest
 
-from hiresense.ingestion.domain.models import NormalizedJob, RawJobListing
+from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import (
     PortalScanner,
     ScanFilters,
-    ScanResult,
 )
 from hiresense.kernel.events import DomainEvent
 

@@ -28,7 +28,13 @@ from hiresense.ingestion.domain.normalizers.lever_normalizer import LeverNormali
 from hiresense.ingestion.domain.portal_config import load_portals_config
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
 from hiresense.ingestion.domain.services import IngestionOrchestrator
-from hiresense.matching.api.dependencies import get_matching_orchestrator
+from hiresense.matching.api.dependencies import (
+    get_batch_evaluation_service,
+    get_ingestion_orchestrator_for_matching,
+    get_matching_orchestrator,
+    get_tracking_service_for_matching,
+)
+from hiresense.matching.domain.batch_service import BatchEvaluationService
 from hiresense.matching.api.routes import router as matching_router
 from hiresense.matching.domain.scorers.application_strength_scorer import ApplicationStrengthScorer
 from hiresense.matching.domain.scorers.compensation_scorer import CompensationScorer
@@ -166,6 +172,13 @@ def create_app() -> FastAPI:
 
     matching_orchestrator = MatchingOrchestrator(llm=llm, event_bus=event_bus, dimension_scorers=dimension_scorers)
     app.dependency_overrides[get_matching_orchestrator] = lambda: matching_orchestrator
+
+    batch_evaluation_service = BatchEvaluationService(
+        orchestrator=matching_orchestrator,
+        concurrency=settings.batch_concurrency,
+    )
+    app.dependency_overrides[get_batch_evaluation_service] = lambda: batch_evaluation_service
+
     app.include_router(matching_router)
 
     # --- Optimization module ---
@@ -184,6 +197,10 @@ def create_app() -> FastAPI:
     )
     app.dependency_overrides[get_tracking_service] = lambda: tracking_service
     app.include_router(tracking_router)
+
+    # --- Cross-module DI for batch evaluation ---
+    app.dependency_overrides[get_tracking_service_for_matching] = lambda: tracking_service
+    app.dependency_overrides[get_ingestion_orchestrator_for_matching] = lambda: ingestion_orchestrator
 
     # --- Interview module ---
     story_repo = StoryRepository(session_factory=sync_session_factory)

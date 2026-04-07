@@ -1,0 +1,65 @@
+portals:
+  # AI Research Labs
+  - name: Anthropic
+    platform: greenhouse
+    board_id: anthropic
+    categories: [ai-research]
+
+  - name: OpenAI
+    platform: greenhouse
+    board_id: openai
+    categories: [ai-research]
+
+  - name: Mistral
+    platform: greenhouse
+    board_id: mistralai
+    categories: [ai-research]
+
+  - name: Cohere
+    platform: greenhouse
+    board_id: cohere
+    categories: [ai-research]
+
+  - name: LangChain
+    platform: greenhouse
+    board_id: langchain
+    categories: [ai-research]
+
+  # Voice Technology
+  - name: ElevenLabs
+    platform: ashby
+    board_id: elevenlabs
+    categories: [voice-tech]
+
+  - name: Deepgram
+    platform: greenhouse
+    board_id: deepgram
+    categories: [voice-tech]
+
+  # Development Platforms
+  - name: Retool
+    platform: lever
+    board_id: retool
+    categories: [dev-platforms]
+
+  - name: Vercel
+    platform: greenhouse
+    board_id: vercel
+    categories: [dev-platforms]
+
+  - name: Temporal
+    platform: greenhouse
+    board_id: temporal
+    categories: [dev-platforms]
+
+  # LLM Operations
+  - name: Weights & Biases
+    platform: greenhouse
+    board_id: wandb
+    categories: [llm-ops]
+
+  # Workflow Automation
+  - name: n8n
+    platform: greenhouse
+    board_id: n8n
+    categories: [workflow-automation]

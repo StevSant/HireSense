@@ -16,10 +16,16 @@ def test_settings_loads_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.app_port == 8000
     assert settings.llm_provider == "anthropic"
     assert settings.vector_store_provider == "pgvector"
-    assert settings.weight_semantic == 30
-    assert settings.weight_skill_match == 40
-    assert settings.weight_experience == 20
-    assert settings.weight_language == 10
+    assert settings.weight_semantic == 15
+    assert settings.weight_skill_match == 20
+    assert settings.weight_experience == 10
+    assert settings.weight_language == 5
+    assert settings.weight_seniority == 10
+    assert settings.weight_compensation == 10
+    assert settings.weight_growth == 5
+    assert settings.weight_culture == 5
+    assert settings.weight_application == 10
+    assert settings.weight_interview == 10
 
 
 def test_settings_enabled_sources_parsed(monkeypatch: pytest.MonkeyPatch) -> None:

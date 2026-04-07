@@ -5,6 +5,8 @@ from pathlib import Path
 
 import httpx
 from fastapi import FastAPI
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from hiresense.adapters.event_bus.in_memory_bus import InMemoryEventBus
 from hiresense.config import Settings
@@ -37,6 +39,10 @@ from hiresense.profile.api.routes import router as profile_router
 from hiresense.profile.domain.latex_parser import LaTeXParser
 from hiresense.profile.domain.services import ProfileService
 from hiresense.profile.domain.skill_extractor import SkillExtractor
+from hiresense.tracking.api.dependencies import get_tracking_service
+from hiresense.tracking.api.routes import router as tracking_router
+from hiresense.tracking.domain.services import TrackingService
+from hiresense.tracking.infrastructure.repository import TrackingRepository
 
 
 def create_app() -> FastAPI:
@@ -138,6 +144,18 @@ def create_app() -> FastAPI:
     cv_optimizer = CVOptimizer(llm=None)
     app.dependency_overrides[get_cv_optimizer] = lambda: cv_optimizer
     app.include_router(optimization_router)
+
+    # --- Tracking module ---
+    sync_db_url = settings.database_url.replace("+asyncpg", "")
+    sync_engine = create_engine(sync_db_url, echo=settings.debug)
+    sync_session_factory = sessionmaker(bind=sync_engine, expire_on_commit=False)
+    tracking_repo = TrackingRepository(session_factory=sync_session_factory)
+    tracking_service = TrackingService(
+        repository=tracking_repo,
+        ingestion_orchestrator=ingestion_orchestrator,
+    )
+    app.dependency_overrides[get_tracking_service] = lambda: tracking_service
+    app.include_router(tracking_router)
 
     # --- Health check ---
     @app.get("/health")

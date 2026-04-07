@@ -22,6 +22,7 @@ dependencies = [
     "feedparser>=6.0.0",
     "beautifulsoup4>=4.12.0",
     "pyyaml>=6.0",
+    "psycopg2-binary>=2.9.11",
 ]
 
 [project.optional-dependencies]

@@ -125,8 +125,13 @@
                   }
                 </div>
               </td>
-              <td>
+              <td class="actions-cell">
                 <a [href]="job.url" target="_blank" class="link">View</a>
+                @if (isTracked(job.id)) {
+                  <button class="btn-tracked" disabled>Tracked</button>
+                } @else {
+                  <button (click)="trackJob(job.id)" class="btn-track">Track</button>
+                }
               </td>
             </tr>
           }

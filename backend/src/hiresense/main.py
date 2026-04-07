@@ -49,6 +49,10 @@ from hiresense.tracking.api.dependencies import get_tracking_service
 from hiresense.tracking.api.routes import router as tracking_router
 from hiresense.tracking.domain.services import TrackingService
 from hiresense.tracking.infrastructure.repository import TrackingRepository
+from hiresense.interview.api.dependencies import get_story_service, get_interview_prep_service
+from hiresense.interview.api.routes import router as interview_router
+from hiresense.interview.domain.services import InterviewPrepService, StoryService
+from hiresense.interview.infrastructure.repository import StoryRepository
 
 
 def create_app() -> FastAPI:
@@ -180,6 +184,14 @@ def create_app() -> FastAPI:
     )
     app.dependency_overrides[get_tracking_service] = lambda: tracking_service
     app.include_router(tracking_router)
+
+    # --- Interview module ---
+    story_repo = StoryRepository(session_factory=sync_session_factory)
+    story_service = StoryService(repository=story_repo)
+    interview_prep_service = InterviewPrepService(llm=llm, story_repo=story_repo)
+    app.dependency_overrides[get_story_service] = lambda: story_service
+    app.dependency_overrides[get_interview_prep_service] = lambda: interview_prep_service
+    app.include_router(interview_router)
 
     # --- Health check ---
     @app.get("/health")

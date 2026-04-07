@@ -7,6 +7,8 @@ import { ApplicationStatus } from '../../core/models/application-status.model';
 import { TrackedApplication } from '../../core/models/tracked-application.model';
 import { CreateApplicationRequest } from '../../core/models/create-application-request.model';
 import { UpdateApplicationRequest } from '../../core/models/update-application-request.model';
+import { BatchEvaluationResponse } from '../../core/models/batch-evaluation-response.model';
+import { BatchResult } from '../../core/models/batch-result.model';
 
 @Component({
   selector: 'app-tracking',
@@ -27,6 +29,10 @@ export class TrackingComponent implements OnInit {
   newUrl = signal('');
   newNotes = signal('');
   adding = signal(false);
+
+  leaderboard = signal<BatchResult[]>([]);
+  evaluating = signal(false);
+  expandedResultId = signal<string | null>(null);
 
   readonly statusOptions: ApplicationStatus[] = [
     'saved',
@@ -130,6 +136,50 @@ export class TrackingComponent implements OnInit {
         this.error.set(err.error?.detail || 'Failed to delete application');
       },
     });
+  }
+
+  evaluateAll(): void {
+    const apps = this.applications();
+    if (apps.length === 0) return;
+    this.evaluating.set(true);
+    this.leaderboard.set([]);
+    const ids = apps.map((a) => a.id);
+    this.http
+      .post<BatchEvaluationResponse>(`${environment.apiUrl}/matching/batch-evaluate`, {
+        tracked_app_ids: ids,
+      })
+      .subscribe({
+        next: (res) => {
+          this.leaderboard.set(res.results);
+          this.evaluating.set(false);
+        },
+        error: (err) => {
+          this.error.set(err.error?.detail || 'Batch evaluation failed');
+          this.evaluating.set(false);
+        },
+      });
+  }
+
+  toggleExpand(sourceId: string): void {
+    this.expandedResultId.update((current) => (current === sourceId ? null : sourceId));
+  }
+
+  scoreColor(score: number): string {
+    if (score >= 0.7) return '#16a34a';
+    if (score >= 0.4) return '#ca8a04';
+    return '#dc2626';
+  }
+
+  dimensionLabel(dimension: string): string {
+    const labels: Record<string, string> = {
+      seniority_fit: 'Seniority Fit',
+      compensation: 'Compensation',
+      growth_potential: 'Growth Potential',
+      culture_fit: 'Culture Fit',
+      application_strength: 'Application Strength',
+      interview_readiness: 'Interview Readiness',
+    };
+    return labels[dimension] || dimension.replace(/_/g, ' ');
   }
 
   private resetForm(): void {

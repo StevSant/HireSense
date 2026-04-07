@@ -75,7 +75,7 @@ def update_story(
     request: UpdateStoryRequest,
     service: StoryService = Depends(get_story_service),
 ) -> StoryResponse:
-    fields = {k: v for k, v in request.model_dump().items() if v is not None}
+    fields = request.model_dump(exclude_unset=True)
     try:
         story = service.update(id, **fields)
     except ValueError as exc:

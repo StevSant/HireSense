@@ -18,6 +18,7 @@ class BatchResult(BaseModel):
     source_id: str
     composite_score: float
     dimensions: list[DimensionResult]
+    failed: bool = False
 
 
 class BatchEvaluationService:
@@ -48,8 +49,9 @@ class BatchEvaluationService:
                         company=job.get("company", "Unknown"),
                         source=job.get("source", "unknown"),
                         source_id=job.get("source_id", ""),
-                        composite_score=0.5,
+                        composite_score=0.0,
                         dimensions=[],
+                        failed=True,
                     )
 
         results = await asyncio.gather(*[evaluate_one(j) for j in jobs])

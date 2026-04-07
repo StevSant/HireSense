@@ -41,6 +41,7 @@ class BatchResultResponse(BaseModel):
     source_id: str
     composite_score: float
     dimensions: list[DimensionResultResponse]
+    failed: bool = False
 
 
 class BatchEvaluationResponse(BaseModel):

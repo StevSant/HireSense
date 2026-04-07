@@ -7,4 +7,5 @@ export interface BatchResult {
   source_id: string;
   composite_score: number;
   dimensions: DimensionResult[];
+  failed: boolean;
 }

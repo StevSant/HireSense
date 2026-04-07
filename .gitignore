@@ -32,3 +32,4 @@ docker-compose.override.yml
 
 # Alembic
 alembic/versions/*.pyc
+.worktrees/

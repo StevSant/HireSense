@@ -6,12 +6,22 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from hiresense.ingestion.domain.models import NormalizedJob
+from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
+from hiresense.ingestion.domain.portal_scanner import PortalScanner, ScanFilters, ScanResult
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
 
 
 def get_ingestion_orchestrator() -> IngestionOrchestrator:
+    raise NotImplementedError("Must be overridden during app startup via dependency_overrides")
+
+
+def get_portal_scanner() -> PortalScanner:
+    raise NotImplementedError("Must be overridden during app startup via dependency_overrides")
+
+
+def get_portals_config() -> PortalsConfig:
     raise NotImplementedError("Must be overridden during app startup via dependency_overrides")
 
 
@@ -26,3 +36,18 @@ async def fetch_jobs(
 ) -> FetchResponse:
     jobs = await orchestrator.run()
     return FetchResponse(count=len(jobs), jobs=jobs)
+
+
+@router.post("/scan-portals", response_model=ScanResult)
+async def scan_portals(
+    filters: ScanFilters,
+    scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
+) -> ScanResult:
+    return await scanner.scan(filters)
+
+
+@router.get("/portals", response_model=list[PortalEntry])
+async def list_portals(
+    config: Annotated[PortalsConfig, Depends(get_portals_config)],
+) -> list[PortalEntry]:
+    return config.portals

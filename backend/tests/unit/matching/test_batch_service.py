@@ -103,8 +103,9 @@ async def test_batch_evaluate_handles_single_job_failure() -> None:
     jobs = [{"title": "SWE", "company": "Acme", "description": "", "source": "tracked", "source_id": "id-1"}]
     results = await service.evaluate_batch(jobs)
     assert len(results) == 1
-    assert results[0].composite_score == 0.5
+    assert results[0].composite_score == 0.0
     assert results[0].dimensions == []
+    assert results[0].failed is True
 
 
 @pytest.mark.asyncio

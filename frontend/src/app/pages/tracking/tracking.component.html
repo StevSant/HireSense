@@ -151,9 +151,13 @@
                     <span class="leaderboard-company">{{ result.company }}</span>
                   </div>
                   <span class="leaderboard-badge badge-{{ result.source }}">{{ result.source }}</span>
-                  <span class="leaderboard-score" [style.color]="scoreColor(result.composite_score)">
-                    {{ (result.composite_score * 100).toFixed(0) }}%
-                  </span>
+                  @if (result.failed) {
+                    <span class="leaderboard-score leaderboard-failed">Failed</span>
+                  } @else {
+                    <span class="leaderboard-score" [style.color]="scoreColor(result.composite_score)">
+                      {{ (result.composite_score * 100).toFixed(0) }}%
+                    </span>
+                  }
                 </div>
                 @if (expandedResultId() === result.source_id) {
                   <div class="leaderboard-dimensions">

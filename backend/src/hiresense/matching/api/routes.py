@@ -93,7 +93,7 @@ async def batch_evaluate(
                 jobs.append({
                     "title": app.title,
                     "company": app.company,
-                    "description": "",
+                    "description": getattr(app, "notes", "") or "",
                     "source": "tracked",
                     "source_id": str(app.id),
                 })
@@ -138,6 +138,7 @@ async def batch_evaluate(
                     )
                     for d in r.dimensions
                 ],
+                failed=r.failed,
             )
             for r in results
         ],

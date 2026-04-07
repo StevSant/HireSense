@@ -73,6 +73,13 @@ class Settings(BaseSettings):
     supported_languages: list[str] = ["en", "es"]
     default_language: str = "en"
 
+    # Portal scanning
+    portals_config_path: str = "ingestion/config/portals.yml"
+    portal_scan_timeout: float = 30.0
+    greenhouse_api_url: str = "https://boards-api.greenhouse.io/v1/boards"
+    lever_api_url: str = "https://api.lever.co/v0/postings"
+    ashby_api_url: str = "https://api.ashbyhq.com/posting-api/job-board"
+
     # Matching weights
     weight_semantic: int = 30
     weight_skill_match: int = 40

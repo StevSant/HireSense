@@ -59,6 +59,10 @@ from hiresense.interview.api.dependencies import get_story_service, get_intervie
 from hiresense.interview.api.routes import router as interview_router
 from hiresense.interview.domain.services import InterviewPrepService, StoryService
 from hiresense.interview.infrastructure.repository import StoryRepository
+from hiresense.research.infrastructure.repository import CompanyResearchRepository
+from hiresense.research.domain.services import CompanyResearchService
+from hiresense.research.api.dependencies import get_company_research_service
+from hiresense.research.api.routes import router as research_router
 
 
 def create_app() -> FastAPI:
@@ -209,6 +213,12 @@ def create_app() -> FastAPI:
     app.dependency_overrides[get_story_service] = lambda: story_service
     app.dependency_overrides[get_interview_prep_service] = lambda: interview_prep_service
     app.include_router(interview_router)
+
+    # --- Research module ---
+    research_repo = CompanyResearchRepository(session_factory=sync_session_factory)
+    research_service = CompanyResearchService(llm=llm, repository=research_repo)
+    app.dependency_overrides[get_company_research_service] = lambda: research_service
+    app.include_router(research_router)
 
     # --- Health check ---
     @app.get("/health")

@@ -14,7 +14,7 @@ class FakeLLM:
         self.call_count = 0
         self.last_prompt: str = ""
 
-    def complete(self, prompt: str) -> str:
+    async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
         self.call_count += 1
         self.last_prompt = prompt
         return self._response
@@ -51,12 +51,13 @@ _LLM_RESPONSE = json.dumps({
 })
 
 
-def test_research_calls_llm_and_persists() -> None:
+@pytest.mark.asyncio
+async def test_research_calls_llm_and_persists() -> None:
     llm = FakeLLM(_LLM_RESPONSE)
     repo = FakeRepo()
     service = CompanyResearchService(repository=repo, llm=llm)
 
-    result = service.research("Anthropic")
+    result = await service.research("Anthropic")
 
     assert llm.call_count == 1
     assert len(repo.created) == 1
@@ -65,73 +66,79 @@ def test_research_calls_llm_and_persists() -> None:
     assert result.pros == "Great mission"
 
 
-def test_research_returns_cached() -> None:
+@pytest.mark.asyncio
+async def test_research_returns_cached() -> None:
     llm = FakeLLM(_LLM_RESPONSE)
     repo = FakeRepo()
     service = CompanyResearchService(repository=repo, llm=llm)
 
-    first = service.research("Anthropic")
-    second = service.research("Anthropic")
+    first = await service.research("Anthropic")
+    second = await service.research("Anthropic")
 
     assert llm.call_count == 1
     assert first.company_name == second.company_name
     assert len(repo.created) == 1
 
 
-def test_research_includes_job_description_in_prompt() -> None:
+@pytest.mark.asyncio
+async def test_research_includes_job_description_in_prompt() -> None:
     llm = FakeLLM(_LLM_RESPONSE)
     repo = FakeRepo()
     service = CompanyResearchService(repository=repo, llm=llm)
 
-    service.research("Anthropic", job_description="We need a backend engineer")
+    await service.research("Anthropic", job_description="We need a backend engineer")
 
     assert "We need a backend engineer" in llm.last_prompt
 
 
-def test_refresh_overwrites_cached() -> None:
+@pytest.mark.asyncio
+async def test_refresh_overwrites_cached() -> None:
     llm = FakeLLM(_LLM_RESPONSE)
     repo = FakeRepo()
     service = CompanyResearchService(repository=repo, llm=llm)
 
-    service.research("Anthropic")
+    await service.research("Anthropic")
     assert llm.call_count == 1
 
-    service.refresh("Anthropic")
+    await service.refresh("Anthropic")
     assert llm.call_count == 2
 
 
-def test_research_no_llm_returns_fallback_not_persisted() -> None:
+@pytest.mark.asyncio
+async def test_research_no_llm_returns_fallback_not_persisted() -> None:
     repo = FakeRepo()
     service = CompanyResearchService(repository=repo, llm=None)
 
-    result = service.research("Anthropic")
+    result = await service.research("Anthropic")
 
     assert result.funding_stage == "LLM not configured"
     assert result.pros == "LLM not configured"
     assert len(repo.created) == 0
 
 
-def test_research_llm_failure_returns_fallback_not_persisted() -> None:
+@pytest.mark.asyncio
+async def test_research_llm_failure_returns_fallback_not_persisted() -> None:
     class FailingLLM:
-        def complete(self, prompt: str) -> str:
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
             raise RuntimeError("API down")
 
     repo = FakeRepo()
     service = CompanyResearchService(repository=repo, llm=FailingLLM())
 
-    result = service.research("Anthropic")
+    result = await service.research("Anthropic")
 
     assert result.funding_stage == "Research unavailable"
     assert result.pros == "Research unavailable"
     assert len(repo.created) == 0
 
 
-def test_get_returns_cached() -> None:
+@pytest.mark.asyncio
+async def test_get_returns_cached() -> None:
     llm = FakeLLM(_LLM_RESPONSE)
     repo = FakeRepo()
     service = CompanyResearchService(repository=repo, llm=llm)
 
-    service.research("Anthropic")
+    await service.research("Anthropic")
     result = service.get("Anthropic")
 
     assert result is not None

@@ -1,16 +1,16 @@
 from __future__ import annotations
 import uuid
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ResearchRequest(BaseModel):
-    company_name: str
+    company_name: str = Field(min_length=1)
     job_description: str = ""
 
 
 class CompanyResearchResponse(BaseModel):
-    id: uuid.UUID
+    id: uuid.UUID | None = None
     company_name: str
     funding_stage: str
     tech_stack: str

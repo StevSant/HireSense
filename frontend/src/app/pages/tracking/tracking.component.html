@@ -131,13 +131,22 @@
                 </td>
                 <td class="notes">{{ app.notes || '—' }}</td>
                 <td>
-                  <button
-                    (click)="researchCompany(app); $event.stopPropagation()"
-                    [disabled]="researchingCompany() === app.id"
-                    class="btn-secondary btn-sm"
-                  >
-                    @if (researchingCompany() === app.id) { Researching... } @else if (hasResearch(app.id)) { View Research } @else { Research }
-                  </button>
+                  @if (hasResearch(app.id)) {
+                    <button
+                      (click)="toggleResearch(app.id); $event.stopPropagation()"
+                      class="btn-secondary btn-sm"
+                    >
+                      @if (expandedResearchId() === app.id) { Hide Research } @else { View Research }
+                    </button>
+                  } @else {
+                    <button
+                      (click)="researchCompany(app); $event.stopPropagation()"
+                      [disabled]="researchingCompany() === app.id"
+                      class="btn-secondary btn-sm"
+                    >
+                      @if (researchingCompany() === app.id) { Researching... } @else { Research }
+                    </button>
+                  }
                   <button (click)="deleteApplication(app.id)" class="btn-danger">Delete</button>
                 </td>
               </tr>

@@ -9,20 +9,20 @@ router = APIRouter(prefix="/research", tags=["research"], dependencies=[Depends(
 
 
 @router.post("", response_model=CompanyResearchResponse)
-def research_company(
+async def research_company(
     request: ResearchRequest,
     service: CompanyResearchService = Depends(get_company_research_service),
 ) -> CompanyResearchResponse:
-    result = service.research(company_name=request.company_name, job_description=request.job_description)
+    result = await service.research(company_name=request.company_name, job_description=request.job_description)
     return CompanyResearchResponse.model_validate(result)
 
 
 @router.post("/refresh", response_model=CompanyResearchResponse)
-def refresh_research(
+async def refresh_research(
     request: ResearchRequest,
     service: CompanyResearchService = Depends(get_company_research_service),
 ) -> CompanyResearchResponse:
-    result = service.refresh(company_name=request.company_name, job_description=request.job_description)
+    result = await service.refresh(company_name=request.company_name, job_description=request.job_description)
     return CompanyResearchResponse.model_validate(result)
 
 

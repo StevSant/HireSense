@@ -36,13 +36,13 @@ class FakeCompanyResearchService:
         self._store[company_name.lower()] = record
         return record
 
-    def research(self, company_name: str, job_description: str = "") -> CompanyResearch:
+    async def research(self, company_name: str, job_description: str = "") -> CompanyResearch:
         key = company_name.lower()
         if key in self._store:
             return self._store[key]
         return self._make_record(company_name)
 
-    def refresh(self, company_name: str, job_description: str = "") -> CompanyResearch:
+    async def refresh(self, company_name: str, job_description: str = "") -> CompanyResearch:
         return self._make_record(company_name, funding_stage="Series B")
 
     def get(self, company_name: str) -> CompanyResearch | None:
@@ -112,7 +112,7 @@ def test_refresh_company() -> None:
 
 def test_get_cached_research() -> None:
     fake = FakeCompanyResearchService()
-    fake.research("Anthropic")
+    fake._make_record("Anthropic")
     client = TestClient(make_app(fake))
 
     resp = client.get("/research/Anthropic")

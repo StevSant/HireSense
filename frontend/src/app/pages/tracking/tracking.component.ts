@@ -9,6 +9,7 @@ import { CreateApplicationRequest } from '../../core/models/create-application-r
 import { UpdateApplicationRequest } from '../../core/models/update-application-request.model';
 import { BatchEvaluationResponse } from '../../core/models/batch-evaluation-response.model';
 import { BatchResult } from '../../core/models/batch-result.model';
+import { CompanyResearch } from '../../core/models/company-research.model';
 
 @Component({
   selector: 'app-tracking',
@@ -33,6 +34,10 @@ export class TrackingComponent implements OnInit {
   leaderboard = signal<BatchResult[]>([]);
   evaluating = signal(false);
   expandedResultId = signal<string | null>(null);
+
+  researchCache = signal<Record<string, CompanyResearch>>({});
+  researchingCompany = signal<string | null>(null);
+  expandedResearchId = signal<string | null>(null);
 
   readonly statusOptions: ApplicationStatus[] = [
     'saved',
@@ -180,6 +185,53 @@ export class TrackingComponent implements OnInit {
       interview_readiness: 'Interview Readiness',
     };
     return labels[dimension] || dimension.replace(/_/g, ' ');
+  }
+
+  researchCompany(app: TrackedApplication): void {
+    this.researchingCompany.set(app.id);
+    this.http
+      .post<CompanyResearch>(`${environment.apiUrl}/research`, {
+        company_name: app.company,
+        job_description: app.notes || '',
+      })
+      .subscribe({
+        next: (res) => {
+          this.researchCache.update((cache) => ({ ...cache, [app.id]: res }));
+          this.researchingCompany.set(null);
+          this.expandedResearchId.set(app.id);
+        },
+        error: (err) => {
+          this.error.set(err.error?.detail || 'Research failed');
+          this.researchingCompany.set(null);
+        },
+      });
+  }
+
+  refreshResearch(app: TrackedApplication): void {
+    this.researchingCompany.set(app.id);
+    this.http
+      .post<CompanyResearch>(`${environment.apiUrl}/research/refresh`, {
+        company_name: app.company,
+        job_description: app.notes || '',
+      })
+      .subscribe({
+        next: (res) => {
+          this.researchCache.update((cache) => ({ ...cache, [app.id]: res }));
+          this.researchingCompany.set(null);
+        },
+        error: (err) => {
+          this.error.set(err.error?.detail || 'Research refresh failed');
+          this.researchingCompany.set(null);
+        },
+      });
+  }
+
+  toggleResearch(appId: string): void {
+    this.expandedResearchId.update((current) => (current === appId ? null : appId));
+  }
+
+  hasResearch(appId: string): boolean {
+    return appId in this.researchCache();
   }
 
   private resetForm(): void {

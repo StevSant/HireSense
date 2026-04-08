@@ -131,9 +131,66 @@
                 </td>
                 <td class="notes">{{ app.notes || '—' }}</td>
                 <td>
+                  <button
+                    (click)="researchCompany(app); $event.stopPropagation()"
+                    [disabled]="researchingCompany() === app.id"
+                    class="btn-secondary btn-sm"
+                  >
+                    @if (researchingCompany() === app.id) { Researching... } @else if (hasResearch(app.id)) { View Research } @else { Research }
+                  </button>
                   <button (click)="deleteApplication(app.id)" class="btn-danger">Delete</button>
                 </td>
               </tr>
+              @if (expandedResearchId() === app.id && researchCache()[app.id]) {
+                <tr class="research-row">
+                  <td colspan="6">
+                    <div class="research-panel">
+                      <div class="research-grid">
+                        <div class="research-item">
+                          <span class="research-label">Funding Stage</span>
+                          <span class="research-badge">{{ researchCache()[app.id].funding_stage }}</span>
+                        </div>
+                        <div class="research-item">
+                          <span class="research-label">Tech Stack</span>
+                          <span class="research-value">{{ researchCache()[app.id].tech_stack }}</span>
+                        </div>
+                      </div>
+                      <div class="research-section">
+                        <h4>Culture</h4>
+                        <p>{{ researchCache()[app.id].culture_summary }}</p>
+                      </div>
+                      <div class="research-section">
+                        <h4>Growth Trajectory</h4>
+                        <p>{{ researchCache()[app.id].growth_trajectory }}</p>
+                      </div>
+                      <div class="research-grid">
+                        <div class="research-section">
+                          <h4>Pros</h4>
+                          <p>{{ researchCache()[app.id].pros }}</p>
+                        </div>
+                        <div class="research-section">
+                          <h4>Cons</h4>
+                          <p>{{ researchCache()[app.id].cons }}</p>
+                        </div>
+                      </div>
+                      @if (researchCache()[app.id].red_flags) {
+                        <div class="research-section research-red-flags">
+                          <h4>Red Flags</h4>
+                          <p>{{ researchCache()[app.id].red_flags }}</p>
+                        </div>
+                      }
+                      <div class="research-footer">
+                        <button (click)="refreshResearch(app)" [disabled]="researchingCompany() === app.id" class="btn-secondary btn-sm">
+                          Refresh
+                        </button>
+                        @if (researchCache()[app.id].updated_at) {
+                          <span class="research-updated">Last updated: {{ researchCache()[app.id].updated_at | date: 'MMM d, y' }}</span>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              }
             }
           </tbody>
         </table>

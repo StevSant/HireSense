@@ -186,7 +186,7 @@ def create_app() -> FastAPI:
     app.include_router(matching_router)
 
     # --- Optimization module ---
-    cv_optimizer = CVOptimizer(llm=None)
+    cv_optimizer = CVOptimizer(llm=llm)
     app.dependency_overrides[get_cv_optimizer] = lambda: cv_optimizer
     app.include_router(optimization_router)
 

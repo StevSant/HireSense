@@ -1,12 +1,11 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
+import { IngestionService } from '../../core/services/ingestion.service';
+import { TrackingService } from '../../core/services/tracking.service';
 import { CreateApplicationRequest } from '../../core/models/create-application-request.model';
-import { FetchResponse } from './models/fetch-response.model';
 import { NormalizedJob } from './models/normalized-job.model';
 import { PortalEntry } from './models/portal-entry.model';
 import { ScanPortalsRequest } from './models/scan-portals-request.model';
-import { ScanError, ScanResult } from './models/scan-result.model';
+import { ScanError } from './models/scan-result.model';
 
 @Component({
   selector: 'app-ingestion',
@@ -32,7 +31,10 @@ export class IngestionComponent implements OnInit {
   scanErrors = signal<ScanError[]>([]);
   showFilters = signal(false);
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private ingestionService: IngestionService,
+    private trackingService: TrackingService,
+  ) {}
 
   ngOnInit(): void {
     this.loadPortals();
@@ -41,7 +43,7 @@ export class IngestionComponent implements OnInit {
   fetchJobs(): void {
     this.loading.set(true);
     this.error.set('');
-    this.http.post<FetchResponse>(`${environment.apiUrl}/ingestion/fetch`, {}).subscribe({
+    this.ingestionService.fetchJobs().subscribe({
       next: (res) => {
         this.jobs.set(res.jobs);
         this.loading.set(false);
@@ -54,7 +56,7 @@ export class IngestionComponent implements OnInit {
   }
 
   loadPortals(): void {
-    this.http.get<PortalEntry[]>(`${environment.apiUrl}/ingestion/portals`).subscribe({
+    this.ingestionService.loadPortals().subscribe({
       next: (portals) => {
         this.portals.set(portals);
         const allCategories = portals.flatMap((p) => p.categories);
@@ -84,7 +86,7 @@ export class IngestionComponent implements OnInit {
       body.keyword = kw;
     }
 
-    this.http.post<ScanResult>(`${environment.apiUrl}/ingestion/scan-portals`, body).subscribe({
+    this.ingestionService.scanPortals(body).subscribe({
       next: (res) => {
         // Merge new jobs (deduplicate by id)
         const existing = this.jobs();
@@ -127,7 +129,7 @@ export class IngestionComponent implements OnInit {
 
   trackJob(jobId: string): void {
     const body: CreateApplicationRequest = { job_id: jobId };
-    this.http.post(`${environment.apiUrl}/tracking`, body).subscribe({
+    this.trackingService.create(body).subscribe({
       next: () => {
         this.trackedJobIds.update((ids) => new Set([...ids, jobId]));
       },

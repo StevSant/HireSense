@@ -1,15 +1,5 @@
-from __future__ import annotations
+"""Backward-compatible re-export. Import from hiresense.ports instead."""
 
-from typing import AsyncIterator, Protocol
+from hiresense.ports.llm import LLMPort
 
-
-class LLMPort(Protocol):
-    async def complete(
-        self, prompt: str, *, system: str = "", model: str = ""
-    ) -> str: ...
-
-    async def embed(self, texts: list[str]) -> list[list[float]]: ...
-
-    async def stream(
-        self, prompt: str, *, system: str = ""
-    ) -> AsyncIterator[str]: ...
+__all__ = ["LLMPort"]

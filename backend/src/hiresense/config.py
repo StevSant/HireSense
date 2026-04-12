@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     app_name: str = "HireSense"
     app_port: int = 8000
     debug: bool = False
+    cors_origins: list[str] = ["http://localhost:4200"]
 
     # Auth
     auth_username: str

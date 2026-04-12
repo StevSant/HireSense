@@ -5,6 +5,7 @@ from pathlib import Path
 
 import httpx
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -84,6 +85,14 @@ def create_app() -> FastAPI:
         await http_client.aclose()
 
     app = FastAPI(title=settings.app_name, debug=settings.debug, lifespan=lifespan)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     # --- Shared infrastructure ---
     event_bus = InMemoryEventBus()

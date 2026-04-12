@@ -1,62 +1,194 @@
 <div class="page">
-  <h1>My Profile</h1>
+  <div class="page-header">
+    <h1>My Profile</h1>
+    <p class="page-subtitle">Upload your CV to unlock intelligent job matching</p>
+  </div>
 
-  @if (!profile()) {
-    <div class="upload-section">
-      <h2>Upload LaTeX CV</h2>
-      <div class="form-group">
-        <label for="language">Language</label>
-        <select id="language" [ngModel]="language()" (ngModelChange)="language.set($event)" name="language">
-          <option value="en">English</option>
-          <option value="es">Spanish</option>
-        </select>
+  @if (initialLoading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Loading profile...</p>
+    </div>
+  } @else if (!profile()) {
+    <div class="upload-card">
+      <div class="tab-bar">
+        <button
+          class="tab"
+          [class.active]="activeTab() === 'upload'"
+          (click)="activeTab.set('upload')"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Upload File
+        </button>
+        <button
+          class="tab"
+          [class.active]="activeTab() === 'paste'"
+          (click)="activeTab.set('paste')"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+          </svg>
+          Paste LaTeX
+        </button>
       </div>
-      <div class="form-group">
-        <label for="tex">Paste your .tex content</label>
-        <textarea
-          id="tex"
-          [ngModel]="texContent()"
-          (ngModelChange)="texContent.set($event)"
-          name="tex"
-          rows="12"
-          placeholder="Paste your LaTeX CV here..."
-        ></textarea>
+
+      <div class="tab-content">
+        <div class="language-selector">
+          <label for="language">CV Language</label>
+          <select id="language" [ngModel]="language()" (ngModelChange)="language.set($event)" name="language">
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+          </select>
+        </div>
+
+        @if (activeTab() === 'upload') {
+          <div
+            class="dropzone"
+            [class.drag-over]="dragOver()"
+            [class.has-file]="selectedFile()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+          >
+            @if (!selectedFile()) {
+              <div class="dropzone-content">
+                <div class="dropzone-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="12" y1="18" x2="12" y2="12"/>
+                    <line x1="9" y1="15" x2="12" y2="12"/>
+                    <line x1="15" y1="15" x2="12" y2="12"/>
+                  </svg>
+                </div>
+                <p class="dropzone-title">Drop your CV here</p>
+                <p class="dropzone-hint">or <label for="file-input" class="browse-link">browse files</label></p>
+                <p class="dropzone-formats">PDF or LaTeX (.tex)</p>
+                <input
+                  id="file-input"
+                  type="file"
+                  accept=".pdf,.tex"
+                  (change)="onFileSelected($event)"
+                  hidden
+                />
+              </div>
+            } @else {
+              <div class="file-preview">
+                <div class="file-icon">
+                  @if (selectedFile()!.name.endsWith('.pdf')) {
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <path d="M9 15h6"/>
+                      <path d="M9 11h6"/>
+                    </svg>
+                  } @else {
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <path d="M10 12l-2 4h8l-2-4"/>
+                    </svg>
+                  }
+                </div>
+                <div class="file-details">
+                  <span class="file-name">{{ selectedFile()!.name }}</span>
+                  <span class="file-size">{{ formatFileSize(selectedFile()!.size) }}</span>
+                </div>
+                <button class="file-remove" (click)="removeFile()" title="Remove file">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            }
+          </div>
+
+          @if (error()) {
+            <div class="alert alert-error">{{ error() }}</div>
+          }
+
+          <button
+            (click)="uploadFile()"
+            [disabled]="loading() || !selectedFile()"
+            class="btn-primary"
+          >
+            @if (loading()) {
+              <span class="btn-spinner"></span>
+              Parsing...
+            } @else {
+              Upload & Parse
+            }
+          </button>
+        } @else {
+          <div class="form-group">
+            <label for="tex">Paste your .tex content</label>
+            <textarea
+              id="tex"
+              [ngModel]="texContent()"
+              (ngModelChange)="texContent.set($event)"
+              name="tex"
+              rows="14"
+              placeholder="Paste your LaTeX CV content here..."
+              class="tex-input"
+            ></textarea>
+          </div>
+
+          @if (error()) {
+            <div class="alert alert-error">{{ error() }}</div>
+          }
+
+          <button
+            (click)="uploadLatex()"
+            [disabled]="loading() || !texContent().trim()"
+            class="btn-primary"
+          >
+            @if (loading()) {
+              <span class="btn-spinner"></span>
+              Parsing...
+            } @else {
+              Upload & Parse
+            }
+          </button>
+        }
       </div>
-      @if (error()) {
-        <div class="alert alert-error">{{ error() }}</div>
-      }
-      <button (click)="uploadCV()" [disabled]="loading() || !texContent().trim()" class="btn-primary">
-        @if (loading()) { Parsing... } @else { Upload & Parse }
-      </button>
     </div>
   } @else {
     <div class="profile-view">
       <div class="profile-header">
-        <h2>{{ profile()!.name }}</h2>
-        <button (click)="profile.set(null)" class="btn-secondary">Upload New CV</button>
+        <div class="profile-identity">
+          <div class="avatar">{{ profile()!.name.charAt(0).toUpperCase() }}</div>
+          <div>
+            <h2>{{ profile()!.name }}</h2>
+            @if (profile()!.location) {
+              <span class="profile-location">{{ profile()!.location }}</span>
+            }
+          </div>
+        </div>
+        <button (click)="resetProfile()" class="btn-secondary">Upload New CV</button>
       </div>
+
       <div class="info-grid">
         @if (profile()!.email) {
           <div class="info-item">
             <span class="label">Email</span>
-            <span>{{ profile()!.email }}</span>
+            <span class="value">{{ profile()!.email }}</span>
           </div>
         }
         @if (profile()!.phone) {
           <div class="info-item">
             <span class="label">Phone</span>
-            <span>{{ profile()!.phone }}</span>
-          </div>
-        }
-        @if (profile()!.location) {
-          <div class="info-item">
-            <span class="label">Location</span>
-            <span>{{ profile()!.location }}</span>
+            <span class="value">{{ profile()!.phone }}</span>
           </div>
         }
         <div class="info-item">
           <span class="label">Language</span>
-          <span>{{ profile()!.language.toUpperCase() }}</span>
+          <span class="value">{{ profile()!.language.toUpperCase() }}</span>
         </div>
       </div>
 

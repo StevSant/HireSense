@@ -4,7 +4,7 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from hiresense.ingestion.api.routes import get_portal_scanner, get_portals_config, router
+from hiresense.ingestion.api import get_portal_scanner, get_portals_config, router
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import ScanError, ScanFilters, ScanResult

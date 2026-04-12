@@ -24,9 +24,6 @@ class ConcreteLLMScorer(BaseLLMScorer):
     def _build_prompt(self, job, profile=None) -> str:
         return f"Evaluate: {job.get('title', '')}"
 
-    def _output_schema(self):
-        return DimensionResult
-
 
 @pytest.mark.asyncio
 async def test_llm_scorer_parses_json_response() -> None:

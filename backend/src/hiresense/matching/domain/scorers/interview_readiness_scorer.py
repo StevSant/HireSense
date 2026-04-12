@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
-
 from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain.scorers.llm_scorer import BaseLLMScorer
 
@@ -12,9 +10,6 @@ class InterviewReadinessScorer(BaseLLMScorer):
     @property
     def dimension_name(self) -> str:
         return "interview_readiness"
-
-    def _output_schema(self) -> type[BaseModel]:
-        return DimensionResult
 
     def _build_prompt(self, job: Any, profile: Any | None = None) -> str:
         title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")

@@ -1,7 +1,7 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 from fastapi import FastAPI
-from hiresense.ingestion.api.routes import router, get_ingestion_orchestrator
+from hiresense.ingestion.api import get_ingestion_orchestrator, router
 from hiresense.ingestion.domain.models import NormalizedJob
 
 

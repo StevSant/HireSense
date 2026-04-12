@@ -8,61 +8,76 @@ from fastapi import FastAPI
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from hiresense.adapters.event_bus.in_memory_bus import InMemoryEventBus
+from hiresense.adapters.event_bus import InMemoryEventBus
 from hiresense.config import Settings
-from hiresense.identity.api.dependencies import get_auth_service
-from hiresense.identity.api.routes import router as auth_router
-from hiresense.identity.services import AuthService
-from hiresense.ingestion.adapters.ashby_adapter import AshbyAdapter
-from hiresense.ingestion.adapters.csv_import import CSVImportAdapter
-from hiresense.ingestion.adapters.greenhouse_adapter import GreenhouseAdapter
-from hiresense.ingestion.adapters.lever_adapter import LeverAdapter
-from hiresense.ingestion.adapters.remoteok import RemoteOKAdapter
-from hiresense.ingestion.adapters.remotive import RemotiveAdapter
-from hiresense.ingestion.api.routes import get_ingestion_orchestrator, get_portal_scanner, get_portals_config
-from hiresense.ingestion.api.routes import router as ingestion_router
-from hiresense.ingestion.domain.normalizer import CSVNormalizer, RemoteOKNormalizer, RemotiveNormalizer
-from hiresense.ingestion.domain.normalizers.ashby_normalizer import AshbyNormalizer
-from hiresense.ingestion.domain.normalizers.greenhouse_normalizer import GreenhouseNormalizer
-from hiresense.ingestion.domain.normalizers.lever_normalizer import LeverNormalizer
-from hiresense.ingestion.domain.portal_config import load_portals_config
-from hiresense.ingestion.domain.portal_scanner import PortalScanner
-from hiresense.ingestion.domain.services import IngestionOrchestrator
-from hiresense.matching.api.dependencies import (
+from hiresense.identity import AuthService
+from hiresense.identity.api import get_auth_service
+from hiresense.identity.api import router as auth_router
+from hiresense.ingestion.adapters import (
+    AshbyAdapter,
+    CSVImportAdapter,
+    GetOnBoardAdapter,
+    GreenhouseAdapter,
+    HimalayasAdapter,
+    HNHiringAdapter,
+    JobicyAdapter,
+    LeverAdapter,
+    LinkedInAdapter,
+    RemoteOKAdapter,
+    RemotiveAdapter,
+    WeWorkRemotelyAdapter,
+)
+from hiresense.ingestion.api import get_ingestion_orchestrator, get_portal_scanner, get_portals_config
+from hiresense.ingestion.api import router as ingestion_router
+from hiresense.ingestion.domain import IngestionOrchestrator, PortalScanner, load_portals_config
+from hiresense.ingestion.domain.normalizers import (
+    AshbyNormalizer,
+    CSVNormalizer,
+    GetOnBoardNormalizer,
+    GreenhouseNormalizer,
+    HimalayasNormalizer,
+    HNHiringNormalizer,
+    JobicyNormalizer,
+    LeverNormalizer,
+    LinkedInNormalizer,
+    RemoteOKNormalizer,
+    RemotiveNormalizer,
+    WeWorkRemotelyNormalizer,
+)
+from hiresense.matching.api import (
     get_batch_evaluation_service,
     get_ingestion_orchestrator_for_matching,
     get_matching_orchestrator,
     get_tracking_service_for_matching,
 )
-from hiresense.matching.domain.batch_service import BatchEvaluationService
-from hiresense.matching.api.routes import router as matching_router
-from hiresense.matching.domain.scorers.application_strength_scorer import ApplicationStrengthScorer
-from hiresense.matching.domain.scorers.compensation_scorer import CompensationScorer
-from hiresense.matching.domain.scorers.culture_scorer import CultureScorer
-from hiresense.matching.domain.scorers.growth_scorer import GrowthScorer
-from hiresense.matching.domain.scorers.interview_readiness_scorer import InterviewReadinessScorer
-from hiresense.matching.domain.scorers.seniority_scorer import SeniorityScorer
-from hiresense.matching.domain.services import MatchingOrchestrator
-from hiresense.optimization.api.dependencies import get_cv_optimizer
-from hiresense.optimization.api.routes import router as optimization_router
-from hiresense.optimization.domain.services import CVOptimizer
-from hiresense.profile.api.dependencies import get_profile_service
-from hiresense.profile.api.routes import router as profile_router
-from hiresense.profile.domain.latex_parser import LaTeXParser
-from hiresense.profile.domain.services import ProfileService
-from hiresense.profile.domain.skill_extractor import SkillExtractor
-from hiresense.tracking.api.dependencies import get_tracking_service
-from hiresense.tracking.api.routes import router as tracking_router
-from hiresense.tracking.domain.services import TrackingService
-from hiresense.tracking.infrastructure.repository import TrackingRepository
-from hiresense.interview.api.dependencies import get_story_service, get_interview_prep_service
-from hiresense.interview.api.routes import router as interview_router
-from hiresense.interview.domain.services import InterviewPrepService, StoryService
-from hiresense.interview.infrastructure.repository import StoryRepository
-from hiresense.research.infrastructure.repository import CompanyResearchRepository
-from hiresense.research.domain.services import CompanyResearchService
-from hiresense.research.api.dependencies import get_company_research_service
-from hiresense.research.api.routes import router as research_router
+from hiresense.matching.api import router as matching_router
+from hiresense.matching.domain import BatchEvaluationService, MatchingOrchestrator
+from hiresense.matching.domain.scorers import (
+    ApplicationStrengthScorer,
+    CompensationScorer,
+    CultureScorer,
+    GrowthScorer,
+    InterviewReadinessScorer,
+    SeniorityScorer,
+)
+from hiresense.optimization.api import get_cv_optimizer
+from hiresense.optimization.api import router as optimization_router
+from hiresense.optimization.domain import CVOptimizer
+from hiresense.profile.api import get_profile_service
+from hiresense.profile.api import router as profile_router
+from hiresense.profile.domain import LaTeXParser, ProfileService, SkillExtractor
+from hiresense.tracking.api import get_tracking_service
+from hiresense.tracking.api import router as tracking_router
+from hiresense.tracking.domain import TrackingService
+from hiresense.tracking.infrastructure import TrackingRepository
+from hiresense.interview.api import get_interview_prep_service, get_story_service
+from hiresense.interview.api import router as interview_router
+from hiresense.interview.domain import InterviewPrepService, StoryService
+from hiresense.interview.infrastructure import StoryRepository
+from hiresense.research.api import get_company_research_service
+from hiresense.research.api import router as research_router
+from hiresense.research.domain import CompanyResearchService
+from hiresense.research.infrastructure import CompanyResearchRepository
 
 
 def create_app() -> FastAPI:
@@ -101,10 +116,29 @@ def create_app() -> FastAPI:
         elif source_name == "csv":
             sources.append(CSVImportAdapter())
             normalizers["csv"] = CSVNormalizer()
+        elif source_name == "jobicy":
+            sources.append(JobicyAdapter(http_client=http_client, base_url=settings.jobicy_api_url))
+            normalizers["jobicy"] = JobicyNormalizer()
+        elif source_name == "himalayas":
+            sources.append(HimalayasAdapter(http_client=http_client, base_url=settings.himalayas_api_url))
+            normalizers["himalayas"] = HimalayasNormalizer()
+        elif source_name == "hn_hiring":
+            sources.append(HNHiringAdapter(http_client=http_client, base_url=settings.hn_algolia_api_url))
+            normalizers["hn_hiring"] = HNHiringNormalizer()
+        elif source_name == "weworkremotely":
+            sources.append(WeWorkRemotelyAdapter(http_client=http_client, rss_url=settings.weworkremotely_rss_url))
+            normalizers["weworkremotely"] = WeWorkRemotelyNormalizer()
+        elif source_name == "getonboard":
+            sources.append(GetOnBoardAdapter(http_client=http_client, base_url=settings.getonboard_api_url))
+            normalizers["getonboard"] = GetOnBoardNormalizer()
+        elif source_name == "linkedin":
+            sources.append(LinkedInAdapter(http_client=http_client, base_url=settings.linkedin_jobs_url))
+            normalizers["linkedin"] = LinkedInNormalizer()
     ingestion_orchestrator = IngestionOrchestrator(
         sources=sources,
         normalizers=normalizers,
         event_bus=event_bus,
+        cooldown_seconds=settings.ingestion_cooldown_seconds,
     )
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: ingestion_orchestrator
     app.include_router(ingestion_router)

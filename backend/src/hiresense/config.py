@@ -1,11 +1,11 @@
 from typing import Any, ClassVar
 
 from pydantic import model_validator
-from pydantic_settings import BaseSettings, EnvSettingsSource, SettingsConfigDict
+from pydantic_settings import BaseSettings, DotEnvSettingsSource, EnvSettingsSource, SettingsConfigDict
 
 
-class _CommaSeparatedEnvSource(EnvSettingsSource):
-    """Custom env source that handles comma-separated list fields gracefully."""
+class _CommaSeparatedMixin:
+    """Mixin that splits comma-separated strings into lists for known fields."""
 
     _COMMA_FIELDS: ClassVar[frozenset[str]] = frozenset(
         {"enabled_job_sources", "supported_languages"}
@@ -21,6 +21,14 @@ class _CommaSeparatedEnvSource(EnvSettingsSource):
         if field_name in self._COMMA_FIELDS and isinstance(value, str):
             return [s.strip() for s in value.split(",") if s.strip()]
         return super().prepare_field_value(field_name, field, value, value_is_complex)
+
+
+class _CommaSeparatedEnvSource(_CommaSeparatedMixin, EnvSettingsSource):
+    pass
+
+
+class _CommaSeparatedDotEnvSource(_CommaSeparatedMixin, DotEnvSettingsSource):
+    pass
 
 
 class Settings(BaseSettings):
@@ -63,6 +71,7 @@ class Settings(BaseSettings):
         "hn_hiring",
         "weworkremotely",
         "getonboard",
+        "linkedin",
     ]
 
     # LaTeX
@@ -72,6 +81,17 @@ class Settings(BaseSettings):
     # Language
     supported_languages: list[str] = ["en", "es"]
     default_language: str = "en"
+
+    # Ingestion cooldown (seconds between manual triggers)
+    ingestion_cooldown_seconds: int = 300
+
+    # Job source URLs
+    jobicy_api_url: str = "https://jobicy.com/api/v2/remote-jobs"
+    himalayas_api_url: str = "https://himalayas.app/jobs/api"
+    hn_algolia_api_url: str = "https://hn.algolia.com/api/v1"
+    weworkremotely_rss_url: str = "https://weworkremotely.com/remote-jobs.rss"
+    getonboard_api_url: str = "https://www.getonbrd.com/api/v0"
+    linkedin_jobs_url: str = "https://www.linkedin.com/jobs-guest/jobs/api"
 
     # Portal scanning
     portals_config_path: str = "ingestion/config/portals.yml"
@@ -107,6 +127,6 @@ class Settings(BaseSettings):
         return (
             init_settings,
             _CommaSeparatedEnvSource(settings_cls),
-            dotenv_settings,
+            _CommaSeparatedDotEnvSource(settings_cls),
             file_secret_settings,
         )

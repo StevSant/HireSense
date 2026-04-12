@@ -1,1 +1,3 @@
-"""HireSense - AI-powered job matching and CV optimization."""
+from hiresense.optimization.domain.services import CVOptimizer
+
+__all__ = ["CVOptimizer"]

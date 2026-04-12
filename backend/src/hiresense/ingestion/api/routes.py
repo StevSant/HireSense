@@ -3,12 +3,13 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner, ScanFilters, ScanResult
-from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.ingestion.domain.services import IngestionCooldownError, IngestionOrchestrator
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
 
@@ -33,8 +34,15 @@ class FetchResponse(BaseModel):
 @router.post("/fetch", response_model=FetchResponse)
 async def fetch_jobs(
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
-) -> FetchResponse:
-    jobs = await orchestrator.run()
+) -> FetchResponse | JSONResponse:
+    try:
+        jobs = await orchestrator.run()
+    except IngestionCooldownError as exc:
+        return JSONResponse(
+            status_code=429,
+            content={"detail": str(exc), "retry_after": exc.retry_after},
+            headers={"Retry-After": str(exc.retry_after)},
+        )
     return FetchResponse(count=len(jobs), jobs=jobs)
 
 

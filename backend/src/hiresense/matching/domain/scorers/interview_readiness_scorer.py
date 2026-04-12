@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from pydantic import BaseModel
+
 from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain.scorers.llm_scorer import BaseLLMScorer
 
@@ -11,13 +13,8 @@ class InterviewReadinessScorer(BaseLLMScorer):
     def dimension_name(self) -> str:
         return "interview_readiness"
 
-    def _build_system(self) -> str:
-        return (
-            "You are an expert interview coach and evaluator. Assess a candidate's interview readiness "
-            "for a specific role based on their CV — including STAR story material, technical depth, "
-            "and potential weak spots. "
-            "Respond with JSON only: {\"score\": <0.0-1.0>, \"rationale\": \"<brief explanation>\"}."
-        )
+    def _output_schema(self) -> type[BaseModel]:
+        return DimensionResult
 
     def _build_prompt(self, job: Any, profile: Any | None = None) -> str:
         title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
@@ -50,7 +47,7 @@ class InterviewReadinessScorer(BaseLLMScorer):
             "- Technical depth and evidence of hands-on expertise\n"
             "- Potential weak spots or gaps that could be probed in interviews\n"
             "A score of 1.0 means the candidate is very well prepared; 0.0 means poorly prepared. "
-            "Return JSON: {\"score\": <float>, \"rationale\": \"<brief>\"}."
+            'Return JSON: {"score": <float>, "rationale": "<brief>"}.'
         )
 
     async def score(self, job: Any, profile: Any | None = None) -> DimensionResult:

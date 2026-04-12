@@ -1,4 +1,4 @@
-import { DimensionResult } from './dimension-result.model';
+import { DimensionResult } from '../../../core/models/dimension-result.model';
 
 export interface BatchResult {
   job_title: string;

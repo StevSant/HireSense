@@ -1,16 +1,12 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { NormalizedJob } from '../../core/models/normalized-job.model';
-import { PortalEntry } from '../../core/models/portal-entry.model';
-import { ScanPortalsRequest } from '../../core/models/scan-portals-request.model';
-import { ScanError, ScanResult } from '../../core/models/scan-result.model';
 import { CreateApplicationRequest } from '../../core/models/create-application-request.model';
-
-interface FetchResponse {
-  count: number;
-  jobs: NormalizedJob[];
-}
+import { FetchResponse } from './models/fetch-response.model';
+import { NormalizedJob } from './models/normalized-job.model';
+import { PortalEntry } from './models/portal-entry.model';
+import { ScanPortalsRequest } from './models/scan-portals-request.model';
+import { ScanError, ScanResult } from './models/scan-result.model';
 
 @Component({
   selector: 'app-ingestion',

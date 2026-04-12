@@ -24,10 +24,10 @@ def upgrade() -> None:
         sa.Column("email", sa.String(255), nullable=True),
         sa.Column("phone", sa.String(100), nullable=True),
         sa.Column("location", sa.String(255), nullable=True),
-        sa.Column("sections", sa.dialects.postgresql.JSONB(), nullable=True),
+        sa.Column("sections", sa.JSON(), nullable=True),
         sa.Column("raw_tex", sa.Text(), nullable=True),
         sa.Column("language", sa.String(10), nullable=False, server_default="en"),
-        sa.Column("skills", sa.dialects.postgresql.JSONB(), nullable=True),
+        sa.Column("skills", sa.JSON(), nullable=True),
         sa.Column("original_filename", sa.String(500), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True),
     )

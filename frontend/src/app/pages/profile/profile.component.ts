@@ -1,8 +1,6 @@
 import { Component, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { environment } from '../../../environments/environment';
-
+import { ProfileService } from '../../core/services/profile.service';
 import { CandidateProfile } from './models/candidate-profile.model';
 
 @Component({
@@ -19,14 +17,14 @@ export class ProfileComponent {
   loading = signal(false);
   error = signal('');
 
-  constructor(private http: HttpClient) {}
+  constructor(private profileService: ProfileService) {}
 
   uploadCV(): void {
     if (!this.texContent().trim()) return;
     this.loading.set(true);
     this.error.set('');
-    this.http
-      .post<CandidateProfile>(`${environment.apiUrl}/profile/upload`, {
+    this.profileService
+      .uploadCV({
         tex_content: this.texContent(),
         language: this.language(),
       })

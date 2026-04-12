@@ -95,6 +95,9 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # --- Settings ---
+    app.state.settings = settings
+
     # --- Shared infrastructure ---
     event_bus = InMemoryEventBus()
 

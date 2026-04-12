@@ -3,9 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { TitleCasePipe } from '@angular/common';
 import { environment } from '../../../environments/environment';
-import { Competency } from '../../core/models/competency.model';
-import { Story } from '../../core/models/story.model';
-import { InterviewPrep } from '../../core/models/interview-prep.model';
+import { Competency } from './models/competency.model';
+import { InterviewPrep } from './models/interview-prep.model';
+import { Story } from './models/story.model';
 
 @Component({
   selector: 'app-interview',

@@ -2,28 +2,9 @@ import { Component, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
-import { EvaluationResult } from '../../core/models/evaluation-result.model';
-import { EvaluateRequest } from '../../core/models/evaluate-request.model';
-
-interface ScoreBreakdown {
-  semantic_score: number;
-  skill_score: number;
-  experience_score: number;
-  language_score: number;
-}
-
-interface MatchResult {
-  id: string;
-  job_id: string;
-  cv_id: string;
-  overall_score: number;
-  breakdown: ScoreBreakdown;
-  matched_skills: string[];
-  missing_skills: string[];
-  pros: string[];
-  cons: string[];
-  recommendations: string[];
-}
+import { EvaluateRequest } from './models/evaluate-request.model';
+import { EvaluationResult } from './models/evaluation-result.model';
+import { MatchResult } from './models/match-result.model';
 
 @Component({
   selector: 'app-matching',

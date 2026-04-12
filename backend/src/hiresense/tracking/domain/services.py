@@ -5,10 +5,11 @@ from datetime import datetime, timezone
 from typing import Any
 
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
+from hiresense.tracking.ports import TrackingRepositoryPort
 
 
 class TrackingService:
-    def __init__(self, repository: Any, ingestion_orchestrator: Any) -> None:
+    def __init__(self, repository: TrackingRepositoryPort, ingestion_orchestrator: Any) -> None:
         self._repo = repository
         self._ingestion = ingestion_orchestrator
 

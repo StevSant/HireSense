@@ -47,6 +47,13 @@ async def scan_portals(
     return await scanner.scan(filters)
 
 
+@router.get("/jobs", response_model=list[NormalizedJob])
+async def list_jobs(
+    orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
+) -> list[NormalizedJob]:
+    return orchestrator.list_jobs()
+
+
 @router.get("/portals", response_model=list[PortalEntry])
 async def list_portals(
     config: Annotated[PortalsConfig, Depends(get_portals_config)],

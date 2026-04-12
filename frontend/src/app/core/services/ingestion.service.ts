@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { FetchResponse } from '../../pages/ingestion/models/fetch-response.model';
+import { NormalizedJob } from '../../pages/ingestion/models/normalized-job.model';
 import { PortalEntry } from '../../pages/ingestion/models/portal-entry.model';
 import { ScanPortalsRequest } from '../../pages/ingestion/models/scan-portals-request.model';
 import { ScanResult } from '../../pages/ingestion/models/scan-result.model';
@@ -13,6 +14,10 @@ export class IngestionService {
 
   fetchJobs(): Observable<FetchResponse> {
     return this.http.post<FetchResponse>(`${environment.apiUrl}/ingestion/fetch`, {});
+  }
+
+  listJobs(): Observable<NormalizedJob[]> {
+    return this.http.get<NormalizedJob[]>(`${environment.apiUrl}/ingestion/jobs`);
   }
 
   loadPortals(): Observable<PortalEntry[]> {

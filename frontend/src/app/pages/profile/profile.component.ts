@@ -3,21 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 
-interface CVSection {
-  name: string;
-  content: string;
-}
-
-interface CandidateProfile {
-  id: string;
-  name: string;
-  email: string | null;
-  phone: string | null;
-  location: string | null;
-  sections: CVSection[];
-  language: string;
-  skills: string[];
-}
+import { CandidateProfile } from './models/candidate-profile.model';
 
 @Component({
   selector: 'app-profile',

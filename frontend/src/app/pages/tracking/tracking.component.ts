@@ -4,12 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { TitleCasePipe, DatePipe } from '@angular/common';
 import { environment } from '../../../environments/environment';
 import { ApplicationStatus } from '../../core/models/application-status.model';
-import { TrackedApplication } from '../../core/models/tracked-application.model';
 import { CreateApplicationRequest } from '../../core/models/create-application-request.model';
-import { UpdateApplicationRequest } from '../../core/models/update-application-request.model';
-import { BatchEvaluationResponse } from '../../core/models/batch-evaluation-response.model';
-import { BatchResult } from '../../core/models/batch-result.model';
-import { CompanyResearch } from '../../core/models/company-research.model';
+import { BatchEvaluationResponse } from './models/batch-evaluation-response.model';
+import { BatchResult } from './models/batch-result.model';
+import { CompanyResearch } from './models/company-research.model';
+import { TrackedApplication } from './models/tracked-application.model';
+import { UpdateApplicationRequest } from './models/update-application-request.model';
 
 @Component({
   selector: 'app-tracking',

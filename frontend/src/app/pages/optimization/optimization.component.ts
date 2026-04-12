@@ -3,21 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 
-interface SectionChange {
-  section_name: string;
-  original: string;
-  optimized: string;
-  reason: string;
-}
-
-interface OptimizationResult {
-  id: string;
-  match_id: string;
-  changes: SectionChange[];
-  original_tex: string;
-  optimized_tex: string;
-  improvement_summary: string | null;
-}
+import { OptimizationResult } from './models/optimization-result.model';
+import { SectionChange } from './models/section-change.model';
 
 @Component({
   selector: 'app-optimization',

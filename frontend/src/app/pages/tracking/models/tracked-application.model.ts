@@ -1,4 +1,4 @@
-import { ApplicationStatus } from './application-status.model';
+import { ApplicationStatus } from '../../../core/models/application-status.model';
 
 export interface TrackedApplication {
   id: string;

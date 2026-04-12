@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from hiresense.identity.domain import AuthService
@@ -10,8 +10,8 @@ from hiresense.identity.domain import AuthService
 security = HTTPBearer()
 
 
-def get_auth_service() -> AuthService:
-    raise NotImplementedError("Must be overridden during app startup via dependency_overrides")
+def get_auth_service(request: Request) -> AuthService:
+    return request.app.state.identity.get_auth_service()
 
 
 def require_auth(

@@ -6,24 +6,17 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from hiresense.ingestion.api.dependencies import (
+    get_ingestion_orchestrator,
+    get_portal_scanner,
+    get_portals_config,
+)
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner, ScanFilters, ScanResult
 from hiresense.ingestion.domain.services import IngestionCooldownError, IngestionOrchestrator
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
-
-
-def get_ingestion_orchestrator() -> IngestionOrchestrator:
-    raise NotImplementedError("Must be overridden during app startup via dependency_overrides")
-
-
-def get_portal_scanner() -> PortalScanner:
-    raise NotImplementedError("Must be overridden during app startup via dependency_overrides")
-
-
-def get_portals_config() -> PortalsConfig:
-    raise NotImplementedError("Must be overridden during app startup via dependency_overrides")
 
 
 class FetchResponse(BaseModel):

@@ -8,6 +8,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from hiresense.interview.domain.models import Competency, Story
+from hiresense.interview.ports import StoryRepositoryPort
 
 
 class StoryMatch(BaseModel):
@@ -26,7 +27,7 @@ class InterviewPrep(BaseModel):
 
 
 class StoryService:
-    def __init__(self, repository: Any) -> None:
+    def __init__(self, repository: StoryRepositoryPort) -> None:
         self._repo = repository
 
     def add_story(

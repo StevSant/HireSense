@@ -1,7 +1,6 @@
 import { Component, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { environment } from '../../../environments/environment';
+import { MatchingService } from '../../core/services/matching.service';
 import { EvaluateRequest } from './models/evaluate-request.model';
 import { EvaluationResult } from './models/evaluation-result.model';
 import { MatchResult } from './models/match-result.model';
@@ -24,7 +23,7 @@ export class MatchingComponent {
   evaluationResult = signal<EvaluationResult | null>(null);
   evaluating = signal(false);
 
-  constructor(private http: HttpClient) {}
+  constructor(private matchingService: MatchingService) {}
 
   analyze(): void {
     this.loading.set(true);
@@ -37,7 +36,7 @@ export class MatchingComponent {
       cv_summary: this.cvSummary(),
       cv_skills: this.cvSkills().split(',').map(s => s.trim()).filter(Boolean),
     };
-    this.http.post<MatchResult>(`${environment.apiUrl}/matching/analyze`, payload).subscribe({
+    this.matchingService.analyze(payload).subscribe({
       next: (res) => {
         this.result.set(res);
         this.loading.set(false);
@@ -57,7 +56,7 @@ export class MatchingComponent {
       description: this.jobDescription(),
       skills: this.jobSkills().split(',').map(s => s.trim()).filter(Boolean),
     };
-    this.http.post<EvaluationResult>(`${environment.apiUrl}/matching/evaluate`, req).subscribe({
+    this.matchingService.evaluate(req).subscribe({
       next: (res) => {
         this.evaluationResult.set(res);
         this.evaluating.set(false);

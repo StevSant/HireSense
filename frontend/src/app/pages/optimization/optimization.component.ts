@@ -1,10 +1,7 @@
 import { Component, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { environment } from '../../../environments/environment';
-
+import { OptimizationService } from '../../core/services/optimization.service';
 import { OptimizationResult } from './models/optimization-result.model';
-import { SectionChange } from './models/section-change.model';
 
 @Component({
   selector: 'app-optimization',
@@ -25,7 +22,7 @@ export class OptimizationComponent {
   loading = signal(false);
   error = signal('');
 
-  constructor(private http: HttpClient) {}
+  constructor(private optimizationService: OptimizationService) {}
 
   optimize(): void {
     this.loading.set(true);
@@ -40,7 +37,7 @@ export class OptimizationComponent {
       missing_skills: this.missingSkills().split(',').map(s => s.trim()).filter(Boolean),
       recommendations: [],
     };
-    this.http.post<OptimizationResult>(`${environment.apiUrl}/optimization/optimize`, payload).subscribe({
+    this.optimizationService.optimize(payload).subscribe({
       next: (res) => {
         this.result.set(res);
         this.loading.set(false);

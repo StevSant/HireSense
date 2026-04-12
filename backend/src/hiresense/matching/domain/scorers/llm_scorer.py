@@ -6,8 +6,6 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any
 
-from pydantic import BaseModel
-
 from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.ports import LLMPort
 
@@ -35,9 +33,6 @@ class BaseLLMScorer(ABC):
 
     @abstractmethod
     def _build_prompt(self, job: Any, profile: Any | None = None) -> str: ...
-
-    @abstractmethod
-    def _output_schema(self) -> type[BaseModel]: ...
 
     async def score(self, job: Any, profile: Any | None = None) -> DimensionResult:
         if self._llm is None:

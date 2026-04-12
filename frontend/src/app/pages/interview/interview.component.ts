@@ -1,11 +1,10 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { TitleCasePipe } from '@angular/common';
-import { environment } from '../../../environments/environment';
-import { Competency } from '../../core/models/competency.model';
-import { Story } from '../../core/models/story.model';
-import { InterviewPrep } from '../../core/models/interview-prep.model';
+import { InterviewService } from '../../core/services/interview.service';
+import { Competency } from './models/competency.model';
+import { InterviewPrep } from './models/interview-prep.model';
+import { Story } from './models/story.model';
 
 @Component({
   selector: 'app-interview',
@@ -51,7 +50,7 @@ export class InterviewComponent implements OnInit {
     'conflict_resolution',
   ];
 
-  constructor(private http: HttpClient) {}
+  constructor(private interviewService: InterviewService) {}
 
   ngOnInit(): void {
     this.loadStories();
@@ -60,7 +59,7 @@ export class InterviewComponent implements OnInit {
   loadStories(): void {
     this.storiesLoading.set(true);
     this.storiesError.set('');
-    this.http.get<Story[]>(`${environment.apiUrl}/interview/stories`).subscribe({
+    this.interviewService.listStories().subscribe({
       next: (stories) => {
         this.stories.set(stories);
         this.storiesLoading.set(false);
@@ -102,7 +101,7 @@ export class InterviewComponent implements OnInit {
     const tags = this.newTags().trim();
     if (tags) body['tags'] = tags;
 
-    this.http.post<Story>(`${environment.apiUrl}/interview/stories`, body).subscribe({
+    this.interviewService.createStory(body).subscribe({
       next: (story) => {
         this.stories.update((list) => [story, ...list]);
         this.addingStory.set(false);
@@ -117,7 +116,7 @@ export class InterviewComponent implements OnInit {
   }
 
   deleteStory(id: string): void {
-    this.http.delete(`${environment.apiUrl}/interview/stories/${id}`).subscribe({
+    this.interviewService.deleteStory(id).subscribe({
       next: () => {
         this.stories.update((list) => list.filter((s) => s.id !== id));
       },
@@ -138,12 +137,8 @@ export class InterviewComponent implements OnInit {
     this.prepError.set('');
     this.prepResult.set(null);
 
-    this.http
-      .post<InterviewPrep>(`${environment.apiUrl}/interview/prepare`, {
-        job_title,
-        company,
-        description,
-      })
+    this.interviewService
+      .prepare({ job_title, company, description })
       .subscribe({
         next: (prep) => {
           this.prepResult.set(prep);

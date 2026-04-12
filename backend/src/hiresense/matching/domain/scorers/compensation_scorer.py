@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from pydantic import BaseModel
+
+from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain.scorers.llm_scorer import BaseLLMScorer
 
 
@@ -10,12 +13,8 @@ class CompensationScorer(BaseLLMScorer):
     def dimension_name(self) -> str:
         return "compensation"
 
-    def _build_system(self) -> str:
-        return (
-            "You are an expert compensation analyst. Evaluate job compensation competitiveness "
-            "based on role, location, and market rates. "
-            "Respond with JSON only: {\"score\": <0.0-1.0>, \"rationale\": \"<brief explanation>\"}."
-        )
+    def _output_schema(self) -> type[BaseModel]:
+        return DimensionResult
 
     def _build_prompt(self, job: Any, profile: Any | None = None) -> str:
         title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
@@ -36,5 +35,5 @@ class CompensationScorer(BaseLLMScorer):
             "Consider the salary range against market rates for the location and role level. "
             "If no salary is specified, infer from company size, role, and location. "
             "A score of 1.0 means highly competitive; 0.0 means well below market. "
-            "Return JSON: {\"score\": <float>, \"rationale\": \"<brief>\"}."
+            'Return JSON: {"score": <float>, "rationale": "<brief>"}.'
         )

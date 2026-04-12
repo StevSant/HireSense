@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from fastapi import Request
 
-def get_cv_optimizer():
-    raise NotImplementedError(
-        "Must be overridden during app startup via dependency_overrides"
-    )
+from hiresense.optimization.domain import CVOptimizer
+
+
+def get_cv_optimizer(request: Request) -> CVOptimizer:
+    return request.app.state.optimization.get_cv_optimizer()

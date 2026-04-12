@@ -1,5 +1,9 @@
-from hiresense.tracking.domain.services import TrackingService
+from __future__ import annotations
+
+from fastapi import Request
+
+from hiresense.tracking.domain import TrackingService
 
 
-def get_tracking_service() -> TrackingService:
-    raise NotImplementedError("Must be overridden during app startup via dependency_overrides")
+def get_tracking_service(request: Request) -> TrackingService:
+    return request.app.state.tracking.get_tracking_service()

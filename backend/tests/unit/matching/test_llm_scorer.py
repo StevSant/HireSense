@@ -24,8 +24,8 @@ class ConcreteLLMScorer(BaseLLMScorer):
     def _build_prompt(self, job, profile=None) -> str:
         return f"Evaluate: {job.get('title', '')}"
 
-    def _build_system(self) -> str:
-        return "You are a test scorer."
+    def _output_schema(self):
+        return DimensionResult
 
 
 @pytest.mark.asyncio
@@ -44,7 +44,7 @@ async def test_llm_scorer_handles_malformed_json() -> None:
     llm = FakeLLM("This is not JSON but score is 0.7 probably")
     scorer = ConcreteLLMScorer(llm=llm, weight=10)
     result = await scorer.score({"title": "SWE"})
-    assert result.score == 0.7
+    assert result.score == 0.5
 
 
 @pytest.mark.asyncio

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from pydantic import BaseModel
+
+from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain.scorers.llm_scorer import BaseLLMScorer
 
 
@@ -10,13 +13,8 @@ class CultureScorer(BaseLLMScorer):
     def dimension_name(self) -> str:
         return "culture_fit"
 
-    def _build_system(self) -> str:
-        return (
-            "You are an expert workplace culture analyst. Evaluate job postings for culture fit, "
-            "focusing on remote/hybrid options, work-life balance signals, collaboration style, "
-            "and company values alignment. "
-            "Respond with JSON only: {\"score\": <0.0-1.0>, \"rationale\": \"<brief explanation>\"}."
-        )
+    def _output_schema(self) -> type[BaseModel]:
+        return DimensionResult
 
     def _build_prompt(self, job: Any, profile: Any | None = None) -> str:
         title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
@@ -35,5 +33,5 @@ class CultureScorer(BaseLLMScorer):
             "- Collaboration style (team-oriented vs. solo)\n"
             "- Company values and mission alignment\n"
             "A score of 1.0 means excellent culture alignment; 0.0 means poor fit. "
-            "Return JSON: {\"score\": <float>, \"rationale\": \"<brief>\"}."
+            'Return JSON: {"score": <float>, "rationale": "<brief>"}.'
         )

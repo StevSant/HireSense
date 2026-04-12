@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from pydantic import BaseModel
+
+from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain.scorers.llm_scorer import BaseLLMScorer
 
 
@@ -10,12 +13,8 @@ class GrowthScorer(BaseLLMScorer):
     def dimension_name(self) -> str:
         return "growth_potential"
 
-    def _build_system(self) -> str:
-        return (
-            "You are an expert career growth analyst. Evaluate job postings for growth potential, "
-            "including learning opportunities, tech stack modernity, mentorship, and career trajectory. "
-            "Respond with JSON only: {\"score\": <0.0-1.0>, \"rationale\": \"<brief explanation>\"}."
-        )
+    def _output_schema(self) -> type[BaseModel]:
+        return DimensionResult
 
     def _build_prompt(self, job: Any, profile: Any | None = None) -> str:
         title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
@@ -36,5 +35,5 @@ class GrowthScorer(BaseLLMScorer):
             "- Mentorship and leadership exposure\n"
             "- Career trajectory and advancement potential\n"
             "A score of 1.0 means excellent growth prospects; 0.0 means stagnant/dead-end role. "
-            "Return JSON: {\"score\": <float>, \"rationale\": \"<brief>\"}."
+            'Return JSON: {"score": <float>, "rationale": "<brief>"}.'
         )

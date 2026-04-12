@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Annotated
+from pathlib import Path
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel
 
 from hiresense.profile.api.dependencies import get_profile_service
@@ -28,18 +29,30 @@ async def upload_cv(
 
 @router.post("/upload-file", response_model=CandidateProfile)
 async def upload_file(
+    request: Request,
     service: Annotated[object, Depends(get_profile_service)],
     file: UploadFile = File(...),
-    language: str = Form("en"),
+    language: Literal["en", "es"] = Form("en"),
 ) -> CandidateProfile:
     filename = file.filename or "unknown"
-    ext = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    ext = Path(filename).suffix.lower()
     if ext not in _ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Unsupported file type: {ext}. Allowed: {', '.join(_ALLOWED_EXTENSIONS)}",
         )
+    max_bytes = request.app.state.settings.max_upload_bytes
+    if file.size and file.size > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large. Maximum size: {max_bytes // (1024 * 1024)} MB",
+        )
     file_bytes = await file.read()
+    if len(file_bytes) > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large. Maximum size: {max_bytes // (1024 * 1024)} MB",
+        )
     return await service.parse_file_and_create(file_bytes, filename, language)
 
 

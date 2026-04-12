@@ -5,13 +5,13 @@ import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from hiresense.profile.domain.latex_parser import LaTeXParser
+from hiresense.profile.domain.latex_parser import LaTeXParser, ParsedCV
 from hiresense.profile.domain.models import CandidateProfile, CVSection, Profile
 from hiresense.profile.domain.skill_extractor import SkillExtractor
 
 if TYPE_CHECKING:
     from hiresense.profile.domain.pdf_parser import PDFParser
-    from hiresense.profile.infrastructure.repository import ProfileRepository
+    from hiresense.profile.ports.repository import ProfileRepositoryPort
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class ProfileService:
         self,
         parser: LaTeXParser,
         skill_extractor: SkillExtractor,
-        repository: ProfileRepository | None = None,
+        repository: ProfileRepositoryPort | None = None,
         pdf_parser: PDFParser | None = None,
         cv_directory: str = "./cvs",
     ) -> None:
@@ -120,11 +120,7 @@ class ProfileService:
         orm = self._repository.get_latest()
         return self._to_response(orm) if orm else None
 
-    def _extract_skills_from_parsed(self, parsed: object) -> list[str]:
-        from hiresense.profile.domain.latex_parser import ParsedCV
-
-        if not isinstance(parsed, ParsedCV):
-            return []
+    def _extract_skills_from_parsed(self, parsed: ParsedCV) -> list[str]:
         for section in parsed.sections:
             if "SKILL" in section.name.upper():
                 return self._skill_extractor.extract_from_tabular(section.content)
@@ -133,7 +129,8 @@ class ProfileService:
     def _save_original_file(self, profile_id: str, filename: str, file_bytes: bytes) -> None:
         originals_dir = self._cv_directory / "originals"
         originals_dir.mkdir(parents=True, exist_ok=True)
-        dest = originals_dir / f"{profile_id}_{filename}"
+        safe_name = Path(filename).name
+        dest = originals_dir / f"{profile_id}_{safe_name}"
         dest.write_bytes(file_bytes)
         logger.info("Saved original CV to %s", dest)
 

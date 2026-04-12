@@ -1,1 +1,1 @@
-"""HireSense - AI-powered job matching and CV optimization."""
+"""Backward-compatible re-export. Import from hiresense.ports instead."""

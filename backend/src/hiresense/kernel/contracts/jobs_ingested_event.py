@@ -1,8 +1,5 @@
-from __future__ import annotations
+"""Backward-compatible re-export. Import from kernel.events."""
 
-from hiresense.kernel.events import DomainEvent
+from hiresense.kernel.events.jobs_ingested import JobsIngestedEvent
 
-
-class JobsIngestedEvent(DomainEvent):
-    event_type: str = "jobs.ingested"
-    payload: dict  # keys: job_ids (list[str]), source (str)
+__all__ = ["JobsIngestedEvent"]

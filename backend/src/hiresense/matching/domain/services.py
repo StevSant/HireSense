@@ -8,7 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from hiresense.kernel.contracts.matching import MatchCompletedEvent
+from hiresense.kernel.events import MatchCompletedEvent
 from hiresense.matching.domain.models import MatchResult, ScoreBreakdown
 from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain.semantic_scorer import SemanticScorer
@@ -99,11 +99,9 @@ class MatchingOrchestrator:
 
         # 5. Publish event
         event = MatchCompletedEvent(
-            payload={
-                "job_id": job_id,
-                "match_id": match_id,
-                "score": result.overall_score,
-            }
+            job_id=job_id,
+            match_id=match_id,
+            score=result.overall_score,
         )
         await self._event_bus.publish(event)
 

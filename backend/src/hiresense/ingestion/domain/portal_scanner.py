@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.normalizer import JobNormalizer
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
-from hiresense.kernel.contracts.jobs_ingested_event import JobsIngestedEvent
+from hiresense.kernel.events import JobsIngestedEvent
 
 logger = logging.getLogger(__name__)
 
@@ -113,10 +113,8 @@ class PortalScanner:
 
         if new_jobs:
             event = JobsIngestedEvent(
-                payload={
-                    "job_ids": [j.id for j in new_jobs],
-                    "source": "portal_scan",
-                },
+                job_ids=[j.id for j in new_jobs],
+                source="portal_scan",
             )
             await self._event_bus.publish(event)
 

@@ -1,14 +1,6 @@
-from __future__ import annotations
+"""Backward-compatible re-export. Import from kernel.schemas."""
 
-from pydantic import BaseModel
+from hiresense.kernel.schemas.candidate_skills_dto import CandidateSkillsDTO
+from hiresense.kernel.schemas.cv_embedding_dto import CVEmbeddingDTO
 
-
-class CandidateSkillsDTO(BaseModel):
-    skills: list[str]
-    experience_summary: str
-    language: str
-
-
-class CVEmbeddingDTO(BaseModel):
-    cv_id: str
-    embedding: list[float]
+__all__ = ["CandidateSkillsDTO", "CVEmbeddingDTO"]

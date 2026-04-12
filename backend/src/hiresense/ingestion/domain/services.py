@@ -7,7 +7,7 @@ from typing import Any
 
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.normalizer import JobNormalizer
-from hiresense.kernel.contracts.ingestion import JobsIngestedEvent
+from hiresense.kernel.events import JobsIngestedEvent
 
 logger = logging.getLogger(__name__)
 
@@ -76,10 +76,8 @@ class IngestionOrchestrator:
 
         if all_jobs:
             event = JobsIngestedEvent(
-                payload={
-                    "job_ids": [j.id for j in all_jobs],
-                    "source": "batch",
-                },
+                job_ids=[j.id for j in all_jobs],
+                source="batch",
             )
             await self._event_bus.publish(event)
 

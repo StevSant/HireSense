@@ -15,11 +15,11 @@ async def test_publish_invokes_subscriber() -> None:
         received.append(event)
 
     bus.subscribe("test.event", handler)
-    event = DomainEvent(event_type="test.event", payload={"key": "value"})
+    event = DomainEvent(event_type="test.event")
     await bus.publish(event)
     await asyncio.sleep(0.05)
     assert len(received) == 1
-    assert received[0].payload == {"key": "value"}
+    assert received[0].event_type == "test.event"
 
 
 @pytest.mark.asyncio

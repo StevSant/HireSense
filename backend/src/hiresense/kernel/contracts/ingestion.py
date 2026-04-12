@@ -1,27 +1,6 @@
-from __future__ import annotations
+"""Backward-compatible re-export. Import from kernel.schemas or kernel.events."""
 
-from datetime import datetime
+from hiresense.kernel.events.jobs_ingested import JobsIngestedEvent
+from hiresense.kernel.schemas.normalized_job_dto import NormalizedJobDTO
 
-from pydantic import BaseModel
-
-from hiresense.kernel.events import DomainEvent
-
-
-class NormalizedJobDTO(BaseModel):
-    id: str
-    title: str
-    company: str
-    description: str
-    skills: list[str]
-    location: str
-    salary_range: str | None = None
-    source: str
-    source_type: str
-    language: str
-    url: str
-    posted_date: datetime | None = None
-
-
-class JobsIngestedEvent(DomainEvent):
-    event_type: str = "jobs.ingested"
-    payload: dict  # keys: job_ids (list[str]), source (str)
+__all__ = ["JobsIngestedEvent", "NormalizedJobDTO"]

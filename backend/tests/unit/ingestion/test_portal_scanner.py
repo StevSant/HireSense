@@ -218,8 +218,8 @@ async def test_scan_publishes_event_when_jobs_found() -> None:
     assert len(bus.published) == 1
     event = bus.published[0]
     assert event.event_type == "jobs.ingested"
-    assert event.payload["source"] == "portal_scan"
-    assert len(event.payload["job_ids"]) == 1
+    assert event.source == "portal_scan"
+    assert len(event.job_ids) == 1
 
 
 @pytest.mark.asyncio

@@ -1,4 +1,4 @@
-from hiresense.identity.services import AuthService
+from hiresense.identity.domain import AuthService
 
 
 def test_verify_valid_credentials() -> None:

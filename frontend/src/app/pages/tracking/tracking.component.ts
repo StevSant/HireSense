@@ -1,15 +1,14 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { TitleCasePipe, DatePipe } from '@angular/common';
-import { environment } from '../../../environments/environment';
+import { TrackingService } from '../../core/services/tracking.service';
+import { ResearchService } from '../../core/services/research.service';
 import { ApplicationStatus } from '../../core/models/application-status.model';
-import { TrackedApplication } from '../../core/models/tracked-application.model';
 import { CreateApplicationRequest } from '../../core/models/create-application-request.model';
-import { UpdateApplicationRequest } from '../../core/models/update-application-request.model';
-import { BatchEvaluationResponse } from '../../core/models/batch-evaluation-response.model';
-import { BatchResult } from '../../core/models/batch-result.model';
-import { CompanyResearch } from '../../core/models/company-research.model';
+import { BatchResult } from './models/batch-result.model';
+import { CompanyResearch } from './models/company-research.model';
+import { TrackedApplication } from './models/tracked-application.model';
+import { UpdateApplicationRequest } from './models/update-application-request.model';
 
 @Component({
   selector: 'app-tracking',
@@ -48,7 +47,10 @@ export class TrackingComponent implements OnInit {
     'rejected',
   ];
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private trackingService: TrackingService,
+    private researchService: ResearchService,
+  ) {}
 
   ngOnInit(): void {
     this.loadApplications();
@@ -58,10 +60,7 @@ export class TrackingComponent implements OnInit {
     this.loading.set(true);
     this.error.set('');
     const filter = this.statusFilter();
-    const url = filter
-      ? `${environment.apiUrl}/tracking?status=${filter}`
-      : `${environment.apiUrl}/tracking`;
-    this.http.get<TrackedApplication[]>(url).subscribe({
+    this.trackingService.list(filter || undefined).subscribe({
       next: (apps) => {
         this.applications.set(apps);
         this.loading.set(false);
@@ -101,7 +100,7 @@ export class TrackingComponent implements OnInit {
     const notes = this.newNotes().trim();
     if (notes) body.notes = notes;
 
-    this.http.post<TrackedApplication>(`${environment.apiUrl}/tracking`, body).subscribe({
+    this.trackingService.create(body).subscribe({
       next: (app) => {
         this.applications.update((list) => [app, ...list]);
         this.adding.set(false);
@@ -119,7 +118,7 @@ export class TrackingComponent implements OnInit {
     const select = event.target as HTMLSelectElement;
     const newStatus = select.value as ApplicationStatus;
     const body: UpdateApplicationRequest = { status: newStatus };
-    this.http.patch<TrackedApplication>(`${environment.apiUrl}/tracking/${app.id}`, body).subscribe({
+    this.trackingService.update(app.id, body).subscribe({
       next: (updated) => {
         this.applications.update((list) =>
           list.map((a) => (a.id === updated.id ? updated : a)),
@@ -133,7 +132,7 @@ export class TrackingComponent implements OnInit {
   }
 
   deleteApplication(id: string): void {
-    this.http.delete(`${environment.apiUrl}/tracking/${id}`).subscribe({
+    this.trackingService.delete(id).subscribe({
       next: () => {
         this.applications.update((list) => list.filter((a) => a.id !== id));
       },
@@ -149,20 +148,16 @@ export class TrackingComponent implements OnInit {
     this.evaluating.set(true);
     this.leaderboard.set([]);
     const ids = apps.map((a) => a.id);
-    this.http
-      .post<BatchEvaluationResponse>(`${environment.apiUrl}/matching/batch-evaluate`, {
-        tracked_app_ids: ids,
-      })
-      .subscribe({
-        next: (res) => {
-          this.leaderboard.set(res.results);
-          this.evaluating.set(false);
-        },
-        error: (err) => {
-          this.error.set(err.error?.detail || 'Batch evaluation failed');
-          this.evaluating.set(false);
-        },
-      });
+    this.trackingService.batchEvaluate(ids).subscribe({
+      next: (res) => {
+        this.leaderboard.set(res.results);
+        this.evaluating.set(false);
+      },
+      error: (err) => {
+        this.error.set(err.error?.detail || 'Batch evaluation failed');
+        this.evaluating.set(false);
+      },
+    });
   }
 
   toggleExpand(sourceId: string): void {
@@ -189,8 +184,8 @@ export class TrackingComponent implements OnInit {
 
   researchCompany(app: TrackedApplication): void {
     this.researchingCompany.set(app.id);
-    this.http
-      .post<CompanyResearch>(`${environment.apiUrl}/research`, {
+    this.researchService
+      .research({
         company_name: app.company,
         job_description: app.notes || '',
       })
@@ -209,8 +204,8 @@ export class TrackingComponent implements OnInit {
 
   refreshResearch(app: TrackedApplication): void {
     this.researchingCompany.set(app.id);
-    this.http
-      .post<CompanyResearch>(`${environment.apiUrl}/research/refresh`, {
+    this.researchService
+      .refresh({
         company_name: app.company,
         job_description: app.notes || '',
       })

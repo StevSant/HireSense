@@ -3,22 +3,12 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
 
 from hiresense.identity.api.dependencies import get_auth_service
-from hiresense.identity.services import AuthService
+from hiresense.identity.api.schemas import LoginRequest, TokenResponse
+from hiresense.identity.domain import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
 
 
 @router.post("/login", response_model=TokenResponse)

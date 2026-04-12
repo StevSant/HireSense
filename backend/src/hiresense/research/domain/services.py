@@ -5,13 +5,14 @@ import re
 from typing import Any
 
 from hiresense.research.domain.models import CompanyResearch
+from hiresense.research.ports import CompanyResearchRepositoryPort
 
 _FALLBACK_LLM_NOT_CONFIGURED = "LLM not configured"
 _FALLBACK_RESEARCH_UNAVAILABLE = "Research unavailable"
 
 
 class CompanyResearchService:
-    def __init__(self, repository: Any, llm: Any = None) -> None:
+    def __init__(self, repository: CompanyResearchRepositoryPort, llm: Any = None) -> None:
         self._repo = repository
         self._llm = llm
 

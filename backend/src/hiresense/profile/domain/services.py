@@ -1,22 +1,40 @@
 from __future__ import annotations
 
+import logging
 import uuid
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from hiresense.profile.domain.latex_parser import LaTeXParser
-from hiresense.profile.domain.models import CandidateProfile, CVSection
+from hiresense.profile.domain.models import CandidateProfile, CVSection, Profile
 from hiresense.profile.domain.skill_extractor import SkillExtractor
+
+if TYPE_CHECKING:
+    from hiresense.profile.domain.pdf_parser import PDFParser
+    from hiresense.profile.infrastructure.repository import ProfileRepository
+
+logger = logging.getLogger(__name__)
 
 
 class ProfileService:
-    def __init__(self, parser: LaTeXParser, skill_extractor: SkillExtractor) -> None:
+    def __init__(
+        self,
+        parser: LaTeXParser,
+        skill_extractor: SkillExtractor,
+        repository: ProfileRepository | None = None,
+        pdf_parser: PDFParser | None = None,
+        cv_directory: str = "./cvs",
+    ) -> None:
         self._parser = parser
         self._skill_extractor = skill_extractor
+        self._repository = repository
+        self._pdf_parser = pdf_parser
+        self._cv_directory = Path(cv_directory)
         self._profiles: dict[str, CandidateProfile] = {}
 
     async def parse_and_create(self, tex_content: str, language: str = "en") -> CandidateProfile:
         parsed = self._parser.parse(tex_content)
 
-        # Extract skills from TECHNICAL SKILLS section if found
         skills: list[str] = []
         for section in parsed.sections:
             if "SKILL" in section.name.upper():
@@ -25,8 +43,9 @@ class ProfileService:
 
         sections = [CVSection(name=s.name, content=s.content) for s in parsed.sections]
 
+        profile_id = str(uuid.uuid4())
         profile = CandidateProfile(
-            id=str(uuid.uuid4()),
+            id=profile_id,
             name=parsed.name,
             email=parsed.email,
             phone=parsed.phone,
@@ -36,8 +55,117 @@ class ProfileService:
             language=language,
             skills=skills,
         )
-        self._profiles[profile.id] = profile
+
+        if self._repository is not None:
+            orm_profile = self._to_orm(profile)
+            self._repository.create(orm_profile)
+        else:
+            self._profiles[profile.id] = profile
+
+        return profile
+
+    async def parse_file_and_create(
+        self, file_bytes: bytes, filename: str, language: str = "en"
+    ) -> CandidateProfile:
+        ext = Path(filename).suffix.lower()
+
+        if ext == ".pdf":
+            if self._pdf_parser is None:
+                msg = "PDF parsing not available — no PDFParser configured"
+                raise ValueError(msg)
+            parsed = await self._pdf_parser.parse(file_bytes)
+            skills = self._extract_skills_from_parsed(parsed)
+        elif ext == ".tex":
+            content = file_bytes.decode("utf-8", errors="replace")
+            parsed = self._parser.parse(content)
+            skills = self._extract_skills_from_parsed(parsed)
+        else:
+            msg = f"Unsupported file type: {ext}"
+            raise ValueError(msg)
+
+        profile_id = str(uuid.uuid4())
+        self._save_original_file(profile_id, filename, file_bytes)
+
+        sections = [CVSection(name=s.name, content=s.content) for s in parsed.sections]
+
+        profile = CandidateProfile(
+            id=profile_id,
+            name=parsed.name,
+            email=parsed.email,
+            phone=parsed.phone,
+            location=parsed.location,
+            sections=sections,
+            raw_tex=parsed.raw_tex,
+            language=language,
+            skills=skills,
+        )
+
+        if self._repository is not None:
+            orm_profile = self._to_orm(profile, original_filename=filename)
+            self._repository.create(orm_profile)
+        else:
+            self._profiles[profile.id] = profile
+
         return profile
 
     async def get_profile(self, profile_id: str) -> CandidateProfile | None:
+        if self._repository is not None:
+            orm = self._repository.get_by_id(uuid.UUID(profile_id))
+            return self._to_response(orm) if orm else None
         return self._profiles.get(profile_id)
+
+    async def get_current_profile(self) -> CandidateProfile | None:
+        if self._repository is None:
+            return None
+        orm = self._repository.get_latest()
+        return self._to_response(orm) if orm else None
+
+    def _extract_skills_from_parsed(self, parsed: object) -> list[str]:
+        from hiresense.profile.domain.latex_parser import ParsedCV
+
+        if not isinstance(parsed, ParsedCV):
+            return []
+        for section in parsed.sections:
+            if "SKILL" in section.name.upper():
+                return self._skill_extractor.extract_from_tabular(section.content)
+        return []
+
+    def _save_original_file(self, profile_id: str, filename: str, file_bytes: bytes) -> None:
+        originals_dir = self._cv_directory / "originals"
+        originals_dir.mkdir(parents=True, exist_ok=True)
+        dest = originals_dir / f"{profile_id}_{filename}"
+        dest.write_bytes(file_bytes)
+        logger.info("Saved original CV to %s", dest)
+
+    def _to_orm(
+        self, profile: CandidateProfile, original_filename: str | None = None
+    ) -> Profile:
+        return Profile(
+            id=uuid.UUID(profile.id),
+            name=profile.name,
+            email=profile.email,
+            phone=profile.phone,
+            location=profile.location,
+            sections=[{"name": s.name, "content": s.content} for s in profile.sections],
+            raw_tex=profile.raw_tex,
+            language=profile.language,
+            skills=profile.skills,
+            original_filename=original_filename,
+        )
+
+    def _to_response(self, orm: Profile) -> CandidateProfile:
+        sections = [
+            CVSection(name=s.get("name", ""), content=s.get("content", ""))
+            for s in (orm.sections or [])
+        ]
+        return CandidateProfile(
+            id=str(orm.id),
+            name=orm.name,
+            email=orm.email,
+            phone=orm.phone,
+            location=orm.location,
+            sections=sections,
+            raw_tex=orm.raw_tex or "",
+            language=orm.language,
+            skills=orm.skills or [],
+        )

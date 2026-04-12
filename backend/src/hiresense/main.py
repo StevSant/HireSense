@@ -60,7 +60,8 @@ from hiresense.optimization.api.provider import OptimizationProvider
 from hiresense.optimization.domain import CVOptimizer
 from hiresense.profile.api import router as profile_router
 from hiresense.profile.api.provider import ProfileProvider
-from hiresense.profile.domain import LaTeXParser, ProfileService, SkillExtractor
+from hiresense.profile.domain import LaTeXParser, PDFParser, ProfileService, SkillExtractor
+from hiresense.profile.infrastructure import ProfileRepository
 from hiresense.tracking.api import router as tracking_router
 from hiresense.tracking.api.provider import TrackingProvider
 from hiresense.tracking.domain import TrackingService
@@ -200,9 +201,17 @@ def create_app() -> FastAPI:
     app.include_router(ingestion_router)
 
     # --- Profile ---
+    profile_repo = ProfileRepository(session_factory=sync_session_factory)
     latex_parser = LaTeXParser()
+    pdf_parser = PDFParser(llm=llm)
     skill_extractor = SkillExtractor()
-    profile_service = ProfileService(parser=latex_parser, skill_extractor=skill_extractor)
+    profile_service = ProfileService(
+        parser=latex_parser,
+        skill_extractor=skill_extractor,
+        repository=profile_repo,
+        pdf_parser=pdf_parser,
+        cv_directory=settings.cv_directory,
+    )
     app.state.profile = ProfileProvider(profile_service=profile_service)
     app.include_router(profile_router)
 

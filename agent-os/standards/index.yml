@@ -1,0 +1,23 @@
+# Agent OS Standards Index
+
+backend:
+  dependency-injection:
+    description: Provider classes + app.state with ports & adapters DI pattern
+  domain-events:
+    description: Typed DomainEvent subclasses with dotted event_type naming
+  kernel-and-shared-types:
+    description: Kernel schemas, events, and shared ports layout
+  llm-scorer:
+    description: BaseLLMScorer abstract class with structured output
+  module-structure:
+    description: Required api/domain/infrastructure/ports layers per module
+
+frontend:
+  domain-services:
+    description: Per-domain Angular services wrapping HTTP calls
+  models:
+    description: TypeScript interfaces organized by domain with .model.ts suffix
+  signals-state:
+    description: Angular signals for all component reactive state
+  standalone-components:
+    description: Standalone components with lazy-loaded routes, no NgModules

@@ -114,11 +114,21 @@ class ProfileService:
             return self._to_response(orm) if orm else None
         return self._profiles.get(profile_id)
 
-    async def get_current_profile(self) -> CandidateProfile | None:
-        if self._repository is None:
-            return None
-        orm = self._repository.get_latest()
-        return self._to_response(orm) if orm else None
+    async def get_current_profile(self, language: str | None = None) -> CandidateProfile | None:
+        if self._repository is not None:
+            orm = self._repository.get_latest(language=language)
+            return self._to_response(orm) if orm else None
+        # In-memory fallback
+        profiles = list(self._profiles.values())
+        if language:
+            profiles = [p for p in profiles if p.language == language]
+        return profiles[-1] if profiles else None
+
+    async def list_profiles(self) -> list[CandidateProfile]:
+        if self._repository is not None:
+            orms = self._repository.list_all()
+            return [self._to_response(orm) for orm in orms]
+        return list(self._profiles.values())
 
     def _extract_skills_from_parsed(self, parsed: ParsedCV) -> list[str]:
         for section in parsed.sections:

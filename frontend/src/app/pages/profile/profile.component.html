@@ -170,8 +170,69 @@
             }
           </div>
         </div>
-        <button (click)="resetProfile()" class="btn-secondary">Upload New CV</button>
+        <button (click)="addAnotherLanguage()" class="btn-secondary">+ Add Language</button>
       </div>
+
+      @if (uploadedLanguages().length > 1) {
+        <div class="language-tabs">
+          @for (lang of uploadedLanguages(); track lang) {
+            <button
+              class="lang-tab"
+              [class.active]="activeLanguage() === lang"
+              (click)="switchLanguage(lang)"
+            >
+              {{ lang === 'es' ? 'Espanol' : 'English' }}
+            </button>
+          }
+        </div>
+      }
+
+      @if (showUploadForm()) {
+        <div class="inline-upload">
+          <div class="inline-upload-header">
+            <h3>Upload {{ language() === 'es' ? 'Spanish' : 'English' }} CV</h3>
+            <button (click)="cancelUpload()" class="btn-secondary btn-sm">Cancel</button>
+          </div>
+          <div class="language-selector">
+            <label for="upload-language">CV Language</label>
+            <select id="upload-language" [ngModel]="language()" (ngModelChange)="language.set($event)" name="language">
+              <option value="en">English</option>
+              <option value="es">Spanish</option>
+            </select>
+          </div>
+          <div
+            class="dropzone"
+            [class.drag-over]="dragOver()"
+            [class.has-file]="selectedFile()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+          >
+            @if (!selectedFile()) {
+              <div class="dropzone-content">
+                <p class="dropzone-title">Drop your CV here</p>
+                <p class="dropzone-hint">or <label for="inline-file-input" class="browse-link">browse files</label></p>
+                <p class="dropzone-formats">PDF or LaTeX (.tex)</p>
+                <input id="inline-file-input" type="file" accept=".pdf,.tex" (change)="onFileSelected($event)" hidden />
+              </div>
+            } @else {
+              <div class="file-preview">
+                <div class="file-details">
+                  <span class="file-name">{{ selectedFile()!.name }}</span>
+                  <span class="file-size">{{ formatFileSize(selectedFile()!.size) }}</span>
+                </div>
+                <button class="file-remove" (click)="removeFile()" title="Remove file">x</button>
+              </div>
+            }
+          </div>
+          @if (error()) {
+            <div class="alert alert-error">{{ error() }}</div>
+          }
+          <button (click)="uploadFile()" [disabled]="loading() || !selectedFile()" class="btn-primary">
+            @if (loading()) { Parsing... } @else { Upload & Parse }
+          </button>
+        </div>
+      }
 
       <div class="info-grid">
         @if (profile()!.email) {
@@ -187,8 +248,8 @@
           </div>
         }
         <div class="info-item">
-          <span class="label">Language</span>
-          <span class="value">{{ profile()!.language.toUpperCase() }}</span>
+          <span class="label">CV Language</span>
+          <span class="language-badge">{{ profile()!.language === 'es' ? 'Espanol' : 'English' }}</span>
         </div>
       </div>
 

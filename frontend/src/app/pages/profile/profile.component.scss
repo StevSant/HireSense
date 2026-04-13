@@ -1,114 +1,488 @@
+// --- Variables ---
+$primary: #4f46e5;
+$primary-dark: #4338ca;
+$primary-light: #e0e7ff;
+$primary-bg: #f5f3ff;
+$text-dark: #1a1a2e;
+$text-mid: #444;
+$text-light: #6b7280;
+$border: #e2e5ea;
+$surface: #ffffff;
+$bg: #f8f9fb;
+$danger: #dc2626;
+$danger-bg: #fef2f2;
+$radius: 10px;
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+$transition: 0.2s ease;
+
+// --- Page Layout ---
 .page {
-  max-width: 900px;
-
-  h1 { font-size: 1.5rem; color: #1a1a2e; margin-bottom: 1.5rem; }
+  max-width: 860px;
 }
 
-.upload-section {
-  background: white;
+.page-header {
+  margin-bottom: 1.75rem;
+
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: $text-dark;
+    margin: 0 0 0.35rem;
+    letter-spacing: -0.02em;
+  }
+
+  .page-subtitle {
+    font-size: 0.9rem;
+    color: $text-light;
+    margin: 0;
+  }
+}
+
+// --- Loading ---
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: $text-light;
+
+  .loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid $border;
+    border-top-color: $primary;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-size: 0.9rem;
+    margin: 0;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// --- Upload Card ---
+.upload-card {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  overflow: hidden;
+}
+
+// --- Tab Bar ---
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid $border;
+  background: $bg;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: $text-light;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color $transition, border-color $transition, background $transition;
+
+  svg {
+    opacity: 0.5;
+    transition: opacity $transition;
+  }
+
+  &:hover {
+    color: $text-mid;
+    background: rgba($primary, 0.03);
+
+    svg { opacity: 0.7; }
+  }
+
+  &.active {
+    color: $primary;
+    border-bottom-color: $primary;
+    background: $surface;
+
+    svg { opacity: 1; }
+  }
+}
+
+// --- Tab Content ---
+.tab-content {
   padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-
-  h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #333; }
 }
 
-.form-group {
-  margin-bottom: 1rem;
+// --- Language Selector ---
+.language-selector {
+  margin-bottom: 1.25rem;
 
   label {
     display: block;
     margin-bottom: 0.35rem;
     font-weight: 500;
-    font-size: 0.875rem;
-    color: #333;
+    font-size: 0.825rem;
+    color: $text-mid;
   }
 
-  select, textarea {
-    width: 100%;
+  select {
     padding: 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;
+    border: 1px solid $border;
     border-radius: 6px;
     font-size: 0.875rem;
     font-family: inherit;
-    box-sizing: border-box;
+    color: $text-dark;
+    background: $surface;
+    min-width: 140px;
+    cursor: pointer;
+    transition: border-color $transition, box-shadow $transition;
 
     &:focus {
       outline: none;
-      border-color: #4f46e5;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    }
+  }
+}
+
+// --- Dropzone ---
+.dropzone {
+  border: 2px dashed $border;
+  border-radius: $radius;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+  cursor: pointer;
+  margin-bottom: 1.25rem;
+  position: relative;
+
+  &:hover {
+    border-color: rgba($primary, 0.4);
+    background: rgba($primary, 0.015);
+  }
+
+  &.drag-over {
+    border-color: $primary;
+    background: rgba($primary, 0.04);
+    box-shadow: 0 0 0 4px rgba($primary, 0.08);
+
+    .dropzone-icon svg {
+      transform: translateY(-4px);
+      color: $primary;
     }
   }
 
-  textarea { font-family: 'Consolas', 'Monaco', monospace; resize: vertical; }
+  &.has-file {
+    border-style: solid;
+    border-color: $primary-light;
+    background: rgba($primary, 0.02);
+    padding: 1rem 1.25rem;
+    cursor: default;
+  }
 }
 
-.btn-primary {
-  padding: 0.5rem 1.25rem;
-  background: #4f46e5;
-  color: white;
+.dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dropzone-icon {
+  margin-bottom: 0.5rem;
+
+  svg {
+    color: $text-light;
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+}
+
+.dropzone-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $text-dark;
+  margin: 0;
+}
+
+.dropzone-hint {
+  font-size: 0.85rem;
+  color: $text-light;
+  margin: 0;
+}
+
+.browse-link {
+  color: $primary;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color $transition;
+
+  &:hover {
+    color: $primary-dark;
+    text-decoration: underline;
+  }
+}
+
+.dropzone-formats {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 0.25rem 0 0;
+}
+
+// --- File Preview ---
+.file-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.file-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: $primary-light;
+  border-radius: 8px;
+  flex-shrink: 0;
+
+  svg { color: $primary; }
+}
+
+.file-details {
+  flex: 1;
+  min-width: 0;
+
+  .file-name {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: $text-dark;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-size {
+    font-size: 0.78rem;
+    color: $text-light;
+  }
+}
+
+.file-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   border: none;
   border-radius: 6px;
+  background: transparent;
+  color: $text-light;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background $transition, color $transition;
+
+  &:hover {
+    background: $danger-bg;
+    color: $danger;
+  }
+}
+
+// --- Textarea ---
+.form-group {
+  margin-bottom: 1.25rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-weight: 500;
+    font-size: 0.825rem;
+    color: $text-mid;
+  }
+}
+
+.tex-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid $border;
+  border-radius: 8px;
+  font-size: 0.825rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  line-height: 1.6;
+  color: $text-dark;
+  background: $bg;
+  box-sizing: border-box;
+  resize: vertical;
+  transition: border-color $transition, box-shadow $transition;
+
+  &::placeholder { color: #c0c5ce; }
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    background: $surface;
+  }
+}
+
+// --- Buttons ---
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
+  background: $primary;
+  color: white;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.875rem;
-  &:hover:not(:disabled) { background: #4338ca; }
-  &:disabled { opacity: 0.6; cursor: not-allowed; }
+  font-weight: 500;
+  transition: background $transition, transform 0.1s ease, box-shadow $transition;
+
+  &:hover:not(:disabled) {
+    background: $primary-dark;
+    box-shadow: 0 2px 8px rgba($primary, 0.25);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
 }
 
 .btn-secondary {
-  padding: 0.4rem 1rem;
-  background: white;
-  color: #4f46e5;
-  border: 1px solid #4f46e5;
-  border-radius: 6px;
+  padding: 0.5rem 1.15rem;
+  background: $surface;
+  color: $primary;
+  border: 1px solid rgba($primary, 0.3);
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.85rem;
-  &:hover { background: #f5f3ff; }
+  font-weight: 500;
+  transition: background $transition, border-color $transition;
+
+  &:hover {
+    background: $primary-bg;
+    border-color: rgba($primary, 0.5);
+  }
 }
 
+// --- Alert ---
 .alert-error {
-  background: #fef2f2;
-  color: #dc2626;
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
+  background: $danger-bg;
+  color: $danger;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
   margin-bottom: 1rem;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
+  border: 1px solid rgba($danger, 0.1);
 }
 
+// --- Profile View ---
 .profile-view {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  background: $surface;
+  padding: 1.75rem;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
 }
 
 .profile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid $border;
+}
 
-  h2 { font-size: 1.25rem; color: #1a1a2e; }
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+
+  h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: $text-dark;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, $primary, $primary-dark);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.profile-location {
+  display: block;
+  font-size: 0.82rem;
+  color: $text-light;
+  margin-top: 0.1rem;
 }
 
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 6px;
+  background: $bg;
+  border-radius: 8px;
+  border: 1px solid rgba($border, 0.6);
 
   .info-item {
     .label {
       display: block;
-      font-size: 0.75rem;
-      color: #888;
+      font-size: 0.7rem;
+      color: $text-light;
       margin-bottom: 0.15rem;
       text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 500;
     }
-    span:last-child { font-size: 0.9rem; color: #333; }
+
+    .value {
+      font-size: 0.875rem;
+      color: $text-dark;
+      font-weight: 500;
+    }
   }
 }
 
@@ -116,17 +490,18 @@
   margin-bottom: 1.25rem;
 
   h3 {
-    font-size: 0.95rem;
-    color: #555;
+    font-size: 0.8rem;
+    color: $text-light;
     margin-bottom: 0.5rem;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.05em;
+    font-weight: 600;
   }
 
   .section-content {
     font-size: 0.875rem;
-    color: #444;
-    line-height: 1.6;
+    color: $text-mid;
+    line-height: 1.65;
     white-space: pre-wrap;
   }
 }
@@ -138,10 +513,11 @@
 }
 
 .skill-tag {
-  padding: 0.25rem 0.6rem;
-  background: #e0e7ff;
-  color: #4338ca;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  padding: 0.3rem 0.65rem;
+  background: $primary-light;
+  color: $primary-dark;
+  border-radius: 6px;
+  font-size: 0.78rem;
   font-weight: 500;
+  letter-spacing: 0.01em;
 }

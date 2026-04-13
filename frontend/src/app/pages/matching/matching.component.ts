@@ -1,6 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatchingService } from '../../core/services/matching.service';
+import { ProfileService } from '../../core/services/profile.service';
+import { IngestionService } from '../../core/services/ingestion.service';
+import { NormalizedJob } from '../ingestion/models/normalized-job.model';
 import { EvaluateRequest } from './models/evaluate-request.model';
 import { EvaluationResult } from './models/evaluation-result.model';
 import { MatchResult } from './models/match-result.model';
@@ -12,7 +15,7 @@ import { MatchResult } from './models/match-result.model';
   templateUrl: './matching.component.html',
   styleUrl: './matching.component.scss',
 })
-export class MatchingComponent {
+export class MatchingComponent implements OnInit {
   jobDescription = signal('');
   jobSkills = signal('');
   cvSummary = signal('');
@@ -23,13 +26,55 @@ export class MatchingComponent {
   evaluationResult = signal<EvaluationResult | null>(null);
   evaluating = signal(false);
 
-  constructor(private matchingService: MatchingService) {}
+  jobs = signal<NormalizedJob[]>([]);
+  selectedJobId = signal<string>('manual');
+  profileLoaded = signal(false);
+
+  constructor(
+    private matchingService: MatchingService,
+    private profileService: ProfileService,
+    private ingestionService: IngestionService,
+  ) {}
+
+  ngOnInit(): void {
+    this.profileService.getCurrentProfile().subscribe({
+      next: (profile) => {
+        const summary = profile.sections
+          .map(s => s.content)
+          .join('\n\n')
+          .substring(0, 2000);
+        this.cvSummary.set(summary);
+        this.cvSkills.set(profile.skills.join(', '));
+        this.profileLoaded.set(true);
+      },
+      error: () => {},
+    });
+
+    this.ingestionService.listJobs().subscribe({
+      next: (jobs) => this.jobs.set(jobs),
+      error: () => {},
+    });
+  }
+
+  onJobSelected(jobId: string): void {
+    this.selectedJobId.set(jobId);
+    if (jobId === 'manual') {
+      this.jobDescription.set('');
+      this.jobSkills.set('');
+      return;
+    }
+    const job = this.jobs().find(j => j.id === jobId);
+    if (job) {
+      this.jobDescription.set(job.description);
+      this.jobSkills.set(job.skills.join(', '));
+    }
+  }
 
   analyze(): void {
     this.loading.set(true);
     this.error.set('');
     const payload = {
-      job_id: 'manual',
+      job_id: this.selectedJobId() !== 'manual' ? this.selectedJobId() : 'manual',
       cv_id: 'manual',
       job_description: this.jobDescription(),
       job_skills: this.jobSkills().split(',').map(s => s.trim()).filter(Boolean),

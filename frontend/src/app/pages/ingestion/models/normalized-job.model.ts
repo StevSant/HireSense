@@ -7,6 +7,10 @@ export interface NormalizedJob {
   location: string;
   salary_range: string | null;
   source: string;
+  source_type: string;
+  platform: string | null;
+  categories: string[];
+  department: string | null;
   url: string;
   posted_date: string | null;
 }

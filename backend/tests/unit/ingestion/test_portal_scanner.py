@@ -261,3 +261,69 @@ async def test_scan_filters_by_keyword() -> None:
     assert result.total_fetched == 2
     assert result.new == 1
     assert result.jobs[0].title == "Backend Engineer"
+
+
+@pytest.mark.asyncio
+async def test_scan_stores_jobs_internally() -> None:
+    """After scanning, jobs are accessible via list_jobs()."""
+    raw = _make_raw("Engineer", "Acme", "https://example.com/1")
+    adapter = FakeAdapter([raw])
+
+    config = _make_config(
+        PortalEntry(name="Acme", platform="greenhouse", board_id="acme", categories=["engineering"]),
+    )
+    adapters = {"greenhouse": adapter}
+    normalizers = {"greenhouse": FakeNormalizer()}
+    bus = FakeEventBus()
+
+    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    assert scanner.list_jobs() == []
+
+    await scanner.scan(ScanFilters())
+    stored = scanner.list_jobs()
+    assert len(stored) == 1
+    assert stored[0].title == "Engineer"
+
+
+@pytest.mark.asyncio
+async def test_scan_sets_platform_and_categories() -> None:
+    """Scanned jobs get platform and categories from the portal config."""
+    raw = _make_raw("Engineer", "Acme", "https://example.com/1")
+    adapter = FakeAdapter([raw])
+
+    config = _make_config(
+        PortalEntry(name="Acme", platform="greenhouse", board_id="acme", categories=["ai-research"]),
+    )
+    adapters = {"greenhouse": adapter}
+    normalizers = {"greenhouse": FakeNormalizer()}
+    bus = FakeEventBus()
+
+    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    result = await scanner.scan(ScanFilters())
+
+    assert result.jobs[0].source == "Acme"
+    assert result.jobs[0].platform == "greenhouse"
+    assert result.jobs[0].categories == ["ai-research"]
+
+
+@pytest.mark.asyncio
+async def test_scan_skips_disabled_portals() -> None:
+    """Disabled portals are not scanned."""
+    raw = _make_raw()
+    adapter_enabled = FakeAdapter([raw])
+    adapter_disabled = FakeAdapter([raw])
+
+    config = _make_config(
+        PortalEntry(name="EnabledCo", platform="greenhouse", board_id="enabled", categories=[], enabled=True),
+        PortalEntry(name="DisabledCo", platform="lever", board_id="disabled", categories=[], enabled=False),
+    )
+    adapters = {"greenhouse": adapter_enabled, "lever": adapter_disabled}
+    normalizers = {"greenhouse": FakeNormalizer(), "lever": FakeNormalizer()}
+    bus = FakeEventBus()
+
+    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    result = await scanner.scan(ScanFilters())
+
+    assert result.new == 1
+    assert len(adapter_enabled.calls) == 1
+    assert len(adapter_disabled.calls) == 0

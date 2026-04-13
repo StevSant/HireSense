@@ -17,6 +17,8 @@ class FakeLLM:
             "recommendations": ["Learn container orchestration"]
         }"""
 
+
+class FakeEmbedder:
     async def embed(self, texts: list[str]) -> list[list[float]]:
         return [[1.0, 0.8, 0.6] for _ in texts]
 
@@ -31,7 +33,7 @@ async def test_orchestrator_produces_match_result() -> None:
 
     bus.subscribe("match.completed", capture)
 
-    orchestrator = MatchingOrchestrator(llm=FakeLLM(), event_bus=bus)
+    orchestrator = MatchingOrchestrator(llm=FakeLLM(), event_bus=bus, embedding=FakeEmbedder())
     result = await orchestrator.analyze(
         job_id="job-1",
         cv_id="cv-1",
@@ -39,8 +41,6 @@ async def test_orchestrator_produces_match_result() -> None:
         job_skills=["python", "fastapi", "kubernetes"],
         cv_summary="Experienced Python developer with FastAPI projects",
         cv_skills=["python", "fastapi", "django"],
-        cv_embedding=[1.0, 0.8, 0.6],
-        job_embedding=[0.9, 0.85, 0.55],
     )
     assert result.job_id == "job-1"
     assert result.cv_id == "cv-1"
@@ -57,7 +57,7 @@ async def test_orchestrator_produces_match_result() -> None:
 
 
 @pytest.mark.asyncio
-async def test_orchestrator_without_embeddings() -> None:
+async def test_orchestrator_without_embedding_port() -> None:
     bus = InMemoryEventBus()
     orchestrator = MatchingOrchestrator(llm=FakeLLM(), event_bus=bus)
     result = await orchestrator.analyze(

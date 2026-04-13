@@ -92,6 +92,16 @@
     }
   </div>
 
+  @if (loading() || scanning()) {
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <div class="loading-text">
+        <h3>{{ scanning() ? 'Scanning portals...' : 'Fetching jobs...' }}</h3>
+        <p>Pulling from configured sources. This may take a moment.</p>
+      </div>
+    </div>
+  }
+
   @if (jobs().length > 0) {
     <div class="stats">
       <span class="stat">{{ jobs().length }} jobs found</span>
@@ -138,7 +148,7 @@
         </tbody>
       </table>
     </div>
-  } @else if (!loading()) {
+  } @else if (!loading() && !scanning()) {
     <div class="empty-state">
       <p>No jobs loaded yet. Click "Fetch Jobs" to pull from configured sources.</p>
     </div>

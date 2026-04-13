@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatchingService } from '../../core/services/matching.service';
 import { ProfileService } from '../../core/services/profile.service';
@@ -33,19 +33,34 @@ export class MatchingComponent implements OnInit {
   selectedJobId = signal<string>('manual');
   profileLoaded = signal(false);
 
+  /** Available CV languages from uploaded profiles */
+  availableLanguages = computed(() => Object.keys(this.profileService.profiles()));
+  selectedCvLanguage = signal('en');
+
+  /** Profile skills as array for chip display */
+  profileSkills = computed(() => {
+    const profiles = this.profileService.profiles();
+    const lang = this.selectedCvLanguage();
+    const profile = profiles[lang] ?? Object.values(profiles)[0];
+    return profile?.skills ?? [];
+  });
+
   constructor() {}
 
   ngOnInit(): void {
-    // Auto-fill from persisted profile if available
-    const profile = this.profileService.profile();
-    if (profile) {
-      this.prefillFromProfile(profile);
-    } else {
-      // Try fetching from server
-      this.profileService.getCurrentProfile().subscribe({
-        next: (p) => this.prefillFromProfile(p),
-        error: () => {},
+    // Load profiles if not cached
+    if (this.availableLanguages().length === 0) {
+      this.profileService.listProfiles().subscribe({
+        next: () => this.applyProfile(),
+        error: () => {
+          this.profileService.getCurrentProfile().subscribe({
+            next: () => this.applyProfile(),
+            error: () => {},
+          });
+        },
       });
+    } else {
+      this.applyProfile();
     }
 
     // If no jobs in cache, try fetching from server
@@ -57,7 +72,20 @@ export class MatchingComponent implements OnInit {
     }
   }
 
-  private prefillFromProfile(profile: { sections: { content: string }[]; skills: string[] }): void {
+  onCvLanguageChange(lang: string): void {
+    this.selectedCvLanguage.set(lang);
+    this.applyProfile();
+  }
+
+  private applyProfile(): void {
+    const profiles = this.profileService.profiles();
+    const lang = this.selectedCvLanguage();
+    const profile = profiles[lang] ?? Object.values(profiles)[0];
+    if (!profile) return;
+
+    // Update selected language to match what we actually found
+    this.selectedCvLanguage.set(profile.language);
+
     const summary = profile.sections
       .map(s => s.content)
       .join('\n\n')
@@ -65,6 +93,29 @@ export class MatchingComponent implements OnInit {
     this.cvSummary.set(summary);
     this.cvSkills.set(profile.skills.join(', '));
     this.profileLoaded.set(true);
+  }
+
+  toggleSkill(skill: string): void {
+    const current = this.cvSkills()
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    const lower = skill.toLowerCase();
+    const idx = current.findIndex(s => s.toLowerCase() === lower);
+    if (idx >= 0) {
+      current.splice(idx, 1);
+    } else {
+      current.push(skill);
+    }
+    this.cvSkills.set(current.join(', '));
+  }
+
+  isSkillSelected(skill: string): boolean {
+    const current = this.cvSkills()
+      .split(',')
+      .map(s => s.trim().toLowerCase())
+      .filter(Boolean);
+    return current.includes(skill.toLowerCase());
   }
 
   onJobSelected(jobId: string): void {

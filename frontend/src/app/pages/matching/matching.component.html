@@ -6,13 +6,29 @@
 
   @if (!result()) {
     <div class="match-form">
+      <!-- CV Language Selector -->
+      @if (availableLanguages().length > 1) {
+        <div class="cv-language-bar">
+          <span class="cv-language-label">Compare using:</span>
+          @for (lang of availableLanguages(); track lang) {
+            <button
+              class="cv-lang-btn"
+              [class.active]="selectedCvLanguage() === lang"
+              (click)="onCvLanguageChange(lang)"
+            >
+              {{ lang === 'es' ? 'Spanish CV' : 'English CV' }}
+            </button>
+          }
+        </div>
+      }
+
       @if (profileLoaded()) {
         <div class="auto-fill-notice">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
-          Profile loaded — CV fields auto-filled from your profile
+          Profile loaded ({{ selectedCvLanguage() === 'es' ? 'Spanish' : 'English' }}) — CV fields auto-filled
         </div>
       }
 
@@ -49,10 +65,28 @@
           <input [ngModel]="jobSkills()" (ngModelChange)="jobSkills.set($event)" name="jobSkills" placeholder="python, fastapi, kubernetes" />
         </div>
         <div class="form-group">
-          <label>Your Skills (comma-separated)</label>
+          <label>Your Skills</label>
           <input [ngModel]="cvSkills()" (ngModelChange)="cvSkills.set($event)" name="cvSkills" placeholder="python, fastapi, django" />
         </div>
       </div>
+
+      <!-- Clickable skill chips from profile -->
+      @if (profileSkills().length > 0) {
+        <div class="skill-picker">
+          <label>Select from your profile skills:</label>
+          <div class="skill-chips">
+            @for (skill of profileSkills(); track skill) {
+              <button
+                class="skill-chip"
+                [class.selected]="isSkillSelected(skill)"
+                (click)="toggleSkill(skill)"
+              >
+                {{ skill }}
+              </button>
+            }
+          </div>
+        </div>
+      }
       @if (error()) {
         <div class="alert alert-error">{{ error() }}</div>
       }

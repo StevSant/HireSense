@@ -95,6 +95,86 @@ $transition: 0.2s ease;
   box-shadow: $shadow-sm;
 }
 
+// --- CV Language Bar ---
+.cv-language-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.cv-language-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $text-light;
+  margin-right: 0.25rem;
+}
+
+.cv-lang-btn {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid $border;
+  border-radius: 6px;
+  background: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $text-light;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+  }
+
+  &.active {
+    background: $primary;
+    border-color: $primary;
+    color: white;
+  }
+}
+
+// --- Skill Picker ---
+.skill-picker {
+  margin-bottom: 1.25rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.8125rem;
+    color: $text-mid;
+  }
+}
+
+.skill-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.skill-chip {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid $border;
+  border-radius: 9999px;
+  background: none;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: $text-light;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+  }
+
+  &.selected {
+    background: $primary-light;
+    border-color: rgba($primary, 0.3);
+    color: $primary-dark;
+  }
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

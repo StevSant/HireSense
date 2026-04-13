@@ -52,9 +52,8 @@ class Settings(BaseSettings):
     llm_provider: str = "anthropic"
     llm_api_key: str
     llm_model: str = "claude-sonnet-4-6"
-    embedding_provider: str = "openai"
-    embedding_model: str = "text-embedding-3-small"
-    embedding_api_key: str
+    embedding_model: str = "all-mpnet-base-v2"
+    embedding_device: str = "cpu"
 
     # Vector Store
     vector_store_provider: str = "pgvector"

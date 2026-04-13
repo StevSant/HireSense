@@ -16,4 +16,15 @@ export class ProfileService {
   uploadCV(request: UploadCVRequest): Observable<CandidateProfile> {
     return this.http.post<CandidateProfile>(`${environment.apiUrl}/profile/upload`, request);
   }
+
+  uploadFile(file: File, language: string): Observable<CandidateProfile> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('language', language);
+    return this.http.post<CandidateProfile>(`${environment.apiUrl}/profile/upload-file`, formData);
+  }
+
+  getCurrentProfile(): Observable<CandidateProfile> {
+    return this.http.get<CandidateProfile>(`${environment.apiUrl}/profile/current`);
+  }
 }

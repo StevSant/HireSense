@@ -29,6 +29,15 @@
       <button (click)="analyze()" [disabled]="loading()" class="btn-primary">
         @if (loading()) { Analyzing... } @else { Analyze Match }
       </button>
+      @if (loading()) {
+        <div class="loading-card" style="margin-top: 1rem">
+          <div class="spinner"></div>
+          <div class="loading-text">
+            <h3>Analyzing match...</h3>
+            <p>Comparing skills, experience, and generating semantic embeddings.</p>
+          </div>
+        </div>
+      }
     </div>
   } @else {
     <div class="results">

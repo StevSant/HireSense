@@ -85,8 +85,17 @@
       </div>
       <div class="batch-actions">
         <button (click)="evaluateAll()" [disabled]="evaluating() || applications().length === 0" class="btn-primary">
-          @if (evaluating()) { Evaluating {{ applications().length }} jobs... } @else { Evaluate All }
+          @if (evaluating()) { Evaluating... } @else { Evaluate All }
         </button>
+        @if (evaluating()) {
+          <div class="loading-card">
+            <div class="spinner"></div>
+            <div class="loading-text">
+              <h3>Evaluating {{ applications().length }} applications...</h3>
+              <p>Running 10-dimension scoring across all tracked jobs. This may take a moment.</p>
+            </div>
+          </div>
+        }
       </div>
       <div class="table-container">
         <table>

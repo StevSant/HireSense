@@ -126,10 +126,21 @@ class ProfileService:
         return profiles[-1] if profiles else None
 
     async def list_profiles(self) -> list[CandidateProfile]:
+        """Return the latest profile per language (deduplicated)."""
         if self._repository is not None:
             orms = self._repository.list_all()
-            return [self._to_response(orm) for orm in orms]
-        return list(self._profiles.values())
+            all_profiles = [self._to_response(orm) for orm in orms]
+        else:
+            all_profiles = list(self._profiles.values())
+
+        # Keep only the latest (first, since ordered by created_at DESC) per language
+        seen_languages: set[str] = set()
+        result: list[CandidateProfile] = []
+        for profile in all_profiles:
+            if profile.language not in seen_languages:
+                seen_languages.add(profile.language)
+                result.append(profile)
+        return result
 
     _SKILL_SECTION_KEYWORDS = {"SKILL", "HABILIDAD", "COMPETENCIA", "TÉCNICA", "TECNICA"}
 

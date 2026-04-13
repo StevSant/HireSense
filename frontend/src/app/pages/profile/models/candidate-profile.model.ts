@@ -7,6 +7,7 @@ export interface CandidateProfile {
   phone: string | null;
   location: string | null;
   sections: CVSection[];
+  raw_tex: string;
   language: string;
   skills: string[];
 }

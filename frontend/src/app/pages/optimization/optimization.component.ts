@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { OptimizationService } from '../../core/services/optimization.service';
+import { ProfileService } from '../../core/services/profile.service';
 import { OptimizationResult } from './models/optimization-result.model';
 
 @Component({
@@ -10,7 +11,10 @@ import { OptimizationResult } from './models/optimization-result.model';
   templateUrl: './optimization.component.html',
   styleUrl: './optimization.component.scss',
 })
-export class OptimizationComponent {
+export class OptimizationComponent implements OnInit {
+  private optimizationService = inject(OptimizationService);
+  private profileService = inject(ProfileService);
+
   matchId = signal('');
   jobId = signal('');
   cvId = signal('');
@@ -22,7 +26,101 @@ export class OptimizationComponent {
   loading = signal(false);
   error = signal('');
 
-  constructor(private optimizationService: OptimizationService) {}
+  // File upload
+  selectedFile = signal<File | null>(null);
+  dragOver = signal(false);
+  inputMode = signal<'profile' | 'paste' | 'file'>('profile');
+
+  // Profile-based
+  availableLanguages = computed(() => Object.keys(this.profileService.profiles()));
+  selectedLanguage = signal('en');
+
+  ngOnInit(): void {
+    if (this.availableLanguages().length === 0) {
+      this.profileService.listProfiles().subscribe({
+        next: () => this.prefillFromProfile(),
+        error: () => {},
+      });
+    } else {
+      this.prefillFromProfile();
+    }
+  }
+
+  onLanguageChange(lang: string): void {
+    this.selectedLanguage.set(lang);
+    this.prefillFromProfile();
+  }
+
+  onInputModeChange(mode: 'profile' | 'paste' | 'file'): void {
+    this.inputMode.set(mode);
+    if (mode === 'profile') {
+      this.prefillFromProfile();
+    } else {
+      this.originalTex.set('');
+      this.selectedFile.set(null);
+    }
+  }
+
+  private prefillFromProfile(): void {
+    const profiles = this.profileService.profiles();
+    const lang = this.selectedLanguage();
+    const profile = profiles[lang] ?? Object.values(profiles)[0];
+    if (!profile) {
+      this.inputMode.set('paste');
+      return;
+    }
+    this.selectedLanguage.set(profile.language);
+    if (profile.raw_tex) {
+      this.originalTex.set(profile.raw_tex);
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.dragOver.set(true);
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.dragOver.set(false);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.dragOver.set(false);
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.handleFile(files[0]);
+    }
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.handleFile(input.files[0]);
+    }
+  }
+
+  removeFile(): void {
+    this.selectedFile.set(null);
+    this.originalTex.set('');
+  }
+
+  private handleFile(file: File): void {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (ext !== 'tex') {
+      this.error.set('Only .tex files are supported for optimization');
+      return;
+    }
+    this.error.set('');
+    this.selectedFile.set(file);
+    // Read file content
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.originalTex.set(reader.result as string);
+    };
+    reader.readAsText(file);
+  }
 
   optimize(): void {
     this.loading.set(true);
@@ -59,5 +157,11 @@ export class OptimizationComponent {
     a.download = 'optimized_cv.tex';
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   }
 }

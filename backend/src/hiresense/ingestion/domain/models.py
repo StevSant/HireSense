@@ -27,6 +27,8 @@ class NormalizedJob(BaseModel):
     url: str
     posted_date: datetime | None = None
     department: str | None = None
+    platform: str | None = None
+    categories: list[str] = Field(default_factory=list)
 
     def dedup_key(self) -> str:
         raw = f"{self.source}:{self.title.lower().strip()}:{self.company.lower().strip()}:{self.url}"

@@ -32,6 +32,38 @@ def test_normalized_job_from_raw() -> None:
     assert "fastapi" in job.skills
 
 
+def test_normalized_job_has_platform_and_categories() -> None:
+    job = NormalizedJob(
+        id="job-2",
+        title="AI Researcher",
+        company="DeepMind",
+        description="Research on large language models",
+        source="greenhouse",
+        source_type="portal",
+        language="en",
+        url="https://boards.greenhouse.io/deepmind/jobs/2",
+        platform="greenhouse",
+        categories=["ai-research"],
+    )
+    assert job.platform == "greenhouse"
+    assert job.categories == ["ai-research"]
+
+
+def test_normalized_job_defaults_platform_and_categories() -> None:
+    job = NormalizedJob(
+        id="job-3",
+        title="Backend Engineer",
+        company="Acme Corp",
+        description="Build APIs",
+        source="remotive",
+        source_type="api",
+        language="en",
+        url="https://example.com/job/3",
+    )
+    assert job.platform is None
+    assert job.categories == []
+
+
 def test_normalized_job_deduplication_key() -> None:
     job = NormalizedJob(
         id="job-1",

@@ -12,6 +12,7 @@ class PortalEntry(BaseModel):
     platform: Literal["greenhouse", "lever", "ashby"]
     board_id: str
     categories: list[str] = []
+    enabled: bool = True
 
 
 class PortalsConfig(BaseModel):

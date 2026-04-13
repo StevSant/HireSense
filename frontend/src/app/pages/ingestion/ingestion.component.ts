@@ -1,15 +1,20 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { IngestionService } from '../../core/services/ingestion.service';
+import { IngestionService, JobFilters } from '../../core/services/ingestion.service';
 import { TrackingService } from '../../core/services/tracking.service';
 import { CreateApplicationRequest } from '../../core/models/create-application-request.model';
+import { NormalizedJob } from './models/normalized-job.model';
 import { PortalEntry } from './models/portal-entry.model';
 import { ScanPortalsRequest } from './models/scan-portals-request.model';
 import { ScanError } from './models/scan-result.model';
+import { PaginationComponent } from './components/pagination/pagination.component';
+import { JobFiltersComponent } from './components/job-filters/job-filters.component';
+import { JobDetailPanelComponent } from './components/job-detail-panel/job-detail-panel.component';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-ingestion',
   standalone: true,
-  imports: [],
+  imports: [PaginationComponent, JobFiltersComponent, JobDetailPanelComponent, DatePipe],
   templateUrl: './ingestion.component.html',
   styleUrl: './ingestion.component.scss',
 })
@@ -17,14 +22,31 @@ export class IngestionComponent implements OnInit {
   private ingestionService = inject(IngestionService);
   private trackingService = inject(TrackingService);
 
-  /** Read from the singleton service — persists across navigation. */
-  jobs = computed(() => this.ingestionService.jobs());
   trackedJobIds = computed(() => this.ingestionService.trackedJobIds());
 
+  // Tab state
+  activeTab = signal<'boards' | 'portals'>('boards');
+
+  // Jobs + pagination
+  jobs = signal<NormalizedJob[]>([]);
+  total = signal(0);
+  page = signal(1);
+  pageSize = signal(20);
+  totalPages = signal(0);
+
+  // Filters
+  filters = signal<JobFilters>({});
+  boardSources = signal<string[]>([
+    'remotive', 'remoteok', 'jobicy', 'himalayas',
+    'hn_hiring', 'weworkremotely', 'getonboard', 'linkedin',
+  ]);
+  portalSources = signal<string[]>([]);
+
+  // Loading
   loading = signal(false);
   error = signal('');
 
-  // Portal scanning state
+  // Portal scan state
   portals = signal<PortalEntry[]>([]);
   availableCategories = signal<string[]>([]);
   selectedCategories = signal<string[]>([]);
@@ -33,12 +55,40 @@ export class IngestionComponent implements OnInit {
   scanning = signal(false);
   scanSummary = signal('');
   scanErrors = signal<ScanError[]>([]);
-  showFilters = signal(false);
+  showScanFilters = signal(false);
 
-  constructor() {}
+  // Detail panel
+  selectedJob = signal<NormalizedJob | null>(null);
 
   ngOnInit(): void {
     this.loadPortals();
+    this.loadJobs();
+  }
+
+  switchTab(tab: 'boards' | 'portals'): void {
+    this.activeTab.set(tab);
+    this.page.set(1);
+    this.filters.set({});
+    this.loadJobs();
+  }
+
+  loadJobs(): void {
+    this.loading.set(true);
+    this.error.set('');
+    this.ingestionService
+      .queryJobs(this.activeTab(), this.page(), this.pageSize(), this.filters())
+      .subscribe({
+        next: (res) => {
+          this.jobs.set(res.jobs);
+          this.total.set(res.total);
+          this.totalPages.set(res.total_pages);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.error.set(err.error?.detail || 'Failed to load jobs');
+          this.loading.set(false);
+        },
+      });
   }
 
   fetchJobs(): void {
@@ -46,7 +96,7 @@ export class IngestionComponent implements OnInit {
     this.error.set('');
     this.ingestionService.fetchJobs().subscribe({
       next: () => {
-        this.loading.set(false);
+        this.loadJobs();
       },
       error: (err) => {
         this.error.set(err.error?.detail || 'Failed to fetch jobs');
@@ -60,12 +110,10 @@ export class IngestionComponent implements OnInit {
       next: (portals) => {
         this.portals.set(portals);
         const allCategories = portals.flatMap((p) => p.categories);
-        const unique = [...new Set(allCategories)].sort();
-        this.availableCategories.set(unique);
+        this.availableCategories.set([...new Set(allCategories)].sort());
+        this.portalSources.set(portals.map((p) => p.name));
       },
-      error: () => {
-        // Non-fatal: portal list is optional
-      },
+      error: () => {},
     });
   }
 
@@ -75,16 +123,10 @@ export class IngestionComponent implements OnInit {
     this.scanErrors.set([]);
 
     const body: ScanPortalsRequest = {};
-    if (this.selectedCategories().length > 0) {
-      body.categories = this.selectedCategories();
-    }
-    if (this.selectedCompanies().length > 0) {
-      body.companies = this.selectedCompanies();
-    }
+    if (this.selectedCategories().length > 0) body.categories = this.selectedCategories();
+    if (this.selectedCompanies().length > 0) body.companies = this.selectedCompanies();
     const kw = this.scanKeyword().trim();
-    if (kw) {
-      body.keyword = kw;
-    }
+    if (kw) body.keyword = kw;
 
     this.ingestionService.scanPortals(body).subscribe({
       next: (res) => {
@@ -93,6 +135,7 @@ export class IngestionComponent implements OnInit {
         );
         this.scanErrors.set(res.errors);
         this.scanning.set(false);
+        this.loadJobs();
       },
       error: (err) => {
         this.scanSummary.set(err.error?.detail || 'Scan failed.');
@@ -101,37 +144,55 @@ export class IngestionComponent implements OnInit {
     });
   }
 
-  toggleFilters(): void {
-    this.showFilters.update((v) => !v);
+  onFiltersChange(newFilters: JobFilters): void {
+    this.filters.set(newFilters);
+    this.page.set(1);
+    this.loadJobs();
+  }
+
+  onPageChange(newPage: number): void {
+    this.page.set(newPage);
+    this.loadJobs();
+  }
+
+  onPageSizeChange(newSize: number): void {
+    this.pageSize.set(newSize);
+    this.page.set(1);
+    this.loadJobs();
+  }
+
+  openDetail(job: NormalizedJob): void {
+    this.selectedJob.set(job);
+  }
+
+  closeDetail(): void {
+    this.selectedJob.set(null);
+  }
+
+  toggleScanFilters(): void {
+    this.showScanFilters.update((v) => !v);
   }
 
   onCategoryChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
-    const selected = Array.from(select.selectedOptions).map((o) => o.value);
-    this.selectedCategories.set(selected);
+    this.selectedCategories.set(Array.from(select.selectedOptions).map((o) => o.value));
   }
 
   onCompanyChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
-    const selected = Array.from(select.selectedOptions).map((o) => o.value);
-    this.selectedCompanies.set(selected);
+    this.selectedCompanies.set(Array.from(select.selectedOptions).map((o) => o.value));
   }
 
-  onKeywordInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.scanKeyword.set(input.value);
+  onScanKeywordInput(event: Event): void {
+    this.scanKeyword.set((event.target as HTMLInputElement).value);
   }
 
   trackJob(jobId: string): void {
     const body: CreateApplicationRequest = { job_id: jobId };
     this.trackingService.create(body).subscribe({
-      next: () => {
-        this.ingestionService.markTracked(jobId);
-      },
+      next: () => this.ingestionService.markTracked(jobId),
       error: (err) => {
-        if (err.status === 409) {
-          this.ingestionService.markTracked(jobId);
-        }
+        if (err.status === 409) this.ingestionService.markTracked(jobId);
       },
     });
   }

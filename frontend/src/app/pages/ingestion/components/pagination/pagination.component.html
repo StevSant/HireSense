@@ -1,0 +1,26 @@
+<div class="pagination-bar">
+  <span class="pagination-info">
+    Showing {{ showingFrom }}–{{ showingTo }} of {{ total() | number }} jobs
+  </span>
+
+  <div class="pagination-controls">
+    <label class="page-size-label">
+      Rows per page:
+      <select [value]="pageSize()" (change)="onPageSizeChange($event)" class="page-size-select">
+        <option value="20">20</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+    </label>
+
+    <button (click)="onPrev()" [disabled]="page() <= 1" class="btn-page">
+      ← Prev
+    </button>
+
+    <span class="page-indicator">Page {{ page() }} of {{ totalPages() }}</span>
+
+    <button (click)="onNext()" [disabled]="page() >= totalPages()" class="btn-page">
+      Next →
+    </button>
+  </div>
+</div>

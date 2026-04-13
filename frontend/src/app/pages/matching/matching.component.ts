@@ -26,7 +26,7 @@ export class MatchingComponent implements OnInit {
   evaluationResult = signal<EvaluationResult | null>(null);
   evaluating = signal(false);
 
-  jobs = signal<NormalizedJob[]>([]);
+  jobs = this.ingestionService.jobs;
   selectedJobId = signal<string>('manual');
   profileLoaded = signal(false);
 
@@ -37,23 +37,35 @@ export class MatchingComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.profileService.getCurrentProfile().subscribe({
-      next: (profile) => {
-        const summary = profile.sections
-          .map(s => s.content)
-          .join('\n\n')
-          .substring(0, 2000);
-        this.cvSummary.set(summary);
-        this.cvSkills.set(profile.skills.join(', '));
-        this.profileLoaded.set(true);
-      },
-      error: () => {},
-    });
+    // Auto-fill from persisted profile if available
+    const profile = this.profileService.profile();
+    if (profile) {
+      this.prefillFromProfile(profile);
+    } else {
+      // Try fetching from server
+      this.profileService.getCurrentProfile().subscribe({
+        next: (p) => this.prefillFromProfile(p),
+        error: () => {},
+      });
+    }
 
-    this.ingestionService.listJobs().subscribe({
-      next: (jobs) => this.jobs.set(jobs),
-      error: () => {},
-    });
+    // If no jobs in cache, try fetching from server
+    if (this.jobs().length === 0) {
+      this.ingestionService.listJobs().subscribe({
+        next: (jobs) => this.ingestionService.jobs.set(jobs),
+        error: () => {},
+      });
+    }
+  }
+
+  private prefillFromProfile(profile: { sections: { content: string }[]; skills: string[] }): void {
+    const summary = profile.sections
+      .map(s => s.content)
+      .join('\n\n')
+      .substring(0, 2000);
+    this.cvSummary.set(summary);
+    this.cvSkills.set(profile.skills.join(', '));
+    this.profileLoaded.set(true);
   }
 
   onJobSelected(jobId: string): void {

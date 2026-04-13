@@ -35,13 +35,16 @@ class ProfileService:
     async def parse_and_create(self, tex_content: str, language: str = "en") -> CandidateProfile:
         parsed = self._parser.parse(tex_content)
 
+        # Extract skills from raw LaTeX content (before stripping)
         skills: list[str] = []
         for section in parsed.sections:
             if "SKILL" in section.name.upper():
                 skills = self._skill_extractor.extract_from_tabular(section.content)
                 break
 
-        sections = [CVSection(name=s.name, content=s.content) for s in parsed.sections]
+        # Strip LaTeX for display
+        cleaned_sections = self._parser.strip_section_content(parsed.sections)
+        sections = [CVSection(name=s.name, content=s.content) for s in cleaned_sections]
 
         profile_id = str(uuid.uuid4())
         profile = CandidateProfile(
@@ -86,7 +89,9 @@ class ProfileService:
         profile_id = str(uuid.uuid4())
         self._save_original_file(profile_id, filename, file_bytes)
 
-        sections = [CVSection(name=s.name, content=s.content) for s in parsed.sections]
+        # Strip LaTeX for display
+        cleaned_sections = self._parser.strip_section_content(parsed.sections)
+        sections = [CVSection(name=s.name, content=s.content) for s in cleaned_sections]
 
         profile = CandidateProfile(
             id=profile_id,

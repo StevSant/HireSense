@@ -1,4 +1,4 @@
-import { Component, computed, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { IngestionService } from '../../core/services/ingestion.service';
 import { TrackingService } from '../../core/services/tracking.service';
 import { CreateApplicationRequest } from '../../core/models/create-application-request.model';
@@ -14,6 +14,9 @@ import { ScanError } from './models/scan-result.model';
   styleUrl: './ingestion.component.scss',
 })
 export class IngestionComponent implements OnInit {
+  private ingestionService = inject(IngestionService);
+  private trackingService = inject(TrackingService);
+
   /** Read from the singleton service — persists across navigation. */
   jobs = computed(() => this.ingestionService.jobs());
   trackedJobIds = computed(() => this.ingestionService.trackedJobIds());
@@ -32,10 +35,7 @@ export class IngestionComponent implements OnInit {
   scanErrors = signal<ScanError[]>([]);
   showFilters = signal(false);
 
-  constructor(
-    private ingestionService: IngestionService,
-    private trackingService: TrackingService,
-  ) {}
+  constructor() {}
 
   ngOnInit(): void {
     this.loadPortals();

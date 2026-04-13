@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProfileService } from '../../core/services/profile.service';
 import { CandidateProfile } from './models/candidate-profile.model';
@@ -11,6 +11,8 @@ import { CandidateProfile } from './models/candidate-profile.model';
   styleUrl: './profile.component.scss',
 })
 export class ProfileComponent implements OnInit {
+  private profileService = inject(ProfileService);
+
   activeTab = signal<'upload' | 'paste'>('upload');
   selectedFile = signal<File | null>(null);
   dragOver = signal(false);
@@ -21,7 +23,7 @@ export class ProfileComponent implements OnInit {
   initialLoading = signal(true);
   error = signal('');
 
-  constructor(private profileService: ProfileService) {}
+  constructor() {}
 
   ngOnInit(): void {
     if (!this.profile()) {

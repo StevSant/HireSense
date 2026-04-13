@@ -1,9 +1,8 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatchingService } from '../../core/services/matching.service';
 import { ProfileService } from '../../core/services/profile.service';
 import { IngestionService } from '../../core/services/ingestion.service';
-import { NormalizedJob } from '../ingestion/models/normalized-job.model';
 import { EvaluateRequest } from './models/evaluate-request.model';
 import { EvaluationResult } from './models/evaluation-result.model';
 import { MatchResult } from './models/match-result.model';
@@ -16,6 +15,10 @@ import { MatchResult } from './models/match-result.model';
   styleUrl: './matching.component.scss',
 })
 export class MatchingComponent implements OnInit {
+  private matchingService = inject(MatchingService);
+  private profileService = inject(ProfileService);
+  private ingestionService = inject(IngestionService);
+
   jobDescription = signal('');
   jobSkills = signal('');
   cvSummary = signal('');
@@ -30,11 +33,7 @@ export class MatchingComponent implements OnInit {
   selectedJobId = signal<string>('manual');
   profileLoaded = signal(false);
 
-  constructor(
-    private matchingService: MatchingService,
-    private profileService: ProfileService,
-    private ingestionService: IngestionService,
-  ) {}
+  constructor() {}
 
   ngOnInit(): void {
     // Auto-fill from persisted profile if available

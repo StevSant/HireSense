@@ -25,10 +25,17 @@ class EvaluationResult(BaseModel):
 
 
 class MatchingOrchestrator:
-    def __init__(self, llm: Any, event_bus: Any, dimension_scorers: list[Any] | None = None) -> None:
+    def __init__(
+        self,
+        llm: Any,
+        event_bus: Any,
+        dimension_scorers: list[Any] | None = None,
+        embedding: Any | None = None,
+    ) -> None:
         self._llm = llm
         self._event_bus = event_bus
         self._dimension_scorers = dimension_scorers or []
+        self._embedding = embedding
         self._semantic_scorer = SemanticScorer()
         self._skill_matcher = SkillMatcher()
 
@@ -64,6 +71,9 @@ class MatchingOrchestrator:
         # 1. Semantic score
         if cv_embedding and job_embedding:
             semantic_score = self._semantic_scorer.score(cv_embedding, job_embedding)
+        elif self._embedding and cv_summary and job_description:
+            embeddings = await self._embedding.embed([cv_summary, job_description])
+            semantic_score = self._semantic_scorer.score(embeddings[0], embeddings[1])
         else:
             semantic_score = 0.0
 

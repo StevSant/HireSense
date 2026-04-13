@@ -1,111 +1,118 @@
 <div class="page">
-  <div class="page-header">
-    <h1>Job Ingestion</h1>
-    <button (click)="fetchJobs()" [disabled]="loading()" class="btn-primary">
-      @if (loading()) { Fetching... } @else { Fetch Jobs }
-    </button>
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <div class="tab-list">
+      <button
+        (click)="switchTab('boards')"
+        class="tab-btn"
+        [class.active]="activeTab() === 'boards'"
+      >
+        Job Boards
+      </button>
+      <button
+        (click)="switchTab('portals')"
+        class="tab-btn"
+        [class.active]="activeTab() === 'portals'"
+      >
+        Company Portals
+      </button>
+    </div>
+    <div class="tab-actions">
+      @if (activeTab() === 'boards') {
+        <button (click)="fetchJobs()" [disabled]="loading()" class="btn-primary">
+          @if (loading()) { Fetching... } @else { Fetch Jobs }
+        </button>
+      } @else {
+        <button (click)="scanPortals()" [disabled]="scanning()" class="btn-primary">
+          @if (scanning()) { Scanning... } @else { Scan Portals }
+        </button>
+      }
+    </div>
   </div>
 
   @if (error()) {
     <div class="alert alert-error">{{ error() }}</div>
   }
 
-  <!-- Portal Scanning Section -->
-  <div class="section">
-    <div class="section-header">
-      <h2>Portal Scanning</h2>
-      <div class="section-actions">
-        <button (click)="toggleFilters()" class="btn-secondary">
-          @if (showFilters()) { Hide Filters } @else { Show Filters }
-        </button>
-        <button (click)="scanPortals()" [disabled]="scanning()" class="btn-primary">
-          @if (scanning()) { Scanning... } @else { Scan Portals }
+  <!-- Scan filters (portals tab only) -->
+  @if (activeTab() === 'portals') {
+    <div class="section">
+      <div class="section-header">
+        <h2>Scan Filters</h2>
+        <button (click)="toggleScanFilters()" class="btn-secondary">
+          @if (showScanFilters()) { Hide Scan Filters } @else { Show Scan Filters }
         </button>
       </div>
+
+      @if (showScanFilters()) {
+        <div class="scan-filter-panel">
+          <div class="filter-group">
+            <label for="category-select">Categories</label>
+            <select id="category-select" multiple (change)="onCategoryChange($event)" class="filter-select">
+              @for (cat of availableCategories(); track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="company-select">Companies</label>
+            <select id="company-select" multiple (change)="onCompanyChange($event)" class="filter-select">
+              @for (portal of portals(); track portal.name) {
+                <option [value]="portal.name">{{ portal.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="scan-keyword-input">Keyword</label>
+            <input
+              id="scan-keyword-input"
+              type="text"
+              [value]="scanKeyword()"
+              (input)="onScanKeywordInput($event)"
+              placeholder="e.g. React, Python, remote..."
+              class="filter-input"
+            />
+          </div>
+        </div>
+      }
+
+      @if (scanSummary()) {
+        <div class="alert alert-info">{{ scanSummary() }}</div>
+      }
+
+      @if (scanErrors().length > 0) {
+        <details class="scan-errors">
+          <summary>{{ scanErrors().length }} portal error(s)</summary>
+          <ul>
+            @for (err of scanErrors(); track err.portal) {
+              <li><strong>{{ err.portal }}</strong> ({{ err.platform }}): {{ err.error }}</li>
+            }
+          </ul>
+        </details>
+      }
     </div>
+  }
 
-    @if (showFilters()) {
-      <div class="filter-panel">
-        <div class="filter-group">
-          <label for="category-select">Categories</label>
-          <select
-            id="category-select"
-            multiple
-            (change)="onCategoryChange($event)"
-            class="filter-select"
-          >
-            @for (cat of availableCategories(); track cat) {
-              <option [value]="cat">{{ cat }}</option>
-            }
-          </select>
-          @if (availableCategories().length === 0) {
-            <span class="filter-hint">No categories available</span>
-          }
-        </div>
+  <!-- Table filters -->
+  <app-job-filters
+    [sources]="activeTab() === 'boards' ? boardSources() : portalSources()"
+    [filters]="filters()"
+    (filtersChange)="onFiltersChange($event)"
+  />
 
-        <div class="filter-group">
-          <label for="company-select">Companies</label>
-          <select
-            id="company-select"
-            multiple
-            (change)="onCompanyChange($event)"
-            class="filter-select"
-          >
-            @for (portal of portals(); track portal.name) {
-              <option [value]="portal.name">{{ portal.name }}</option>
-            }
-          </select>
-          @if (portals().length === 0) {
-            <span class="filter-hint">No portals loaded</span>
-          }
-        </div>
-
-        <div class="filter-group">
-          <label for="keyword-input">Keyword</label>
-          <input
-            id="keyword-input"
-            type="text"
-            [value]="scanKeyword()"
-            (input)="onKeywordInput($event)"
-            placeholder="e.g. React, Python, remote..."
-            class="filter-input"
-          />
-        </div>
-      </div>
-    }
-
-    @if (scanSummary()) {
-      <div class="alert alert-info">{{ scanSummary() }}</div>
-    }
-
-    @if (scanErrors().length > 0) {
-      <details class="scan-errors">
-        <summary>{{ scanErrors().length }} portal error(s)</summary>
-        <ul>
-          @for (err of scanErrors(); track err.portal) {
-            <li>
-              <strong>{{ err.portal }}</strong> ({{ err.platform }}): {{ err.error }}
-            </li>
-          }
-        </ul>
-      </details>
-    }
-  </div>
-
+  <!-- Loading -->
   @if (loading() || scanning()) {
     <div class="loading-card">
       <div class="spinner"></div>
       <div class="loading-text">
-        <h3>{{ scanning() ? 'Scanning portals...' : 'Fetching jobs...' }}</h3>
+        <h3>{{ scanning() ? 'Scanning portals...' : 'Loading jobs...' }}</h3>
         <p>Pulling from configured sources. This may take a moment.</p>
       </div>
     </div>
   }
 
+  <!-- Jobs table -->
   @if (jobs().length > 0) {
-    <div class="stats">
-      <span class="stat">{{ jobs().length }} jobs found</span>
-    </div>
     <div class="table-container">
       <table>
         <thead>
@@ -114,43 +121,57 @@
             <th>Company</th>
             <th>Location</th>
             <th>Source</th>
-            <th>Skills</th>
+            <th>Posted</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           @for (job of jobs(); track job.id) {
-            <tr>
+            <tr (click)="openDetail(job)" class="clickable-row">
               <td class="title">{{ job.title }}</td>
               <td>{{ job.company }}</td>
               <td>{{ job.location }}</td>
-              <td><span class="badge">{{ job.source }}</span></td>
-              <td>
-                <div class="skills">
-                  @for (skill of job.skills.slice(0, 3); track skill) {
-                    <span class="skill-tag">{{ skill }}</span>
-                  }
-                  @if (job.skills.length > 3) {
-                    <span class="skill-more">+{{ job.skills.length - 3 }}</span>
-                  }
-                </div>
-              </td>
+              <td><span class="badge source-badge-{{ job.source }}">{{ job.source }}</span></td>
+              <td class="date-cell">{{ job.posted_date ? (job.posted_date | date:'mediumDate') : '—' }}</td>
               <td class="actions-cell">
-                <a [href]="job.url" target="_blank" class="link">View</a>
+                <a [href]="job.url" target="_blank" class="link" (click)="$event.stopPropagation()">View</a>
                 @if (isTracked(job.id)) {
-                  <button class="btn-tracked" disabled>Tracked</button>
+                  <button class="btn-tracked" disabled (click)="$event.stopPropagation()">Tracked</button>
                 } @else {
-                  <button (click)="trackJob(job.id)" class="btn-track">Track</button>
+                  <button (click)="trackJob(job.id); $event.stopPropagation()" class="btn-track">Track</button>
                 }
               </td>
             </tr>
           }
         </tbody>
       </table>
+
+      <app-pagination
+        [page]="page()"
+        [pageSize]="pageSize()"
+        [total]="total()"
+        [totalPages]="totalPages()"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)"
+      />
     </div>
   } @else if (!loading() && !scanning()) {
     <div class="empty-state">
-      <p>No jobs loaded yet. Click "Fetch Jobs" to pull from configured sources.</p>
+      @if (activeTab() === 'boards') {
+        <p>No jobs loaded yet. Click "Fetch Jobs" to pull from job boards.</p>
+      } @else {
+        <p>No portal jobs loaded yet. Click "Scan Portals" to pull from company career pages.</p>
+      }
     </div>
+  }
+
+  <!-- Detail panel -->
+  @if (selectedJob()) {
+    <app-job-detail-panel
+      [job]="selectedJob()!"
+      [tracked]="isTracked(selectedJob()!.id)"
+      (close)="closeDetail()"
+      (track)="trackJob($event)"
+    />
   }
 </div>

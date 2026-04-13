@@ -46,9 +46,14 @@ class PortalScanner:
         self._adapters = adapters
         self._normalizers = normalizers
         self._event_bus = event_bus
+        self._jobs: dict[str, NormalizedJob] = {}
+
+    def list_jobs(self) -> list[NormalizedJob]:
+        return list(self._jobs.values())
 
     def _filter_portals(self, filters: ScanFilters) -> list[PortalEntry]:
         portals = self._config.portals
+        portals = [p for p in portals if p.enabled]
 
         if filters.categories:
             filter_set = set(filters.categories)
@@ -95,8 +100,10 @@ class PortalScanner:
                 normalized_data = normalizer.normalize(raw)
                 job = NormalizedJob(
                     id=str(uuid.uuid4()),
-                    source=portal.platform,
+                    source=portal.name,
                     source_type="api",
+                    platform=portal.platform,
+                    categories=list(portal.categories),
                     **normalized_data,
                 )
                 if filters.keyword:
@@ -108,6 +115,7 @@ class PortalScanner:
                 if dedup_key not in seen_dedup_keys:
                     seen_dedup_keys.add(dedup_key)
                     new_jobs.append(job)
+                    self._jobs[job.id] = job
 
         duplicates = total_fetched - len(new_jobs)
 

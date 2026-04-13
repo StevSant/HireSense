@@ -112,6 +112,9 @@ class Settings(BaseSettings):
     weight_application: int = 10
     weight_interview: int = 10
 
+    # Upload
+    max_upload_bytes: int = 10 * 1024 * 1024  # 10 MB
+
     # Batch processing
     batch_concurrency: int = 3
 

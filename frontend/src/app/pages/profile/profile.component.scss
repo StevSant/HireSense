@@ -1,30 +1,416 @@
+// --- Variables ---
+$primary: #4f46e5;
+$primary-dark: #4338ca;
+$primary-light: #e0e7ff;
+$primary-bg: #f5f3ff;
+$text-dark: #1a1a2e;
+$text-mid: #444;
+$text-light: #6b7280;
+$border: #e2e5ea;
+$surface: #ffffff;
+$bg: #f8f9fb;
+$danger: #dc2626;
+$danger-bg: #fef2f2;
+$radius: 10px;
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+$transition: 0.2s ease;
+
+// --- Page Layout ---
 .page {
-  max-width: 900px;
+  max-width: 860px;
+}
+
+.page-header {
+  margin-bottom: 1.75rem;
 
   h1 {
-    font-size: 1.625rem;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: $text-dark;
+    margin: 0 0 0.35rem;
     letter-spacing: -0.02em;
-    margin-bottom: 1.75rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.9rem;
+    color: $text-light;
+    margin: 0;
   }
 }
 
-.upload-section {
-  background: var(--bg-card);
-  padding: 1.75rem;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+// --- Loading ---
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: $text-light;
 
-  h2 {
-    font-size: 1.125rem;
-    margin-bottom: 1.25rem;
+  .loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid $border;
+    border-top-color: $primary;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-size: 0.9rem;
+    margin: 0;
   }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// --- Upload Card ---
+.upload-card {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  overflow: hidden;
+}
+
+// --- Tab Bar ---
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid $border;
+  background: $bg;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: $text-light;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color $transition, border-color $transition, background $transition;
+
+  svg {
+    opacity: 0.5;
+    transition: opacity $transition;
+  }
+
+  &:hover {
+    color: $text-mid;
+    background: rgba($primary, 0.03);
+
+    svg { opacity: 0.7; }
+  }
+
+  &.active {
+    color: $primary;
+    border-bottom-color: $primary;
+    background: $surface;
+
+    svg { opacity: 1; }
+  }
+}
+
+// --- Tab Content ---
+.tab-content {
+  padding: 1.5rem;
+}
+
+// --- Language Selector ---
+.language-selector {
+  margin-bottom: 1.25rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-weight: 500;
+    font-size: 0.825rem;
+    color: $text-mid;
+  }
+
+  select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid $border;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    color: $text-dark;
+    background: $surface;
+    min-width: 140px;
+    cursor: pointer;
+    transition: border-color $transition, box-shadow $transition;
+
+    &:focus {
+      outline: none;
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    }
+  }
+}
+
+// --- Dropzone ---
+.dropzone {
+  border: 2px dashed $border;
+  border-radius: $radius;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+  cursor: pointer;
+  margin-bottom: 1.25rem;
+  position: relative;
+
+  &:hover {
+    border-color: rgba($primary, 0.4);
+    background: rgba($primary, 0.015);
+  }
+
+  &.drag-over {
+    border-color: $primary;
+    background: rgba($primary, 0.04);
+    box-shadow: 0 0 0 4px rgba($primary, 0.08);
+
+    .dropzone-icon svg {
+      transform: translateY(-4px);
+      color: $primary;
+    }
+  }
+
+  &.has-file {
+    border-style: solid;
+    border-color: $primary-light;
+    background: rgba($primary, 0.02);
+    padding: 1rem 1.25rem;
+    cursor: default;
+  }
+}
+
+.dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dropzone-icon {
+  margin-bottom: 0.5rem;
+
+  svg {
+    color: $text-light;
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+}
+
+.dropzone-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $text-dark;
+  margin: 0;
+}
+
+.dropzone-hint {
+  font-size: 0.85rem;
+  color: $text-light;
+  margin: 0;
+}
+
+.browse-link {
+  color: $primary;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color $transition;
+
+  &:hover {
+    color: $primary-dark;
+    text-decoration: underline;
+  }
+}
+
+.dropzone-formats {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 0.25rem 0 0;
+}
+
+// --- File Preview ---
+.file-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.file-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: $primary-light;
+  border-radius: 8px;
+  flex-shrink: 0;
+
+  svg { color: $primary; }
+}
+
+.file-details {
+  flex: 1;
+  min-width: 0;
+
+  .file-name {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: $text-dark;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-size {
+    font-size: 0.78rem;
+    color: $text-light;
+  }
+}
+
+.file-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: $text-light;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background $transition, color $transition;
+
+  &:hover {
+    background: $danger-bg;
+    color: $danger;
+  }
+}
+
+// --- Textarea ---
+.form-group {
+  margin-bottom: 1.25rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-weight: 500;
+    font-size: 0.825rem;
+    color: $text-mid;
+  }
+}
+
+.tex-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid $border;
+  border-radius: 8px;
+  font-size: 0.825rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  line-height: 1.6;
+  color: $text-dark;
+  background: $bg;
+  box-sizing: border-box;
+  resize: vertical;
+  transition: border-color $transition, box-shadow $transition;
+
+  &::placeholder { color: #c0c5ce; }
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    background: $surface;
+  }
+}
+
+// --- Buttons ---
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
+  background: $primary;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background $transition, transform 0.1s ease, box-shadow $transition;
+
+  &:hover:not(:disabled) {
+    background: $primary-dark;
+    box-shadow: 0 2px 8px rgba($primary, 0.25);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.btn-secondary {
+  padding: 0.5rem 1.15rem;
+  background: $surface;
+  color: $primary;
+  border: 1px solid rgba($primary, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background $transition, border-color $transition;
+
+  &:hover {
+    background: $primary-bg;
+    border-color: rgba($primary, 0.5);
+  }
+}
+
+// --- Alert ---
+.alert-error {
+  background: $danger-bg;
+  color: $danger;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  border: 1px solid rgba($danger, 0.1);
+}
+
+// --- Profile View ---
 .profile-view {
-  background: var(--bg-card);
+  background: $surface;
   padding: 1.75rem;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
 }
 
 .profile-header {
@@ -32,37 +418,69 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid $border;
+}
+
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
 
   h2 {
-    font-size: 1.375rem;
-    letter-spacing: -0.02em;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: $text-dark;
+    margin: 0;
+    letter-spacing: -0.01em;
   }
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, $primary, $primary-dark);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.profile-location {
+  display: block;
+  font-size: 0.82rem;
+  color: $text-light;
+  margin-top: 0.1rem;
 }
 
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.75rem;
-  padding: 1.25rem;
-  background: var(--bg-inset);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: $bg;
+  border-radius: 8px;
+  border: 1px solid rgba($border, 0.6);
 
   .info-item {
     .label {
       display: block;
-      font-size: 0.6875rem;
-      color: var(--text-muted);
-      margin-bottom: 0.2rem;
+      font-size: 0.7rem;
+      color: $text-light;
+      margin-bottom: 0.15rem;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 600;
+      letter-spacing: 0.04em;
+      font-weight: 500;
     }
 
-    span:last-child {
-      font-size: 0.9375rem;
-      color: var(--text-primary);
+    .value {
+      font-size: 0.875rem;
+      color: $text-dark;
       font-weight: 500;
     }
   }
@@ -72,18 +490,18 @@
   margin-bottom: 1.5rem;
 
   h3 {
-    font-size: 0.8125rem;
-    color: var(--text-muted);
-    margin-bottom: 0.625rem;
+    font-size: 0.8rem;
+    color: $text-light;
+    margin-bottom: 0.5rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.05em;
     font-weight: 600;
   }
 
   .section-content {
-    font-size: 0.9375rem;
-    color: var(--text-secondary);
-    line-height: 1.7;
+    font-size: 0.875rem;
+    color: $text-mid;
+    line-height: 1.65;
     white-space: pre-wrap;
   }
 }
@@ -92,4 +510,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
+}
+
+.skill-tag {
+  padding: 0.3rem 0.65rem;
+  background: $primary-light;
+  color: $primary-dark;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }

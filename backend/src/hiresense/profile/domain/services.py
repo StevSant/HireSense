@@ -36,11 +36,7 @@ class ProfileService:
         parsed = self._parser.parse(tex_content)
 
         # Extract skills from raw LaTeX content (before stripping)
-        skills: list[str] = []
-        for section in parsed.sections:
-            if "SKILL" in section.name.upper():
-                skills = self._skill_extractor.extract_from_tabular(section.content)
-                break
+        skills = self._extract_skills_from_parsed(parsed)
 
         # Strip LaTeX for display
         cleaned_sections = self._parser.strip_section_content(parsed.sections)
@@ -135,9 +131,12 @@ class ProfileService:
             return [self._to_response(orm) for orm in orms]
         return list(self._profiles.values())
 
+    _SKILL_SECTION_KEYWORDS = {"SKILL", "HABILIDAD", "COMPETENCIA", "TÉCNICA", "TECNICA"}
+
     def _extract_skills_from_parsed(self, parsed: ParsedCV) -> list[str]:
         for section in parsed.sections:
-            if "SKILL" in section.name.upper():
+            name_upper = section.name.upper()
+            if any(kw in name_upper for kw in self._SKILL_SECTION_KEYWORDS):
                 return self._skill_extractor.extract_from_tabular(section.content)
         return []
 

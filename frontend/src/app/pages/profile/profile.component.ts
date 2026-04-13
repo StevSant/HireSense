@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProfileService } from '../../core/services/profile.service';
 import { CandidateProfile } from './models/candidate-profile.model';
@@ -18,26 +18,51 @@ export class ProfileComponent implements OnInit {
   dragOver = signal(false);
   texContent = signal('');
   language = signal('en');
-  profile = this.profileService.profile;
   loading = signal(false);
   initialLoading = signal(true);
   error = signal('');
+  showUploadForm = signal(false);
+
+  profile = this.profileService.profile;
+  profiles = this.profileService.profiles;
+  activeLanguage = this.profileService.activeLanguage;
+  uploadedLanguages = computed(() => Object.keys(this.profiles()));
 
   constructor() {}
 
   ngOnInit(): void {
-    if (!this.profile()) {
-      this.profileService.getCurrentProfile().subscribe({
-        next: () => {
-          this.initialLoading.set(false);
-        },
-        error: () => {
-          this.initialLoading.set(false);
-        },
-      });
-    } else {
-      this.initialLoading.set(false);
+    this.profileService.listProfiles().subscribe({
+      next: () => this.initialLoading.set(false),
+      error: () => {
+        // Fallback to single profile fetch
+        this.profileService.getCurrentProfile().subscribe({
+          next: () => this.initialLoading.set(false),
+          error: () => this.initialLoading.set(false),
+        });
+      },
+    });
+  }
+
+  switchLanguage(lang: string): void {
+    this.profileService.activeLanguage.set(lang);
+  }
+
+  addAnotherLanguage(): void {
+    // Pre-select a language that hasn't been uploaded yet
+    const uploaded = this.uploadedLanguages();
+    if (!uploaded.includes('es')) {
+      this.language.set('es');
+    } else if (!uploaded.includes('en')) {
+      this.language.set('en');
     }
+    this.showUploadForm.set(true);
+  }
+
+  cancelUpload(): void {
+    this.showUploadForm.set(false);
+    this.selectedFile.set(null);
+    this.texContent.set('');
+    this.error.set('');
   }
 
   onDragOver(event: DragEvent): void {
@@ -81,6 +106,8 @@ export class ProfileComponent implements OnInit {
     this.profileService.uploadFile(file, this.language()).subscribe({
       next: () => {
         this.loading.set(false);
+        this.showUploadForm.set(false);
+        this.selectedFile.set(null);
       },
       error: (err) => {
         this.error.set(err.error?.detail || 'Failed to parse file');
@@ -101,19 +128,14 @@ export class ProfileComponent implements OnInit {
       .subscribe({
         next: () => {
           this.loading.set(false);
+          this.showUploadForm.set(false);
+          this.texContent.set('');
         },
         error: (err) => {
           this.error.set(err.error?.detail || 'Failed to parse CV');
           this.loading.set(false);
         },
       });
-  }
-
-  resetProfile(): void {
-    this.profileService.profile.set(null);
-    this.selectedFile.set(null);
-    this.texContent.set('');
-    this.error.set('');
   }
 
   private handleFile(file: File): void {

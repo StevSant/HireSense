@@ -458,32 +458,46 @@ $transition: 0.2s ease;
 }
 
 .info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 2.5rem;
   margin-bottom: 1.5rem;
-  padding: 1rem;
+  padding: 1.125rem 1.25rem;
   background: $bg;
   border-radius: 8px;
   border: 1px solid rgba($border, 0.6);
 
   .info-item {
+    min-width: 0;
+
     .label {
       display: block;
-      font-size: 0.7rem;
+      font-size: 0.6875rem;
       color: $text-light;
-      margin-bottom: 0.15rem;
+      margin-bottom: 0.2rem;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
-      font-weight: 500;
+      letter-spacing: 0.06em;
+      font-weight: 600;
     }
 
     .value {
-      font-size: 0.875rem;
+      font-size: 0.9rem;
       color: $text-dark;
       font-weight: 500;
+      word-break: break-all;
     }
   }
+}
+
+.language-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  background: $primary-light;
+  color: $primary-dark;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .section {
@@ -520,4 +534,63 @@ $transition: 0.2s ease;
   font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0.01em;
+}
+
+// --- Language tabs ---
+.language-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.lang-tab {
+  padding: 0.4rem 1rem;
+  background: none;
+  border: 1px solid $border;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $text-light;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+  }
+
+  &.active {
+    background: $primary;
+    border-color: $primary;
+    color: white;
+  }
+}
+
+// --- Inline upload (when adding another language) ---
+.inline-upload {
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.inline-upload-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: $text-dark;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+}
+
+.btn-sm {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
 }

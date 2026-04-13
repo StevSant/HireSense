@@ -56,11 +56,19 @@ async def upload_file(
     return await service.parse_file_and_create(file_bytes, filename, language)
 
 
+@router.get("/list", response_model=list[CandidateProfile])
+async def list_profiles(
+    service: Annotated[object, Depends(get_profile_service)],
+) -> list[CandidateProfile]:
+    return await service.list_profiles()
+
+
 @router.get("/current", response_model=CandidateProfile)
 async def get_current_profile(
     service: Annotated[object, Depends(get_profile_service)],
+    language: str | None = None,
 ) -> CandidateProfile:
-    profile = await service.get_current_profile()
+    profile = await service.get_current_profile(language=language)
     if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile found")
     return profile

@@ -1,8 +1,7 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, computed, OnInit, signal } from '@angular/core';
 import { IngestionService } from '../../core/services/ingestion.service';
 import { TrackingService } from '../../core/services/tracking.service';
 import { CreateApplicationRequest } from '../../core/models/create-application-request.model';
-import { NormalizedJob } from './models/normalized-job.model';
 import { PortalEntry } from './models/portal-entry.model';
 import { ScanPortalsRequest } from './models/scan-portals-request.model';
 import { ScanError } from './models/scan-result.model';
@@ -15,10 +14,12 @@ import { ScanError } from './models/scan-result.model';
   styleUrl: './ingestion.component.scss',
 })
 export class IngestionComponent implements OnInit {
-  jobs = signal<NormalizedJob[]>([]);
+  /** Read from the singleton service — persists across navigation. */
+  jobs = computed(() => this.ingestionService.jobs());
+  trackedJobIds = computed(() => this.ingestionService.trackedJobIds());
+
   loading = signal(false);
   error = signal('');
-  trackedJobIds = signal<Set<string>>(new Set());
 
   // Portal scanning state
   portals = signal<PortalEntry[]>([]);
@@ -44,8 +45,7 @@ export class IngestionComponent implements OnInit {
     this.loading.set(true);
     this.error.set('');
     this.ingestionService.fetchJobs().subscribe({
-      next: (res) => {
-        this.jobs.set(res.jobs);
+      next: () => {
         this.loading.set(false);
       },
       error: (err) => {
@@ -88,11 +88,6 @@ export class IngestionComponent implements OnInit {
 
     this.ingestionService.scanPortals(body).subscribe({
       next: (res) => {
-        // Merge new jobs (deduplicate by id)
-        const existing = this.jobs();
-        const existingIds = new Set(existing.map((j) => j.id));
-        const merged = [...existing, ...res.jobs.filter((j) => !existingIds.has(j.id))];
-        this.jobs.set(merged);
         this.scanSummary.set(
           `Scan complete: ${res.total_fetched} fetched, ${res.new} new, ${res.duplicates} duplicates.`,
         );
@@ -131,11 +126,11 @@ export class IngestionComponent implements OnInit {
     const body: CreateApplicationRequest = { job_id: jobId };
     this.trackingService.create(body).subscribe({
       next: () => {
-        this.trackedJobIds.update((ids) => new Set([...ids, jobId]));
+        this.ingestionService.markTracked(jobId);
       },
       error: (err) => {
         if (err.status === 409) {
-          this.trackedJobIds.update((ids) => new Set([...ids, jobId]));
+          this.ingestionService.markTracked(jobId);
         }
       },
     });

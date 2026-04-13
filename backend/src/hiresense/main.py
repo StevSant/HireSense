@@ -104,12 +104,21 @@ def create_app() -> FastAPI:
     llm = None
     if settings.llm_api_key:
         try:
-            from anthropic import AsyncAnthropic
-            from hiresense.adapters.llm.anthropic_adapter import AnthropicLLMAdapter
-            anthropic_client = AsyncAnthropic(api_key=settings.llm_api_key)
-            llm = AnthropicLLMAdapter(client=anthropic_client, model=settings.llm_model)
+            from langchain_anthropic import ChatAnthropic
+
+            from hiresense.adapters.llm import LangChainLLMAdapter
+
+            chat_model = ChatAnthropic(model=settings.llm_model, api_key=settings.llm_api_key)
+            llm = LangChainLLMAdapter(model=chat_model)
         except ImportError:
             pass
+
+    from hiresense.adapters.embedding import SentenceTransformerAdapter
+
+    embedding = SentenceTransformerAdapter(
+        model_name=settings.embedding_model,
+        device=settings.embedding_device,
+    )
 
     # --- Identity ---
     app.state.identity = IdentityProvider(
@@ -216,7 +225,12 @@ def create_app() -> FastAPI:
         InterviewReadinessScorer(llm=llm, weight=settings.weight_interview),
     ]
 
-    matching_orchestrator = MatchingOrchestrator(llm=llm, event_bus=event_bus, dimension_scorers=dimension_scorers)
+    matching_orchestrator = MatchingOrchestrator(
+        llm=llm,
+        event_bus=event_bus,
+        dimension_scorers=dimension_scorers,
+        embedding=embedding,
+    )
     batch_evaluation_service = BatchEvaluationService(
         orchestrator=matching_orchestrator,
         concurrency=settings.batch_concurrency,

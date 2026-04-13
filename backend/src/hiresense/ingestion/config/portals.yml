@@ -6,23 +6,33 @@ portals:
     categories: [ai-research]
 
   - name: OpenAI
-    platform: greenhouse
+    platform: ashby
     board_id: openai
     categories: [ai-research]
 
   - name: Mistral
-    platform: greenhouse
-    board_id: mistralai
+    platform: lever
+    board_id: mistral
     categories: [ai-research]
 
   - name: Cohere
-    platform: greenhouse
+    platform: ashby
     board_id: cohere
     categories: [ai-research]
 
   - name: LangChain
-    platform: greenhouse
+    platform: ashby
     board_id: langchain
+    categories: [ai-research]
+
+  - name: Scale AI
+    platform: greenhouse
+    board_id: scaleai
+    categories: [ai-research]
+
+  - name: Stability AI
+    platform: greenhouse
+    board_id: stabilityai
     categories: [ai-research]
 
   # Voice Technology
@@ -32,13 +42,13 @@ portals:
     categories: [voice-tech]
 
   - name: Deepgram
-    platform: greenhouse
+    platform: ashby
     board_id: deepgram
     categories: [voice-tech]
 
   # Development Platforms
   - name: Retool
-    platform: lever
+    platform: ashby
     board_id: retool
     categories: [dev-platforms]
 
@@ -52,14 +62,20 @@ portals:
     board_id: temporal
     categories: [dev-platforms]
 
+  - name: Pinecone
+    platform: ashby
+    board_id: pinecone
+    categories: [dev-platforms]
+
   # LLM Operations
   - name: Weights & Biases
     platform: greenhouse
     board_id: wandb
+    enabled: false
     categories: [llm-ops]
 
   # Workflow Automation
   - name: n8n
-    platform: greenhouse
+    platform: ashby
     board_id: n8n
     categories: [workflow-automation]

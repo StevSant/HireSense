@@ -16,7 +16,7 @@ export class ProfileComponent implements OnInit {
   dragOver = signal(false);
   texContent = signal('');
   language = signal('en');
-  profile = signal<CandidateProfile | null>(null);
+  profile = this.profileService.profile;
   loading = signal(false);
   initialLoading = signal(true);
   error = signal('');
@@ -24,15 +24,18 @@ export class ProfileComponent implements OnInit {
   constructor(private profileService: ProfileService) {}
 
   ngOnInit(): void {
-    this.profileService.getCurrentProfile().subscribe({
-      next: (profile) => {
-        this.profile.set(profile);
-        this.initialLoading.set(false);
-      },
-      error: () => {
-        this.initialLoading.set(false);
-      },
-    });
+    if (!this.profile()) {
+      this.profileService.getCurrentProfile().subscribe({
+        next: () => {
+          this.initialLoading.set(false);
+        },
+        error: () => {
+          this.initialLoading.set(false);
+        },
+      });
+    } else {
+      this.initialLoading.set(false);
+    }
   }
 
   onDragOver(event: DragEvent): void {
@@ -74,8 +77,7 @@ export class ProfileComponent implements OnInit {
     this.loading.set(true);
     this.error.set('');
     this.profileService.uploadFile(file, this.language()).subscribe({
-      next: (res) => {
-        this.profile.set(res);
+      next: () => {
         this.loading.set(false);
       },
       error: (err) => {
@@ -95,8 +97,7 @@ export class ProfileComponent implements OnInit {
         language: this.language(),
       })
       .subscribe({
-        next: (res) => {
-          this.profile.set(res);
+        next: () => {
           this.loading.set(false);
         },
         error: (err) => {
@@ -107,7 +108,7 @@ export class ProfileComponent implements OnInit {
   }
 
   resetProfile(): void {
-    this.profile.set(null);
+    this.profileService.profile.set(null);
     this.selectedFile.set(null);
     this.texContent.set('');
     this.error.set('');

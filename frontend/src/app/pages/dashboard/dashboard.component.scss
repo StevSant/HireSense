@@ -5,83 +5,112 @@
 
 .sidebar {
   width: 240px;
-  background: #1a1a2e;
-  color: white;
+  background: var(--bg-sidebar);
+  color: var(--text-on-dark);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
 
   .logo {
-    padding: 1.25rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.5rem 1.25rem;
+    border-bottom: 1px solid var(--border-sidebar);
 
     h2 {
       margin: 0;
-      font-size: 1.25rem;
-      font-weight: 600;
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-on-dark);
+    }
+
+    .logo-sub {
+      font-size: 0.6875rem;
+      color: var(--text-on-dark-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 0.15rem;
     }
   }
 
   nav {
     flex: 1;
     padding: 0.75rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 
     a {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.75rem 1.25rem;
-      color: rgba(255, 255, 255, 0.7);
+      padding: 0.625rem 1.25rem;
+      color: var(--text-on-dark-muted);
       text-decoration: none;
-      font-size: 0.9rem;
-      transition: all 0.2s;
-      border-left: 3px solid transparent;
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s var(--ease);
+      border-left: 2px solid transparent;
+      margin: 0 0.5rem;
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
 
-      .icon {
-        font-size: 1.1rem;
+      .nav-icon {
+        font-size: 1rem;
         width: 1.25rem;
         text-align: center;
+        opacity: 0.6;
+        transition: opacity 0.15s var(--ease);
       }
 
       &:hover {
-        color: white;
-        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-on-dark);
+        background: var(--bg-sidebar-hover);
+
+        .nav-icon { opacity: 0.9; }
       }
 
       &.active {
-        color: white;
-        background: rgba(79, 70, 229, 0.2);
-        border-left-color: #4f46e5;
+        color: var(--text-on-dark);
+        background: var(--bg-sidebar-active);
+        border-left-color: var(--accent);
+
+        .nav-icon { opacity: 1; }
       }
     }
   }
 
   .sidebar-footer {
     padding: 1rem 1.25rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--border-sidebar);
   }
 
   .logout-btn {
     width: 100%;
     padding: 0.5rem;
     background: transparent;
-    color: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
+    color: var(--text-on-dark-muted);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: all 0.15s var(--ease);
 
     &:hover {
-      color: white;
-      border-color: rgba(255, 255, 255, 0.4);
+      color: var(--text-on-dark);
+      border-color: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.04);
     }
   }
 }
 
 .content {
   flex: 1;
-  padding: 1.5rem 2rem;
-  background: #f5f6fa;
+  padding: 2rem 2.5rem;
+  background: var(--bg-root);
   overflow-y: auto;
+  min-height: 100vh;
 }

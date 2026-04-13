@@ -1,29 +1,52 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { FetchResponse } from '../../pages/ingestion/models/fetch-response.model';
 import { NormalizedJob } from '../../pages/ingestion/models/normalized-job.model';
+import { PaginatedJobsResponse } from '../../pages/ingestion/models/paginated-jobs-response.model';
 import { PortalEntry } from '../../pages/ingestion/models/portal-entry.model';
 import { ScanPortalsRequest } from '../../pages/ingestion/models/scan-portals-request.model';
 import { ScanResult } from '../../pages/ingestion/models/scan-result.model';
 
+export interface JobFilters {
+  source?: string;
+  keyword?: string;
+  location?: string;
+  skills?: string;
+  date_from?: string;
+  date_to?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class IngestionService {
-  /** Persisted job list — survives page navigation. */
-  readonly jobs = signal<NormalizedJob[]>([]);
   readonly trackedJobIds = signal<Set<string>>(new Set());
 
   constructor(private http: HttpClient) {}
 
   fetchJobs(): Observable<FetchResponse> {
-    return this.http.post<FetchResponse>(`${environment.apiUrl}/ingestion/fetch`, {}).pipe(
-      tap((res) => this.jobs.set(res.jobs)),
-    );
+    return this.http.post<FetchResponse>(`${environment.apiUrl}/ingestion/fetch`, {});
   }
 
-  listJobs(): Observable<NormalizedJob[]> {
-    return this.http.get<NormalizedJob[]>(`${environment.apiUrl}/ingestion/jobs`);
+  queryJobs(
+    tab: 'boards' | 'portals',
+    page: number,
+    pageSize: number,
+    filters: JobFilters = {},
+  ): Observable<PaginatedJobsResponse> {
+    let params = new HttpParams()
+      .set('tab', tab)
+      .set('page', page.toString())
+      .set('page_size', pageSize.toString());
+
+    if (filters.source) params = params.set('source', filters.source);
+    if (filters.keyword) params = params.set('keyword', filters.keyword);
+    if (filters.location) params = params.set('location', filters.location);
+    if (filters.skills) params = params.set('skills', filters.skills);
+    if (filters.date_from) params = params.set('date_from', filters.date_from);
+    if (filters.date_to) params = params.set('date_to', filters.date_to);
+
+    return this.http.get<PaginatedJobsResponse>(`${environment.apiUrl}/ingestion/jobs`, { params });
   }
 
   loadPortals(): Observable<PortalEntry[]> {
@@ -31,14 +54,7 @@ export class IngestionService {
   }
 
   scanPortals(body: ScanPortalsRequest): Observable<ScanResult> {
-    return this.http.post<ScanResult>(`${environment.apiUrl}/ingestion/scan-portals`, body).pipe(
-      tap((res) => {
-        const existing = this.jobs();
-        const existingIds = new Set(existing.map((j) => j.id));
-        const merged = [...existing, ...res.jobs.filter((j) => !existingIds.has(j.id))];
-        this.jobs.set(merged);
-      }),
-    );
+    return this.http.post<ScanResult>(`${environment.apiUrl}/ingestion/scan-portals`, body);
   }
 
   markTracked(jobId: string): void {

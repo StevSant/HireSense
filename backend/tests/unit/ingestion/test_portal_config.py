@@ -74,6 +74,18 @@ def test_filter_by_category() -> None:
     assert {p.name for p in filtered} == {"A", "C"}
 
 
+def test_portal_entry_enabled_defaults_true() -> None:
+    entry = PortalEntry(name="Anthropic", platform="greenhouse", board_id="anthropic")
+    assert entry.enabled is True
+
+
+def test_portal_entry_can_be_disabled() -> None:
+    entry = PortalEntry(
+        name="Anthropic", platform="greenhouse", board_id="anthropic", enabled=False
+    )
+    assert entry.enabled is False
+
+
 def test_filter_by_company() -> None:
     config = PortalsConfig(
         portals=[

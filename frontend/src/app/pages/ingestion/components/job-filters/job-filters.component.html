@@ -1,0 +1,68 @@
+<div class="filters-bar">
+  <div class="filter-item">
+    <label class="filter-label">Source</label>
+    <select (change)="onSourceChange($event)" class="filter-control">
+      <option value="">All sources</option>
+      @for (source of sources(); track source) {
+        <option [value]="source" [selected]="filters().source === source">{{ source }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="filter-item">
+    <label class="filter-label">Keyword</label>
+    <input
+      type="text"
+      [value]="filters().keyword ?? ''"
+      (input)="onKeywordInput($event)"
+      placeholder="Search title, description..."
+      class="filter-control"
+    />
+  </div>
+
+  <div class="filter-item">
+    <label class="filter-label">Location</label>
+    <input
+      type="text"
+      [value]="filters().location ?? ''"
+      (input)="onLocationInput($event)"
+      placeholder="e.g. Remote, USA..."
+      class="filter-control"
+    />
+  </div>
+
+  <div class="filter-item">
+    <label class="filter-label">Skills</label>
+    <input
+      type="text"
+      [value]="filters().skills ?? ''"
+      (input)="onSkillsInput($event)"
+      placeholder="Python, React..."
+      class="filter-control"
+    />
+  </div>
+
+  <div class="filter-item">
+    <label class="filter-label">Date From</label>
+    <input
+      type="date"
+      [value]="filters().date_from ?? ''"
+      (change)="onDateFromChange($event)"
+      class="filter-control"
+    />
+  </div>
+
+  <div class="filter-item">
+    <label class="filter-label">Date To</label>
+    <input
+      type="date"
+      [value]="filters().date_to ?? ''"
+      (change)="onDateToChange($event)"
+      class="filter-control"
+    />
+  </div>
+
+  <div class="filter-item filter-item-clear">
+    <button (click)="clearAll()" class="btn-clear">Clear all</button>
+  </div>
+</div>

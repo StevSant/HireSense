@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { MatchingService } from '../../core/services/matching.service';
 import { ProfileService } from '../../core/services/profile.service';
 import { IngestionService } from '../../core/services/ingestion.service';
+import { NormalizedJob } from '../ingestion/models/normalized-job.model';
 import { EvaluateRequest } from './models/evaluate-request.model';
 import { EvaluationResult } from './models/evaluation-result.model';
 import { MatchResult } from './models/match-result.model';
@@ -29,7 +30,7 @@ export class MatchingComponent implements OnInit {
   evaluationResult = signal<EvaluationResult | null>(null);
   evaluating = signal(false);
 
-  jobs = this.ingestionService.jobs;
+  jobs = signal<NormalizedJob[]>([]);
   selectedJobId = signal<string>('manual');
   profileLoaded = signal(false);
 
@@ -65,8 +66,8 @@ export class MatchingComponent implements OnInit {
 
     // If no jobs in cache, try fetching from server
     if (this.jobs().length === 0) {
-      this.ingestionService.listJobs().subscribe({
-        next: (jobs) => this.ingestionService.jobs.set(jobs),
+      this.ingestionService.queryJobs('boards', 1, 100).subscribe({
+        next: (res) => this.jobs.set(res.jobs),
         error: () => {},
       });
     }

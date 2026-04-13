@@ -17,10 +17,85 @@
           <input [ngModel]="missingSkills()" (ngModelChange)="missingSkills.set($event)" name="missing" placeholder="kubernetes, terraform" />
         </div>
       </div>
-      <div class="form-group">
+
+      <!-- CV Source Tabs -->
+      <div class="cv-source-section">
         <label>Your LaTeX CV</label>
-        <textarea [ngModel]="originalTex()" (ngModelChange)="originalTex.set($event)" name="tex" rows="10" placeholder="Paste your .tex CV content..."></textarea>
+        <div class="source-tabs">
+          @if (availableLanguages().length > 0) {
+            <button
+              class="source-tab"
+              [class.active]="inputMode() === 'profile'"
+              (click)="onInputModeChange('profile')"
+            >From Profile</button>
+          }
+          <button
+            class="source-tab"
+            [class.active]="inputMode() === 'file'"
+            (click)="onInputModeChange('file')"
+          >Upload File</button>
+          <button
+            class="source-tab"
+            [class.active]="inputMode() === 'paste'"
+            (click)="onInputModeChange('paste')"
+          >Paste LaTeX</button>
+        </div>
+
+        @if (inputMode() === 'profile') {
+          @if (availableLanguages().length > 1) {
+            <div class="lang-selector">
+              @for (lang of availableLanguages(); track lang) {
+                <button
+                  class="lang-btn"
+                  [class.active]="selectedLanguage() === lang"
+                  (click)="onLanguageChange(lang)"
+                >{{ lang === 'es' ? 'Spanish' : 'English' }}</button>
+              }
+            </div>
+          }
+          <div class="profile-loaded-notice">
+            LaTeX loaded from your {{ selectedLanguage() === 'es' ? 'Spanish' : 'English' }} profile
+            ({{ originalTex().length }} characters)
+          </div>
+        }
+
+        @if (inputMode() === 'file') {
+          <div
+            class="dropzone"
+            [class.drag-over]="dragOver()"
+            [class.has-file]="selectedFile()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+          >
+            @if (!selectedFile()) {
+              <div class="dropzone-content">
+                <p class="dropzone-title">Drop your .tex file here</p>
+                <p class="dropzone-hint">or <label for="opt-file-input" class="browse-link">browse files</label></p>
+                <input id="opt-file-input" type="file" accept=".tex" (change)="onFileSelected($event)" hidden />
+              </div>
+            } @else {
+              <div class="file-preview">
+                <span class="file-name">{{ selectedFile()!.name }}</span>
+                <span class="file-size">({{ formatFileSize(selectedFile()!.size) }})</span>
+                <button class="file-remove" (click)="removeFile()">Remove</button>
+              </div>
+            }
+          </div>
+        }
+
+        @if (inputMode() === 'paste') {
+          <textarea
+            [ngModel]="originalTex()"
+            (ngModelChange)="originalTex.set($event)"
+            name="tex"
+            rows="10"
+            placeholder="Paste your .tex CV content..."
+            class="tex-textarea"
+          ></textarea>
+        }
       </div>
+
       @if (error()) {
         <div class="alert alert-error">{{ error() }}</div>
       }

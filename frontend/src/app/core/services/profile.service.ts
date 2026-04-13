@@ -60,7 +60,10 @@ export class ProfileService {
       tap((list) => {
         const byLang: Record<string, CandidateProfile> = {};
         for (const p of list) {
-          byLang[p.language] = p;
+          // Keep only the first (newest) per language
+          if (!byLang[p.language]) {
+            byLang[p.language] = p;
+          }
         }
         this.profiles.set(byLang);
       }),

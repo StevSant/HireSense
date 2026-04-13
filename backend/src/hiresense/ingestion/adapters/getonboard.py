@@ -30,9 +30,11 @@ class GetOnBoardAdapter:
                 "per_page": "100",
                 "page": str(page),
             }
-            url = f"{self._base_url}/search/jobs"
             if query:
+                url = f"{self._base_url}/search/jobs"
                 params["query"] = query
+            else:
+                url = f"{self._base_url}/categories/programming/jobs"
             response = await self._http.get(url, params=params)
             response.raise_for_status()
             data = response.json()

@@ -1,8 +1,38 @@
 <div class="page">
-  <h1>Job Matching</h1>
+  <div class="page-header">
+    <h1>Job Matching</h1>
+    <p class="page-subtitle">Compare your profile against job requirements</p>
+  </div>
 
   @if (!result()) {
     <div class="match-form">
+      @if (profileLoaded()) {
+        <div class="auto-fill-notice">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          Profile loaded — CV fields auto-filled from your profile
+        </div>
+      }
+
+      @if (jobs().length > 0) {
+        <div class="job-selector">
+          <label for="job-select">Select a Job</label>
+          <select
+            id="job-select"
+            [ngModel]="selectedJobId()"
+            (ngModelChange)="onJobSelected($event)"
+            name="jobSelect"
+          >
+            <option value="manual">Manual entry</option>
+            @for (job of jobs(); track job.id) {
+              <option [value]="job.id">{{ job.title }} — {{ job.company }}</option>
+            }
+          </select>
+        </div>
+      }
+
       <div class="form-row">
         <div class="form-group">
           <label>Job Description</label>
@@ -27,7 +57,12 @@
         <div class="alert alert-error">{{ error() }}</div>
       }
       <button (click)="analyze()" [disabled]="loading()" class="btn-primary">
-        @if (loading()) { Analyzing... } @else { Analyze Match }
+        @if (loading()) {
+          <span class="btn-spinner"></span>
+          Analyzing...
+        } @else {
+          Analyze Match
+        }
       </button>
       @if (loading()) {
         <div class="loading-card" style="margin-top: 1rem">
@@ -43,7 +78,7 @@
     <div class="results">
       <div class="results-header">
         <h2>Match Results</h2>
-        <button (click)="result.set(null)" class="btn-secondary">New Analysis</button>
+        <button (click)="result.set(null); evaluationResult.set(null)" class="btn-secondary">New Analysis</button>
       </div>
 
       <div class="score-overview">
@@ -136,8 +171,13 @@
 
       <!-- Evaluation Section -->
       <section class="evaluation-section">
-        <button (click)="evaluate()" [disabled]="evaluating()">
-          {{ evaluating() ? 'Evaluating...' : 'Run 10-Dimension Evaluation' }}
+        <button (click)="evaluate()" [disabled]="evaluating()" class="btn-primary">
+          @if (evaluating()) {
+            <span class="btn-spinner"></span>
+            Evaluating...
+          } @else {
+            Run 10-Dimension Evaluation
+          }
         </button>
 
         @if (evaluationResult()) {

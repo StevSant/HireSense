@@ -1,0 +1,93 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.apps-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+  }
+
+  th {
+    font-size: 0.85em;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+.row {
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #f9fafb;
+  }
+}
+
+.status-pill {
+  font-size: 0.8em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #e5e7eb;
+  color: #374151;
+
+  &.status-applied { background: #dbeafe; color: #1e40af; }
+  &.status-interviewing { background: #fef3c7; color: #92400e; }
+  &.status-offered { background: #d1fae5; color: #065f46; }
+  &.status-accepted { background: #d1fae5; color: #065f46; font-weight: 600; }
+  &.status-rejected { background: #fee2e2; color: #991b1b; }
+}
+
+.score-pill {
+  color: white;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.badges .badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 4px;
+  background: #e5e7eb;
+  color: #9ca3af;
+  font-size: 0.75em;
+  font-weight: 600;
+
+  &.on {
+    background: #10b981;
+    color: white;
+  }
+}
+
+.muted { color: #9ca3af; }
+
+.empty-state {
+  padding: 3rem;
+  text-align: center;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  color: #6b7280;
+
+  a { color: #2563eb; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+}
+
+.alert-error {
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #fecaca;
+}

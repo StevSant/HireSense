@@ -1,0 +1,54 @@
+<div class="overlay" (click)="onOverlay($event)">
+  <div class="dialog">
+    <div class="dialog-header">
+      <h2>New application</h2>
+      <button class="btn-close" (click)="closed.emit()">✕</button>
+    </div>
+    <p class="hint">Paste a job description below. Required skills will be extracted automatically.</p>
+
+    <div class="field">
+      <label>Title</label>
+      <input
+        [ngModel]="title()"
+        (ngModelChange)="title.set($event)"
+        placeholder="e.g. Senior Backend Engineer"
+      />
+    </div>
+    <div class="field">
+      <label>Company</label>
+      <input
+        [ngModel]="company()"
+        (ngModelChange)="company.set($event)"
+        placeholder="e.g. Acme Corp"
+      />
+    </div>
+    <div class="field">
+      <label>URL (optional)</label>
+      <input
+        [ngModel]="url()"
+        (ngModelChange)="url.set($event)"
+        placeholder="https://..."
+      />
+    </div>
+    <div class="field">
+      <label>Job description</label>
+      <textarea
+        rows="10"
+        [ngModel]="description()"
+        (ngModelChange)="description.set($event)"
+        placeholder="Paste the full job description here..."
+      ></textarea>
+    </div>
+
+    @if (error()) {
+      <div class="alert alert-error">{{ error() }}</div>
+    }
+
+    <div class="actions">
+      <button class="btn-secondary" (click)="closed.emit()">Cancel</button>
+      <button class="btn-primary" (click)="submit()" [disabled]="saving()">
+        @if (saving()) { Creating... } @else { Create application }
+      </button>
+    </div>
+  </div>
+</div>

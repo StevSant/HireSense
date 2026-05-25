@@ -1,0 +1,79 @@
+<div class="match-tab">
+  <div class="controls">
+    <label>CV language:</label>
+    <select [value]="cvLanguage()" (change)="onLangChange($event)">
+      <option value="en">English</option>
+      <option value="es">Spanish</option>
+    </select>
+    <button class="btn-primary" (click)="run()" [disabled]="running()">
+      @if (running()) {
+        Running...
+      } @else if (match()) {
+        ↻ Re-run match
+      } @else {
+        Run match
+      }
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (match(); as m) {
+    <div class="score-grid">
+      <div class="score-card big">
+        <span class="label">Overall</span>
+        <span class="value" [style.color]="color(m.overall_score)">{{ pct(m.overall_score) }}%</span>
+      </div>
+      <div class="score-card">
+        <span class="label">Semantic</span>
+        <span class="value">{{ pct(m.semantic_score) }}%</span>
+      </div>
+      <div class="score-card">
+        <span class="label">Skills</span>
+        <span class="value">{{ pct(m.skill_score) }}%</span>
+      </div>
+      <div class="score-card">
+        <span class="label">Experience</span>
+        <span class="value">{{ pct(m.experience_score) }}%</span>
+      </div>
+      <div class="score-card">
+        <span class="label">Language</span>
+        <span class="value">{{ pct(m.language_score) }}%</span>
+      </div>
+    </div>
+
+    <div class="cols">
+      <div class="row">
+        <h3>Matched skills</h3>
+        <app-skill-chips [skills]="m.matched_skills" [variant]="'matched'" />
+      </div>
+      <div class="row">
+        <h3>Missing skills</h3>
+        <app-skill-chips [skills]="m.missing_skills" [variant]="'missing'" />
+      </div>
+    </div>
+
+    @if (m.pros.length) {
+      <div class="row">
+        <h3>Pros</h3>
+        <ul>@for (p of m.pros; track p) { <li>{{ p }}</li> }</ul>
+      </div>
+    }
+    @if (m.cons.length) {
+      <div class="row">
+        <h3>Cons</h3>
+        <ul>@for (c of m.cons; track c) { <li>{{ c }}</li> }</ul>
+      </div>
+    }
+    @if (m.recommendations.length) {
+      <div class="row">
+        <h3>Recommendations</h3>
+        <ul>@for (r of m.recommendations; track r) { <li>{{ r }}</li> }</ul>
+      </div>
+    }
+  } @else {
+    <p class="muted">No match yet. Run one to see the score breakdown.</p>
+  }
+</div>

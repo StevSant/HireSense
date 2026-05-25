@@ -1,0 +1,51 @@
+.row { margin-bottom: 1.25rem; }
+
+.row-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.source-badge {
+  font-size: 0.8em;
+  color: #6b7280;
+  padding: 1px 8px;
+  border-radius: 8px;
+  background: #f3f4f6;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+textarea {
+  width: 100%;
+  font-family: inherit;
+  padding: 10px;
+  font-size: 0.95em;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+  }
+}
+
+.btn-sm { font-size: 0.85em; padding: 4px 10px; }
+
+.actions { display: flex; gap: 8px; }
+
+.alert-error {
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin: 1rem 0;
+}

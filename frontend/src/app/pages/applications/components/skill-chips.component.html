@@ -1,0 +1,23 @@
+<div class="chips" [class.variant-matched]="variant() === 'matched'" [class.variant-missing]="variant() === 'missing'">
+  @if (skills().length === 0 && !editable()) {
+    <span class="empty">—</span>
+  }
+  @for (skill of skills(); track skill) {
+    <span class="chip">
+      {{ skill }}
+      @if (editable()) {
+        <button type="button" (click)="onRemove(skill)" class="chip-remove" title="Remove">✕</button>
+      }
+    </span>
+  }
+  @if (editable()) {
+    <input
+      class="chip-input"
+      [ngModel]="draft()"
+      (ngModelChange)="draft.set($event)"
+      (keyup.enter)="onAdd()"
+      (blur)="onAdd()"
+      placeholder="+ add skill"
+    />
+  }
+</div>

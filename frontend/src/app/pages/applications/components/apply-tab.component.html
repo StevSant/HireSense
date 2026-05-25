@@ -1,0 +1,116 @@
+<div class="apply-tab">
+  <!-- Step 1: cover letter -->
+  <section class="step">
+    <div class="step-header">
+      <span class="step-num" [class.done]="letter()">1</span>
+      <h3>Generate cover letter</h3>
+    </div>
+
+    <div class="controls">
+      <div class="field-inline">
+        <label>CV language:</label>
+        <select [value]="cvLanguage()" (change)="onLangChange($event)">
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+        </select>
+      </div>
+      <div class="field-inline">
+        <label>Tone:</label>
+        <select [value]="tone()" (change)="onToneChange($event)">
+          <option value="professional">Professional</option>
+          <option value="enthusiastic">Enthusiastic</option>
+          <option value="concise">Concise</option>
+        </select>
+      </div>
+      <button class="btn-primary" (click)="generate()" [disabled]="generating()">
+        @if (generating()) {
+          Generating...
+        } @else if (letter()) {
+          ↻ Regenerate
+        } @else {
+          Generate cover letter
+        }
+      </button>
+    </div>
+
+    @if (letter(); as l) {
+      <div class="letter-preview">
+        <div class="letter-meta">
+          <span class="badge">tone: {{ l.tone }}</span>
+          @if (l.match_id) { <span class="badge">linked to match</span> }
+        </div>
+        <pre class="letter-body">{{ l.body }}</pre>
+      </div>
+    } @else {
+      <p class="muted">No cover letter yet. Generate one tailored to this job.</p>
+    }
+  </section>
+
+  <!-- Step 2: bundle download -->
+  <section class="step">
+    <div class="step-header">
+      <span class="step-num" [class.done]="letter() && hasCv()">2</span>
+      <h3>Download application bundle</h3>
+    </div>
+
+    @if (!hasCv()) {
+      <div class="alert">Optimize the CV first (CV tab) so the bundle includes a tailored PDF.</div>
+    }
+    @if (!letter()) {
+      <div class="alert">Generate a cover letter (above) before downloading the bundle.</div>
+    }
+
+    <div class="downloads">
+      <a class="btn-secondary" [href]="cvPdfUrl()" target="_blank" rel="noopener" [class.disabled]="!hasCv()">
+        📄 CV (PDF)
+      </a>
+      <a class="btn-secondary" [href]="coverLetterPdfUrl()" target="_blank" rel="noopener" [class.disabled]="!letter()">
+        📄 Cover letter (PDF)
+      </a>
+      <a class="btn-primary" [href]="bundleUrl()" target="_blank" rel="noopener" [class.disabled]="!letter() || !hasCv()">
+        📦 Bundle (.zip)
+      </a>
+    </div>
+  </section>
+
+  <!-- Step 3: submit -->
+  <section class="step">
+    <div class="step-header">
+      <span class="step-num" [class.done]="isApplied()">3</span>
+      <h3>Submit on the job board</h3>
+    </div>
+
+    <p class="hint">
+      Open the original job posting and upload the bundle. When done, mark this application
+      as <em>applied</em> so it shows up in your tracker.
+    </p>
+
+    <div class="submit-row">
+      @if (aggregate().url) {
+        <button class="btn-primary" (click)="openJobAndMarkApplied()">
+          🚀 Open job & mark applied
+        </button>
+      } @else {
+        <button class="btn-primary" (click)="markApplied()" [disabled]="marking() || isApplied()">
+          @if (marking()) {
+            Marking...
+          } @else if (isApplied()) {
+            ✓ Applied
+          } @else {
+            Mark as applied
+          }
+        </button>
+      }
+
+      @if (isApplied()) {
+        <span class="applied-badge">
+          ✓ Applied @if (aggregate().applied_at) { · {{ aggregate().applied_at }} }
+        </span>
+      }
+    </div>
+  </section>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+</div>

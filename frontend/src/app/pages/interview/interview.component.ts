@@ -7,11 +7,12 @@ import { IngestionService } from '../../core/services/ingestion.service';
 import { Competency } from './models/competency.model';
 import { InterviewPrep } from './models/interview-prep.model';
 import { Story } from './models/story.model';
+import { ApplicationsPrepListComponent } from './components/applications-prep-list.component';
 
 @Component({
   selector: 'app-interview',
   standalone: true,
-  imports: [FormsModule, TitleCasePipe],
+  imports: [FormsModule, TitleCasePipe, ApplicationsPrepListComponent],
   templateUrl: './interview.component.html',
   styleUrl: './interview.component.scss',
 })

@@ -1,0 +1,58 @@
+<div class="interview-tab">
+  <div class="controls">
+    <button class="btn-primary" (click)="run()" [disabled]="running()">
+      @if (running()) {
+        Generating...
+      } @else if (prep()) {
+        ↻ Re-run prep
+      } @else {
+        Generate prep
+      }
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (prep(); as p) {
+    <div class="cols">
+      <section class="card">
+        <h3>Competencies to probe</h3>
+        @if (p.competencies_to_probe.length) {
+          <ul>@for (c of p.competencies_to_probe; track c) { <li>{{ c }}</li> }</ul>
+        } @else {
+          <p class="muted">None</p>
+        }
+      </section>
+      <section class="card">
+        <h3>Technical topics</h3>
+        @if (p.technical_topics.length) {
+          <ul>@for (t of p.technical_topics; track t) { <li>{{ t }}</li> }</ul>
+        } @else {
+          <p class="muted">None</p>
+        }
+      </section>
+      <section class="card">
+        <h3>Negotiation points</h3>
+        @if (p.negotiation_points.length) {
+          <ul>@for (n of p.negotiation_points; track n) { <li>{{ n }}</li> }</ul>
+        } @else {
+          <p class="muted">None</p>
+        }
+      </section>
+    </div>
+
+    @if (p.matched_stories.length) {
+      <h3 class="section-title">Matched stories</h3>
+      @for (s of p.matched_stories; track s.story_id) {
+        <div class="story-card">
+          <div class="story-title">{{ s.story_title }}</div>
+          <div class="story-relevance">{{ s.relevance }}</div>
+        </div>
+      }
+    }
+  } @else {
+    <p class="muted">No prep yet. Generate one to see competencies, topics, and negotiation points.</p>
+  }
+</div>

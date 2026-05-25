@@ -22,6 +22,17 @@
           <option value="concise">Concise</option>
         </select>
       </div>
+      @if (filteredTemplates().length > 0) {
+        <div class="field-inline">
+          <label>Template:</label>
+          <select [value]="templateId()" (change)="onTemplateChange($event)">
+            <option value="">None</option>
+            @for (t of filteredTemplates(); track t.id) {
+              <option [value]="t.id">{{ t.name }}</option>
+            }
+          </select>
+        </div>
+      }
       <button class="btn-primary" (click)="generate()" [disabled]="generating()">
         @if (generating()) {
           Generating...

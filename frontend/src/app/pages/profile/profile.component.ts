@@ -3,7 +3,9 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ProfileService } from '../../core/services/profile.service';
 import { ApplicationsService } from '../../core/services/applications.service';
+import { CoverLetterTemplatesService } from '../../core/services/cover-letter-templates.service';
 import { CandidateProfile } from './models/candidate-profile.model';
+import { CoverLetterTemplate } from './models/cover-letter-template.model';
 import { CoverLetterLibraryItem } from '../applications/models/cover-letter-library-item.model';
 
 type ProfilePageTab = 'cv' | 'personal' | 'cover-letters';
@@ -18,6 +20,7 @@ type ProfilePageTab = 'cv' | 'personal' | 'cover-letters';
 export class ProfileComponent implements OnInit {
   private profileService = inject(ProfileService);
   private applicationsService = inject(ApplicationsService);
+  private templatesService = inject(CoverLetterTemplatesService);
 
   pageTab = signal<ProfilePageTab>('cv');
   uploadMode = signal<'upload' | 'paste'>('upload');
@@ -43,6 +46,17 @@ export class ProfileComponent implements OnInit {
   coverLettersLoading = signal(false);
   coverLettersError = signal('');
   copiedId = signal<string | null>(null);
+
+  templatesLoading = signal(false);
+  templatesError = signal('');
+  templates = this.templatesService.templates;
+  templatesLoaded = signal(false);
+  editingTemplateId = signal<string | null>(null); // null = not editing; 'new' = new draft
+  templateName = signal('');
+  templateBody = signal('');
+  templateTone = signal('professional');
+  templateLanguage = signal('en');
+  savingTemplate = signal(false);
 
   profile = this.profileService.profile;
   profiles = this.profileService.profiles;
@@ -187,7 +201,88 @@ export class ProfileComponent implements OnInit {
 
   selectTab(tab: ProfilePageTab): void {
     this.pageTab.set(tab);
-    if (tab === 'cover-letters') this.loadCoverLetters();
+    if (tab === 'cover-letters') {
+      this.loadCoverLetters();
+      this.loadTemplates();
+    }
+  }
+
+  loadTemplates(): void {
+    if (this.templatesLoaded() || this.templatesLoading()) return;
+    this.templatesLoading.set(true);
+    this.templatesError.set('');
+    this.templatesService.list().subscribe({
+      next: () => {
+        this.templatesLoaded.set(true);
+        this.templatesLoading.set(false);
+      },
+      error: (err) => {
+        this.templatesError.set(err.error?.detail || 'Failed to load templates');
+        this.templatesLoading.set(false);
+      },
+    });
+  }
+
+  startNewTemplate(): void {
+    this.editingTemplateId.set('new');
+    this.templateName.set('');
+    this.templateBody.set('');
+    this.templateTone.set('professional');
+    this.templateLanguage.set('en');
+    this.templatesError.set('');
+  }
+
+  startEditTemplate(t: CoverLetterTemplate): void {
+    this.editingTemplateId.set(t.id);
+    this.templateName.set(t.name);
+    this.templateBody.set(t.body);
+    this.templateTone.set(t.tone);
+    this.templateLanguage.set(t.language);
+    this.templatesError.set('');
+  }
+
+  cancelEditTemplate(): void {
+    this.editingTemplateId.set(null);
+    this.templatesError.set('');
+  }
+
+  saveTemplate(): void {
+    if (!this.templateName().trim() || !this.templateBody().trim()) {
+      this.templatesError.set('Name and body are required');
+      return;
+    }
+    this.savingTemplate.set(true);
+    this.templatesError.set('');
+    const editingId = this.editingTemplateId();
+    const payload = {
+      name: this.templateName().trim(),
+      body: this.templateBody(),
+      tone: this.templateTone(),
+      language: this.templateLanguage(),
+    };
+    const obs =
+      editingId && editingId !== 'new'
+        ? this.templatesService.update(editingId, payload)
+        : this.templatesService.create(payload);
+    obs.subscribe({
+      next: () => {
+        this.savingTemplate.set(false);
+        this.editingTemplateId.set(null);
+      },
+      error: (err) => {
+        this.templatesError.set(err.error?.detail || 'Failed to save template');
+        this.savingTemplate.set(false);
+      },
+    });
+  }
+
+  deleteTemplate(t: CoverLetterTemplate): void {
+    if (!confirm(`Delete template "${t.name}"?`)) return;
+    this.templatesService.delete(t.id).subscribe({
+      error: (err) => {
+        this.templatesError.set(err.error?.detail || 'Failed to delete template');
+      },
+    });
   }
 
   startEditPersonal(): void {

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid as uuid_mod
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -17,6 +18,14 @@ _ALLOWED_EXTENSIONS = {".pdf", ".tex"}
 class UploadCVRequest(BaseModel):
     tex_content: str
     language: str = "en"
+
+
+class ProfilePatchRequest(BaseModel):
+    name_override: str | None = None
+    location_override: str | None = None
+    linkedin_url: str | None = None
+    github_url: str | None = None
+    portfolio_url: str | None = None
 
 
 @router.post("/upload", response_model=CandidateProfile)
@@ -80,6 +89,31 @@ async def get_profile(
     service: Annotated[object, Depends(get_profile_service)],
 ) -> CandidateProfile:
     profile = await service.get_profile(profile_id)
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+    return profile
+
+
+@router.patch("/{profile_id}", response_model=CandidateProfile)
+async def update_profile(
+    profile_id: uuid_mod.UUID,
+    body: ProfilePatchRequest,
+    service: Annotated[object, Depends(get_profile_service)],
+) -> CandidateProfile:
+    fields = body.model_dump(exclude_unset=True)
+    for key, value in list(fields.items()):
+        if key.endswith("_url") and value is not None:
+            value = value.strip()
+            if value and not (value.startswith("http://") or value.startswith("https://")):
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"{key} must start with http:// or https://",
+                )
+            fields[key] = value or None
+    try:
+        profile = await service.update_profile(profile_id, fields)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
     return profile

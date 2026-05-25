@@ -69,6 +69,13 @@
       </div>
     </div>
 
+    <!-- Use-this-job shortcuts -->
+    <div class="panel-shortcuts">
+      <button (click)="goToMatching()" class="btn-shortcut">Match</button>
+      <button (click)="goToOptimization()" class="btn-shortcut">Optimize CV</button>
+      <button (click)="goToInterview()" class="btn-shortcut">Prep Interview</button>
+    </div>
+
     <!-- Actions -->
     <div class="panel-actions">
       <a [href]="job().url" target="_blank" rel="noopener" class="btn-primary btn-action">

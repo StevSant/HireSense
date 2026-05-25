@@ -10,7 +10,7 @@
       role="tab"
       class="page-tab"
       [class.active]="pageTab() === 'cv'"
-      (click)="pageTab.set('cv')"
+      (click)="selectTab('cv')"
     >
       CV
     </button>
@@ -19,7 +19,7 @@
       role="tab"
       class="page-tab"
       [class.active]="pageTab() === 'personal'"
-      (click)="pageTab.set('personal')"
+      (click)="selectTab('personal')"
     >
       Personal details
     </button>
@@ -28,7 +28,7 @@
       role="tab"
       class="page-tab"
       [class.active]="pageTab() === 'cover-letters'"
-      (click)="pageTab.set('cover-letters')"
+      (click)="selectTab('cover-letters')"
     >
       Cover letters
     </button>
@@ -194,11 +194,11 @@
     <div class="profile-view">
       <div class="profile-header">
         <div class="profile-identity">
-          <div class="avatar">{{ profile()!.name.charAt(0).toUpperCase() }}</div>
+          <div class="avatar">{{ (effectiveName() || '?').charAt(0).toUpperCase() }}</div>
           <div>
-            <h2>{{ profile()!.name }}</h2>
-            @if (profile()!.location) {
-              <span class="profile-location">{{ profile()!.location }}</span>
+            <h2>{{ effectiveName() || profile()!.name }}</h2>
+            @if (effectiveLocation()) {
+              <span class="profile-location">{{ effectiveLocation() }}</span>
             }
           </div>
         </div>
@@ -310,44 +310,99 @@
   @if (pageTab() === 'personal') {
   <section class="tab-panel">
     @if (profile(); as p) {
-      <div class="details-card">
-        <div class="details-grid">
-          <div class="details-item">
-            <span class="details-label">Name</span>
-            <span class="details-value">{{ p.name || '—' }}</span>
+      @if (!editingPersonal()) {
+        <div class="details-card">
+          <div class="details-header">
+            <h3>Your details</h3>
+            <button type="button" class="btn-secondary btn-sm" (click)="startEditPersonal()">Edit</button>
           </div>
-          <div class="details-item">
-            <span class="details-label">Email</span>
-            <span class="details-value">{{ p.email || '—' }}</span>
+          <div class="details-grid">
+            <div class="details-item">
+              <span class="details-label">Name</span>
+              <span class="details-value">{{ effectiveName() || '—' }}</span>
+            </div>
+            <div class="details-item">
+              <span class="details-label">Email</span>
+              <span class="details-value">{{ p.email || '—' }}</span>
+            </div>
+            <div class="details-item">
+              <span class="details-label">Phone</span>
+              <span class="details-value">{{ p.phone || '—' }}</span>
+            </div>
+            <div class="details-item">
+              <span class="details-label">Location</span>
+              <span class="details-value">{{ effectiveLocation() || '—' }}</span>
+            </div>
+            <div class="details-item">
+              <span class="details-label">Primary language</span>
+              <span class="details-value">{{ p.language === 'es' ? 'Espanol' : 'English' }}</span>
+            </div>
+            @if (p.linkedin_url) {
+              <div class="details-item">
+                <span class="details-label">LinkedIn</span>
+                <a class="details-link" [href]="p.linkedin_url" target="_blank" rel="noopener">{{ urlLabel(p.linkedin_url) }}</a>
+              </div>
+            }
+            @if (p.github_url) {
+              <div class="details-item">
+                <span class="details-label">GitHub</span>
+                <a class="details-link" [href]="p.github_url" target="_blank" rel="noopener">{{ urlLabel(p.github_url) }}</a>
+              </div>
+            }
+            @if (p.portfolio_url) {
+              <div class="details-item">
+                <span class="details-label">Portfolio</span>
+                <a class="details-link" [href]="p.portfolio_url" target="_blank" rel="noopener">{{ urlLabel(p.portfolio_url) }}</a>
+              </div>
+            }
           </div>
-          <div class="details-item">
-            <span class="details-label">Phone</span>
-            <span class="details-value">{{ p.phone || '—' }}</span>
-          </div>
-          <div class="details-item">
-            <span class="details-label">Location</span>
-            <span class="details-value">{{ p.location || '—' }}</span>
-          </div>
-          <div class="details-item">
-            <span class="details-label">Primary language</span>
-            <span class="details-value">{{ p.language === 'es' ? 'Espanol' : 'English' }}</span>
-          </div>
+          <p class="details-source-note">
+            Name and location fall back to what was parsed from your CV unless you've set an override.
+          </p>
         </div>
-        <p class="details-source-note">
-          These fields were parsed from your uploaded CV.
-        </p>
-      </div>
-
-      <div class="coming-soon-card">
-        <div class="coming-soon-badge">Coming soon</div>
-        <h3>Manual fields</h3>
-        <p>Edit your name and location directly, and add LinkedIn, GitHub, and portfolio links that aren't on your CV.</p>
-      </div>
+      } @else {
+        <form class="details-card edit-form" (submit)="$event.preventDefault(); savePersonal()">
+          <div class="details-header">
+            <h3>Edit your details</h3>
+          </div>
+          <div class="edit-grid">
+            <label class="edit-field">
+              <span class="edit-label">Name (override)</span>
+              <input type="text" [ngModel]="editName()" (ngModelChange)="editName.set($event)" name="name" [placeholder]="profile()!.name || 'Your name'" />
+            </label>
+            <label class="edit-field">
+              <span class="edit-label">Location (override)</span>
+              <input type="text" [ngModel]="editLocation()" (ngModelChange)="editLocation.set($event)" name="location" [placeholder]="profile()!.location || 'City, Country'" />
+            </label>
+            <label class="edit-field">
+              <span class="edit-label">LinkedIn</span>
+              <input type="url" [ngModel]="editLinkedin()" (ngModelChange)="editLinkedin.set($event)" name="linkedin" placeholder="https://linkedin.com/in/you" />
+            </label>
+            <label class="edit-field">
+              <span class="edit-label">GitHub</span>
+              <input type="url" [ngModel]="editGithub()" (ngModelChange)="editGithub.set($event)" name="github" placeholder="https://github.com/you" />
+            </label>
+            <label class="edit-field edit-field-wide">
+              <span class="edit-label">Portfolio</span>
+              <input type="url" [ngModel]="editPortfolio()" (ngModelChange)="editPortfolio.set($event)" name="portfolio" placeholder="https://your-site.com" />
+            </label>
+          </div>
+          @if (personalError()) {
+            <div class="alert alert-error">{{ personalError() }}</div>
+          }
+          <div class="edit-actions">
+            <button type="button" class="btn-secondary" (click)="cancelEditPersonal()">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="savingPersonal()">
+              @if (savingPersonal()) { Saving... } @else { Save }
+            </button>
+          </div>
+        </form>
+      }
     } @else {
       <div class="empty-state">
         <p class="empty-state-title">No profile yet</p>
         <p class="empty-state-hint">
-          Upload a CV in the <button type="button" class="link-button" (click)="pageTab.set('cv')">CV tab</button> to see your parsed details here.
+          Upload a CV in the <button type="button" class="link-button" (click)="selectTab('cv')">CV tab</button> to see your parsed details here.
         </p>
       </div>
     }
@@ -364,11 +419,10 @@
         </svg>
       </div>
       <div class="per-job-body">
-        <h3>Generated per job</h3>
+        <h3>Generate a new one</h3>
         <p>
           Cover letters are tailored to each specific job in the <strong>Applications</strong> tab.
-          Open any application and use the <em>Apply</em> tab to generate one matched to the job
-          and your CV.
+          Open any application and use the <em>Apply</em> tab.
         </p>
         <a routerLink="/dashboard/applications" class="btn-primary per-job-cta">
           Go to Applications
@@ -376,10 +430,46 @@
       </div>
     </div>
 
-    <div class="coming-soon-card">
-      <div class="coming-soon-badge">Coming soon</div>
-      <h3>Library</h3>
-      <p>A single view of every cover letter you've generated, across all applications. Search, copy, and reuse without digging through each job.</p>
+    <div class="library-section">
+      <h3 class="library-heading">Library</h3>
+
+      @if (coverLettersLoading()) {
+        <div class="library-loading">Loading…</div>
+      } @else if (coverLettersError()) {
+        <div class="alert alert-error">{{ coverLettersError() }}</div>
+      } @else if (coverLetters() === null || coverLetters()!.length === 0) {
+        <div class="library-empty">
+          <p>You haven't generated any cover letters yet.</p>
+          <p class="library-empty-hint">Open an application and use the Apply tab to create your first one.</p>
+        </div>
+      } @else {
+        <div class="library-list">
+          @for (item of coverLetters(); track item.id) {
+            <div class="library-item">
+              <div class="library-item-header">
+                <div class="library-item-titles">
+                  <h4>{{ item.job_title }}</h4>
+                  <span class="library-item-company">{{ item.company }}</span>
+                </div>
+                <div class="library-item-badges">
+                  <span class="badge tone-badge">{{ item.tone }}</span>
+                  <span class="badge status-badge status-{{ item.application_status }}">{{ item.application_status }}</span>
+                  <span class="library-item-time">{{ relativeTime(item.created_at) }}</span>
+                </div>
+              </div>
+              <p class="library-item-body">{{ item.body }}</p>
+              <div class="library-item-actions">
+                <button type="button" class="btn-secondary btn-sm" (click)="copyBody(item)">
+                  @if (copiedId() === item.id) { ✓ Copied } @else { Copy body }
+                </button>
+                <a class="btn-secondary btn-sm" [routerLink]="['/dashboard/applications', item.application_id]">
+                  Open application
+                </a>
+              </div>
+            </div>
+          }
+        </div>
+      }
     </div>
 
     <div class="coming-soon-card">

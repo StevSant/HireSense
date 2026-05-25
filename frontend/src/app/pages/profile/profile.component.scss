@@ -815,3 +815,231 @@ $transition: 0.2s ease;
 .tab-panel .coming-soon-card + .coming-soon-card {
   margin-top: 1.25rem;
 }
+
+// --- Personal details: header + edit form ---
+.details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $text-dark;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+}
+
+.details-link {
+  font-size: 0.9rem;
+  color: $primary;
+  text-decoration: none;
+  font-weight: 500;
+  word-break: break-all;
+
+  &:hover { text-decoration: underline; }
+}
+
+.edit-form { padding-top: 1.25rem; }
+
+.edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  &.edit-field-wide { grid-column: 1 / -1; }
+
+  input {
+    padding: 0.55rem 0.75rem;
+    border: 1px solid $border;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: $text-dark;
+    background: $surface;
+    font-family: inherit;
+    transition: border-color $transition, box-shadow $transition;
+
+    &::placeholder { color: #c0c5ce; }
+
+    &:focus {
+      outline: none;
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    }
+  }
+}
+
+.edit-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $text-mid;
+  letter-spacing: 0.02em;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid $border;
+}
+
+// --- Cover letters: library list ---
+.library-section { margin-bottom: 1.25rem; }
+
+.library-heading {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: $text-light;
+  margin: 0 0 0.75rem;
+}
+
+.library-loading {
+  padding: 2rem;
+  text-align: center;
+  color: $text-light;
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+}
+
+.library-empty {
+  padding: 2rem 1.5rem;
+  text-align: center;
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+
+  p {
+    margin: 0;
+    color: $text-mid;
+    font-size: 0.9rem;
+  }
+
+  .library-empty-hint {
+    color: $text-light;
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+  }
+}
+
+.library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.library-item {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 1.15rem 1.35rem;
+}
+
+.library-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.library-item-titles {
+  min-width: 0;
+
+  h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: $text-dark;
+  }
+}
+
+.library-item-company {
+  display: block;
+  font-size: 0.82rem;
+  color: $text-light;
+  margin-top: 0.1rem;
+}
+
+.library-item-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.library-item-time {
+  font-size: 0.75rem;
+  color: $text-light;
+}
+
+.badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.5rem;
+  border-radius: 4px;
+}
+
+.tone-badge {
+  background: $primary-light;
+  color: $primary-dark;
+}
+
+.status-badge {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.status-badge.status-applied {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.status-interviewing {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.status-offered {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.library-item-body {
+  margin: 0 0 0.85rem;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: $text-mid;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+}
+
+.library-item-actions {
+  display: flex;
+  gap: 0.5rem;
+}

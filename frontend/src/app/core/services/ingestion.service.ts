@@ -16,6 +16,8 @@ export interface JobFilters {
   skills?: string;
   date_from?: string;
   date_to?: string;
+  user_location?: string;
+  strict_location?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -45,6 +47,8 @@ export class IngestionService {
     if (filters.skills) params = params.set('skills', filters.skills);
     if (filters.date_from) params = params.set('date_from', filters.date_from);
     if (filters.date_to) params = params.set('date_to', filters.date_to);
+    if (filters.user_location) params = params.set('user_location', filters.user_location);
+    if (filters.strict_location) params = params.set('strict_location', 'true');
 
     return this.http.get<PaginatedJobsResponse>(`${environment.apiUrl}/ingestion/jobs`, { params });
   }

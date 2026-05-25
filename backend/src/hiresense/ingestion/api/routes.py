@@ -62,6 +62,8 @@ async def list_jobs(
     skills: str | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
+    user_location: str | None = None,
+    strict_location: bool = False,
 ) -> PaginatedResult:
     all_jobs = orchestrator.list_jobs() if tab == "boards" else scanner.list_jobs()
     params = JobQueryParams(
@@ -73,6 +75,8 @@ async def list_jobs(
         skills=skills,
         date_from=date_from,
         date_to=date_to,
+        user_location=user_location,
+        strict_location=strict_location,
     )
     return filter_and_paginate(all_jobs, params)
 

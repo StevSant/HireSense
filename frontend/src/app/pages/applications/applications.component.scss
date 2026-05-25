@@ -91,3 +91,48 @@
   border-radius: 6px;
   border: 1px solid #fecaca;
 }
+
+.col-actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.row-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #9ca3af;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s, border-color 0.15s;
+
+  &:hover {
+    color: #dc2626;
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+
+  &:focus-visible {
+    outline: none;
+    opacity: 1;
+    color: #dc2626;
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 1;
+  }
+}
+
+.row:hover .row-delete {
+  opacity: 0.8;
+}

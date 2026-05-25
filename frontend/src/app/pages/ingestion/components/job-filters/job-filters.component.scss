@@ -55,3 +55,40 @@
     text-decoration: underline;
   }
 }
+
+.location-pref-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+
+  .filter-item {
+    min-width: 200px;
+    max-width: 280px;
+  }
+}
+
+.strict-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding-bottom: 0.375rem;
+
+  input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  span {
+    user-select: none;
+  }
+}

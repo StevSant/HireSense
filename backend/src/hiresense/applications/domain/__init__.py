@@ -6,6 +6,7 @@ from hiresense.applications.domain.aggregate import (
     MatchView,
 )
 from hiresense.applications.domain.application_service import ApplicationService
+from hiresense.applications.domain.artifact_service import ArtifactService
 from hiresense.applications.domain.models import (
     ApplicationCvOptimization,
     ApplicationInterviewPrep,
@@ -22,6 +23,7 @@ __all__ = [
     "ApplicationJobSnapshot",
     "ApplicationMatch",
     "ApplicationService",
+    "ArtifactService",
     "CvOptimizationView",
     "InterviewPrepView",
     "JobSnapshotSource",

@@ -7,7 +7,10 @@ from typing import TYPE_CHECKING
 
 from hiresense.profile.domain.latex_parser import LaTeXParser, ParsedCV
 from hiresense.profile.domain.models import CandidateProfile, CVSection, Profile
+from hiresense.profile.domain.profile_language_view import ProfileLanguageView
 from hiresense.profile.domain.skill_extractor import SkillExtractor
+
+SUMMARY_MAX_CHARS = 2000
 
 if TYPE_CHECKING:
     from hiresense.profile.domain.pdf_parser import PDFParser
@@ -123,6 +126,29 @@ class ProfileService:
         profiles = list(self._profiles.values())
         if language:
             profiles = [p for p in profiles if p.language == language]
+        return profiles[-1] if profiles else None
+
+    def get_for_language(self, language: str) -> ProfileLanguageView | None:
+        """Sync uniform view of the latest profile for a given language.
+
+        Returns None if no profile exists for that language.
+        """
+        profile = self._get_latest_for_language_sync(language)
+        if profile is None:
+            return None
+        summary = "\n\n".join(s.content for s in profile.sections)[:SUMMARY_MAX_CHARS]
+        return ProfileLanguageView(
+            language=profile.language,
+            summary=summary,
+            skills=list(profile.skills or []),
+            raw_tex=profile.raw_tex or "",
+        )
+
+    def _get_latest_for_language_sync(self, language: str) -> CandidateProfile | None:
+        if self._repository is not None:
+            orm = self._repository.get_latest(language=language)
+            return self._to_response(orm) if orm else None
+        profiles = [p for p in self._profiles.values() if p.language == language]
         return profiles[-1] if profiles else None
 
     async def list_profiles(self) -> list[CandidateProfile]:

@@ -353,4 +353,40 @@
     }
   </section>
   }
+
+  @if (pageTab() === 'cover-letters') {
+  <section class="tab-panel">
+    <div class="per-job-card">
+      <div class="per-job-icon" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+      </div>
+      <div class="per-job-body">
+        <h3>Generated per job</h3>
+        <p>
+          Cover letters are tailored to each specific job in the <strong>Applications</strong> tab.
+          Open any application and use the <em>Apply</em> tab to generate one matched to the job
+          and your CV.
+        </p>
+        <a routerLink="/dashboard/applications" class="btn-primary per-job-cta">
+          Go to Applications
+        </a>
+      </div>
+    </div>
+
+    <div class="coming-soon-card">
+      <div class="coming-soon-badge">Coming soon</div>
+      <h3>Library</h3>
+      <p>A single view of every cover letter you've generated, across all applications. Search, copy, and reuse without digging through each job.</p>
+    </div>
+
+    <div class="coming-soon-card">
+      <div class="coming-soon-badge">Coming soon</div>
+      <h3>Templates</h3>
+      <p>Reusable cover letter templates you can pick from when applying — set the tone, opening, and signature once.</p>
+    </div>
+  </section>
+  }
 </div>

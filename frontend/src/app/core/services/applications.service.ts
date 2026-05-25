@@ -78,7 +78,7 @@ export class ApplicationsService {
 
   generateCoverLetter(
     id: string,
-    payload: { cv_language: string; tone?: string },
+    payload: { cv_language: string; tone?: string; template_id?: string | null },
   ): Observable<CoverLetter> {
     return this.http.post<CoverLetter>(`${this.base}/${id}/cover-letter`, payload);
   }

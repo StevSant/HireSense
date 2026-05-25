@@ -859,7 +859,8 @@ $transition: 0.2s ease;
 
   &.edit-field-wide { grid-column: 1 / -1; }
 
-  input {
+  input,
+  select {
     padding: 0.55rem 0.75rem;
     border: 1px solid $border;
     border-radius: 6px;
@@ -876,6 +877,10 @@ $transition: 0.2s ease;
       border-color: $primary;
       box-shadow: 0 0 0 3px rgba($primary, 0.1);
     }
+  }
+
+  select {
+    cursor: pointer;
   }
 }
 
@@ -1042,4 +1047,47 @@ $transition: 0.2s ease;
 .library-item-actions {
   display: flex;
   gap: 0.5rem;
+}
+
+// --- Cover letter templates ---
+.templates-section {
+  margin-top: 1.5rem;
+}
+
+.templates-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 0.75rem;
+
+  .library-heading { margin: 0; }
+}
+
+.template-body-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid $border;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  color: $text-dark;
+  background: $surface;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color $transition, box-shadow $transition;
+
+  &::placeholder { color: #c0c5ce; }
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+}
+
+.template-delete:hover {
+  color: $danger;
+  border-color: rgba($danger, 0.3);
+  background: $danger-bg;
 }

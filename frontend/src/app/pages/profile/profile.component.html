@@ -472,10 +472,94 @@
       }
     </div>
 
-    <div class="coming-soon-card">
-      <div class="coming-soon-badge">Coming soon</div>
-      <h3>Templates</h3>
-      <p>Reusable cover letter templates you can pick from when applying — set the tone, opening, and signature once.</p>
+    <div class="templates-section">
+      <div class="templates-header">
+        <h3 class="library-heading">Templates</h3>
+        @if (editingTemplateId() === null) {
+          <button type="button" class="btn-secondary btn-sm" (click)="startNewTemplate()">+ New template</button>
+        }
+      </div>
+
+      @if (templatesLoading()) {
+        <div class="library-loading">Loading templates…</div>
+      } @else if (templatesError() && editingTemplateId() === null) {
+        <div class="alert alert-error">{{ templatesError() }}</div>
+      }
+
+      @if (editingTemplateId() !== null) {
+        <form class="details-card edit-form" (submit)="$event.preventDefault(); saveTemplate()">
+          <div class="details-header">
+            <h3>{{ editingTemplateId() === 'new' ? 'New template' : 'Edit template' }}</h3>
+          </div>
+          <div class="edit-grid">
+            <label class="edit-field">
+              <span class="edit-label">Name</span>
+              <input type="text" [ngModel]="templateName()" (ngModelChange)="templateName.set($event)" name="tpl-name" placeholder="e.g. Concise, technical" />
+            </label>
+            <label class="edit-field">
+              <span class="edit-label">Tone</span>
+              <select [ngModel]="templateTone()" (ngModelChange)="templateTone.set($event)" name="tpl-tone">
+                <option value="professional">Professional</option>
+                <option value="enthusiastic">Enthusiastic</option>
+                <option value="concise">Concise</option>
+              </select>
+            </label>
+            <label class="edit-field">
+              <span class="edit-label">Language</span>
+              <select [ngModel]="templateLanguage()" (ngModelChange)="templateLanguage.set($event)" name="tpl-lang">
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+              </select>
+            </label>
+            <label class="edit-field edit-field-wide">
+              <span class="edit-label">Body</span>
+              <textarea
+                [ngModel]="templateBody()"
+                (ngModelChange)="templateBody.set($event)"
+                name="tpl-body"
+                rows="10"
+                placeholder="The reference letter — used to match voice and structure when generating new ones."
+                class="template-body-input"
+              ></textarea>
+            </label>
+          </div>
+          @if (templatesError()) {
+            <div class="alert alert-error">{{ templatesError() }}</div>
+          }
+          <div class="edit-actions">
+            <button type="button" class="btn-secondary" (click)="cancelEditTemplate()">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="savingTemplate()">
+              @if (savingTemplate()) { Saving... } @else { Save }
+            </button>
+          </div>
+        </form>
+      } @else if (templates() === null || templates()!.length === 0) {
+        <div class="library-empty">
+          <p>No templates yet.</p>
+          <p class="library-empty-hint">Create one to give your generated cover letters a consistent voice.</p>
+        </div>
+      } @else {
+        <div class="library-list">
+          @for (t of templates(); track t.id) {
+            <div class="library-item">
+              <div class="library-item-header">
+                <div class="library-item-titles">
+                  <h4>{{ t.name }}</h4>
+                </div>
+                <div class="library-item-badges">
+                  <span class="badge tone-badge">{{ t.tone }}</span>
+                  <span class="badge status-badge">{{ t.language === 'es' ? 'es' : 'en' }}</span>
+                </div>
+              </div>
+              <p class="library-item-body">{{ t.body }}</p>
+              <div class="library-item-actions">
+                <button type="button" class="btn-secondary btn-sm" (click)="startEditTemplate(t)">Edit</button>
+                <button type="button" class="btn-secondary btn-sm template-delete" (click)="deleteTemplate(t)">Delete</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
     </div>
   </section>
   }

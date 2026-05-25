@@ -1,5 +1,6 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { ApplicationsService } from '../../../core/services/applications.service';
+import { CoverLetterTemplatesService } from '../../../core/services/cover-letter-templates.service';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
 
 @Component({
@@ -8,17 +9,30 @@ import { ApplicationAggregate } from '../models/application-aggregate.model';
   templateUrl: './apply-tab.component.html',
   styleUrl: './apply-tab.component.scss',
 })
-export class ApplyTabComponent {
+export class ApplyTabComponent implements OnInit {
   private service = inject(ApplicationsService);
+  private templatesService = inject(CoverLetterTemplatesService);
 
   aggregate = input.required<ApplicationAggregate>();
   changed = output<void>();
 
   cvLanguage = signal<'en' | 'es'>('en');
   tone = signal<'professional' | 'enthusiastic' | 'concise'>('professional');
+  templateId = signal<string>('');
   generating = signal(false);
   marking = signal(false);
   error = signal('');
+
+  templates = this.templatesService.templates;
+  filteredTemplates = computed(() =>
+    (this.templates() ?? []).filter((t) => t.language === this.cvLanguage()),
+  );
+
+  ngOnInit(): void {
+    if (this.templates() === null) {
+      this.templatesService.list().subscribe();
+    }
+  }
 
   letter = computed(() => this.aggregate().latest_cover_letter);
   hasCv = computed(() => this.aggregate().latest_optimization !== null);
@@ -89,21 +103,27 @@ export class ApplyTabComponent {
   generate(): void {
     this.generating.set(true);
     this.error.set('');
-    this.service
-      .generateCoverLetter(this.aggregate().id, {
-        cv_language: this.cvLanguage(),
-        tone: this.tone(),
-      })
-      .subscribe({
-        next: () => {
-          this.generating.set(false);
-          this.changed.emit();
-        },
-        error: (err) => {
-          this.error.set(err?.error?.detail ?? 'Cover letter generation failed');
-          this.generating.set(false);
-        },
-      });
+    const payload: { cv_language: string; tone?: string; template_id?: string } = {
+      cv_language: this.cvLanguage(),
+      tone: this.tone(),
+    };
+    if (this.templateId()) {
+      payload.template_id = this.templateId();
+    }
+    this.service.generateCoverLetter(this.aggregate().id, payload).subscribe({
+      next: () => {
+        this.generating.set(false);
+        this.changed.emit();
+      },
+      error: (err) => {
+        this.error.set(err?.error?.detail ?? 'Cover letter generation failed');
+        this.generating.set(false);
+      },
+    });
+  }
+
+  onTemplateChange(ev: Event): void {
+    this.templateId.set((ev.target as HTMLSelectElement).value);
   }
 
   openJobAndMarkApplied(): void {

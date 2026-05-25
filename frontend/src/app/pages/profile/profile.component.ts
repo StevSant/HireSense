@@ -1,19 +1,23 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ProfileService } from '../../core/services/profile.service';
 import { CandidateProfile } from './models/candidate-profile.model';
+
+type ProfilePageTab = 'cv' | 'personal' | 'cover-letters';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
 })
 export class ProfileComponent implements OnInit {
   private profileService = inject(ProfileService);
 
-  activeTab = signal<'upload' | 'paste'>('upload');
+  pageTab = signal<ProfilePageTab>('cv');
+  uploadMode = signal<'upload' | 'paste'>('upload');
   selectedFile = signal<File | null>(null);
   dragOver = signal(false);
   texContent = signal('');

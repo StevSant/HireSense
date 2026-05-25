@@ -3,25 +3,31 @@ from __future__ import annotations
 import uuid as uuid_mod
 
 from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.responses import StreamingResponse
 
+from hiresense.adapters.latex import LatexCompileError
 from hiresense.applications.api.dependencies import (
     get_application_service,
+    get_apply_service,
     get_artifact_service,
 )
 from hiresense.applications.api.schemas import (
     ApplicationListItemResponse,
     CreateApplicationRequest,
+    GenerateCoverLetterRequest,
     GenerateMatchRequest,
     GenerateOptimizationRequest,
     UpdateJobSnapshotRequest,
 )
 from hiresense.applications.domain.aggregate import (
     ApplicationAggregate,
+    CoverLetterView,
     CvOptimizationView,
     InterviewPrepView,
     MatchView,
 )
 from hiresense.applications.domain.application_service import ApplicationService
+from hiresense.applications.domain.apply_service import ApplyService
 from hiresense.applications.domain.artifact_service import ArtifactService
 from hiresense.identity.api.dependencies import require_auth
 
@@ -177,5 +183,101 @@ async def generate_interview_prep(
 ) -> InterviewPrepView:
     try:
         return await service.generate_interview_prep(application_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+# -------- apply (cover letter + PDFs + bundle + mark-applied) ----------
+
+@router.post(
+    "/{application_id}/cover-letter",
+    response_model=CoverLetterView,
+    status_code=201,
+)
+async def generate_cover_letter(
+    application_id: uuid_mod.UUID,
+    request: GenerateCoverLetterRequest,
+    service: ApplyService = Depends(get_apply_service),
+) -> CoverLetterView:
+    try:
+        return await service.generate_cover_letter(
+            application_id,
+            cv_language=request.cv_language,
+            tone=request.tone,
+        )
+    except ValueError as exc:
+        msg = str(exc).lower()
+        status_code = 404 if "not found" in msg else 400
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        # LLM not configured
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.get("/{application_id}/cv.pdf")
+async def download_cv_pdf(
+    application_id: uuid_mod.UUID,
+    optimization_id: uuid_mod.UUID | None = None,
+    service: ApplyService = Depends(get_apply_service),
+) -> StreamingResponse:
+    try:
+        pdf = await service.compile_cv_pdf(application_id, optimization_id=optimization_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except LatexCompileError as exc:
+        raise HTTPException(status_code=500, detail=f"LaTeX compile failed: {exc}") from exc
+    return StreamingResponse(
+        iter([pdf]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="cv_{application_id}.pdf"'},
+    )
+
+
+@router.get("/{application_id}/cover-letter.pdf")
+async def download_cover_letter_pdf(
+    application_id: uuid_mod.UUID,
+    cover_letter_id: uuid_mod.UUID | None = None,
+    service: ApplyService = Depends(get_apply_service),
+) -> StreamingResponse:
+    try:
+        pdf = await service.compile_cover_letter_pdf(application_id, cover_letter_id=cover_letter_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except LatexCompileError as exc:
+        raise HTTPException(status_code=500, detail=f"LaTeX compile failed: {exc}") from exc
+    return StreamingResponse(
+        iter([pdf]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="cover_letter_{application_id}.pdf"'},
+    )
+
+
+@router.get("/{application_id}/bundle.zip")
+async def download_bundle(
+    application_id: uuid_mod.UUID,
+    service: ApplyService = Depends(get_apply_service),
+) -> StreamingResponse:
+    try:
+        zip_bytes = await service.build_bundle(application_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except LatexCompileError as exc:
+        raise HTTPException(status_code=500, detail=f"LaTeX compile failed: {exc}") from exc
+    return StreamingResponse(
+        iter([zip_bytes]),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="application_{application_id}.zip"'},
+    )
+
+
+@router.post("/{application_id}/mark-applied", response_model=ApplicationAggregate)
+def mark_applied(
+    application_id: uuid_mod.UUID,
+    apply_service: ApplyService = Depends(get_apply_service),
+    app_service: ApplicationService = Depends(get_application_service),
+) -> ApplicationAggregate:
+    try:
+        apply_service.mark_applied(application_id)
+        return app_service.get(application_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

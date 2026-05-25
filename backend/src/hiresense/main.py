@@ -10,10 +10,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from hiresense.adapters.event_bus import InMemoryEventBus
+from hiresense.adapters.latex import LatexCompiler
 from hiresense.applications.api.provider import ApplicationsProvider
 from hiresense.applications.api.routes import router as applications_router
 from hiresense.applications.domain import ApplicationService, ArtifactService
 from hiresense.applications.domain import SkillExtractor as ApplicationsSkillExtractor
+from hiresense.applications.domain.apply_service import ApplyService
+from hiresense.applications.domain.cover_letter_generator import CoverLetterGenerator
 from hiresense.applications.infrastructure import ApplicationRepository
 from hiresense.config import Settings
 from hiresense.identity.api import router as auth_router
@@ -304,9 +307,19 @@ def create_app() -> FastAPI:
         profile_service=profile_service,
         tracking_service=tracking_service,
     )
+    cover_letter_generator = CoverLetterGenerator(llm=llm)
+    latex_compiler = LatexCompiler(compiler=settings.latex_compiler)
+    apply_service = ApplyService(
+        repository=application_repo,
+        cover_letter_generator=cover_letter_generator,
+        latex_compiler=latex_compiler,
+        profile_service=profile_service,
+        tracking_service=tracking_service,
+    )
     app.state.applications_provider = ApplicationsProvider(
         application_service=application_service,
         artifact_service=artifact_service,
+        apply_service=apply_service,
     )
     app.include_router(applications_router)
 

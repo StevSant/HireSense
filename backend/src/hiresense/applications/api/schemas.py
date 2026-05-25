@@ -44,6 +44,11 @@ class GenerateOptimizationRequest(BaseModel):
     match_id: uuid.UUID | None = None
 
 
+class GenerateCoverLetterRequest(BaseModel):
+    cv_language: str = "en"
+    tone: str = "professional"
+
+
 class ApplicationListItemResponse(BaseModel):
     id: uuid.UUID
     title: str

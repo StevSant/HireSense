@@ -102,6 +102,28 @@ class ApplicationCvOptimization(Base):
     )
 
 
+class ApplicationCoverLetter(Base):
+    __tablename__ = "application_cover_letters"
+    __table_args__ = (
+        Index("ix_application_cover_letters_app_created", "application_id", "created_at"),
+    )
+
+    id: Mapped[uuid_mod.UUID] = mapped_column(
+        Uuid, primary_key=True, default=uuid_mod.uuid4
+    )
+    application_id: Mapped[uuid_mod.UUID] = mapped_column(
+        Uuid, ForeignKey("tracked_applications.id", ondelete="CASCADE"), nullable=False
+    )
+    match_id: Mapped[uuid_mod.UUID | None] = mapped_column(
+        Uuid, ForeignKey("application_matches.id", ondelete="SET NULL"), nullable=True
+    )
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    tone: Mapped[str] = mapped_column(String(20), nullable=False, default="professional")
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
 class ApplicationInterviewPrep(Base):
     __tablename__ = "application_interview_preps"
     __table_args__ = (

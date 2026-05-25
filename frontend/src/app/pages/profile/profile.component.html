@@ -1,9 +1,41 @@
 <div class="page">
   <div class="page-header">
     <h1>My Profile</h1>
-    <p class="page-subtitle">Upload your CV to unlock intelligent job matching</p>
+    <p class="page-subtitle">Your CV, personal details, and cover letters in one place.</p>
   </div>
 
+  <div class="page-tabs" role="tablist">
+    <button
+      type="button"
+      role="tab"
+      class="page-tab"
+      [class.active]="pageTab() === 'cv'"
+      (click)="pageTab.set('cv')"
+    >
+      CV
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="page-tab"
+      [class.active]="pageTab() === 'personal'"
+      (click)="pageTab.set('personal')"
+    >
+      Personal details
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="page-tab"
+      [class.active]="pageTab() === 'cover-letters'"
+      (click)="pageTab.set('cover-letters')"
+    >
+      Cover letters
+    </button>
+  </div>
+
+  @if (pageTab() === 'cv') {
+  <section class="tab-panel">
   @if (initialLoading()) {
     <div class="loading-state">
       <div class="loading-spinner"></div>
@@ -14,8 +46,8 @@
       <div class="tab-bar">
         <button
           class="tab"
-          [class.active]="activeTab() === 'upload'"
-          (click)="activeTab.set('upload')"
+          [class.active]="uploadMode() === 'upload'"
+          (click)="uploadMode.set('upload')"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -26,8 +58,8 @@
         </button>
         <button
           class="tab"
-          [class.active]="activeTab() === 'paste'"
-          (click)="activeTab.set('paste')"
+          [class.active]="uploadMode() === 'paste'"
+          (click)="uploadMode.set('paste')"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
@@ -46,7 +78,7 @@
           </select>
         </div>
 
-        @if (activeTab() === 'upload') {
+        @if (uploadMode() === 'upload') {
           <div
             class="dropzone"
             [class.drag-over]="dragOver()"
@@ -271,5 +303,90 @@
         </div>
       }
     </div>
+  }
+  </section>
+  }
+
+  @if (pageTab() === 'personal') {
+  <section class="tab-panel">
+    @if (profile(); as p) {
+      <div class="details-card">
+        <div class="details-grid">
+          <div class="details-item">
+            <span class="details-label">Name</span>
+            <span class="details-value">{{ p.name || '—' }}</span>
+          </div>
+          <div class="details-item">
+            <span class="details-label">Email</span>
+            <span class="details-value">{{ p.email || '—' }}</span>
+          </div>
+          <div class="details-item">
+            <span class="details-label">Phone</span>
+            <span class="details-value">{{ p.phone || '—' }}</span>
+          </div>
+          <div class="details-item">
+            <span class="details-label">Location</span>
+            <span class="details-value">{{ p.location || '—' }}</span>
+          </div>
+          <div class="details-item">
+            <span class="details-label">Primary language</span>
+            <span class="details-value">{{ p.language === 'es' ? 'Espanol' : 'English' }}</span>
+          </div>
+        </div>
+        <p class="details-source-note">
+          These fields were parsed from your uploaded CV.
+        </p>
+      </div>
+
+      <div class="coming-soon-card">
+        <div class="coming-soon-badge">Coming soon</div>
+        <h3>Manual fields</h3>
+        <p>Edit your name and location directly, and add LinkedIn, GitHub, and portfolio links that aren't on your CV.</p>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <p class="empty-state-title">No profile yet</p>
+        <p class="empty-state-hint">
+          Upload a CV in the <button type="button" class="link-button" (click)="pageTab.set('cv')">CV tab</button> to see your parsed details here.
+        </p>
+      </div>
+    }
+  </section>
+  }
+
+  @if (pageTab() === 'cover-letters') {
+  <section class="tab-panel">
+    <div class="per-job-card">
+      <div class="per-job-icon" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+      </div>
+      <div class="per-job-body">
+        <h3>Generated per job</h3>
+        <p>
+          Cover letters are tailored to each specific job in the <strong>Applications</strong> tab.
+          Open any application and use the <em>Apply</em> tab to generate one matched to the job
+          and your CV.
+        </p>
+        <a routerLink="/dashboard/applications" class="btn-primary per-job-cta">
+          Go to Applications
+        </a>
+      </div>
+    </div>
+
+    <div class="coming-soon-card">
+      <div class="coming-soon-badge">Coming soon</div>
+      <h3>Library</h3>
+      <p>A single view of every cover letter you've generated, across all applications. Search, copy, and reuse without digging through each job.</p>
+    </div>
+
+    <div class="coming-soon-card">
+      <div class="coming-soon-badge">Coming soon</div>
+      <h3>Templates</h3>
+      <p>Reusable cover letter templates you can pick from when applying — set the tone, opening, and signature once.</p>
+    </div>
+  </section>
   }
 </div>

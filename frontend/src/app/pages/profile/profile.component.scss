@@ -594,3 +594,224 @@ $transition: 0.2s ease;
   padding: 0.3rem 0.75rem;
   font-size: 0.8rem;
 }
+
+// --- Page-level tab bar (CV / Personal / Cover letters) ---
+.page-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid $border;
+}
+
+.page-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.1rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: $text-light;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color $transition, border-color $transition;
+
+  &:hover {
+    color: $text-mid;
+  }
+
+  &.active {
+    color: $primary;
+    border-bottom-color: $primary;
+    font-weight: 600;
+  }
+}
+
+.tab-panel {
+  animation: tab-fade 0.18s ease;
+}
+
+@keyframes tab-fade {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// --- Personal details tab ---
+.details-card {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 1.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem 2rem;
+  margin-bottom: 1.25rem;
+}
+
+.details-item {
+  min-width: 0;
+}
+
+.details-label {
+  display: block;
+  font-size: 0.6875rem;
+  color: $text-light;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.details-value {
+  display: block;
+  font-size: 0.95rem;
+  color: $text-dark;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.details-source-note {
+  margin: 0;
+  padding-top: 1rem;
+  border-top: 1px solid $border;
+  font-size: 0.8rem;
+  color: $text-light;
+  font-style: italic;
+}
+
+// --- "Coming soon" card (shared with Cover letters tab) ---
+.coming-soon-card {
+  position: relative;
+  background: $surface;
+  border: 1px dashed $border;
+  border-radius: $radius;
+  padding: 1.5rem 1.75rem;
+  color: $text-mid;
+
+  h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    color: $text-dark;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: $text-light;
+  }
+}
+
+.coming-soon-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.2rem 0.55rem;
+  background: $primary-light;
+  color: $primary-dark;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+// --- Empty state (shared across tabs) ---
+.empty-state {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.empty-state-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: $text-dark;
+}
+
+.empty-state-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: $text-light;
+}
+
+// --- Inline link-styled button (e.g. "CV tab" link inside empty state) ---
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: $primary;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: $primary-dark;
+  }
+}
+
+// --- Cover letters: per-job explainer card ---
+.per-job-card {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.per-job-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: $primary-light;
+  color: $primary;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.per-job-body {
+  flex: 1;
+  min-width: 0;
+
+  h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    color: $text-dark;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: $text-mid;
+  }
+}
+
+.per-job-cta {
+  text-decoration: none;
+  display: inline-flex;
+}
+
+// Stack adjacent coming-soon cards inside the cover letters tab with spacing.
+.tab-panel .coming-soon-card + .coming-soon-card {
+  margin-top: 1.25rem;
+}

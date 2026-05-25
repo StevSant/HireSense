@@ -2,7 +2,9 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ProfileService } from '../../core/services/profile.service';
+import { ApplicationsService } from '../../core/services/applications.service';
 import { CandidateProfile } from './models/candidate-profile.model';
+import { CoverLetterLibraryItem } from '../applications/models/cover-letter-library-item.model';
 
 type ProfilePageTab = 'cv' | 'personal' | 'cover-letters';
 
@@ -15,6 +17,7 @@ type ProfilePageTab = 'cv' | 'personal' | 'cover-letters';
 })
 export class ProfileComponent implements OnInit {
   private profileService = inject(ProfileService);
+  private applicationsService = inject(ApplicationsService);
 
   pageTab = signal<ProfilePageTab>('cv');
   uploadMode = signal<'upload' | 'paste'>('upload');
@@ -27,10 +30,34 @@ export class ProfileComponent implements OnInit {
   error = signal('');
   showUploadForm = signal(false);
 
+  editingPersonal = signal(false);
+  editName = signal('');
+  editLocation = signal('');
+  editLinkedin = signal('');
+  editGithub = signal('');
+  editPortfolio = signal('');
+  savingPersonal = signal(false);
+  personalError = signal('');
+
+  coverLetters = signal<CoverLetterLibraryItem[] | null>(null);
+  coverLettersLoading = signal(false);
+  coverLettersError = signal('');
+  copiedId = signal<string | null>(null);
+
   profile = this.profileService.profile;
   profiles = this.profileService.profiles;
   activeLanguage = this.profileService.activeLanguage;
   uploadedLanguages = computed(() => Object.keys(this.profiles()));
+
+  effectiveName = computed(() => {
+    const p = this.profile();
+    return p ? (p.name_override || p.name || '') : '';
+  });
+
+  effectiveLocation = computed(() => {
+    const p = this.profile();
+    return p ? (p.location_override || p.location || '') : '';
+  });
 
   constructor() {}
 
@@ -156,5 +183,97 @@ export class ProfileComponent implements OnInit {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  selectTab(tab: ProfilePageTab): void {
+    this.pageTab.set(tab);
+    if (tab === 'cover-letters') this.loadCoverLetters();
+  }
+
+  startEditPersonal(): void {
+    const p = this.profile();
+    if (!p) return;
+    this.editName.set(p.name_override ?? '');
+    this.editLocation.set(p.location_override ?? '');
+    this.editLinkedin.set(p.linkedin_url ?? '');
+    this.editGithub.set(p.github_url ?? '');
+    this.editPortfolio.set(p.portfolio_url ?? '');
+    this.personalError.set('');
+    this.editingPersonal.set(true);
+  }
+
+  cancelEditPersonal(): void {
+    this.editingPersonal.set(false);
+    this.personalError.set('');
+  }
+
+  savePersonal(): void {
+    const p = this.profile();
+    if (!p) return;
+    this.savingPersonal.set(true);
+    this.personalError.set('');
+    const patch = {
+      name_override: this.editName().trim() || null,
+      location_override: this.editLocation().trim() || null,
+      linkedin_url: this.editLinkedin().trim() || null,
+      github_url: this.editGithub().trim() || null,
+      portfolio_url: this.editPortfolio().trim() || null,
+    };
+    this.profileService.updateProfile(p.id, patch).subscribe({
+      next: () => {
+        this.savingPersonal.set(false);
+        this.editingPersonal.set(false);
+      },
+      error: (err) => {
+        this.personalError.set(err.error?.detail || 'Failed to update profile');
+        this.savingPersonal.set(false);
+      },
+    });
+  }
+
+  urlLabel(url: string): string {
+    try {
+      const u = new URL(url);
+      return u.host + u.pathname.replace(/\/$/, '');
+    } catch {
+      return url;
+    }
+  }
+
+  loadCoverLetters(): void {
+    if (this.coverLetters() !== null || this.coverLettersLoading()) return;
+    this.coverLettersLoading.set(true);
+    this.coverLettersError.set('');
+    this.applicationsService.listAllCoverLetters().subscribe({
+      next: (items) => {
+        this.coverLetters.set(items);
+        this.coverLettersLoading.set(false);
+      },
+      error: (err) => {
+        this.coverLettersError.set(err.error?.detail || 'Failed to load cover letters');
+        this.coverLettersLoading.set(false);
+      },
+    });
+  }
+
+  copyBody(item: CoverLetterLibraryItem): void {
+    navigator.clipboard.writeText(item.body).then(() => {
+      this.copiedId.set(item.id);
+      setTimeout(() => {
+        if (this.copiedId() === item.id) this.copiedId.set(null);
+      }, 1500);
+    });
+  }
+
+  relativeTime(iso: string): string {
+    const then = new Date(iso).getTime();
+    if (isNaN(then)) return '';
+    const diff = Date.now() - then;
+    const minute = 60_000, hour = 60 * minute, day = 24 * hour;
+    if (diff < hour) return `${Math.max(1, Math.round(diff / minute))}m ago`;
+    if (diff < day) return `${Math.round(diff / hour)}h ago`;
+    if (diff < 30 * day) return `${Math.round(diff / day)}d ago`;
+    if (diff < 365 * day) return `${Math.round(diff / (30 * day))}mo ago`;
+    return `${Math.round(diff / (365 * day))}y ago`;
   }
 }

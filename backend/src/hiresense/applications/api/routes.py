@@ -214,6 +214,7 @@ async def generate_cover_letter(
             application_id,
             cv_language=request.cv_language,
             tone=request.tone,
+            template_id=request.template_id,
         )
     except ValueError as exc:
         msg = str(exc).lower()

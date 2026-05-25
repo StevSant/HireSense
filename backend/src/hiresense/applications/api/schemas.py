@@ -47,6 +47,7 @@ class GenerateOptimizationRequest(BaseModel):
 class GenerateCoverLetterRequest(BaseModel):
     cv_language: str = "en"
     tone: str = "professional"
+    template_id: uuid.UUID | None = None
 
 
 class ApplicationListItemResponse(BaseModel):

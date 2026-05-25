@@ -26,18 +26,21 @@ class ApplyService:
         latex_compiler: LatexCompiler,
         profile_service: Any,
         tracking_service: Any,
+        cover_letter_template_service: Any | None = None,
     ) -> None:
         self._repo = repository
         self._generator = cover_letter_generator
         self._latex = latex_compiler
         self._profiles = profile_service
         self._tracking = tracking_service
+        self._templates = cover_letter_template_service
 
     async def generate_cover_letter(
         self,
         application_id: uuid.UUID,
         cv_language: str = "en",
         tone: str = "professional",
+        template_id: uuid.UUID | None = None,
     ) -> CoverLetterView:
         snapshot = self._repo.get_snapshot(application_id)
         if snapshot is None:
@@ -52,6 +55,14 @@ class ApplyService:
         missing = list(latest_match.missing_skills) if latest_match else []
         match_id = latest_match.id if latest_match else None
 
+        template_body: str | None = None
+        if template_id is not None:
+            if self._templates is None:
+                raise ValueError("template_id provided but template service not configured")
+            template_body = self._templates.get_body(template_id)
+            if template_body is None:
+                raise ValueError(f"Template {template_id} not found")
+
         body = await self._generator.generate(
             title=tracked.title,
             company=tracked.company,
@@ -62,6 +73,7 @@ class ApplyService:
             pros=pros,
             missing_skills=missing,
             tone=tone,
+            template_body=template_body,
         )
 
         row = ApplicationCoverLetter(

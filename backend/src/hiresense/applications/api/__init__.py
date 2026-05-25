@@ -1,6 +1,7 @@
 from hiresense.applications.api.schemas import (
     ApplicationListItemResponse,
     CreateApplicationRequest,
+    GenerateCoverLetterRequest,
     GenerateMatchRequest,
     GenerateOptimizationRequest,
     UpdateApplicationRequest,
@@ -10,6 +11,7 @@ from hiresense.applications.api.schemas import (
 __all__ = [
     "ApplicationListItemResponse",
     "CreateApplicationRequest",
+    "GenerateCoverLetterRequest",
     "GenerateMatchRequest",
     "GenerateOptimizationRequest",
     "UpdateApplicationRequest",

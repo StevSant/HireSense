@@ -43,8 +43,13 @@ class SkillExtractor:
             prompt, system="You are a skill extraction assistant."
         )
 
+        cleaned = response.strip()
+        fence_match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", cleaned, re.DOTALL)
+        if fence_match:
+            cleaned = fence_match.group(1).strip()
+
         try:
-            skills = json.loads(response)
+            skills = json.loads(cleaned)
             if isinstance(skills, list):
                 return [s.strip().lower() for s in skills if isinstance(s, str)]
         except (json.JSONDecodeError, TypeError):

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
+from hiresense.ingestion.domain.html_stripper import strip_html
 from hiresense.ingestion.domain.models import RawJobListing
 
 
@@ -15,7 +16,7 @@ class RemotiveNormalizer:
         return {
             "title": d.get("title", ""),
             "company": d.get("company_name", ""),
-            "description": d.get("description", ""),
+            "description": strip_html(d.get("description", "")),
             "skills": d.get("tags", []),
             "location": d.get("candidate_required_location", ""),
             "salary_range": d.get("salary") or None,
@@ -37,7 +38,7 @@ class RemoteOKNormalizer:
         return {
             "title": d.get("position", ""),
             "company": d.get("company", ""),
-            "description": d.get("description", ""),
+            "description": strip_html(d.get("description", "")),
             "skills": d.get("tags", []),
             "location": d.get("location", "Worldwide"),
             "salary_range": salary_range,
@@ -58,7 +59,7 @@ class CSVNormalizer:
         return {
             "title": d.get("title", ""),
             "company": d.get("company", ""),
-            "description": d.get("description", ""),
+            "description": strip_html(d.get("description", "")),
             "skills": skills,
             "location": d.get("location", ""),
             "salary_range": d.get("salary_range") or None,

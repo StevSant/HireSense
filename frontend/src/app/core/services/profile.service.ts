@@ -69,4 +69,21 @@ export class ProfileService {
       }),
     );
   }
+
+  updateProfile(
+    id: string,
+    patch: Partial<{
+      name_override: string | null;
+      location_override: string | null;
+      linkedin_url: string | null;
+      github_url: string | null;
+      portfolio_url: string | null;
+    }>,
+  ): Observable<CandidateProfile> {
+    return this.http.patch<CandidateProfile>(`${environment.apiUrl}/profile/${id}`, patch).pipe(
+      tap((updated) => {
+        this.profiles.update((all) => ({ ...all, [updated.language]: updated }));
+      }),
+    );
+  }
 }

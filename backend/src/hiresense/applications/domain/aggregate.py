@@ -78,3 +78,14 @@ class ApplicationAggregate(BaseModel):
     optimization_count: int
     interview_prep_count: int
     cover_letter_count: int = 0
+
+
+class CoverLetterLibraryItem(BaseModel):
+    id: uuid.UUID
+    application_id: uuid.UUID
+    job_title: str
+    company: str
+    body: str
+    tone: str
+    application_status: str
+    created_at: datetime | None = None

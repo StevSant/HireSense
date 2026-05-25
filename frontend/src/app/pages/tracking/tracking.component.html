@@ -103,6 +103,10 @@
             <tr>
               <th>Company</th>
               <th>Title</th>
+              <th>Location</th>
+              <th>Salary</th>
+              <th>Source</th>
+              <th>Posted</th>
               <th>Status</th>
               <th>Applied</th>
               <th>Notes</th>
@@ -114,10 +118,28 @@
               <tr>
                 <td class="company">{{ app.company }}</td>
                 <td class="title">
-                  @if (app.url) {
+                  @if (app.job_id) {
+                    <a [routerLink]="['/dashboard/ingestion']" [queryParams]="{ job_id: app.job_id }" class="link">{{ app.title }}</a>
+                  } @else if (app.url) {
                     <a [href]="app.url" target="_blank" class="link">{{ app.title }}</a>
                   } @else {
                     {{ app.title }}
+                  }
+                </td>
+                <td>{{ app.location || '—' }}</td>
+                <td>{{ app.salary_range || '—' }}</td>
+                <td>
+                  @if (app.source) {
+                    <span class="badge source-badge-{{ app.source }}">{{ app.source }}</span>
+                  } @else {
+                    —
+                  }
+                </td>
+                <td class="date">
+                  @if (app.posted_date) {
+                    {{ app.posted_date | date: 'MMM d, y' }}
+                  } @else {
+                    —
                   }
                 </td>
                 <td>
@@ -161,7 +183,7 @@
               </tr>
               @if (expandedResearchId() === app.id && researchCache()[app.id]) {
                 <tr class="research-row">
-                  <td colspan="6">
+                  <td colspan="10">
                     <div class="research-panel">
                       <div class="research-grid">
                         <div class="research-item">

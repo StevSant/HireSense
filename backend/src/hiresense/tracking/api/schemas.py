@@ -32,5 +32,9 @@ class TrackedApplicationResponse(BaseModel):
     applied_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    location: str | None = None
+    salary_range: str | None = None
+    source: str | None = None
+    posted_date: datetime | None = None
 
     model_config = {"from_attributes": True}

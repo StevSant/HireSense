@@ -1,4 +1,5 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { IngestionService, JobFilters } from '../../core/services/ingestion.service';
 import { TrackingService } from '../../core/services/tracking.service';
 import { CreateApplicationRequest } from '../../core/models/create-application-request.model';
@@ -21,6 +22,7 @@ import { DatePipe } from '@angular/common';
 export class IngestionComponent implements OnInit {
   private ingestionService = inject(IngestionService);
   private trackingService = inject(TrackingService);
+  private route = inject(ActivatedRoute);
 
   trackedJobIds = computed(() => this.ingestionService.trackedJobIds());
 
@@ -63,6 +65,16 @@ export class IngestionComponent implements OnInit {
   ngOnInit(): void {
     this.loadPortals();
     this.loadJobs();
+    this.openDetailFromQueryParam();
+  }
+
+  private openDetailFromQueryParam(): void {
+    const jobId = this.route.snapshot.queryParamMap.get('job_id');
+    if (!jobId) return;
+    this.ingestionService.getJob(jobId).subscribe({
+      next: (job) => this.selectedJob.set(job),
+      error: () => {},
+    });
   }
 
   switchTab(tab: 'boards' | 'portals'): void {

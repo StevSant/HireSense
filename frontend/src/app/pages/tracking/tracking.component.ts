@@ -1,4 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TitleCasePipe, DatePipe } from '@angular/common';
 import { TrackingService } from '../../core/services/tracking.service';
@@ -13,7 +14,7 @@ import { UpdateApplicationRequest } from './models/update-application-request.mo
 @Component({
   selector: 'app-tracking',
   standalone: true,
-  imports: [FormsModule, TitleCasePipe, DatePipe],
+  imports: [FormsModule, TitleCasePipe, DatePipe, RouterLink],
   templateUrl: './tracking.component.html',
   styleUrl: './tracking.component.scss',
 })

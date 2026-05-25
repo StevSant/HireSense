@@ -9,61 +9,64 @@
       <button (click)="close.emit()" class="btn-close">✕</button>
     </div>
 
-    <!-- Meta grid -->
-    <div class="panel-section meta-grid">
-      <div class="meta-item">
-        <span class="meta-label">Location</span>
-        <span class="meta-value">{{ job().location || '—' }}</span>
+    <!-- Scrollable body -->
+    <div class="panel-body">
+      <!-- Meta grid -->
+      <div class="panel-section meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Location</span>
+          <span class="meta-value">{{ job().location || '—' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Posted</span>
+          <span class="meta-value">{{ job().posted_date ? (job().posted_date | date:'longDate') : '—' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Salary Range</span>
+          <span class="meta-value">{{ job().salary_range || '—' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Department</span>
+          <span class="meta-value">{{ job().department || '—' }}</span>
+        </div>
       </div>
-      <div class="meta-item">
-        <span class="meta-label">Posted</span>
-        <span class="meta-value">{{ job().posted_date ? (job().posted_date | date:'longDate') : '—' }}</span>
-      </div>
-      <div class="meta-item">
-        <span class="meta-label">Salary Range</span>
-        <span class="meta-value">{{ job().salary_range || '—' }}</span>
-      </div>
-      <div class="meta-item">
-        <span class="meta-label">Department</span>
-        <span class="meta-value">{{ job().department || '—' }}</span>
-      </div>
-    </div>
 
-    <!-- Source -->
-    <div class="panel-section">
-      <span class="section-label">Source</span>
-      <div class="source-badges">
-        <span class="badge source-badge">{{ job().source }}</span>
-        <span class="badge type-badge">{{ job().source_type }}</span>
-        @if (job().platform) {
-          <span class="badge platform-badge">{{ job().platform }}</span>
+      <!-- Source -->
+      <div class="panel-section">
+        <span class="section-label">Source</span>
+        <div class="source-badges">
+          <span class="badge source-badge">{{ job().source }}</span>
+          <span class="badge type-badge">{{ job().source_type }}</span>
+          @if (job().platform) {
+            <span class="badge platform-badge">{{ job().platform }}</span>
+          }
+        </div>
+        @if (job().categories.length > 0) {
+          <div class="category-tags">
+            @for (cat of job().categories; track cat) {
+              <span class="badge category-badge">{{ cat }}</span>
+            }
+          </div>
         }
       </div>
-      @if (job().categories.length > 0) {
-        <div class="category-tags">
-          @for (cat of job().categories; track cat) {
-            <span class="badge category-badge">{{ cat }}</span>
-          }
+
+      <!-- Skills -->
+      @if (job().skills.length > 0) {
+        <div class="panel-section">
+          <span class="section-label">Skills</span>
+          <div class="skill-chips">
+            @for (skill of job().skills; track skill) {
+              <span class="skill-tag">{{ skill }}</span>
+            }
+          </div>
         </div>
       }
-    </div>
 
-    <!-- Skills -->
-    @if (job().skills.length > 0) {
+      <!-- Description -->
       <div class="panel-section">
-        <span class="section-label">Skills</span>
-        <div class="skill-chips">
-          @for (skill of job().skills; track skill) {
-            <span class="skill-tag">{{ skill }}</span>
-          }
-        </div>
+        <span class="section-label">Description</span>
+        <div class="description-text">{{ job().description }}</div>
       </div>
-    }
-
-    <!-- Description -->
-    <div class="panel-section">
-      <span class="section-label">Description</span>
-      <div class="description-text">{{ job().description }}</div>
     </div>
 
     <!-- Actions -->

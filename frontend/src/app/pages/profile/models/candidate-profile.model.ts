@@ -10,4 +10,9 @@ export interface CandidateProfile {
   raw_tex: string;
   language: string;
   skills: string[];
+  name_override?: string | null;
+  location_override?: string | null;
+  linkedin_url?: string | null;
+  github_url?: string | null;
+  portfolio_url?: string | null;
 }

@@ -8,6 +8,7 @@ import { ApplicationMatch } from '../../pages/applications/models/application-ma
 import { CvOptimization } from '../../pages/applications/models/cv-optimization.model';
 import { ApplicationInterviewPrep } from '../../pages/applications/models/application-interview-prep.model';
 import { CoverLetter } from '../../pages/applications/models/cover-letter.model';
+import { CoverLetterLibraryItem } from '../../pages/applications/models/cover-letter-library-item.model';
 
 @Injectable({ providedIn: 'root' })
 export class ApplicationsService {
@@ -16,6 +17,10 @@ export class ApplicationsService {
 
   list(): Observable<ApplicationListItem[]> {
     return this.http.get<ApplicationListItem[]>(this.base);
+  }
+
+  listAllCoverLetters(): Observable<CoverLetterLibraryItem[]> {
+    return this.http.get<CoverLetterLibraryItem[]>(`${this.base}/cover-letters`);
   }
 
   get(id: string): Observable<ApplicationAggregate> {

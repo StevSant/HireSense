@@ -52,6 +52,11 @@ class Settings(BaseSettings):
     llm_provider: str = "anthropic"
     llm_api_key: str
     llm_model: str = "claude-sonnet-4-6"
+    # Fernet key for encrypting API keys at rest in the admin llm_settings
+    # row. Generate via: Fernet.generate_key().decode(). Empty disables
+    # encryption-backed persistence; the admin endpoints will refuse to
+    # save a new key and the runtime falls back to llm_api_key from env.
+    llm_settings_encryption_key: str = ""
     embedding_model: str = "all-mpnet-base-v2"
     embedding_device: str = "cpu"
 

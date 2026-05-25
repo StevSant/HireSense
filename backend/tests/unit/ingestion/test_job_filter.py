@@ -168,3 +168,80 @@ def test_job_query_params_accepts_location_match_fields() -> None:
     params = JobQueryParams(user_location="Chile", strict_location=True)
     assert params.user_location == "Chile"
     assert params.strict_location is True
+
+
+def test_strict_location_off_is_no_op() -> None:
+    jobs = [
+        _job(id="1", location="Remote (Remote)"),
+        _job(id="2", location="Chile"),
+        _job(id="3", location="USA only"),
+    ]
+    params = JobQueryParams(user_location="Chile", strict_location=False)
+    result = filter_and_paginate(jobs, params)
+    assert result.total == 3
+
+
+def test_strict_location_requires_user_location_set() -> None:
+    jobs = [_job(id="1", location="USA only"), _job(id="2", location="Chile")]
+    params = JobQueryParams(user_location=None, strict_location=True)
+    result = filter_and_paginate(jobs, params)
+    assert result.total == 2
+
+
+def test_strict_location_includes_empty_location() -> None:
+    jobs = [_job(id="1", location="")]
+    params = JobQueryParams(user_location="Chile", strict_location=True)
+    result = filter_and_paginate(jobs, params)
+    assert result.total == 1
+
+
+def test_strict_location_includes_worldwide_keywords() -> None:
+    jobs = [
+        _job(id="1", location="Worldwide"),
+        _job(id="2", location="Remote - Anywhere"),
+        _job(id="3", location="Global remote"),
+    ]
+    params = JobQueryParams(user_location="Chile", strict_location=True)
+    result = filter_and_paginate(jobs, params)
+    assert result.total == 3
+
+
+def test_strict_location_includes_user_country_substring() -> None:
+    jobs = [
+        _job(id="1", location="Chile"),
+        _job(id="2", location="Chile (Remote)"),
+        _job(id="3", location="Latin America - Chile, Peru"),
+    ]
+    params = JobQueryParams(user_location="Chile", strict_location=True)
+    result = filter_and_paginate(jobs, params)
+    assert result.total == 3
+
+
+def test_strict_location_excludes_non_matching() -> None:
+    jobs = [
+        _job(id="1", location="USA only"),
+        _job(id="2", location="Remote (Remote)"),
+        _job(id="3", location="Europe"),
+    ]
+    params = JobQueryParams(user_location="Chile", strict_location=True)
+    result = filter_and_paginate(jobs, params)
+    assert result.total == 0
+
+
+def test_strict_location_case_insensitive() -> None:
+    jobs = [
+        _job(id="1", location="CHILE"),
+        _job(id="2", location="chile"),
+        _job(id="3", location="WORLDWIDE"),
+    ]
+    params = JobQueryParams(user_location="chile", strict_location=True)
+    result = filter_and_paginate(jobs, params)
+    assert result.total == 3
+
+
+def test_strict_location_trims_user_location() -> None:
+    jobs = [_job(id="1", location="Chile"), _job(id="2", location="USA")]
+    params = JobQueryParams(user_location="  Chile  ", strict_location=True)
+    result = filter_and_paginate(jobs, params)
+    assert result.total == 1
+    assert result.jobs[0].location == "Chile"

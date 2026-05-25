@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy import select
 
 from hiresense.applications.domain.models import (
+    ApplicationCoverLetter,
     ApplicationCvOptimization,
     ApplicationInterviewPrep,
     ApplicationJobSnapshot,
@@ -121,3 +122,43 @@ class ApplicationRepository:
     ) -> ApplicationInterviewPrep | None:
         preps = self.list_interview_preps(application_id)
         return preps[0] if preps else None
+
+    def get_optimization(
+        self, optimization_id: uuid.UUID
+    ) -> ApplicationCvOptimization | None:
+        with self._session_factory() as session:
+            return session.get(ApplicationCvOptimization, optimization_id)
+
+    # ---- cover letters -----------------------------------------------
+
+    def create_cover_letter(
+        self, letter: ApplicationCoverLetter
+    ) -> ApplicationCoverLetter:
+        with self._session_factory() as session:
+            session.add(letter)
+            session.commit()
+            session.refresh(letter)
+            return letter
+
+    def list_cover_letters(
+        self, application_id: uuid.UUID
+    ) -> list[ApplicationCoverLetter]:
+        with self._session_factory() as session:
+            stmt = (
+                select(ApplicationCoverLetter)
+                .where(ApplicationCoverLetter.application_id == application_id)
+                .order_by(ApplicationCoverLetter.created_at.desc())
+            )
+            return list(session.scalars(stmt).all())
+
+    def get_latest_cover_letter(
+        self, application_id: uuid.UUID
+    ) -> ApplicationCoverLetter | None:
+        letters = self.list_cover_letters(application_id)
+        return letters[0] if letters else None
+
+    def get_cover_letter(
+        self, cover_letter_id: uuid.UUID
+    ) -> ApplicationCoverLetter | None:
+        with self._session_factory() as session:
+            return session.get(ApplicationCoverLetter, cover_letter_id)

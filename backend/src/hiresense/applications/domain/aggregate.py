@@ -50,6 +50,14 @@ class InterviewPrepView(BaseModel):
     created_at: datetime | None = None
 
 
+class CoverLetterView(BaseModel):
+    id: uuid.UUID
+    match_id: uuid.UUID | None
+    body: str
+    tone: str
+    created_at: datetime | None = None
+
+
 class ApplicationAggregate(BaseModel):
     id: uuid.UUID
     job_id: uuid.UUID | None
@@ -65,6 +73,8 @@ class ApplicationAggregate(BaseModel):
     latest_match: MatchView | None
     latest_optimization: CvOptimizationView | None
     latest_interview_prep: InterviewPrepView | None
+    latest_cover_letter: CoverLetterView | None = None
     match_count: int
     optimization_count: int
     interview_prep_count: int
+    cover_letter_count: int = 0

@@ -21,14 +21,22 @@ USER_AGENT = (
 MAX_PAGES = 4
 PAGE_SIZE = 25
 REQUEST_DELAY = 2.0
-DETAIL_CONCURRENCY = 3
-DETAIL_DELAY = 0.3
+DEFAULT_DETAIL_CONCURRENCY = 1
+DEFAULT_DETAIL_DELAY = 1.0
 
 
 class LinkedInAdapter:
-    def __init__(self, http_client: Any, base_url: str) -> None:
+    def __init__(
+        self,
+        http_client: Any,
+        base_url: str,
+        detail_concurrency: int = DEFAULT_DETAIL_CONCURRENCY,
+        detail_delay: float = DEFAULT_DETAIL_DELAY,
+    ) -> None:
         self._http = http_client
         self._base_url = base_url
+        self._detail_concurrency = detail_concurrency
+        self._detail_delay = detail_delay
 
     def source_name(self) -> str:
         return "linkedin"
@@ -113,11 +121,11 @@ class LinkedInAdapter:
         cards: list[dict[str, str]],
         headers: dict[str, str],
     ) -> None:
-        semaphore = asyncio.Semaphore(DETAIL_CONCURRENCY)
+        semaphore = asyncio.Semaphore(self._detail_concurrency)
 
         async def fetch_one(card: dict[str, str]) -> None:
             async with semaphore:
-                await asyncio.sleep(DETAIL_DELAY)
+                await asyncio.sleep(self._detail_delay)
                 detail = await self._fetch_detail(card["job_id"], headers)
                 if detail:
                     card.update(detail)

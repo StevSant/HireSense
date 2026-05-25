@@ -34,11 +34,21 @@ class ApplicationService:
         if job is None:
             raise ValueError(f"Job {job_id} not found")
         tracked = self._tracking.track_from_ingestion(job_id)
+        description = getattr(job, "description", "") or ""
+        skills = list(getattr(job, "skills", []) or [])
+        source = JobSnapshotSource.INGESTED.value
+        # Some normalizers (LinkedIn, HN Hiring) can't extract skills.
+        # Fall back to LLM extraction when description is non-empty.
+        if not skills and description:
+            extracted = await self._extractor.extract(description)
+            if extracted:
+                skills = extracted
+                source = JobSnapshotSource.LLM_EXTRACTED.value
         snapshot = ApplicationJobSnapshot(
             application_id=tracked.id,
-            description=getattr(job, "description", "") or "",
-            required_skills=list(getattr(job, "skills", []) or []),
-            source=JobSnapshotSource.INGESTED.value,
+            description=description,
+            required_skills=skills,
+            source=source,
         )
         self._repo.create_snapshot(snapshot)
         return self._build_aggregate(tracked)

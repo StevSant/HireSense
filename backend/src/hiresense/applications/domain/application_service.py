@@ -5,6 +5,7 @@ from typing import Any
 
 from hiresense.applications.domain.aggregate import (
     ApplicationAggregate,
+    CoverLetterLibraryItem,
     CoverLetterView,
     CvOptimizationView,
     InterviewPrepView,
@@ -88,6 +89,26 @@ class ApplicationService:
 
     def remove(self, application_id: uuid.UUID) -> None:
         self._tracking.remove(application_id)
+
+    def list_all_cover_letters(self) -> list[CoverLetterLibraryItem]:
+        if not hasattr(self._repo, "list_all_cover_letters_with_apps"):
+            return []
+        rows = self._repo.list_all_cover_letters_with_apps()
+        return [
+            CoverLetterLibraryItem(
+                id=letter.id,
+                application_id=letter.application_id,
+                job_title=app.title,
+                company=app.company,
+                body=letter.body,
+                tone=letter.tone,
+                application_status=(
+                    app.status.value if hasattr(app.status, "value") else str(app.status)
+                ),
+                created_at=letter.created_at,
+            )
+            for letter, app in rows
+        ]
 
     def update_snapshot(
         self,

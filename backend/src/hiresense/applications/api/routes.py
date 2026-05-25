@@ -21,6 +21,7 @@ from hiresense.applications.api.schemas import (
 )
 from hiresense.applications.domain.aggregate import (
     ApplicationAggregate,
+    CoverLetterLibraryItem,
     CoverLetterView,
     CvOptimizationView,
     InterviewPrepView,
@@ -81,6 +82,15 @@ def list_applications(
         )
         for a in aggregates
     ]
+
+
+# Must be declared BEFORE the catch-all /{application_id} route below, otherwise
+# FastAPI would try to parse "cover-letters" as a UUID and 422.
+@router.get("/cover-letters", response_model=list[CoverLetterLibraryItem])
+def list_cover_letters_library(
+    service: ApplicationService = Depends(get_application_service),
+) -> list[CoverLetterLibraryItem]:
+    return service.list_all_cover_letters()
 
 
 @router.get("/{application_id}", response_model=ApplicationAggregate)

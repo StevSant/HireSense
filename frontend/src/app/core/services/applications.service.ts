@@ -78,16 +78,16 @@ export class ApplicationsService {
     return this.http.post<CoverLetter>(`${this.base}/${id}/cover-letter`, payload);
   }
 
-  cvPdfUrl(id: string): string {
-    return `${this.base}/${id}/cv.pdf`;
+  downloadCvPdf(id: string): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/cv.pdf`, { responseType: 'blob' });
   }
 
-  coverLetterPdfUrl(id: string): string {
-    return `${this.base}/${id}/cover-letter.pdf`;
+  downloadCoverLetterPdf(id: string): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/cover-letter.pdf`, { responseType: 'blob' });
   }
 
-  bundleUrl(id: string): string {
-    return `${this.base}/${id}/bundle.zip`;
+  downloadBundle(id: string): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/bundle.zip`, { responseType: 'blob' });
   }
 
   markApplied(id: string): Observable<ApplicationAggregate> {

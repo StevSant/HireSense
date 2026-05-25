@@ -32,6 +32,7 @@ class TrackingRepository:
         with self._session_factory() as session:
             application = session.merge(application)
             session.commit()
+            session.refresh(application)
             return application
 
     def create(self, application: TrackedApplication) -> TrackedApplication:

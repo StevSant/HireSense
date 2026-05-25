@@ -1,0 +1,360 @@
+.admin-settings {
+  padding: 1.5rem;
+  max-width: 1100px;
+
+  .page-header {
+    margin-bottom: 1.5rem;
+
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: 1.5rem;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: #6b7280;
+      font-size: 0.9rem;
+      max-width: 70ch;
+    }
+  }
+
+  .state {
+    padding: 2rem;
+    text-align: center;
+    color: #6b7280;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+
+    h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1.05rem;
+    }
+  }
+
+  .current-state {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+
+    > div {
+      margin: 0.15rem 0;
+    }
+
+    code {
+      background: #fff;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      border: 1px solid #e5e7eb;
+    }
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.85rem;
+
+      span {
+        color: #374151;
+        font-weight: 500;
+      }
+    }
+
+    input,
+    select {
+      padding: 0.5rem 0.65rem;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+  }
+
+  .extras {
+    margin-top: 1rem;
+
+    .extras-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.4rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    .extra-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr auto;
+      gap: 0.4rem;
+      margin-bottom: 0.4rem;
+
+      input {
+        padding: 0.4rem 0.55rem;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 0.85rem;
+      }
+    }
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+
+    &:hover:not(:disabled) {
+      background: #f3f4f6;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn-primary {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+
+    &:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+  }
+
+  .btn-link {
+    background: none;
+    border: none;
+    color: #2563eb;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &.danger {
+      color: #dc2626;
+    }
+  }
+
+  .btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0 0.4rem;
+    color: #6b7280;
+
+    &:hover {
+      color: #dc2626;
+    }
+  }
+
+  .test-result {
+    margin-top: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+
+    &.success {
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+    }
+
+    &.failure {
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+    }
+
+    .preview {
+      margin-top: 0.35rem;
+
+      code {
+        background: rgba(255, 255, 255, 0.5);
+        padding: 0.1rem 0.3rem;
+        border-radius: 3px;
+      }
+    }
+  }
+
+  .alert {
+    margin-top: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+
+    &-error {
+      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+    }
+
+    &-success {
+      background: #ecfdf5;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+    }
+  }
+
+  .warning {
+    color: #92400e;
+    background: #fef3c7;
+    padding: 0.5rem 0.7rem;
+    border-radius: 4px;
+    margin: 0.5rem 0;
+  }
+
+  .muted {
+    color: #6b7280;
+
+    &.small {
+      font-size: 0.8rem;
+    }
+  }
+
+  .overrides-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+
+    th,
+    td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid #f3f4f6;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f9fafb;
+      color: #374151;
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+    }
+
+    .right {
+      text-align: right;
+    }
+
+    code {
+      background: #f3f4f6;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      font-size: 0.85rem;
+    }
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    background: #f3f4f6;
+    color: #6b7280;
+    margin-left: 0.4rem;
+
+    &-inherited {
+      background: #e5e7eb;
+      color: #6b7280;
+    }
+
+    &-override {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+  }
+
+  .modal {
+    background: #fff;
+    border-radius: 8px;
+    width: min(560px, calc(100% - 2rem));
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+  }
+
+  .modal-body {
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+
+    select,
+    input[type='text'] {
+      padding: 0.5rem 0.65rem;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+  }
+
+  .checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.9rem;
+    color: #374151;
+  }
+
+  .modal-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+}

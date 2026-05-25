@@ -13,4 +13,5 @@ export interface NormalizedJob {
   department: string | null;
   url: string;
   posted_date: string | null;
+  match_score: number | null;
 }

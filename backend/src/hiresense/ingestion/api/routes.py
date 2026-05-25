@@ -13,10 +13,13 @@ from hiresense.ingestion.api.dependencies import (
     get_portals_config,
 )
 from hiresense.ingestion.domain.job_filter import JobQueryParams, PaginatedResult, filter_and_paginate
+from hiresense.ingestion.domain.job_scorer import score_jobs
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner, ScanFilters, ScanResult
 from hiresense.ingestion.domain.services import IngestionCooldownError, IngestionOrchestrator
+from hiresense.profile.api.dependencies import get_profile_service
+from hiresense.profile.domain import ProfileService
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
 
@@ -54,6 +57,7 @@ async def list_jobs(
     tab: Annotated[Literal["boards", "portals"], Query()],
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
+    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
     page: int = 1,
     page_size: int = 20,
     source: str | None = None,
@@ -64,8 +68,16 @@ async def list_jobs(
     date_to: datetime | None = None,
     user_location: str | None = None,
     strict_location: bool = False,
+    sort: str | None = None,
 ) -> PaginatedResult:
     all_jobs = orchestrator.list_jobs() if tab == "boards" else scanner.list_jobs()
+
+    candidate_skills: list[str] = []
+    for profile in await profile_service.list_profiles():
+        candidate_skills.extend(profile.skills)
+    if candidate_skills:
+        all_jobs = score_jobs(all_jobs, candidate_skills)
+
     params = JobQueryParams(
         page=page,
         page_size=page_size,
@@ -77,6 +89,7 @@ async def list_jobs(
         date_to=date_to,
         user_location=user_location,
         strict_location=strict_location,
+        sort=sort,
     )
     return filter_and_paginate(all_jobs, params)
 

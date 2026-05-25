@@ -11,12 +11,14 @@ from hiresense.ingestion.api.dependencies import (
     get_ingestion_orchestrator,
     get_portal_scanner,
     get_portals_config,
+    get_semantic_scoring,
 )
 from hiresense.ingestion.domain.job_filter import JobQueryParams, PaginatedResult, filter_and_paginate
-from hiresense.ingestion.domain.job_scorer import score_jobs
+from hiresense.ingestion.domain.job_scorer import combine_fit_score, score_jobs
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner, ScanFilters, ScanResult
+from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
 from hiresense.ingestion.domain.services import IngestionCooldownError, IngestionOrchestrator
 from hiresense.profile.api.dependencies import get_profile_service
 from hiresense.profile.domain import ProfileService
@@ -58,6 +60,7 @@ async def list_jobs(
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
+    semantic_scoring: Annotated[SemanticScoringService | None, Depends(get_semantic_scoring)],
     page: int = 1,
     page_size: int = 20,
     source: str | None = None,
@@ -73,8 +76,13 @@ async def list_jobs(
     all_jobs = orchestrator.list_jobs() if tab == "boards" else scanner.list_jobs()
 
     candidate_skills: list[str] = []
+    candidate_summary_parts: list[str] = []
     for profile in await profile_service.list_profiles():
         candidate_skills.extend(profile.skills)
+        for section in profile.sections:
+            candidate_summary_parts.append(section.content)
+    candidate_summary = "\n".join(candidate_summary_parts)
+
     if candidate_skills:
         all_jobs = score_jobs(all_jobs, candidate_skills)
 
@@ -91,7 +99,26 @@ async def list_jobs(
         strict_location=strict_location,
         sort=sort,
     )
-    return filter_and_paginate(all_jobs, params)
+    result = filter_and_paginate(all_jobs, params)
+
+    # Semantic scoring is bounded to the visible page so the first request
+    # after a backend restart doesn't block on 1000+ embeddings. Subsequent
+    # pages incrementally warm the cache; the per-job cache persists for
+    # the lifetime of the process.
+    if (
+        semantic_scoring is not None
+        and (candidate_skills or candidate_summary)
+        and result.jobs
+    ):
+        scored_page = await semantic_scoring.score_jobs(
+            result.jobs, candidate_skills, candidate_summary
+        )
+        result.jobs = [
+            j.model_copy(update={"match_score": combine_fit_score(j.match_score, j.semantic_score)})
+            for j in scored_page
+        ]
+
+    return result
 
 
 @router.get("/jobs/{job_id}", response_model=NormalizedJob)

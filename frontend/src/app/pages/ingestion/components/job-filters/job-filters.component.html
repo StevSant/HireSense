@@ -66,3 +66,24 @@
     <button (click)="clearAll()" class="btn-clear">Clear all</button>
   </div>
 </div>
+
+<div class="location-pref-bar">
+  <div class="filter-item">
+    <label class="filter-label">My location</label>
+    <input
+      type="text"
+      [value]="filters().user_location ?? ''"
+      (input)="onUserLocationInput($event)"
+      placeholder="e.g. Chile, USA, Spain"
+      class="filter-control"
+    />
+  </div>
+  <label class="strict-toggle">
+    <input
+      type="checkbox"
+      [checked]="filters().strict_location ?? false"
+      (change)="onStrictLocationChange($event)"
+    />
+    <span>Only show jobs I can apply to from my location</span>
+  </label>
+</div>

@@ -1,4 +1,5 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatchingService } from '../../core/services/matching.service';
 import { ProfileService } from '../../core/services/profile.service';
@@ -19,6 +20,7 @@ export class MatchingComponent implements OnInit {
   private matchingService = inject(MatchingService);
   private profileService = inject(ProfileService);
   private ingestionService = inject(IngestionService);
+  private route = inject(ActivatedRoute);
 
   jobDescription = signal('');
   jobSkills = signal('');
@@ -67,10 +69,37 @@ export class MatchingComponent implements OnInit {
     // If no jobs in cache, try fetching from server
     if (this.jobs().length === 0) {
       this.ingestionService.queryJobs('boards', 1, 100).subscribe({
-        next: (res) => this.jobs.set(res.jobs),
+        next: (res) => {
+          this.jobs.set(res.jobs);
+          this.applyJobIdFromQuery();
+        },
         error: () => {},
       });
+    } else {
+      this.applyJobIdFromQuery();
     }
+  }
+
+  private applyJobIdFromQuery(): void {
+    const jobId = this.route.snapshot.queryParamMap.get('job_id');
+    if (!jobId) return;
+    const job = this.jobs().find((j) => j.id === jobId);
+    if (job) {
+      this.selectedJobId.set(jobId);
+      this.jobDescription.set(job.description);
+      this.jobSkills.set(job.skills.join(', '));
+      return;
+    }
+    // Job not in the first 100 — fetch directly
+    this.ingestionService.getJob(jobId).subscribe({
+      next: (j) => {
+        this.jobs.update((list) => [j, ...list]);
+        this.selectedJobId.set(jobId);
+        this.jobDescription.set(j.description);
+        this.jobSkills.set(j.skills.join(', '));
+      },
+      error: () => {},
+    });
   }
 
   onCvLanguageChange(lang: string): void {

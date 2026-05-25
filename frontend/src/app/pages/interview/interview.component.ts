@@ -1,7 +1,9 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TitleCasePipe } from '@angular/common';
 import { InterviewService } from '../../core/services/interview.service';
+import { IngestionService } from '../../core/services/ingestion.service';
 import { Competency } from './models/competency.model';
 import { InterviewPrep } from './models/interview-prep.model';
 import { Story } from './models/story.model';
@@ -50,10 +52,27 @@ export class InterviewComponent implements OnInit {
     'conflict_resolution',
   ];
 
+  private ingestionService = inject(IngestionService);
+  private route = inject(ActivatedRoute);
+
   constructor(private interviewService: InterviewService) {}
 
   ngOnInit(): void {
     this.loadStories();
+    this.applyJobIdFromQuery();
+  }
+
+  private applyJobIdFromQuery(): void {
+    const jobId = this.route.snapshot.queryParamMap.get('job_id');
+    if (!jobId) return;
+    this.ingestionService.getJob(jobId).subscribe({
+      next: (job) => {
+        this.prepJobTitle.set(job.title);
+        this.prepCompany.set(job.company);
+        this.prepDescription.set(job.description);
+      },
+      error: () => {},
+    });
   }
 
   loadStories(): void {

@@ -15,9 +15,35 @@
   border-left: 1px solid var(--border-default);
   box-shadow: var(--shadow-lg);
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr auto auto;
   overflow: hidden;
   animation: slideIn 0.2s var(--ease);
+}
+
+.panel-shortcuts {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--bg-inset);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.btn-shortcut {
+  flex: 1;
+  padding: 0.4375rem 0.5rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--duration) var(--ease), border-color var(--duration) var(--ease), color var(--duration) var(--ease);
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 }
 
 @keyframes slideIn {

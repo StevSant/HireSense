@@ -2,6 +2,8 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { IngestionService, JobFilters } from '../../core/services/ingestion.service';
 import { TrackingService } from '../../core/services/tracking.service';
+import { ApplicationsService } from '../../core/services/applications.service';
+import { Router } from '@angular/router';
 import { CreateApplicationRequest } from '../../core/models/create-application-request.model';
 import { NormalizedJob } from './models/normalized-job.model';
 import { PortalEntry } from './models/portal-entry.model';
@@ -22,6 +24,8 @@ import { DatePipe } from '@angular/common';
 export class IngestionComponent implements OnInit {
   private ingestionService = inject(IngestionService);
   private trackingService = inject(TrackingService);
+  private applicationsService = inject(ApplicationsService);
+  private router = inject(Router);
   private route = inject(ActivatedRoute);
 
   trackedJobIds = computed(() => this.ingestionService.trackedJobIds());
@@ -204,11 +208,23 @@ export class IngestionComponent implements OnInit {
   }
 
   trackJob(jobId: string): void {
-    const body: CreateApplicationRequest = { job_id: jobId };
-    this.trackingService.create(body).subscribe({
-      next: () => this.ingestionService.markTracked(jobId),
+    this.applicationsService.createFromJob(jobId).subscribe({
+      next: (agg) => {
+        this.ingestionService.markTracked(jobId);
+        this.router.navigate(['/dashboard/applications', agg.id]);
+      },
       error: (err) => {
-        if (err.status === 409) this.ingestionService.markTracked(jobId);
+        if (err.status === 409) {
+          // Already tracked — find existing app and navigate.
+          this.ingestionService.markTracked(jobId);
+          this.applicationsService.list().subscribe({
+            next: (rows) => {
+              // Match by job_id requires fetching aggregates; fall back to
+              // applications list nav so the user can find it.
+              this.router.navigate(['/dashboard/applications']);
+            },
+          });
+        }
       },
     });
   }

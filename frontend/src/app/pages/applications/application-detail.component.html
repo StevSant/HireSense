@@ -1,0 +1,52 @@
+@if (loading()) {
+  <p class="muted">Loading...</p>
+} @else if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+} @else if (aggregate(); as agg) {
+  <div class="detail-page">
+    <header class="detail-header">
+      <div>
+        <button class="btn-back" (click)="backToList()">← Applications</button>
+        <h1>{{ agg.title }}</h1>
+        <p class="company">
+          {{ agg.company }} ·
+          <span class="status-pill status-{{agg.status}}">{{ agg.status | titlecase }}</span>
+          @if (agg.applied_at) {
+            <span class="applied-at">· Applied {{ agg.applied_at | date:'mediumDate' }}</span>
+          }
+        </p>
+      </div>
+      <div class="header-actions">
+        @if (agg.url) {
+          <a [href]="agg.url" target="_blank" rel="noopener" class="btn-secondary">Open job ↗</a>
+        }
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button [class.active]="activeTab() === 'job'" (click)="setTab('job')">Job</button>
+      <button [class.active]="activeTab() === 'match'" (click)="setTab('match')">
+        Match @if (agg.match_count) { <span class="count">{{ agg.match_count }}</span> }
+      </button>
+      <button [class.active]="activeTab() === 'cv'" (click)="setTab('cv')">
+        CV @if (agg.optimization_count) { <span class="count">{{ agg.optimization_count }}</span> }
+      </button>
+      <button [class.active]="activeTab() === 'interview'" (click)="setTab('interview')">
+        Interview @if (agg.interview_prep_count) { <span class="count">{{ agg.interview_prep_count }}</span> }
+      </button>
+      <button [class.active]="activeTab() === 'apply'" (click)="setTab('apply')">
+        Apply @if (agg.cover_letter_count) { <span class="count">{{ agg.cover_letter_count }}</span> }
+      </button>
+    </nav>
+
+    <section class="tab-body">
+      @switch (activeTab()) {
+        @case ('job')       { <app-job-tab [aggregate]="agg" (changed)="reload()" /> }
+        @case ('match')     { <app-match-tab [aggregate]="agg" (changed)="reload()" /> }
+        @case ('cv')        { <app-cv-tab [aggregate]="agg" (changed)="reload()" /> }
+        @case ('interview') { <app-interview-tab [aggregate]="agg" (changed)="reload()" /> }
+        @case ('apply')     { <app-apply-tab [aggregate]="agg" (changed)="reload()" /> }
+      }
+    </section>
+  </div>
+}

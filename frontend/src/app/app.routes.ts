@@ -12,6 +12,8 @@ export const routes: Routes = [
       { path: '', redirectTo: 'ingestion', pathMatch: 'full' },
       { path: 'ingestion', loadComponent: () => import('./pages/ingestion/ingestion.component').then(m => m.IngestionComponent) },
       { path: 'profile', loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent) },
+      { path: 'applications', loadComponent: () => import('./pages/applications/applications.component').then(m => m.ApplicationsComponent) },
+      { path: 'applications/:id', loadComponent: () => import('./pages/applications/application-detail.component').then(m => m.ApplicationDetailComponent) },
       { path: 'matching', loadComponent: () => import('./pages/matching/matching.component').then(m => m.MatchingComponent) },
       { path: 'optimization', loadComponent: () => import('./pages/optimization/optimization.component').then(m => m.OptimizationComponent) },
       { path: 'tracking', loadComponent: () => import('./pages/tracking/tracking.component').then(m => m.TrackingComponent) },

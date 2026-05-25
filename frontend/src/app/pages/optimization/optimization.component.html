@@ -1,146 +1,33 @@
 <div class="page">
   <h1>CV Optimization</h1>
+  <p class="hint">
+    Paste a job description below. We'll create an application, extract required skills,
+    and take you to the CV tab where you can run the optimization and download a tailored PDF.
+  </p>
 
-  @if (!result()) {
-    <div class="opt-form">
-      <div class="form-group">
-        <label>Job Description</label>
-        <textarea [ngModel]="jobDescription()" (ngModelChange)="jobDescription.set($event)" name="jobDesc" rows="3" placeholder="Target job description..."></textarea>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Required Skills (comma-separated)</label>
-          <input [ngModel]="jobSkills()" (ngModelChange)="jobSkills.set($event)" name="skills" placeholder="python, fastapi, kubernetes" />
-        </div>
-        <div class="form-group">
-          <label>Missing Skills (comma-separated)</label>
-          <input [ngModel]="missingSkills()" (ngModelChange)="missingSkills.set($event)" name="missing" placeholder="kubernetes, terraform" />
-        </div>
-      </div>
-
-      <!-- CV Source Tabs -->
-      <div class="cv-source-section">
-        <label>Your LaTeX CV</label>
-        <div class="source-tabs">
-          @if (availableLanguages().length > 0) {
-            <button
-              class="source-tab"
-              [class.active]="inputMode() === 'profile'"
-              (click)="onInputModeChange('profile')"
-            >From Profile</button>
-          }
-          <button
-            class="source-tab"
-            [class.active]="inputMode() === 'file'"
-            (click)="onInputModeChange('file')"
-          >Upload File</button>
-          <button
-            class="source-tab"
-            [class.active]="inputMode() === 'paste'"
-            (click)="onInputModeChange('paste')"
-          >Paste LaTeX</button>
-        </div>
-
-        @if (inputMode() === 'profile') {
-          @if (availableLanguages().length > 1) {
-            <div class="lang-selector">
-              @for (lang of availableLanguages(); track lang) {
-                <button
-                  class="lang-btn"
-                  [class.active]="selectedLanguage() === lang"
-                  (click)="onLanguageChange(lang)"
-                >{{ lang === 'es' ? 'Spanish' : 'English' }}</button>
-              }
-            </div>
-          }
-          <div class="profile-loaded-notice">
-            LaTeX loaded from your {{ selectedLanguage() === 'es' ? 'Spanish' : 'English' }} profile
-            ({{ originalTex().length }} characters)
-          </div>
-        }
-
-        @if (inputMode() === 'file') {
-          <div
-            class="dropzone"
-            [class.drag-over]="dragOver()"
-            [class.has-file]="selectedFile()"
-            (dragover)="onDragOver($event)"
-            (dragleave)="onDragLeave($event)"
-            (drop)="onDrop($event)"
-          >
-            @if (!selectedFile()) {
-              <div class="dropzone-content">
-                <p class="dropzone-title">Drop your .tex file here</p>
-                <p class="dropzone-hint">or <label for="opt-file-input" class="browse-link">browse files</label></p>
-                <input id="opt-file-input" type="file" accept=".tex" (change)="onFileSelected($event)" hidden />
-              </div>
-            } @else {
-              <div class="file-preview">
-                <span class="file-name">{{ selectedFile()!.name }}</span>
-                <span class="file-size">({{ formatFileSize(selectedFile()!.size) }})</span>
-                <button class="file-remove" (click)="removeFile()">Remove</button>
-              </div>
-            }
-          </div>
-        }
-
-        @if (inputMode() === 'paste') {
-          <textarea
-            [ngModel]="originalTex()"
-            (ngModelChange)="originalTex.set($event)"
-            name="tex"
-            rows="10"
-            placeholder="Paste your .tex CV content..."
-            class="tex-textarea"
-          ></textarea>
-        }
-      </div>
-
-      @if (error()) {
-        <div class="alert alert-error">{{ error() }}</div>
-      }
-      <button (click)="optimize()" [disabled]="loading() || !originalTex().trim()" class="btn-primary">
-        @if (loading()) { Optimizing... } @else { Optimize CV }
-      </button>
+  <div class="form">
+    <div class="field">
+      <label>Title</label>
+      <input [ngModel]="title()" (ngModelChange)="title.set($event)" placeholder="e.g. Senior Backend Engineer" />
     </div>
-  } @else {
-    <div class="results">
-      <div class="results-header">
-        <h2>Optimization Results</h2>
-        <div class="actions">
-          <button (click)="downloadTex()" class="btn-primary">Download .tex</button>
-          <button (click)="result.set(null)" class="btn-secondary">New Optimization</button>
-        </div>
-      </div>
-
-      @if (result()!.improvement_summary) {
-        <div class="summary-card">
-          <h3>Summary</h3>
-          <p>{{ result()!.improvement_summary }}</p>
-        </div>
-      }
-
-      @if (result()!.changes.length > 0) {
-        <h3 class="section-title">Changes</h3>
-        @for (change of result()!.changes; track change.section_name) {
-          <div class="change-card">
-            <div class="change-header">
-              <span class="section-name">{{ change.section_name }}</span>
-              <span class="reason">{{ change.reason }}</span>
-            </div>
-            <div class="diff">
-              <div class="diff-side diff-original">
-                <span class="diff-label">Original</span>
-                <pre>{{ change.original }}</pre>
-              </div>
-              <div class="diff-side diff-optimized">
-                <span class="diff-label">Optimized</span>
-                <pre>{{ change.optimized }}</pre>
-              </div>
-            </div>
-          </div>
-        }
-      }
+    <div class="field">
+      <label>Company</label>
+      <input [ngModel]="company()" (ngModelChange)="company.set($event)" placeholder="e.g. Acme Corp" />
     </div>
-  }
+    <div class="field">
+      <label>Job description</label>
+      <textarea
+        rows="10"
+        [ngModel]="description()"
+        (ngModelChange)="description.set($event)"
+        placeholder="Paste the full job description here..."
+      ></textarea>
+    </div>
+    @if (error()) {
+      <div class="alert alert-error">{{ error() }}</div>
+    }
+    <button class="btn-primary" (click)="submit()" [disabled]="saving()">
+      @if (saving()) { Creating... } @else { Continue to CV optimization → }
+    </button>
+  </div>
 </div>

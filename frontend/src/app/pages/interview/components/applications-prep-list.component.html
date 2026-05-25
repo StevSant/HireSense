@@ -1,0 +1,41 @@
+<section class="prep-list">
+  <h2>Interview prep — your applications</h2>
+  @if (loading()) {
+    <p class="muted">Loading...</p>
+  } @else if (applications().length === 0) {
+    <p class="muted">No applications yet. Track a job or create one to start preparing.</p>
+  } @else {
+    <table>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Company</th>
+          <th>Status</th>
+          <th>Prep</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of applications(); track a.id) {
+          <tr>
+            <td>{{ a.title }}</td>
+            <td>{{ a.company }}</td>
+            <td>{{ a.status | titlecase }}</td>
+            <td>
+              @if (a.has_prep) {
+                <span class="badge on">ready</span>
+              } @else {
+                <span class="badge">none</span>
+              }
+            </td>
+            <td>
+              <button class="btn-primary btn-sm" (click)="openPrep(a.id)">
+                @if (a.has_prep) { Open prep } @else { Generate prep }
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</section>

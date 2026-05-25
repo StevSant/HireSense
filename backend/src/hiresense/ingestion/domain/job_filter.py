@@ -68,6 +68,20 @@ def filter_and_paginate(
             if j.posted_date is not None and j.posted_date <= params.date_to
         ]
 
+    if params.strict_location and params.user_location:
+        user_loc = params.user_location.strip().lower()
+        open_keywords = ("worldwide", "anywhere", "global")
+
+        def _is_open(job_location: str) -> bool:
+            if not job_location:
+                return True
+            loc = job_location.lower()
+            if any(kw in loc for kw in open_keywords):
+                return True
+            return user_loc in loc
+
+        filtered = [j for j in filtered if _is_open(j.location)]
+
     total = len(filtered)
     total_pages = math.ceil(total / params.page_size) if total > 0 else 0
     start = (params.page - 1) * params.page_size

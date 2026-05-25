@@ -70,13 +70,23 @@
 <div class="location-pref-bar">
   <div class="filter-item">
     <label class="filter-label">My location</label>
-    <input
-      type="text"
-      [value]="filters().user_location ?? ''"
-      (input)="onUserLocationInput($event)"
-      placeholder="e.g. Chile, USA, Spain"
-      class="filter-control"
-    />
+    <div class="user-location-row">
+      <input
+        type="text"
+        [value]="filters().user_location ?? ''"
+        (input)="onUserLocationInput($event)"
+        placeholder="e.g. Chile, USA, Spain"
+        class="filter-control"
+      />
+      <button
+        type="button"
+        (click)="useTimezone()"
+        class="btn-use-timezone"
+        title="Fill from your browser's timezone"
+      >
+        Use my timezone
+      </button>
+    </div>
   </div>
   <label class="strict-toggle">
     <input

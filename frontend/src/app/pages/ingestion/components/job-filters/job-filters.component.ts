@@ -21,14 +21,10 @@ export class JobFiltersComponent implements OnInit {
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
-    let storedLocation = localStorage.getItem(LS_USER_LOCATION);
-    if (storedLocation === null) {
-      const detected = detectUserLocation();
-      if (detected) {
-        localStorage.setItem(LS_USER_LOCATION, detected);
-        storedLocation = detected;
-      }
-    }
+    // Only restore a previously-saved value. Don't auto-detect on first
+    // visit — most users start by looking at remote jobs, and a pre-filled
+    // country biases the result list before they've decided.
+    const storedLocation = localStorage.getItem(LS_USER_LOCATION);
     const storedStrict = localStorage.getItem(LS_STRICT_LOCATION) === 'true';
     if (storedLocation || storedStrict) {
       this.emitFilters({
@@ -36,6 +32,13 @@ export class JobFiltersComponent implements OnInit {
         strict_location: storedStrict || undefined,
       });
     }
+  }
+
+  useTimezone(): void {
+    const detected = detectUserLocation();
+    if (!detected) return;
+    localStorage.setItem(LS_USER_LOCATION, detected);
+    this.emitFilters({ user_location: detected });
   }
 
   onSourceChange(event: Event): void {

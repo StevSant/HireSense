@@ -92,6 +92,9 @@ class Settings(BaseSettings):
     weworkremotely_rss_url: str = "https://weworkremotely.com/remote-jobs.rss"
     getonboard_api_url: str = "https://www.getonbrd.com/api/v0"
     linkedin_jobs_url: str = "https://www.linkedin.com/jobs-guest/jobs/api"
+    # LinkedIn per-job detail fetch rate-limit knobs (guest endpoint is aggressive)
+    linkedin_detail_concurrency: int = 1
+    linkedin_detail_delay: float = 1.0
 
     # Portal scanning
     portals_config_path: str = "ingestion/config/portals.yml"

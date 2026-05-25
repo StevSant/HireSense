@@ -61,6 +61,13 @@ $mobile-breakpoint: 768px;
   flex-direction: column;
   flex-shrink: 0;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
+  // Pin to viewport on desktop so the footer (sign out) stays visible no
+  // matter how tall the content is. The mobile media query below overrides
+  // to position: fixed.
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 
   .logo {
     padding: 1.5rem 1.25rem;

@@ -306,4 +306,51 @@
   }
   </section>
   }
+
+  @if (pageTab() === 'personal') {
+  <section class="tab-panel">
+    @if (profile(); as p) {
+      <div class="details-card">
+        <div class="details-grid">
+          <div class="details-item">
+            <span class="details-label">Name</span>
+            <span class="details-value">{{ p.name || '—' }}</span>
+          </div>
+          <div class="details-item">
+            <span class="details-label">Email</span>
+            <span class="details-value">{{ p.email || '—' }}</span>
+          </div>
+          <div class="details-item">
+            <span class="details-label">Phone</span>
+            <span class="details-value">{{ p.phone || '—' }}</span>
+          </div>
+          <div class="details-item">
+            <span class="details-label">Location</span>
+            <span class="details-value">{{ p.location || '—' }}</span>
+          </div>
+          <div class="details-item">
+            <span class="details-label">Primary language</span>
+            <span class="details-value">{{ p.language === 'es' ? 'Espanol' : 'English' }}</span>
+          </div>
+        </div>
+        <p class="details-source-note">
+          These fields were parsed from your uploaded CV.
+        </p>
+      </div>
+
+      <div class="coming-soon-card">
+        <div class="coming-soon-badge">Coming soon</div>
+        <h3>Manual fields</h3>
+        <p>Edit your name and location directly, and add LinkedIn, GitHub, and portfolio links that aren't on your CV.</p>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <p class="empty-state-title">No profile yet</p>
+        <p class="empty-state-hint">
+          Upload a CV in the <button type="button" class="link-button" (click)="pageTab.set('cv')">CV tab</button> to see your parsed details here.
+        </p>
+      </div>
+    }
+  </section>
+  }
 </div>

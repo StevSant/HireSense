@@ -1,22 +1,24 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { ApplicationsService } from '../../core/services/applications.service';
+import { ApplicationsService } from '../../../core/services/applications.service';
 
 @Component({
-  selector: 'app-optimization',
+  selector: 'app-application-create-dialog',
   standalone: true,
   imports: [FormsModule],
-  templateUrl: './optimization.component.html',
-  styleUrl: './optimization.component.scss',
+  templateUrl: './application-create-dialog.component.html',
+  styleUrl: './application-create-dialog.component.scss',
 })
-export class OptimizationComponent {
+export class ApplicationCreateDialogComponent {
   private service = inject(ApplicationsService);
-  private router = inject(Router);
+
+  closed = output<void>();
+  created = output<string>();
 
   title = signal('');
   company = signal('');
   description = signal('');
+  url = signal('');
   saving = signal(false);
   error = signal('');
 
@@ -31,17 +33,27 @@ export class OptimizationComponent {
     this.saving.set(true);
     this.error.set('');
     this.service
-      .createManual({ title: t, company: c, description: d })
+      .createManual({
+        title: t,
+        company: c,
+        description: d,
+        url: this.url().trim() || undefined,
+      })
       .subscribe({
         next: (agg) => {
-          this.router.navigate(['/dashboard/applications', agg.id], {
-            queryParams: { tab: 'cv' },
-          });
+          this.saving.set(false);
+          this.created.emit(agg.id);
         },
         error: (err) => {
           this.error.set(err?.error?.detail ?? 'Create failed');
           this.saving.set(false);
         },
       });
+  }
+
+  onOverlay(ev: MouseEvent): void {
+    if ((ev.target as HTMLElement).classList.contains('overlay')) {
+      this.closed.emit();
+    }
   }
 }

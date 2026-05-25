@@ -1,0 +1,95 @@
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0.25rem 0 0.25rem;
+    font-size: 1.6em;
+  }
+}
+
+.btn-back {
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.9em;
+
+  &:hover { text-decoration: underline; }
+}
+
+.company {
+  color: #6b7280;
+  margin: 0;
+}
+
+.status-pill {
+  font-size: 0.85em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #e5e7eb;
+  color: #374151;
+
+  &.status-applied { background: #dbeafe; color: #1e40af; }
+  &.status-interviewing { background: #fef3c7; color: #92400e; }
+  &.status-offered { background: #d1fae5; color: #065f46; }
+  &.status-accepted { background: #d1fae5; color: #065f46; font-weight: 600; }
+  &.status-rejected { background: #fee2e2; color: #991b1b; }
+}
+
+.applied-at { color: #9ca3af; font-size: 0.9em; }
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid #e5e7eb;
+  margin: 1rem 0;
+
+  button {
+    padding: 10px 18px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: #6b7280;
+    font-size: 0.95em;
+    font-weight: 500;
+    transition: color 0.15s, border-color 0.15s;
+
+    &:hover { color: #374151; }
+    &.active {
+      border-bottom-color: #2563eb;
+      color: #2563eb;
+    }
+  }
+}
+
+.count {
+  background: #e5e7eb;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 0.75em;
+  margin-left: 4px;
+  color: #374151;
+}
+
+.tabs button.active .count {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.tab-body {
+  padding: 1rem 0;
+}
+
+.alert-error {
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 0.75rem;
+  border-radius: 6px;
+}
+
+.muted { color: #9ca3af; }

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from hiresense.ingestion.domain.html_stripper import strip_html
 from hiresense.ingestion.domain.models import RawJobListing
 
 
@@ -13,7 +14,7 @@ class LinkedInNormalizer:
         return {
             "title": d.get("title", ""),
             "company": d.get("company", ""),
-            "description": d.get("description", ""),
+            "description": strip_html(d.get("description", "")),
             "skills": [],
             "location": d.get("location", ""),
             "salary_range": None,

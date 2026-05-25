@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -79,6 +79,23 @@ async def list_jobs(
         strict_location=strict_location,
     )
     return filter_and_paginate(all_jobs, params)
+
+
+@router.get("/jobs/{job_id}", response_model=NormalizedJob)
+async def get_job(
+    job_id: str,
+    orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
+    scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
+) -> NormalizedJob:
+    job = orchestrator.get_job_by_id(job_id)
+    if job is None:
+        for j in scanner.list_jobs():
+            if j.id == job_id:
+                job = j
+                break
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job
 
 
 @router.get("/portals", response_model=list[PortalEntry])

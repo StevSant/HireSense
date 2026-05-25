@@ -1,7 +1,9 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { OptimizationService } from '../../core/services/optimization.service';
 import { ProfileService } from '../../core/services/profile.service';
+import { IngestionService } from '../../core/services/ingestion.service';
 import { OptimizationResult } from './models/optimization-result.model';
 
 @Component({
@@ -14,6 +16,8 @@ import { OptimizationResult } from './models/optimization-result.model';
 export class OptimizationComponent implements OnInit {
   private optimizationService = inject(OptimizationService);
   private profileService = inject(ProfileService);
+  private ingestionService = inject(IngestionService);
+  private route = inject(ActivatedRoute);
 
   matchId = signal('');
   jobId = signal('');
@@ -44,6 +48,20 @@ export class OptimizationComponent implements OnInit {
     } else {
       this.prefillFromProfile();
     }
+    this.applyJobIdFromQuery();
+  }
+
+  private applyJobIdFromQuery(): void {
+    const jobId = this.route.snapshot.queryParamMap.get('job_id');
+    if (!jobId) return;
+    this.ingestionService.getJob(jobId).subscribe({
+      next: (job) => {
+        this.jobId.set(job.id);
+        this.jobDescription.set(job.description);
+        this.jobSkills.set(job.skills.join(', '));
+      },
+      error: () => {},
+    });
   }
 
   onLanguageChange(lang: string): void {

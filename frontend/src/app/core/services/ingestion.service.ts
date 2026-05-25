@@ -53,6 +53,10 @@ export class IngestionService {
     return this.http.get<PaginatedJobsResponse>(`${environment.apiUrl}/ingestion/jobs`, { params });
   }
 
+  getJob(jobId: string): Observable<NormalizedJob> {
+    return this.http.get<NormalizedJob>(`${environment.apiUrl}/ingestion/jobs/${jobId}`);
+  }
+
   loadPortals(): Observable<PortalEntry[]> {
     return this.http.get<PortalEntry[]>(`${environment.apiUrl}/ingestion/portals`);
   }

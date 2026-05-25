@@ -17,6 +17,8 @@ class JobQueryParams(BaseModel):
     skills: str | None = None
     date_from: datetime | None = None
     date_to: datetime | None = None
+    user_location: str | None = None
+    strict_location: bool = False
 
 
 class PaginatedResult(BaseModel):

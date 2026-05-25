@@ -81,6 +81,8 @@ class ApplicationAggregate(BaseModel):
 
 
 class CoverLetterLibraryItem(BaseModel):
+    """A cover letter joined with its parent application — used by GET /applications/cover-letters."""
+
     id: uuid.UUID
     application_id: uuid.UUID
     job_title: str

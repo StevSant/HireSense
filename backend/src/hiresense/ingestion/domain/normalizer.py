@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
+from hiresense.ingestion.domain.date_parser import parse_iso_date
 from hiresense.ingestion.domain.html_stripper import strip_html
 from hiresense.ingestion.domain.models import RawJobListing
 
@@ -22,6 +23,7 @@ class RemotiveNormalizer:
             "salary_range": d.get("salary") or None,
             "url": d.get("url", ""),
             "language": "en",
+            "posted_date": parse_iso_date(d.get("publication_date")),
         }
 
 
@@ -44,6 +46,7 @@ class RemoteOKNormalizer:
             "salary_range": salary_range,
             "url": d.get("url", ""),
             "language": "en",
+            "posted_date": parse_iso_date(d.get("date")),
         }
 
 

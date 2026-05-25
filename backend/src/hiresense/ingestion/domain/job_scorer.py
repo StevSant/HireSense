@@ -2,6 +2,29 @@ from __future__ import annotations
 
 from hiresense.ingestion.domain.models import NormalizedJob
 
+_SKILL_WEIGHT = 0.4
+_SEMANTIC_WEIGHT = 0.6
+
+
+def combine_fit_score(
+    skill_score: float | None,
+    semantic_score: float | None,
+) -> float | None:
+    """Combine skill-overlap and semantic-similarity into a single fit score.
+
+    Both signals are independently informative, so we weight semantic higher
+    (it captures meaning beyond exact skill-name matches) but still let skill
+    overlap pull the score up when the job actually lists matching skills.
+    Falls back gracefully when either input is missing.
+    """
+    if skill_score is None and semantic_score is None:
+        return None
+    if skill_score is None:
+        return semantic_score
+    if semantic_score is None:
+        return skill_score
+    return _SKILL_WEIGHT * skill_score + _SEMANTIC_WEIGHT * semantic_score
+
 
 def score_job_against_skills(
     job: NormalizedJob,

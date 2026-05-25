@@ -166,7 +166,12 @@ def create_app() -> FastAPI:
             sources.append(GetOnBoardAdapter(http_client=http_client, base_url=settings.getonboard_api_url))
             normalizers["getonboard"] = GetOnBoardNormalizer()
         elif source_name == "linkedin":
-            sources.append(LinkedInAdapter(http_client=http_client, base_url=settings.linkedin_jobs_url))
+            sources.append(LinkedInAdapter(
+                http_client=http_client,
+                base_url=settings.linkedin_jobs_url,
+                detail_concurrency=settings.linkedin_detail_concurrency,
+                detail_delay=settings.linkedin_detail_delay,
+            ))
             normalizers["linkedin"] = LinkedInNormalizer()
 
     ingestion_orchestrator = IngestionOrchestrator(

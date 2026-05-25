@@ -1,0 +1,117 @@
+from __future__ import annotations
+
+import logging
+import threading
+import time
+
+from hiresense.admin.domain.encryption import APIKeyCipher, EncryptionUnavailableError
+from hiresense.admin.domain.resolved_config import ResolvedConfig
+from hiresense.admin.infrastructure.llm_feature_override_repository import (
+    LLMFeatureOverrideRepository,
+)
+from hiresense.admin.infrastructure.llm_settings_repository import LLMSettingsRepository
+
+logger = logging.getLogger(__name__)
+
+
+class LLMConfigService:
+    """Resolves the effective LLM config for any feature_key.
+
+    Resolution order: feature_override → global llm_settings row → .env fallback.
+    A short in-memory TTL cache (~30s) avoids hammering the DB for every call;
+    the cache is invalidated explicitly after a successful PUT.
+    """
+
+    _CACHE_TTL_SECONDS = 30.0
+
+    def __init__(
+        self,
+        *,
+        settings_repo: LLMSettingsRepository,
+        override_repo: LLMFeatureOverrideRepository,
+        cipher: APIKeyCipher,
+        env_provider: str,
+        env_model: str,
+        env_api_key: str,
+    ) -> None:
+        self._settings_repo = settings_repo
+        self._override_repo = override_repo
+        self._cipher = cipher
+        self._env_provider = env_provider
+        self._env_model = env_model
+        self._env_api_key = env_api_key
+        self._cache: dict[str, tuple[float, ResolvedConfig]] = {}
+        self._lock = threading.Lock()
+
+    # ---- Resolution ---------------------------------------------------
+
+    def resolve(self, feature_key: str) -> ResolvedConfig:
+        now = time.monotonic()
+        with self._lock:
+            cached = self._cache.get(feature_key)
+            if cached and now - cached[0] < self._CACHE_TTL_SECONDS:
+                return cached[1]
+
+        resolved = self._resolve_fresh(feature_key)
+        with self._lock:
+            self._cache[feature_key] = (now, resolved)
+        return resolved
+
+    def _resolve_fresh(self, feature_key: str) -> ResolvedConfig:
+        global_row = self._settings_repo.get()
+        override = self._override_repo.get(feature_key)
+
+        if global_row is not None:
+            provider = global_row.provider
+            model = global_row.model
+            extra_params = dict(global_row.extra_params or {})
+            api_key = self._decrypt_or_env_fallback(global_row.api_key_encrypted)
+            source = "global"
+        else:
+            provider = self._env_provider
+            model = self._env_model
+            api_key = self._env_api_key
+            extra_params = {}
+            source = "env"
+
+        if override is not None:
+            if override.provider is not None:
+                provider = override.provider
+                source = "override"
+            if override.model is not None:
+                model = override.model
+                source = "override"
+            override_params = dict(override.extra_params or {})
+            if override_params:
+                extra_params = {**extra_params, **override_params}
+                source = "override"
+
+        return ResolvedConfig(
+            provider=provider,
+            model=model,
+            api_key=api_key,
+            extra_params=extra_params,
+            source=source,
+        )
+
+    def _decrypt_or_env_fallback(self, ciphertext: str | None) -> str:
+        if not ciphertext:
+            return self._env_api_key
+        if not self._cipher.is_available:
+            logger.warning(
+                "llm_settings has encrypted api_key but LLM_SETTINGS_ENCRYPTION_KEY is unset; "
+                "falling back to env."
+            )
+            return self._env_api_key
+        try:
+            return self._cipher.decrypt(ciphertext)
+        except (EncryptionUnavailableError, Exception) as exc:
+            logger.warning("failed to decrypt stored api_key (%s); falling back to env.", exc)
+            return self._env_api_key
+
+    # ---- Cache management --------------------------------------------
+
+    def invalidate(self) -> None:
+        """Drop all cached configs. Call after any settings/override write."""
+        with self._lock:
+            self._cache.clear()

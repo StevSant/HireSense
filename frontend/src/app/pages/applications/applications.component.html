@@ -23,6 +23,7 @@
           <th>Match</th>
           <th>Artifacts</th>
           <th>Created</th>
+          <th class="col-actions" aria-label="Actions"></th>
         </tr>
       </thead>
       <tbody>
@@ -46,6 +47,27 @@
               <span class="badge" [class.on]="app.has_prep" title="Has interview prep">P</span>
             </td>
             <td>{{ app.created_at | date:'mediumDate' }}</td>
+            <td class="col-actions">
+              <button
+                type="button"
+                class="row-delete"
+                [disabled]="deletingId() === app.id"
+                title="Delete application"
+                aria-label="Delete application"
+                (click)="remove(app, $event)"
+              >
+                @if (deletingId() === app.id) {
+                  …
+                } @else {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                }
+              </button>
+            </td>
           </tr>
         }
       </tbody>

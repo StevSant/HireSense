@@ -35,6 +35,7 @@ export class ApplicationDetailComponent implements OnInit {
   loading = signal(true);
   error = signal('');
   activeTab = signal<TabKey>('job');
+  deleting = signal(false);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -82,5 +83,26 @@ export class ApplicationDetailComponent implements OnInit {
 
   backToList(): void {
     this.router.navigate(['/dashboard/applications']);
+  }
+
+  remove(): void {
+    const agg = this.aggregate();
+    if (!agg) return;
+    const label = `${agg.title} · ${agg.company}`;
+    if (!confirm(`Delete "${label}"?\n\nThis removes the application and all its matches, optimizations, cover letters and interview prep. The original job in Ingestion is not affected.`)) {
+      return;
+    }
+    this.deleting.set(true);
+    this.error.set('');
+    this.service.remove(agg.id).subscribe({
+      next: () => {
+        this.deleting.set(false);
+        this.router.navigate(['/dashboard/applications']);
+      },
+      error: (err) => {
+        this.error.set(err?.error?.detail ?? 'Failed to delete application');
+        this.deleting.set(false);
+      },
+    });
   }
 }

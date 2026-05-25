@@ -165,13 +165,14 @@
     </div>
   }
 
-  <!-- Detail panel -->
-  @if (selectedJob()) {
-    <app-job-detail-panel
-      [job]="selectedJob()!"
-      [tracked]="isTracked(selectedJob()!.id)"
-      (close)="closeDetail()"
-      (track)="trackJob($event)"
-    />
-  }
 </div>
+
+<!-- Detail panel — rendered outside .page so its position:fixed escapes the page's transform containing block -->
+@if (selectedJob()) {
+  <app-job-detail-panel
+    [job]="selectedJob()!"
+    [tracked]="isTracked(selectedJob()!.id)"
+    (close)="closeDetail()"
+    (track)="trackJob($event)"
+  />
+}

@@ -62,6 +62,9 @@ export class IngestionComponent implements OnInit {
   // Detail panel
   selectedJob = signal<NormalizedJob | null>(null);
 
+  // Sort
+  sortMode = signal<'' | 'match_desc' | 'date_desc'>('');
+
   ngOnInit(): void {
     this.loadPortals();
     this.loadJobs();
@@ -87,8 +90,9 @@ export class IngestionComponent implements OnInit {
   loadJobs(): void {
     this.loading.set(true);
     this.error.set('');
+    const filtersWithSort = { ...this.filters(), sort: this.sortMode() || undefined };
     this.ingestionService
-      .queryJobs(this.activeTab(), this.page(), this.pageSize(), this.filters())
+      .queryJobs(this.activeTab(), this.page(), this.pageSize(), filtersWithSort)
       .subscribe({
         next: (res) => {
           this.jobs.set(res.jobs);
@@ -211,5 +215,18 @@ export class IngestionComponent implements OnInit {
 
   isTracked(jobId: string): boolean {
     return this.trackedJobIds().has(jobId);
+  }
+
+  onSortChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value as '' | 'match_desc' | 'date_desc';
+    this.sortMode.set(value);
+    this.page.set(1);
+    this.loadJobs();
+  }
+
+  scoreBadgeClass(score: number): string {
+    if (score >= 0.7) return 'score-high';
+    if (score >= 0.4) return 'score-mid';
+    return 'score-low';
   }
 }

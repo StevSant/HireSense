@@ -5,6 +5,7 @@ from hiresense.applications.domain.models import (
     ApplicationMatch,
     JobSnapshotSource,
 )
+from hiresense.applications.domain.skill_extractor import SkillExtractor
 
 __all__ = [
     "ApplicationCvOptimization",
@@ -12,4 +13,5 @@ __all__ = [
     "ApplicationJobSnapshot",
     "ApplicationMatch",
     "JobSnapshotSource",
+    "SkillExtractor",
 ]

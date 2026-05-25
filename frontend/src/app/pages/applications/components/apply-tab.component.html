@@ -61,15 +61,15 @@
     }
 
     <div class="downloads">
-      <a class="btn-secondary" [href]="cvPdfUrl()" target="_blank" rel="noopener" [class.disabled]="!hasCv()">
-        📄 CV (PDF)
-      </a>
-      <a class="btn-secondary" [href]="coverLetterPdfUrl()" target="_blank" rel="noopener" [class.disabled]="!letter()">
-        📄 Cover letter (PDF)
-      </a>
-      <a class="btn-primary" [href]="bundleUrl()" target="_blank" rel="noopener" [class.disabled]="!letter() || !hasCv()">
-        📦 Bundle (.zip)
-      </a>
+      <button class="btn-secondary" (click)="downloadCv()" [disabled]="!hasCv() || downloadingCv()">
+        @if (downloadingCv()) { Downloading... } @else { 📄 CV (PDF) }
+      </button>
+      <button class="btn-secondary" (click)="downloadLetter()" [disabled]="!letter() || downloadingLetter()">
+        @if (downloadingLetter()) { Downloading... } @else { 📄 Cover letter (PDF) }
+      </button>
+      <button class="btn-primary" (click)="downloadBundle()" [disabled]="!letter() || !hasCv() || downloadingBundle()">
+        @if (downloadingBundle()) { Downloading... } @else { 📦 Bundle (.zip) }
+      </button>
     </div>
   </section>
 

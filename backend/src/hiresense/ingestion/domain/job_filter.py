@@ -22,6 +22,10 @@ class JobQueryParams(BaseModel):
     user_location: str | None = None
     strict_location: bool = False
     sort: str | None = None
+    # Hide jobs whose match_score is below this threshold (0.0–1.0). When
+    # None, no filter is applied. Jobs with match_score == None (not yet
+    # scored, e.g. no profile) are passed through regardless.
+    min_score: float | None = None
 
 
 class PaginatedResult(BaseModel):
@@ -69,6 +73,13 @@ def filter_and_paginate(
         filtered = [
             j for j in filtered
             if j.posted_date is not None and j.posted_date <= params.date_to
+        ]
+
+    if params.min_score is not None:
+        threshold = params.min_score
+        filtered = [
+            j for j in filtered
+            if j.match_score is None or j.match_score >= threshold
         ]
 
     if params.strict_location and params.user_location:

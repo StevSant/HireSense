@@ -312,7 +312,10 @@ def create_app() -> FastAPI:
         tracking_service=tracking_service,
     )
     cover_letter_generator = CoverLetterGenerator(llm=llm)
-    latex_compiler = LatexCompiler(compiler=settings.latex_compiler)
+    latex_compiler = LatexCompiler(
+        compiler=settings.latex_compiler,
+        timeout_seconds=settings.latex_timeout_seconds,
+    )
     apply_service = ApplyService(
         repository=application_repo,
         cover_letter_generator=cover_letter_generator,

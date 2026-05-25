@@ -10,6 +10,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from hiresense.adapters.event_bus import InMemoryEventBus
+from hiresense.applications.api.provider import ApplicationsProvider
+from hiresense.applications.api.routes import router as applications_router
+from hiresense.applications.domain import ApplicationService, ArtifactService
+from hiresense.applications.domain import SkillExtractor as ApplicationsSkillExtractor
+from hiresense.applications.infrastructure import ApplicationRepository
 from hiresense.config import Settings
 from hiresense.identity.api import router as auth_router
 from hiresense.identity.api.provider import IdentityProvider
@@ -276,6 +281,29 @@ def create_app() -> FastAPI:
         interview_prep_service=interview_prep_service,
     )
     app.include_router(interview_router)
+
+    # --- Applications ---
+    application_repo = ApplicationRepository(session_factory=sync_session_factory)
+    applications_skill_extractor = ApplicationsSkillExtractor(llm=llm)
+    application_service = ApplicationService(
+        repository=application_repo,
+        tracking_service=tracking_service,
+        ingestion_orchestrator=ingestion_orchestrator,
+        skill_extractor=applications_skill_extractor,
+    )
+    artifact_service = ArtifactService(
+        repository=application_repo,
+        matching_orchestrator=matching_orchestrator,
+        cv_optimizer=cv_optimizer,
+        interview_prep_service=interview_prep_service,
+        profile_service=profile_service,
+        tracking_service=tracking_service,
+    )
+    app.state.applications_provider = ApplicationsProvider(
+        application_service=application_service,
+        artifact_service=artifact_service,
+    )
+    app.include_router(applications_router)
 
     # --- Research ---
     research_repo = CompanyResearchRepository(session_factory=sync_session_factory)

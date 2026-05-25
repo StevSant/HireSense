@@ -2,12 +2,20 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import uuid
 from typing import Any
 
 from hiresense.optimization.domain.models import OptimizationResult, SectionChange
 
 logger = logging.getLogger(__name__)
+
+_MARKDOWN_FENCE_RE = re.compile(r"```(?:json)?\s*\n?(.*?)\n?```", re.DOTALL)
+
+
+def _strip_markdown_fence(text: str) -> str:
+    match = _MARKDOWN_FENCE_RE.search(text)
+    return match.group(1).strip() if match else text.strip()
 
 
 class CVOptimizer:
@@ -88,4 +96,12 @@ class CVOptimizer:
         response = await self._llm.complete(
             prompt, system="You are a professional CV optimization assistant."
         )
-        return json.loads(response)
+        cleaned = _strip_markdown_fence(response)
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError:
+            logger.warning(
+                "CV optimizer got non-JSON LLM response (first 500 chars): %r",
+                cleaned[:500],
+            )
+            raise

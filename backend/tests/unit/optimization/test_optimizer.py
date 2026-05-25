@@ -69,6 +69,46 @@ Some education content
 
 
 @pytest.mark.asyncio
+async def test_optimizer_parses_markdown_fenced_json() -> None:
+    """Claude usually wraps JSON output in ```json ... ``` fences;
+    optimizer must strip those before parsing."""
+
+    class FencedLLM:
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            return (
+                "```json\n"
+                "{\n"
+                '  "changes": [\n'
+                "    {\n"
+                '      "section_name": "SUMMARY",\n'
+                '      "original": "Backend developer with Python experience",\n'
+                '      "optimized": "Backend SRE with Python, Kubernetes, and Terraform experience",\n'
+                '      "reason": "Adds missing required skills"\n'
+                "    }\n"
+                "  ],\n"
+                '  "improvement_summary": "Added Kubernetes and Terraform to summary"\n'
+                "}\n"
+                "```"
+            )
+
+    optimizer = CVOptimizer(llm=FencedLLM())
+    result = await optimizer.optimize(
+        match_id="match-x",
+        job_id="job-x",
+        cv_id="cv-x",
+        original_tex="\\section*{SUMMARY}\nBackend developer with Python experience",
+        job_description="SRE",
+        job_skills=["python", "kubernetes"],
+        missing_skills=["kubernetes"],
+        recommendations=[],
+    )
+    assert len(result.changes) == 1
+    assert result.changes[0].section_name == "SUMMARY"
+    assert "Kubernetes" in result.optimized_tex
+    assert result.improvement_summary == "Added Kubernetes and Terraform to summary"
+
+
+@pytest.mark.asyncio
 async def test_optimizer_handles_llm_failure() -> None:
     class BrokenLLM:
         async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:

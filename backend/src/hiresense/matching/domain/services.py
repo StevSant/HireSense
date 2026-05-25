@@ -3,8 +3,16 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import uuid
 from typing import Any
+
+_MARKDOWN_FENCE_RE = re.compile(r"```(?:json)?\s*\n?(.*?)\n?```", re.DOTALL)
+
+
+def _strip_markdown_fence(text: str) -> str:
+    match = _MARKDOWN_FENCE_RE.search(text)
+    return match.group(1).strip() if match else text.strip()
 
 from pydantic import BaseModel
 
@@ -142,13 +150,19 @@ class MatchingOrchestrator:
             response = await self._llm.complete(
                 prompt, system="You are a job matching analysis assistant."
             )
-            return json.loads(response)
-        except (json.JSONDecodeError, Exception):
+            cleaned = _strip_markdown_fence(response)
+            return json.loads(cleaned)
+        except json.JSONDecodeError:
+            logger.warning(
+                "Matching LLM returned non-JSON (first 500 chars): %r",
+                (cleaned if "cleaned" in locals() else response)[:500],
+            )
+        except Exception:
             logger.exception("LLM analysis failed")
-            return {
-                "experience_score": 0.5,
-                "language_score": 0.5,
-                "pros": [],
-                "cons": [],
-                "recommendations": [],
-            }
+        return {
+            "experience_score": 0.5,
+            "language_score": 0.5,
+            "pros": [],
+            "cons": [],
+            "recommendations": [],
+        }

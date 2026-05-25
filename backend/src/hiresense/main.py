@@ -11,6 +11,23 @@ from sqlalchemy.orm import sessionmaker
 
 from hiresense.adapters.event_bus import InMemoryEventBus
 from hiresense.adapters.latex import LatexCompiler
+from hiresense.admin.api import AdminProvider, router as admin_router
+from hiresense.admin.domain import (
+    APIKeyCipher,
+    LLMConfigService,
+    LLMFactory,
+    LLMSettingsService,
+    LLMTestRunner,
+    TrackedLLMAdapter,
+    UsageAggregator,
+    UsageRecorder,
+)
+from hiresense.admin.infrastructure import (
+    LLMAuditLogRepository,
+    LLMFeatureOverrideRepository,
+    LLMSettingsRepository,
+    LLMUsageLogRepository,
+)
 from hiresense.applications.api.provider import ApplicationsProvider
 from hiresense.applications.api.routes import router as applications_router
 from hiresense.applications.domain import ApplicationService, ArtifactService
@@ -113,17 +130,54 @@ def create_app() -> FastAPI:
     sync_engine = create_engine(sync_db_url, echo=settings.debug)
     sync_session_factory = sessionmaker(bind=sync_engine, expire_on_commit=False)
 
-    llm = None
-    if settings.llm_api_key:
-        try:
-            from langchain_anthropic import ChatAnthropic
+    # --- Admin: runtime LLM config, per-feature overrides, usage tracking ---
+    llm_settings_repo = LLMSettingsRepository(session_factory=sync_session_factory)
+    llm_override_repo = LLMFeatureOverrideRepository(session_factory=sync_session_factory)
+    llm_usage_repo = LLMUsageLogRepository(session_factory=sync_session_factory)
+    llm_audit_repo = LLMAuditLogRepository(session_factory=sync_session_factory)
+    cipher = APIKeyCipher(settings.llm_settings_encryption_key)
+    llm_factory = LLMFactory()
+    llm_config_service = LLMConfigService(
+        settings_repo=llm_settings_repo,
+        override_repo=llm_override_repo,
+        cipher=cipher,
+        env_provider=settings.llm_provider,
+        env_model=settings.llm_model,
+        env_api_key=settings.llm_api_key,
+    )
+    llm_test_runner = LLMTestRunner(factory=llm_factory)
+    llm_settings_service = LLMSettingsService(
+        settings_repo=llm_settings_repo,
+        override_repo=llm_override_repo,
+        audit_repo=llm_audit_repo,
+        cipher=cipher,
+        config_service=llm_config_service,
+        factory=llm_factory,
+        test_runner=llm_test_runner,
+        env_provider=settings.llm_provider,
+        env_model=settings.llm_model,
+        env_api_key=settings.llm_api_key,
+    )
+    usage_recorder = UsageRecorder(repo=llm_usage_repo)
+    usage_aggregator = UsageAggregator(repo=llm_usage_repo)
+    app.state.admin_provider = AdminProvider(
+        settings_service=llm_settings_service,
+        config_service=llm_config_service,
+        factory=llm_factory,
+        usage_aggregator=usage_aggregator,
+        usage_recorder=usage_recorder,
+    )
+    app.include_router(admin_router)
 
-            from hiresense.adapters.llm import LangChainLLMAdapter
-
-            chat_model = ChatAnthropic(model=settings.llm_model, api_key=settings.llm_api_key)
-            llm = LangChainLLMAdapter(model=chat_model)
-        except ImportError:
-            pass
+    def _tracked(feature_key: str) -> TrackedLLMAdapter | None:
+        if not settings.llm_api_key:
+            return None
+        return TrackedLLMAdapter(
+            config_service=llm_config_service,
+            factory=llm_factory,
+            recorder=usage_recorder,
+            feature_key=feature_key,
+        )
 
     from hiresense.adapters.embedding import SentenceTransformerAdapter
 
@@ -232,7 +286,7 @@ def create_app() -> FastAPI:
     # --- Profile ---
     profile_repo = ProfileRepository(session_factory=sync_session_factory)
     latex_parser = LaTeXParser()
-    pdf_parser = PDFParser(llm=llm)
+    pdf_parser = PDFParser(llm=_tracked("cv_parser"))
     skill_extractor = SkillExtractor()
     profile_service = ProfileService(
         parser=latex_parser,
@@ -246,16 +300,20 @@ def create_app() -> FastAPI:
 
     # --- Matching ---
     dimension_scorers = [
-        SeniorityScorer(llm=llm, weight=settings.weight_seniority),
-        CompensationScorer(llm=llm, weight=settings.weight_compensation),
-        GrowthScorer(llm=llm, weight=settings.weight_growth),
-        CultureScorer(llm=llm, weight=settings.weight_culture),
-        ApplicationStrengthScorer(llm=llm, weight=settings.weight_application),
-        InterviewReadinessScorer(llm=llm, weight=settings.weight_interview),
+        SeniorityScorer(llm=_tracked("seniority_scorer"), weight=settings.weight_seniority),
+        CompensationScorer(llm=_tracked("compensation_scorer"), weight=settings.weight_compensation),
+        GrowthScorer(llm=_tracked("growth_scorer"), weight=settings.weight_growth),
+        CultureScorer(llm=_tracked("culture_scorer"), weight=settings.weight_culture),
+        ApplicationStrengthScorer(
+            llm=_tracked("application_strength_scorer"), weight=settings.weight_application,
+        ),
+        InterviewReadinessScorer(
+            llm=_tracked("interview_readiness_scorer"), weight=settings.weight_interview,
+        ),
     ]
 
     matching_orchestrator = MatchingOrchestrator(
-        llm=llm,
+        llm=_tracked("matching_reasoning"),
         event_bus=event_bus,
         dimension_scorers=dimension_scorers,
         embedding=embedding,
@@ -271,7 +329,7 @@ def create_app() -> FastAPI:
     app.include_router(matching_router)
 
     # --- Optimization ---
-    cv_optimizer = CVOptimizer(llm=llm)
+    cv_optimizer = CVOptimizer(llm=_tracked("cv_optimizer"))
     app.state.optimization = OptimizationProvider(cv_optimizer=cv_optimizer)
     app.include_router(optimization_router)
 
@@ -287,7 +345,9 @@ def create_app() -> FastAPI:
     # --- Interview ---
     story_repo = StoryRepository(session_factory=sync_session_factory)
     story_service = StoryService(repository=story_repo)
-    interview_prep_service = InterviewPrepService(llm=llm, story_repo=story_repo)
+    interview_prep_service = InterviewPrepService(
+        llm=_tracked("interview_prep"), story_repo=story_repo,
+    )
     app.state.interview = InterviewProvider(
         story_service=story_service,
         interview_prep_service=interview_prep_service,
@@ -296,7 +356,9 @@ def create_app() -> FastAPI:
 
     # --- Applications ---
     application_repo = ApplicationRepository(session_factory=sync_session_factory)
-    applications_skill_extractor = ApplicationsSkillExtractor(llm=llm)
+    applications_skill_extractor = ApplicationsSkillExtractor(
+        llm=_tracked("application_skill_extractor"),
+    )
     application_service = ApplicationService(
         repository=application_repo,
         tracking_service=tracking_service,
@@ -311,7 +373,7 @@ def create_app() -> FastAPI:
         profile_service=profile_service,
         tracking_service=tracking_service,
     )
-    cover_letter_generator = CoverLetterGenerator(llm=llm)
+    cover_letter_generator = CoverLetterGenerator(llm=_tracked("cover_letter"))
     latex_compiler = LatexCompiler(
         compiler=settings.latex_compiler,
         timeout_seconds=settings.latex_timeout_seconds,
@@ -332,7 +394,9 @@ def create_app() -> FastAPI:
 
     # --- Research ---
     research_repo = CompanyResearchRepository(session_factory=sync_session_factory)
-    research_service = CompanyResearchService(llm=llm, repository=research_repo)
+    research_service = CompanyResearchService(
+        llm=_tracked("company_research"), repository=research_repo,
+    )
     app.state.research = ResearchProvider(research_service=research_service)
     app.include_router(research_router)
 

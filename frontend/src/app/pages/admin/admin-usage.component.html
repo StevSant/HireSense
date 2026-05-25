@@ -1,0 +1,198 @@
+<div class="admin-usage">
+  <header class="page-header">
+    <h1>LLM Usage</h1>
+    <p class="subtitle">Track every LLM call: tokens, cost (USD), latency, by feature/provider/model.</p>
+    <div class="header-actions">
+      <button class="btn" (click)="refresh()" type="button">Refresh</button>
+      <button class="btn" (click)="exportCsv()" type="button">Export CSV</button>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  <!-- KPI cards -->
+  @if (summary(); as s) {
+    <section class="kpis">
+      <div class="kpi-card">
+        <div class="kpi-label">Today</div>
+        <div class="kpi-value">{{ s.today.total_cost_usd | currency:'USD':'symbol':'1.4-4' }}</div>
+        <div class="kpi-sub">
+          {{ s.today.total_calls }} calls · {{ s.today.total_tokens | number }} tokens
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">This month</div>
+        <div class="kpi-value">{{ s.this_month.total_cost_usd | currency:'USD':'symbol':'1.4-4' }}</div>
+        <div class="kpi-sub">
+          {{ s.this_month.total_calls }} calls · {{ s.this_month.total_tokens | number }} tokens
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">All time</div>
+        <div class="kpi-value">{{ s.all_time.total_cost_usd | currency:'USD':'symbol':'1.4-4' }}</div>
+        <div class="kpi-sub">
+          {{ s.all_time.total_calls }} calls · {{ s.all_time.total_tokens | number }} tokens
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- Range toggle -->
+  <section class="card">
+    <div class="card-header">
+      <h2>Cost over time</h2>
+      <div class="range-toggle">
+        <button class="btn-toggle" [class.active]="rangeDays() === 7" (click)="setRange(7)">7d</button>
+        <button class="btn-toggle" [class.active]="rangeDays() === 30" (click)="setRange(30)">30d</button>
+        <button class="btn-toggle" [class.active]="rangeDays() === 90" (click)="setRange(90)">90d</button>
+      </div>
+    </div>
+    @if (timeseries(); as ts) {
+      @if (ts.buckets.length === 0) {
+        <div class="empty">No usage in this range yet.</div>
+      } @else {
+        <svg class="bar-chart" viewBox="0 0 800 200" preserveAspectRatio="none">
+          @for (b of ts.buckets; track b.key; let i = $index) {
+            <g>
+              <rect
+                [attr.x]="barX(i, ts.buckets.length, 780, 4)"
+                [attr.y]="200 - barHeight(b.cost_usd, maxBucketCost(), 180)"
+                [attr.width]="slotWidth(ts.buckets.length, 780, 4)"
+                [attr.height]="barHeight(b.cost_usd, maxBucketCost(), 180)"
+                fill="#2563eb"
+              >
+                <title>{{ formatDay(b.key) }} — {{ b.cost_usd | currency:'USD':'symbol':'1.4-4' }} · {{ b.calls }} calls</title>
+              </rect>
+            </g>
+          }
+        </svg>
+        <div class="chart-axis">
+          <span>{{ formatDay(ts.buckets[0].key) }}</span>
+          <span>{{ formatDay(ts.buckets[ts.buckets.length - 1].key) }}</span>
+        </div>
+      }
+    } @else {
+      <div class="state">Loading…</div>
+    }
+  </section>
+
+  <!-- Breakdown -->
+  <section class="card">
+    <div class="card-header">
+      <h2>Breakdown</h2>
+      <div class="range-toggle">
+        <button class="btn-toggle" [class.active]="dimension() === 'feature'" (click)="setDimension('feature')">Feature</button>
+        <button class="btn-toggle" [class.active]="dimension() === 'provider'" (click)="setDimension('provider')">Provider</button>
+        <button class="btn-toggle" [class.active]="dimension() === 'model'" (click)="setDimension('model')">Model</button>
+      </div>
+    </div>
+    @if (breakdown(); as b) {
+      @if (b.buckets.length === 0) {
+        <div class="empty">No usage to break down.</div>
+      } @else {
+        <table class="breakdown-table">
+          <thead>
+            <tr>
+              <th>{{ b.dimension | titlecase }}</th>
+              <th class="right">Calls</th>
+              <th class="right">Tokens</th>
+              <th class="right">Cost</th>
+              <th class="bar-col">Share</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of b.buckets; track row.key) {
+              <tr>
+                <td><code>{{ row.key }}</code></td>
+                <td class="right">{{ row.calls | number }}</td>
+                <td class="right">{{ row.total_tokens | number }}</td>
+                <td class="right">{{ row.cost_usd | currency:'USD':'symbol':'1.4-4' }}</td>
+                <td class="bar-col">
+                  <div class="row-bar">
+                    <div
+                      class="row-bar-fill"
+                      [style.width.%]="(row.cost_usd / maxBreakdownCost()) * 100">
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    }
+  </section>
+
+  <!-- Recent calls -->
+  <section class="card">
+    <div class="card-header">
+      <h2>Recent calls</h2>
+    </div>
+
+    <div class="filters">
+      <input
+        type="text"
+        placeholder="Provider"
+        [ngModel]="filterProvider()"
+        (ngModelChange)="filterProvider.set($event)" />
+      <input
+        type="text"
+        placeholder="Model"
+        [ngModel]="filterModel()"
+        (ngModelChange)="filterModel.set($event)" />
+      <input
+        type="text"
+        placeholder="Feature key"
+        [ngModel]="filterFeature()"
+        (ngModelChange)="filterFeature.set($event)" />
+      <button class="btn" (click)="loadRecent()" type="button">Apply</button>
+    </div>
+
+    @if (recent(); as r) {
+      @if (r.calls.length === 0) {
+        <div class="empty">No calls match the current filters.</div>
+      } @else {
+        <table class="calls-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Feature</th>
+              <th>Provider</th>
+              <th>Model</th>
+              <th class="right">In</th>
+              <th class="right">Out</th>
+              <th class="right">Cost</th>
+              <th class="right">Latency</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (call of r.calls; track call.id) {
+              <tr [class.failed]="!call.success">
+                <td>{{ call.created_at | date:'short' }}</td>
+                <td><code>{{ call.feature_key }}</code></td>
+                <td>{{ call.provider }}</td>
+                <td><code>{{ call.model }}</code></td>
+                <td class="right">{{ call.input_tokens | number }}</td>
+                <td class="right">{{ call.output_tokens | number }}</td>
+                <td class="right">{{ call.cost_usd | currency:'USD':'symbol':'1.6-6' }}</td>
+                <td class="right">{{ call.latency_ms | number:'1.0-0' }} ms</td>
+                <td>
+                  @if (call.success) {
+                    <span class="badge success">ok</span>
+                  } @else {
+                    <span class="badge error" [title]="call.error || ''">error</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    } @else {
+      <div class="state">Loading…</div>
+    }
+  </section>
+</div>

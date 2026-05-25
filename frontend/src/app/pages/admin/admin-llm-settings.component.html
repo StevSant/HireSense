@@ -1,0 +1,290 @@
+<div class="admin-settings">
+  <header class="page-header">
+    <h1>LLM Settings</h1>
+    <p class="subtitle">
+      Configure the global provider, model and API key. Per-feature overrides let you route
+      cheap, high-volume features to a small model while keeping the expensive features on the
+      flagship.
+    </p>
+  </header>
+
+  @if (loading()) {
+    <div class="state">Loading…</div>
+  } @else {
+    <section class="card">
+      <h2>Global config</h2>
+      @if (current(); as cfg) {
+        <div class="current-state">
+          <div><span class="muted">Source:</span> <strong>{{ cfg.source }}</strong></div>
+          @if (cfg.has_stored_key) {
+            <div><span class="muted">Stored key:</span> <code>{{ cfg.api_key_mask }}</code></div>
+          } @else {
+            <div class="warning">
+              No API key stored in DB &mdash; falling back to <code>LLM_API_KEY</code> from .env.
+              Submitting a new key here requires <code>LLM_SETTINGS_ENCRYPTION_KEY</code> to be set.
+            </div>
+          }
+          @if (cfg.updated_at) {
+            <div class="muted small">
+              Last updated {{ cfg.updated_at }} by {{ cfg.updated_by || '—' }}
+            </div>
+          }
+        </div>
+      }
+
+      <div class="form-grid">
+        <label>
+          <span>Provider</span>
+          <select
+            [ngModel]="formProvider()"
+            (ngModelChange)="onProviderChange($event)">
+            @for (p of providers; track p) {
+              <option [value]="p">{{ p }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          <span>Model</span>
+          <input
+            type="text"
+            [ngModel]="formModel()"
+            (ngModelChange)="onModelChange($event)"
+            list="model-suggestions"
+            placeholder="e.g. claude-sonnet-4-6"
+          />
+          <datalist id="model-suggestions">
+            @for (m of modelSuggestions(); track m) {
+              <option [value]="m"></option>
+            }
+          </datalist>
+        </label>
+
+        <label>
+          <span>API key</span>
+          <input
+            type="password"
+            [ngModel]="formApiKey()"
+            (ngModelChange)="onApiKeyChange($event)"
+            placeholder="Leave blank to keep the existing key"
+            autocomplete="new-password"
+          />
+        </label>
+      </div>
+
+      <div class="extras">
+        <div class="extras-header">
+          <span>Extra params</span>
+          <button class="btn-link" (click)="addExtra()" type="button">+ Add</button>
+        </div>
+        @for (param of formExtras(); track $index) {
+          <div class="extra-row">
+            <input
+              type="text"
+              placeholder="key"
+              [ngModel]="param.key"
+              (ngModelChange)="setExtraKey($index, $event)"
+            />
+            <input
+              type="text"
+              placeholder="value"
+              [ngModel]="param.value"
+              (ngModelChange)="setExtraValue($index, $event)"
+            />
+            <button class="btn-icon" (click)="removeExtra($index)" type="button" aria-label="Remove">×</button>
+          </div>
+        }
+      </div>
+
+      <div class="actions">
+        <button
+          class="btn"
+          (click)="test()"
+          [disabled]="testing() || saving()"
+          type="button">
+          {{ testing() ? 'Testing…' : 'Test connection' }}
+        </button>
+        <button
+          class="btn btn-primary"
+          (click)="save()"
+          [disabled]="saving() || testing()"
+          type="button">
+          {{ saving() ? 'Saving…' : 'Save' }}
+        </button>
+      </div>
+
+      @if (testResult(); as t) {
+        <div class="test-result" [class.success]="t.success" [class.failure]="!t.success">
+          @if (t.success) {
+            <strong>✓ Test passed</strong> ({{ t.latency_ms | number:'1.0-0' }} ms)
+            @if (t.response_preview) {
+              <div class="preview">Response: <code>{{ t.response_preview }}</code></div>
+            }
+          } @else {
+            <strong>✗ Test failed</strong>
+            <div class="preview">{{ t.error }}</div>
+          }
+        </div>
+      }
+
+      @if (error()) {
+        <div class="alert alert-error">{{ error() }}</div>
+      }
+      @if (successMessage()) {
+        <div class="alert alert-success">{{ successMessage() }}</div>
+      }
+    </section>
+
+    <!-- Per-feature overrides -->
+    <section class="card">
+      <h2>Per-feature overrides</h2>
+      <p class="muted small">
+        Each feature inherits the global config by default. Override the provider and/or model
+        to route that feature elsewhere (e.g. Haiku for CV parsing, Sonnet for scoring).
+      </p>
+
+      <table class="overrides-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Provider</th>
+            <th>Model</th>
+            <th>Source</th>
+            <th class="right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (feature of features(); track feature.feature_key) {
+            <tr>
+              <td>
+                <strong>{{ feature.feature_name }}</strong>
+                <div class="muted small">{{ feature.feature_description }}</div>
+              </td>
+              <td>
+                <code>{{ feature.provider }}</code>
+                @if (feature.inherits_provider) {
+                  <span class="badge badge-inherited">inherited</span>
+                }
+              </td>
+              <td>
+                <code>{{ feature.model }}</code>
+                @if (feature.inherits_model) {
+                  <span class="badge badge-inherited">inherited</span>
+                }
+              </td>
+              <td>
+                <span class="badge" [class.badge-override]="feature.source === 'override'">
+                  {{ feature.source }}
+                </span>
+              </td>
+              <td class="right">
+                <button class="btn-link" (click)="startEdit(feature)" type="button">Edit</button>
+                @if (feature.source === 'override') {
+                  <button class="btn-link danger" (click)="resetOverride(feature)" type="button">Reset</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Override edit modal -->
+    @if (editingOverride(); as draft) {
+      <div class="modal-backdrop" (click)="cancelEdit()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <header class="modal-header">
+            <h3>Edit override: {{ draft.feature_key }}</h3>
+            <button class="btn-icon" (click)="cancelEdit()" aria-label="Close">×</button>
+          </header>
+          <div class="modal-body">
+            <label class="checkbox">
+              <input
+                type="checkbox"
+                [checked]="draft.inherit_provider"
+                (change)="setOverrideInheritProvider($any($event.target).checked)"
+              />
+              Inherit provider from global
+            </label>
+            @if (!draft.inherit_provider) {
+              <select
+                [ngModel]="draft.provider"
+                (ngModelChange)="setOverrideProvider($event)">
+                <option value="" disabled>Pick a provider</option>
+                @for (p of providers; track p) {
+                  <option [value]="p">{{ p }}</option>
+                }
+              </select>
+            }
+
+            <label class="checkbox">
+              <input
+                type="checkbox"
+                [checked]="draft.inherit_model"
+                (change)="setOverrideInheritModel($any($event.target).checked)"
+              />
+              Inherit model from global
+            </label>
+            @if (!draft.inherit_model) {
+              <input
+                type="text"
+                placeholder="model"
+                [ngModel]="draft.model"
+                (ngModelChange)="setOverrideModel($event)"
+              />
+            }
+
+            <div class="extras">
+              <div class="extras-header">
+                <span>Extra params</span>
+                <button class="btn-link" (click)="addOverrideExtra()" type="button">+ Add</button>
+              </div>
+              @for (param of draft.extra; track $index) {
+                <div class="extra-row">
+                  <input
+                    type="text"
+                    placeholder="key"
+                    [ngModel]="param.key"
+                    (ngModelChange)="setOverrideExtraKey($index, $event)"
+                  />
+                  <input
+                    type="text"
+                    placeholder="value"
+                    [ngModel]="param.value"
+                    (ngModelChange)="setOverrideExtraValue($index, $event)"
+                  />
+                  <button class="btn-icon" (click)="removeOverrideExtra($index)" type="button" aria-label="Remove">×</button>
+                </div>
+              }
+            </div>
+
+            @if (overrideTestResult(); as t) {
+              <div class="test-result" [class.success]="t.success" [class.failure]="!t.success">
+                @if (t.success) {
+                  <strong>✓ Test passed</strong> ({{ t.latency_ms | number:'1.0-0' }} ms)
+                } @else {
+                  <strong>✗ Test failed</strong>
+                  <div class="preview">{{ t.error }}</div>
+                }
+              </div>
+            }
+            @if (overrideError()) {
+              <div class="alert alert-error">{{ overrideError() }}</div>
+            }
+          </div>
+          <footer class="modal-footer">
+            <button class="btn" (click)="cancelEdit()" type="button">Cancel</button>
+            <button
+              class="btn"
+              (click)="testOverride()"
+              [disabled]="overrideTesting()"
+              type="button">
+              {{ overrideTesting() ? 'Testing…' : 'Test' }}
+            </button>
+            <button class="btn btn-primary" (click)="saveOverride()" type="button">Save</button>
+          </footer>
+        </div>
+      </div>
+    }
+  }
+</div>

@@ -218,10 +218,14 @@ def create_app() -> FastAPI:
         event_bus=event_bus,
     )
 
+    from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
+    semantic_scoring = SemanticScoringService(embedding_port=embedding)
+
     app.state.ingestion = IngestionProvider(
         orchestrator=ingestion_orchestrator,
         portal_scanner=portal_scanner,
         portals_config=portals_config,
+        semantic_scoring=semantic_scoring,
     )
     app.include_router(ingestion_router)
 

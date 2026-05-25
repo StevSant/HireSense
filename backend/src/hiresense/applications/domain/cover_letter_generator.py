@@ -31,6 +31,13 @@ USER_PROMPT_TEMPLATE = (
 )
 
 
+TEMPLATE_PROMPT_SUFFIX = (
+    "\n\nStylistic reference (a previous cover letter the candidate liked — match its "
+    "voice, structure, and signature, but do NOT copy text verbatim and DO tailor the "
+    "content to the specific job above):\n---\n{template_body}\n---"
+)
+
+
 class CoverLetterGenerator:
     def __init__(self, llm: Any | None) -> None:
         self._llm = llm
@@ -47,6 +54,7 @@ class CoverLetterGenerator:
         pros: list[str],
         missing_skills: list[str],
         tone: str = "professional",
+        template_body: str | None = None,
     ) -> str:
         if self._llm is None:
             raise RuntimeError("LLM not configured — cover letter generation unavailable")
@@ -62,6 +70,8 @@ class CoverLetterGenerator:
             missing_skills=", ".join(missing_skills) or "(none)",
             tone=tone,
         )
+        if template_body and template_body.strip():
+            prompt += TEMPLATE_PROMPT_SUFFIX.format(template_body=template_body.strip())
         try:
             response = await self._llm.complete(prompt, system=SYSTEM_PROMPT)
         except Exception:

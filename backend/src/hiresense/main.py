@@ -68,6 +68,12 @@ from hiresense.optimization.api.provider import OptimizationProvider
 from hiresense.optimization.domain import CVOptimizer
 from hiresense.profile.api import router as profile_router
 from hiresense.profile.api.provider import ProfileProvider
+from hiresense.profile.cover_letter_templates import (
+    CoverLetterTemplateProvider,
+    CoverLetterTemplateRepository,
+    CoverLetterTemplateService,
+    cover_letter_templates_router,
+)
 from hiresense.profile.domain import LaTeXParser, PDFParser, ProfileService, SkillExtractor
 from hiresense.profile.infrastructure import ProfileRepository
 from hiresense.tracking.api import router as tracking_router
@@ -244,6 +250,18 @@ def create_app() -> FastAPI:
     app.state.profile = ProfileProvider(profile_service=profile_service)
     app.include_router(profile_router)
 
+    # --- Cover letter templates (reusable across applications) ---
+    cover_letter_template_repo = CoverLetterTemplateRepository(
+        session_factory=sync_session_factory
+    )
+    cover_letter_template_service = CoverLetterTemplateService(
+        repository=cover_letter_template_repo
+    )
+    app.state.cover_letter_templates = CoverLetterTemplateProvider(
+        service=cover_letter_template_service
+    )
+    app.include_router(cover_letter_templates_router)
+
     # --- Matching ---
     dimension_scorers = [
         SeniorityScorer(llm=llm, weight=settings.weight_seniority),
@@ -322,6 +340,7 @@ def create_app() -> FastAPI:
         latex_compiler=latex_compiler,
         profile_service=profile_service,
         tracking_service=tracking_service,
+        cover_letter_template_service=cover_letter_template_service,
     )
     app.state.applications_provider = ApplicationsProvider(
         application_service=application_service,

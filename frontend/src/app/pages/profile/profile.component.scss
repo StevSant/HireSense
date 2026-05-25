@@ -762,3 +762,56 @@ $transition: 0.2s ease;
     color: $primary-dark;
   }
 }
+
+// --- Cover letters: per-job explainer card ---
+.per-job-card {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.per-job-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: $primary-light;
+  color: $primary;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.per-job-body {
+  flex: 1;
+  min-width: 0;
+
+  h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    color: $text-dark;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: $text-mid;
+  }
+}
+
+.per-job-cta {
+  text-decoration: none;
+  display: inline-flex;
+}
+
+// Stack adjacent coming-soon cards inside the cover letters tab with spacing.
+.tab-panel .coming-soon-card + .coming-soon-card {
+  margin-top: 1.25rem;
+}

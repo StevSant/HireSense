@@ -1,4 +1,17 @@
-<div class="dashboard-layout">
+<div class="dashboard-layout" [class.sidebar-open]="sidebarOpen()">
+  <header class="mobile-header">
+    <button class="hamburger" (click)="toggleSidebar()" aria-label="Toggle navigation">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div class="mobile-logo">
+      <h2>HireSense</h2>
+    </div>
+  </header>
+
+  <div class="sidebar-backdrop" (click)="closeSidebar()"></div>
+
   <aside class="sidebar">
     <div class="logo">
       <h2>HireSense</h2>

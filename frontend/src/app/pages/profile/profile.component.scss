@@ -638,3 +638,127 @@ $transition: 0.2s ease;
   from { opacity: 0; transform: translateY(2px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+// --- Personal details tab ---
+.details-card {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 1.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem 2rem;
+  margin-bottom: 1.25rem;
+}
+
+.details-item {
+  min-width: 0;
+}
+
+.details-label {
+  display: block;
+  font-size: 0.6875rem;
+  color: $text-light;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.details-value {
+  display: block;
+  font-size: 0.95rem;
+  color: $text-dark;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.details-source-note {
+  margin: 0;
+  padding-top: 1rem;
+  border-top: 1px solid $border;
+  font-size: 0.8rem;
+  color: $text-light;
+  font-style: italic;
+}
+
+// --- "Coming soon" card (shared with Cover letters tab) ---
+.coming-soon-card {
+  position: relative;
+  background: $surface;
+  border: 1px dashed $border;
+  border-radius: $radius;
+  padding: 1.5rem 1.75rem;
+  color: $text-mid;
+
+  h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    color: $text-dark;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: $text-light;
+  }
+}
+
+.coming-soon-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.2rem 0.55rem;
+  background: $primary-light;
+  color: $primary-dark;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+// --- Empty state (shared across tabs) ---
+.empty-state {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.empty-state-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: $text-dark;
+}
+
+.empty-state-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: $text-light;
+}
+
+// --- Inline link-styled button (e.g. "CV tab" link inside empty state) ---
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: $primary;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: $primary-dark;
+  }
+}

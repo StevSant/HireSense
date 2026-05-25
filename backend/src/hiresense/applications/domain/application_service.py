@@ -5,6 +5,7 @@ from typing import Any
 
 from hiresense.applications.domain.aggregate import (
     ApplicationAggregate,
+    CoverLetterView,
     CvOptimizationView,
     InterviewPrepView,
     JobSnapshotView,
@@ -183,6 +184,28 @@ class ApplicationService:
             else None
         )
 
+        latest_letter = (
+            self._repo.get_latest_cover_letter(tracked.id)
+            if hasattr(self._repo, "get_latest_cover_letter")
+            else None
+        )
+        letter_view = (
+            CoverLetterView(
+                id=latest_letter.id,
+                match_id=latest_letter.match_id,
+                body=latest_letter.body,
+                tone=latest_letter.tone,
+                created_at=latest_letter.created_at,
+            )
+            if latest_letter is not None
+            else None
+        )
+        cover_letter_count = (
+            len(self._repo.list_cover_letters(tracked.id))
+            if hasattr(self._repo, "list_cover_letters")
+            else 0
+        )
+
         return ApplicationAggregate(
             id=tracked.id,
             job_id=tracked.job_id,
@@ -198,7 +221,9 @@ class ApplicationService:
             latest_match=match_view,
             latest_optimization=opt_view,
             latest_interview_prep=prep_view,
+            latest_cover_letter=letter_view,
             match_count=len(self._repo.list_matches(tracked.id)),
             optimization_count=len(self._repo.list_optimizations(tracked.id)),
             interview_prep_count=len(self._repo.list_interview_preps(tracked.id)),
+            cover_letter_count=cover_letter_count,
         )

@@ -50,7 +50,27 @@ export class CvTabComponent {
     URL.revokeObjectURL(url);
   }
 
-  pdfUrl = computed(() => this.service.cvPdfUrl(this.aggregate().id));
+  downloadingPdf = signal(false);
+
+  downloadPdf(): void {
+    this.downloadingPdf.set(true);
+    this.error.set('');
+    this.service.downloadCvPdf(this.aggregate().id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cv_${this.optimization()?.cv_language ?? 'en'}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.downloadingPdf.set(false);
+      },
+      error: (err) => {
+        this.error.set(err?.error?.detail ?? 'PDF download failed');
+        this.downloadingPdf.set(false);
+      },
+    });
+  }
 
   onLangChange(ev: Event): void {
     this.cvLanguage.set((ev.target as HTMLSelectElement).value as 'en' | 'es');

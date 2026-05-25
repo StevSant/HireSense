@@ -16,7 +16,9 @@
     </button>
     @if (optimization()) {
       <button class="btn-secondary" (click)="downloadTex()">Download .tex</button>
-      <a class="btn-secondary" [href]="pdfUrl()" target="_blank" rel="noopener">Download .pdf ↗</a>
+      <button class="btn-secondary" (click)="downloadPdf()" [disabled]="downloadingPdf()">
+        @if (downloadingPdf()) { Downloading... } @else { Download .pdf }
+      </button>
     }
   </div>
 

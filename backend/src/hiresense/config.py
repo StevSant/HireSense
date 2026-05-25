@@ -76,7 +76,13 @@ class Settings(BaseSettings):
 
     # LaTeX
     latex_compiler: str = "xelatex"
+    latex_timeout_seconds: float = 60.0
     cv_directory: str = "./cvs"
+
+    # Ingestion job-listing default minimum match score (0.0–1.0). Jobs with
+    # match_score below this value are hidden from the listing. Override per
+    # request with the ?min_score= query param (e.g. min_score=0 to show all).
+    ingestion_min_match_score: float = 0.25
 
     # Language
     supported_languages: list[str] = ["en", "es"]

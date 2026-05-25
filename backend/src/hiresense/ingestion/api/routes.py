@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -56,6 +56,7 @@ async def scan_portals(
 
 @router.get("/jobs", response_model=PaginatedResult)
 async def list_jobs(
+    request: Request,
     tab: Annotated[Literal["boards", "portals"], Query()],
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
@@ -72,7 +73,16 @@ async def list_jobs(
     user_location: str | None = None,
     strict_location: bool = False,
     sort: str | None = None,
+    min_score: float | None = None,
 ) -> PaginatedResult:
+    # Default min_score from settings when the client doesn't specify one
+    # (pass min_score=0 explicitly to disable the filter). Tests mount the
+    # router on a bare FastAPI without app.state.settings — fall back to
+    # no-filter in that case.
+    if min_score is None:
+        settings = getattr(request.app.state, "settings", None)
+        if settings is not None:
+            min_score = settings.ingestion_min_match_score
     all_jobs = orchestrator.list_jobs() if tab == "boards" else scanner.list_jobs()
 
     candidate_skills: list[str] = []
@@ -98,6 +108,7 @@ async def list_jobs(
         user_location=user_location,
         strict_location=strict_location,
         sort=sort,
+        min_score=min_score,
     )
     result = filter_and_paginate(all_jobs, params)
 

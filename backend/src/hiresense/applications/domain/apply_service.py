@@ -113,7 +113,6 @@ class ApplyService:
         tracked = self._tracking.get(application_id)
         profile = self._profiles.get_for_language("en")  # cover letter is always English for now
 
-        candidate_name = getattr(profile, "language", None) and "Bryan Menoscal" or "Candidate"
         # Pull name/contact from the underlying CandidateProfile via the latest profile lookup.
         candidate_info = self._candidate_info(profile)
 

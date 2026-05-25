@@ -9,6 +9,7 @@ import { NormalizedJob } from './models/normalized-job.model';
 import { PortalEntry } from './models/portal-entry.model';
 import { ScanPortalsRequest } from './models/scan-portals-request.model';
 import { ScanError } from './models/scan-result.model';
+import { SourceResult } from './models/source-result.model';
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { JobFiltersComponent } from './components/job-filters/job-filters.component';
 import { JobDetailPanelComponent } from './components/job-detail-panel/job-detail-panel.component';
@@ -52,6 +53,10 @@ export class IngestionComponent implements OnInit {
   loading = signal(false);
   error = signal('');
 
+  // Fetch result summary (board fetches)
+  fetchSummary = signal('');
+  fetchSourceResults = signal<SourceResult[]>([]);
+
   // Portal scan state
   portals = signal<PortalEntry[]>([]);
   availableCategories = signal<string[]>([]);
@@ -68,6 +73,10 @@ export class IngestionComponent implements OnInit {
 
   // Sort
   sortMode = signal<'' | 'match_desc' | 'date_desc'>('');
+
+  // Poll handle used to refresh the job list while /ingestion/fetch is in
+  // flight, so jobs from fast sources appear before slow sources finish.
+  private fetchPollHandle: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
     this.loadPortals();
@@ -114,14 +123,74 @@ export class IngestionComponent implements OnInit {
   fetchJobs(): void {
     this.loading.set(true);
     this.error.set('');
+    this.fetchSummary.set('');
+    this.fetchSourceResults.set([]);
+    this.startFetchPolling();
     this.ingestionService.fetchJobs().subscribe({
-      next: () => {
+      next: (res) => {
+        this.stopFetchPolling();
+        const results = res.source_results ?? [];
+        this.fetchSourceResults.set(results);
+        const ok = results.filter((r) => r.status === 'ok').length;
+        const errors = results.filter((r) => r.status === 'error').length;
+        const prefix = res.cancelled ? 'Ingestion stopped early. ' : 'Fetch complete: ';
+        this.fetchSummary.set(
+          `${prefix}${res.count} new jobs from ${ok}/${results.length} sources` +
+            (errors > 0 ? `, ${errors} failed.` : '.'),
+        );
         this.loadJobs();
       },
       error: (err) => {
+        this.stopFetchPolling();
         this.error.set(err.error?.detail || 'Failed to fetch jobs');
         this.loading.set(false);
       },
+    });
+  }
+
+  private startFetchPolling(): void {
+    this.stopFetchPolling();
+    this.fetchPollHandle = setInterval(() => {
+      this.refreshJobsSilently();
+    }, 2000);
+  }
+
+  private stopFetchPolling(): void {
+    if (this.fetchPollHandle !== null) {
+      clearInterval(this.fetchPollHandle);
+      this.fetchPollHandle = null;
+    }
+  }
+
+  // Like loadJobs() but doesn't toggle the page-level loading spinner —
+  // we're already showing it for the fetch operation, and a poll-driven
+  // flicker would be distracting.
+  private refreshJobsSilently(): void {
+    if (this.activeTab() !== 'boards') return;
+    const filtersWithSort = { ...this.filters(), sort: this.sortMode() || undefined };
+    this.ingestionService
+      .queryJobs(this.activeTab(), this.page(), this.pageSize(), filtersWithSort)
+      .subscribe({
+        next: (res) => {
+          this.jobs.set(res.jobs);
+          this.total.set(res.total);
+          this.totalPages.set(res.total_pages);
+        },
+        error: () => {},
+      });
+  }
+
+  cancelFetch(): void {
+    this.ingestionService.cancelFetch().subscribe({
+      next: () => {},
+      error: () => {},
+    });
+  }
+
+  cancelScan(): void {
+    this.ingestionService.cancelScan().subscribe({
+      next: () => {},
+      error: () => {},
     });
   }
 
@@ -150,8 +219,9 @@ export class IngestionComponent implements OnInit {
 
     this.ingestionService.scanPortals(body).subscribe({
       next: (res) => {
+        const prefix = res.cancelled ? 'Scan stopped early. ' : 'Scan complete: ';
         this.scanSummary.set(
-          `Scan complete: ${res.total_fetched} fetched, ${res.new} new, ${res.duplicates} duplicates.`,
+          `${prefix}${res.total_fetched} fetched, ${res.new} new, ${res.duplicates} duplicates.`,
         );
         this.scanErrors.set(res.errors);
         this.scanning.set(false);

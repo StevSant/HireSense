@@ -20,6 +20,7 @@ export class ApplicationsComponent implements OnInit {
   loading = signal(false);
   error = signal('');
   showCreateDialog = signal(false);
+  deletingId = signal<string | null>(null);
 
   ngOnInit(): void {
     this.load();
@@ -63,5 +64,24 @@ export class ApplicationsComponent implements OnInit {
   scorePct(score: number | null): string {
     if (score === null) return '—';
     return (score * 100).toFixed(0) + '%';
+  }
+
+  remove(app: ApplicationListItem, event: MouseEvent): void {
+    event.stopPropagation();
+    const label = `${app.title} · ${app.company}`;
+    if (!confirm(`Delete "${label}"?\n\nThis removes the application and all its matches, optimizations, cover letters and interview prep. The original job in Ingestion is not affected.`)) {
+      return;
+    }
+    this.deletingId.set(app.id);
+    this.service.remove(app.id).subscribe({
+      next: () => {
+        this.applications.update((rows) => rows.filter((r) => r.id !== app.id));
+        this.deletingId.set(null);
+      },
+      error: (err) => {
+        this.error.set(err?.error?.detail ?? 'Failed to delete application');
+        this.deletingId.set(null);
+      },
+    });
   }
 }

@@ -216,4 +216,17 @@ class ProfileService:
             raw_tex=orm.raw_tex or "",
             language=orm.language,
             skills=orm.skills or [],
+            name_override=orm.name_override,
+            location_override=orm.location_override,
+            linkedin_url=orm.linkedin_url,
+            github_url=orm.github_url,
+            portfolio_url=orm.portfolio_url,
         )
+
+    async def update_profile(
+        self, profile_id: uuid.UUID, fields: dict[str, str | None]
+    ) -> CandidateProfile | None:
+        if self._repository is None:
+            return None
+        orm = self._repository.update_manual_fields(profile_id, fields)
+        return self._to_response(orm) if orm else None

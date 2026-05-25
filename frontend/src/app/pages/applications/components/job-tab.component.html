@@ -1,0 +1,31 @@
+<div class="job-tab">
+  <div class="row">
+    <label>Job description</label>
+    <textarea rows="10" [ngModel]="description()" (ngModelChange)="description.set($event)"></textarea>
+  </div>
+
+  <div class="row">
+    <div class="row-header">
+      <label>Required skills</label>
+      <span class="source-badge">source: {{ source() }}</span>
+      <button class="btn-secondary btn-sm" (click)="regenerate()" [disabled]="regenerating()">
+        @if (regenerating()) { Regenerating... } @else { ↻ Regenerate from description }
+      </button>
+    </div>
+    <app-skill-chips
+      [skills]="skills()"
+      [editable]="true"
+      (add)="addSkill($event)"
+      (remove)="removeSkill($event)" />
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  <div class="actions">
+    <button class="btn-primary" (click)="save()" [disabled]="saving()">
+      @if (saving()) { Saving... } @else { Save snapshot }
+    </button>
+  </div>
+</div>

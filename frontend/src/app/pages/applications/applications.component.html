@@ -1,0 +1,61 @@
+<div class="page">
+  <div class="page-header">
+    <h1>Applications</h1>
+    <button class="btn-primary" (click)="openCreate()">+ New application</button>
+  </div>
+
+  @if (loading()) {
+    <p class="muted">Loading...</p>
+  } @else if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  } @else if (applications().length === 0) {
+    <div class="empty-state">
+      <p>No applications yet.</p>
+      <p class="muted">Track a job from <a routerLink="/dashboard/ingestion">Ingestion</a> or paste a job description to start.</p>
+    </div>
+  } @else {
+    <table class="apps-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Company</th>
+          <th>Status</th>
+          <th>Match</th>
+          <th>Artifacts</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (app of applications(); track app.id) {
+          <tr (click)="open(app.id)" class="row">
+            <td>{{ app.title }}</td>
+            <td>{{ app.company }}</td>
+            <td><span class="status-pill status-{{app.status}}">{{ app.status | titlecase }}</span></td>
+            <td>
+              @if (app.latest_match_score !== null) {
+                <span class="score-pill" [style.background]="scoreColor(app.latest_match_score)">
+                  {{ scorePct(app.latest_match_score) }}
+                </span>
+              } @else {
+                <span class="muted">—</span>
+              }
+            </td>
+            <td class="badges">
+              <span class="badge" [class.on]="app.has_match" title="Has match">M</span>
+              <span class="badge" [class.on]="app.has_optimization" title="Has CV optimization">CV</span>
+              <span class="badge" [class.on]="app.has_prep" title="Has interview prep">P</span>
+            </td>
+            <td>{{ app.created_at | date:'mediumDate' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+
+  @if (showCreateDialog()) {
+    <app-application-create-dialog
+      (closed)="showCreateDialog.set(false)"
+      (created)="onCreated($event)"
+    />
+  }
+</div>

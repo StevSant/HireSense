@@ -1,280 +1,41 @@
-$primary: #4f46e5;
-$primary-dark: #4338ca;
-$primary-light: #e0e7ff;
-$text-dark: #1a1a2e;
-$text-mid: #444;
-$text-light: #6b7280;
-$border: #e2e5ea;
-$surface: #ffffff;
-$bg: #f8f9fb;
-$radius: 10px;
-$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-$transition: 0.2s ease;
-
 .page {
-  max-width: 1000px;
-
-  h1 {
-    font-size: 1.625rem;
-    letter-spacing: -0.02em;
-    margin-bottom: 1.75rem;
-  }
+  max-width: 800px;
 }
 
-.opt-form {
-  background: var(--bg-card);
-  padding: 1.75rem;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-
-  textarea {
-    font-family: var(--font-mono);
-    font-size: 0.8125rem;
-    line-height: 1.7;
-  }
+.hint {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
 }
 
-.results-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.75rem;
-
-  h2 {
-    font-size: 1.25rem;
-    letter-spacing: -0.01em;
-  }
-
-  .actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-}
-
-.summary-card {
-  background: var(--bg-card);
-  padding: 1.25rem;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  margin-bottom: 1.25rem;
-
-  h3 {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 600;
-  }
-
-  p {
-    font-size: 0.9375rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-  }
-}
-
-.section-title {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
-}
-
-.change-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+.form .field {
   margin-bottom: 1rem;
-  overflow: hidden;
-}
 
-.change-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1.25rem;
-  background: var(--bg-inset);
-  border-bottom: 1px solid var(--border-default);
-
-  .section-name {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: var(--text-primary);
-  }
-
-  .reason {
-    font-size: 0.8125rem;
-    color: var(--text-muted);
-    font-style: italic;
-  }
-}
-
-.diff {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-}
-
-.diff-side {
-  padding: 1.25rem;
-
-  .diff-label {
+  label {
     display: block;
-    font-size: 0.6875rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 0.625rem;
+    margin-bottom: 0.4rem;
   }
 
-  pre {
-    font-family: var(--font-mono);
-    font-size: 0.8125rem;
-    white-space: pre-wrap;
-    word-break: break-word;
-    margin: 0;
-    line-height: 1.6;
-    color: var(--text-secondary);
-  }
-}
+  input, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.95em;
 
-.diff-original {
-  background: #fef7f7;
-  border-right: 1px solid var(--border-default);
-
-  .diff-label { color: var(--danger); }
-}
-
-.diff-optimized {
-  background: #f6fef9;
-
-  .diff-label { color: var(--success); }
-}
-
-// --- CV Source Section ---
-.cv-source-section {
-  margin-bottom: 1.25rem;
-
-  > label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    font-size: 0.8125rem;
-    color: $text-mid;
+    &:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+    }
   }
 }
 
-.source-tabs {
-  display: flex;
-  gap: 0.35rem;
+.alert-error {
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 0.75rem;
+  border-radius: 6px;
   margin-bottom: 1rem;
-}
-
-.source-tab {
-  padding: 0.4rem 0.9rem;
-  border: 1px solid $border;
-  border-radius: 6px;
-  background: none;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: $text-light;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    border-color: $primary;
-    color: $primary;
-  }
-
-  &.active {
-    background: $primary;
-    border-color: $primary;
-    color: white;
-  }
-}
-
-.lang-selector {
-  display: flex;
-  gap: 0.35rem;
-  margin-bottom: 0.75rem;
-}
-
-.lang-btn {
-  padding: 0.3rem 0.75rem;
-  border: 1px solid $border;
-  border-radius: 6px;
-  background: none;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: $text-light;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover { border-color: $primary; color: $primary; }
-  &.active { background: $primary-light; border-color: rgba($primary, 0.3); color: $primary-dark; }
-}
-
-.profile-loaded-notice {
-  padding: 0.6rem 1rem;
-  background: $bg;
-  border: 1px solid $border;
-  border-radius: 8px;
-  font-size: 0.8125rem;
-  color: $text-light;
-}
-
-.tex-textarea {
-  font-family: 'IBM Plex Mono', 'Consolas', monospace;
-  font-size: 0.8125rem;
-  line-height: 1.7;
-}
-
-// --- Dropzone ---
-.dropzone {
-  border: 2px dashed $border;
-  border-radius: $radius;
-  padding: 2rem 1.5rem;
-  text-align: center;
-  transition: border-color 0.2s ease, background 0.2s ease;
-  cursor: pointer;
-
-  &:hover { border-color: rgba($primary, 0.4); background: rgba($primary, 0.015); }
-  &.drag-over { border-color: $primary; background: rgba($primary, 0.04); }
-  &.has-file { border-style: solid; border-color: $primary-light; background: rgba($primary, 0.02); padding: 1rem 1.25rem; cursor: default; }
-}
-
-.dropzone-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.dropzone-title { font-size: 0.9375rem; font-weight: 600; color: $text-dark; }
-.dropzone-hint { font-size: 0.8125rem; color: $text-light; }
-.browse-link { color: $primary; font-weight: 500; cursor: pointer; &:hover { text-decoration: underline; } }
-
-.file-preview {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.file-name { font-weight: 500; color: $text-dark; font-size: 0.875rem; }
-.file-size { color: $text-light; font-size: 0.8125rem; }
-
-.file-remove {
-  padding: 0.25rem 0.6rem;
-  border: 1px solid $border;
-  border-radius: 6px;
-  background: none;
-  font-size: 0.78rem;
-  color: $text-light;
-  cursor: pointer;
-  margin-left: auto;
-
-  &:hover { border-color: #dc2626; color: #dc2626; background: #fef2f2; }
 }

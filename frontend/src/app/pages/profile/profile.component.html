@@ -1,9 +1,41 @@
 <div class="page">
   <div class="page-header">
     <h1>My Profile</h1>
-    <p class="page-subtitle">Upload your CV to unlock intelligent job matching</p>
+    <p class="page-subtitle">Your CV, personal details, and cover letters in one place.</p>
   </div>
 
+  <div class="page-tabs" role="tablist">
+    <button
+      type="button"
+      role="tab"
+      class="page-tab"
+      [class.active]="pageTab() === 'cv'"
+      (click)="pageTab.set('cv')"
+    >
+      CV
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="page-tab"
+      [class.active]="pageTab() === 'personal'"
+      (click)="pageTab.set('personal')"
+    >
+      Personal details
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="page-tab"
+      [class.active]="pageTab() === 'cover-letters'"
+      (click)="pageTab.set('cover-letters')"
+    >
+      Cover letters
+    </button>
+  </div>
+
+  @if (pageTab() === 'cv') {
+  <section class="tab-panel">
   @if (initialLoading()) {
     <div class="loading-state">
       <div class="loading-spinner"></div>
@@ -271,5 +303,7 @@
         </div>
       }
     </div>
+  }
+  </section>
   }
 </div>

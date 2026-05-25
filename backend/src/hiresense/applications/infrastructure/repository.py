@@ -12,6 +12,7 @@ from hiresense.applications.domain.models import (
     ApplicationJobSnapshot,
     ApplicationMatch,
 )
+from hiresense.tracking.domain.models import TrackedApplication
 
 
 class ApplicationRepository:
@@ -162,3 +163,17 @@ class ApplicationRepository:
     ) -> ApplicationCoverLetter | None:
         with self._session_factory() as session:
             return session.get(ApplicationCoverLetter, cover_letter_id)
+
+    def list_all_cover_letters_with_apps(
+        self,
+    ) -> list[tuple[ApplicationCoverLetter, TrackedApplication]]:
+        with self._session_factory() as session:
+            stmt = (
+                select(ApplicationCoverLetter, TrackedApplication)
+                .join(
+                    TrackedApplication,
+                    ApplicationCoverLetter.application_id == TrackedApplication.id,
+                )
+                .order_by(ApplicationCoverLetter.created_at.desc())
+            )
+            return [(letter, app) for letter, app in session.execute(stmt).all()]

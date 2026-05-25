@@ -156,3 +156,15 @@ def test_empty_result() -> None:
     assert result.total == 0
     assert result.jobs == []
     assert result.total_pages == 0
+
+
+def test_job_query_params_defaults_for_location_match() -> None:
+    params = JobQueryParams()
+    assert params.user_location is None
+    assert params.strict_location is False
+
+
+def test_job_query_params_accepts_location_match_fields() -> None:
+    params = JobQueryParams(user_location="Chile", strict_location=True)
+    assert params.user_location == "Chile"
+    assert params.strict_location is True

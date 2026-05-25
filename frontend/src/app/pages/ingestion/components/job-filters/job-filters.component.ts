@@ -1,5 +1,6 @@
 import { Component, OnInit, input, output } from '@angular/core';
 import { JobFilters } from '../../../../core/services/ingestion.service';
+import { detectUserLocation } from '../../../../core/utils/detect-user-location';
 
 const LS_USER_LOCATION = 'hiresense.user_location';
 const LS_STRICT_LOCATION = 'hiresense.strict_location_match';
@@ -20,7 +21,14 @@ export class JobFiltersComponent implements OnInit {
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
-    const storedLocation = localStorage.getItem(LS_USER_LOCATION) ?? '';
+    let storedLocation = localStorage.getItem(LS_USER_LOCATION);
+    if (storedLocation === null) {
+      const detected = detectUserLocation();
+      if (detected) {
+        localStorage.setItem(LS_USER_LOCATION, detected);
+        storedLocation = detected;
+      }
+    }
     const storedStrict = localStorage.getItem(LS_STRICT_LOCATION) === 'true';
     if (storedLocation || storedStrict) {
       this.emitFilters({

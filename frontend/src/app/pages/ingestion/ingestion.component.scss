@@ -184,6 +184,37 @@ table {
   cursor: default;
 }
 
+/* --- Sort bar --- */
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+
+  select.filter-control {
+    width: auto;
+    min-width: 180px;
+  }
+}
+
+/* --- Match score badge --- */
+.score-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 44px;
+  text-align: center;
+}
+
+.score-high { background: #dcfce7; color: #166534; }
+.score-mid  { background: #fef3c7; color: #92400e; }
+.score-low  { background: #fee2e2; color: #991b1b; }
+.score-na   { background: var(--bg-inset); color: var(--text-muted); font-weight: 500; }
+
 /* --- Source badge colors --- */
 .source-badge-remotive { background: #e0f2f1; color: #0d9488; }
 .source-badge-getonboard { background: #fef3c7; color: #92400e; }

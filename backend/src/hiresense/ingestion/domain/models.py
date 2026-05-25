@@ -29,6 +29,7 @@ class NormalizedJob(BaseModel):
     department: str | None = None
     platform: str | None = None
     categories: list[str] = Field(default_factory=list)
+    match_score: float | None = None
 
     def dedup_key(self) -> str:
         raw = f"{self.source}:{self.title.lower().strip()}:{self.company.lower().strip()}:{self.url}"

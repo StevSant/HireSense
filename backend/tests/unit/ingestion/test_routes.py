@@ -3,6 +3,12 @@ from httpx import ASGITransport, AsyncClient
 from fastapi import FastAPI
 from hiresense.ingestion.api import get_ingestion_orchestrator, get_portal_scanner, router
 from hiresense.ingestion.domain.models import NormalizedJob
+from hiresense.profile.api.dependencies import get_profile_service
+
+
+class FakeProfileService:
+    async def list_profiles(self):
+        return []
 
 
 BOARD_JOB = NormalizedJob(
@@ -57,6 +63,7 @@ def _make_app() -> tuple[FastAPI, FakeOrchestrator, FakeScanner]:
     scanner = FakeScanner()
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: orch
     app.dependency_overrides[get_portal_scanner] = lambda: scanner
+    app.dependency_overrides[get_profile_service] = lambda: FakeProfileService()
     app.include_router(router)
     return app, orch, scanner
 
@@ -179,6 +186,7 @@ async def test_list_jobs_strict_location_filters_non_matching() -> None:
     app = FastAPI()
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: MultiJobOrchestrator()
     app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
+    app.dependency_overrides[get_profile_service] = lambda: FakeProfileService()
     app.include_router(router)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

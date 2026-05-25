@@ -18,6 +18,7 @@ export interface JobFilters {
   date_to?: string;
   user_location?: string;
   strict_location?: boolean;
+  sort?: 'match_desc' | 'date_desc';
 }
 
 @Injectable({ providedIn: 'root' })
@@ -49,6 +50,7 @@ export class IngestionService {
     if (filters.date_to) params = params.set('date_to', filters.date_to);
     if (filters.user_location) params = params.set('user_location', filters.user_location);
     if (filters.strict_location) params = params.set('strict_location', 'true');
+    if (filters.sort) params = params.set('sort', filters.sort);
 
     return this.http.get<PaginatedJobsResponse>(`${environment.apiUrl}/ingestion/jobs`, { params });
   }

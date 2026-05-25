@@ -111,12 +111,25 @@
     </div>
   }
 
+  <!-- Sort bar -->
+  @if (jobs().length > 0) {
+    <div class="sort-bar">
+      <label for="sort-select">Sort by</label>
+      <select id="sort-select" [value]="sortMode()" (change)="onSortChange($event)" class="filter-control">
+        <option value="">Default</option>
+        <option value="match_desc">Best match for me</option>
+        <option value="date_desc">Newest first</option>
+      </select>
+    </div>
+  }
+
   <!-- Jobs table -->
   @if (jobs().length > 0) {
     <div class="table-container">
       <table>
         <thead>
           <tr>
+            <th>Match</th>
             <th>Title</th>
             <th>Company</th>
             <th>Location</th>
@@ -128,6 +141,15 @@
         <tbody>
           @for (job of jobs(); track job.id) {
             <tr (click)="openDetail(job)" class="clickable-row">
+              <td>
+                @if (job.match_score !== null && job.match_score !== undefined) {
+                  <span class="score-badge" [class]="scoreBadgeClass(job.match_score)">
+                    {{ (job.match_score * 100).toFixed(0) }}%
+                  </span>
+                } @else {
+                  <span class="score-badge score-na">—</span>
+                }
+              </td>
               <td class="title">{{ job.title }}</td>
               <td>{{ job.company }}</td>
               <td>{{ job.location }}</td>

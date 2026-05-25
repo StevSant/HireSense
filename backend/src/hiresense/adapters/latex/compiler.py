@@ -30,14 +30,21 @@ class LatexCompiler:
         return await loop.run_in_executor(None, self._compile_sync, tex_source)
 
     def _compile_sync(self, tex_source: str) -> bytes:
-        # Sanitize: round-trip through UTF-8 with errors="replace" to drop
-        # lone surrogates and other non-UTF-8 contamination from upstream
-        # encoders (some .tex uploads come in via mixed encodings).
+        # Sanitize the source:
+        # 1. Round-trip through UTF-8 with errors="replace" to drop lone
+        #    surrogates and other non-UTF-8 contamination from upstream encoders.
+        # 2. Normalize line endings to plain LF. Path.write_text on Windows
+        #    defaults to newline=None which translates \n → \r\n, so any
+        #    existing \r in the source becomes \r\r\n on disk — which breaks
+        #    LaTeX argument parsing for commands like \titleformat.
         cleaned = tex_source.encode("utf-8", errors="replace").decode("utf-8")
+        cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
         with tempfile.TemporaryDirectory(prefix="hiresense-tex-") as tmp:
             tmp_path = Path(tmp)
             source_path = tmp_path / "doc.tex"
-            source_path.write_text(cleaned, encoding="utf-8")
+            # newline="" disables Python's universal-newlines translation on
+            # write so our normalized LFs land on disk unchanged.
+            source_path.write_text(cleaned, encoding="utf-8", newline="")
 
             for _ in range(2):
                 result = self._run_once(tmp_path, source_path)

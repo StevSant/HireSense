@@ -122,7 +122,10 @@ class LinkedInAdapter:
                 if detail:
                     card.update(detail)
 
-        await asyncio.gather(*(fetch_one(c) for c in cards), return_exceptions=True)
+        await asyncio.gather(*(fetch_one(c) for c in cards))
+
+        enriched = sum(1 for c in cards if c.get("description"))
+        logger.info("LinkedIn detail enrichment: %d/%d jobs enriched", enriched, len(cards))
 
     async def _fetch_detail(
         self,

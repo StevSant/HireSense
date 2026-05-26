@@ -1,0 +1,111 @@
+--- section contents ---
+
+## Skills
+
+
+## SUMMARY
+Backend Engineer focused on designing scalable, event-driven systems using Python (FastAPI, Django REST) and microservices architecture. Experience building distributed systems with Kafka, Redis, and Docker, deploying production-ready services to cloud environments. Strong emphasis on software quality through comprehensive testing strategies (unit, integration, and E2E) using PyTest.
+
+## LANGUAGES
+Spanish: — Native
+English: — C1
+
+## TECHNICAL SKILLS
+Backend: — Django, Django REST Framework, Flask, FastAPI, NestJS, Gin, Kafka, RabbitMQ, LangChain, LangGraph
+Languages: — Python (primary), Golang, TypeScript
+Cloud \ — DevOps: — AWS (boto/aioboto), Google Cloud Run, Azure, Vercel
+Observability: — OpenTelemetry, Prometheus, Grafana
+Databases: — MySQL, PostgreSQL, MongoDB
+Testing: — PyTest, Unit Testing, Integration Testing, End-to-End (E2E) Testing
+Tools: — Git, Docker, Kubernetes, GitHub / GitLab, Postman, Visual Studio Code
+Methodologies: — Scrum, Agile Development, DevOps, TDD
+
+## PROFESSIONAL EXPERIENCE
+PATRIMORE Remote 
+
+AI Agent Developer Intern Mar 2026 -- May 2026
+
+
+- Developed autonomous AI-assisted agents using LangGraph, FastAPI, and Anthropic SDKs (including Model Context Protocol, MCP).
+- Integrated AWS services using boto and aioboto for cloud-based workflows.
+- Implemented system observability tooling using OpenTelemetry, Prometheus, and Grafana.
+
+## PROJECTS & RELEVANT EXPERIENCE
+SME RISK ASSESSMENT AGENT --- HACKATÓN VIAMATICA (2025) Ecuador, Guayas, Guayaquil 
+
+Backend — AI Developer | Hackathon (460+ participants, 3rd place) 2025
+
+
+- Built the AI agent with LangChain and the REST API with FastAPI to enable frontend communication and real-time credit risk evaluation for SMEs.
+- Implemented automated web scraping pipelines using Playwright to extract financial data from Ecuador's Superintendencia de Compañías and SRI, plus digital reputation data from Twitter, Facebook, Instagram, and LinkedIn.
+- Designed a digital reputation scoring system that incorporates SMEs' online presence into credit assessments, addressing bias in traditional evaluation methods.
+- Wrote unit and integration tests with PyTest to validate AI agent responses, scraping pipelines, and API endpoints under edge-case scenarios.
+
+
+
+
+STREAMFLOWMUSIC Personal Project 
+
+Backend Developer 2025
+
+
+- Developed a scalable REST API using Django REST Framework following clean architecture principles.
+- Implemented asynchronous background tasks for media ingestion using YouTube API.
+- Optimized database queries to support 100+ concurrent users with low latency.
+- Implemented a comprehensive test suite with PyTest covering unit, integration, and E2E tests for API endpoints, background tasks, and database operations.
+
+
+
+
+MESAYA Academic Project 
+
+Backend Developer 2025 -- 2026
+
+
+- Architected a microservices-based restaurant reservation platform with 7+ services using NestJS, FastAPI, Go, and Python following Clean Architecture and event-driven patterns via Apache Kafka.
+- Developed authentication (JWT), payment processing with Stripe integration, AI chatbot using LangChain/Groq, GraphQL API, and real-time WebSocket service with secure B2B webhooks (HMAC-SHA256).
+- Designed scalable PostgreSQL and Redis architecture to handle concurrent reservations and automated workflows with n8n for email notifications and third-party API integrations.
+- Built end-to-end and integration test suites with PyTest across microservices, validating inter-service communication via Kafka, payment flows, and WebSocket event handling.
+
+## EDUCATION
+UNIVERSIDAD LAICA ELOY ALFARO DE MANABÍ Ecuador, Manabí, Manta 
+
+BSc. in Software Engineering 2023 -- Present
+
+
+- Development of academic and personal projects using Django REST, Flask, FastAPI, NestJS, and Angular, focused on solving real-world problems with scalable solutions.
+- Self-directed complementary training in backend, frontend, and Agile methodologies (Scrum / Kanban), reinforced through hands-on experience.
+- Relevant coursework: Data Structures, Software Architecture, Databases, Backend Development, Software Testing.
+
+## LEADERSHIP & VOLUNTEERING
+Artificial Intelligence Club -- ULEAM Ecuador, Manabí, Manta 
+
+Content Management Lead 2024 -- Present
+
+
+- Planned and structured Artificial Intelligence training curricula for the university community.
+- Supported the organization of tech talks and workshops, fostering collaborative and peer-driven learning.
+--- metrics ---
+{
+  "viewport": {
+    "w": 1920,
+    "h": 1080
+  },
+  "page": {
+    "width": 1600,
+    "left": 280,
+    "right": 1880
+  },
+  "profileView": {
+    "width": 1600,
+    "left": 280,
+    "right": 1880
+  },
+  "infoGrid": {
+    "width": 1544,
+    "left": 308,
+    "right": 1852
+  },
+  "contentMaxWidth": "none"
+}
+Saved: C:\Users\Bryan\OneDrive\Desktop\Bryan\Dev\Personal\HireSense\frontend\.screenshots\sections-dump.png

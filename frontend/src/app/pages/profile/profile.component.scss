@@ -17,8 +17,12 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 $transition: 0.2s ease;
 
 // --- Page Layout ---
+// Profile uses a wider container than the global 1200px default because the
+// CV view renders a horizontally rich card (info-grid + heading-content
+// sections). Stays inside the dashboard content padding via `width: 100%`.
 .page {
-  max-width: 860px;
+  max-width: none;
+  width: 100%;
 }
 
 .page-header {
@@ -458,10 +462,10 @@ $transition: 0.2s ease;
 }
 
 .info-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.25rem 2.5rem;
-  margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.125rem 1.75rem;
+  margin-bottom: 1.75rem;
   padding: 1.125rem 1.25rem;
   background: $bg;
   border-radius: 8px;
@@ -469,12 +473,14 @@ $transition: 0.2s ease;
 
   .info-item {
     min-width: 0;
+    display: flex;
+    flex-direction: column;
 
     .label {
       display: block;
       font-size: 0.6875rem;
       color: $text-light;
-      margin-bottom: 0.2rem;
+      margin-bottom: 0.3rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       font-weight: 600;
@@ -484,14 +490,26 @@ $transition: 0.2s ease;
       font-size: 0.9rem;
       color: $text-dark;
       font-weight: 500;
-      word-break: break-all;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .info-link {
+    color: $primary;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+      color: $primary-dark;
     }
   }
 }
 
 .language-badge {
   display: inline-block;
-  padding: 0.15rem 0.5rem;
+  align-self: flex-start;
+  padding: 0.2rem 0.55rem;
   background: $primary-light;
   color: $primary-dark;
   border-radius: 4px;
@@ -501,22 +519,40 @@ $transition: 0.2s ease;
 }
 
 .section {
-  margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 2.5rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid rgba($border, 0.6);
+
+  &:last-child {
+    padding-bottom: 0;
+  }
 
   h3 {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     color: $text-light;
-    margin-bottom: 0.5rem;
+    margin: 0;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     font-weight: 600;
+    padding-top: 0.15rem;
   }
 
   .section-content {
-    font-size: 0.875rem;
+    font-size: 0.9rem;
     color: $text-mid;
     line-height: 1.65;
     white-space: pre-wrap;
+    margin: 0;
+    max-width: 85ch;
+  }
+}
+
+@media (max-width: 720px) {
+  .section {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
   }
 }
 
@@ -539,12 +575,22 @@ $transition: 0.2s ease;
 // --- Language tabs ---
 .language-tabs {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.language-tabs-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $text-light;
+  font-weight: 600;
+  margin-right: 0.25rem;
 }
 
 .lang-tab {
-  padding: 0.4rem 1rem;
+  padding: 0.35rem 0.9rem;
   background: none;
   border: 1px solid $border;
   border-radius: 6px;
@@ -675,6 +721,23 @@ $transition: 0.2s ease;
   color: $text-dark;
   font-weight: 500;
   word-break: break-word;
+}
+
+.details-link {
+  color: $primary;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+
+  &:hover {
+    text-decoration: underline;
+    color: $primary-dark;
+  }
+}
+
+.details-empty {
+  color: $text-light;
+  font-style: italic;
+  font-weight: 400;
 }
 
 .details-source-note {

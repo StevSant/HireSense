@@ -27,6 +27,7 @@ dependencies = [
     "psycopg2-binary>=2.9.11",
     "pymupdf>=1.25.0",
     "cryptography>=43.0",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.optional-dependencies]

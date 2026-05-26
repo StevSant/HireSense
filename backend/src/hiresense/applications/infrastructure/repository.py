@@ -12,6 +12,7 @@ from hiresense.applications.domain.models import (
     ApplicationJobSnapshot,
     ApplicationMatch,
 )
+from hiresense.tracking.domain.models import TrackedApplication
 
 
 class ApplicationRepository:
@@ -162,3 +163,38 @@ class ApplicationRepository:
     ) -> ApplicationCoverLetter | None:
         with self._session_factory() as session:
             return session.get(ApplicationCoverLetter, cover_letter_id)
+
+    def list_all_cover_letters_with_context(self) -> list[dict[str, Any]]:
+        """Cross-application listing for the Cover Letter Library view."""
+        with self._session_factory() as session:
+            stmt = (
+                select(
+                    ApplicationCoverLetter.id,
+                    ApplicationCoverLetter.application_id,
+                    ApplicationCoverLetter.body,
+                    ApplicationCoverLetter.tone,
+                    ApplicationCoverLetter.created_at,
+                    TrackedApplication.title,
+                    TrackedApplication.company,
+                    TrackedApplication.url,
+                )
+                .join(
+                    TrackedApplication,
+                    TrackedApplication.id == ApplicationCoverLetter.application_id,
+                )
+                .order_by(ApplicationCoverLetter.created_at.desc())
+            )
+            rows = session.execute(stmt).all()
+            return [
+                {
+                    "id": row.id,
+                    "application_id": row.application_id,
+                    "body": row.body,
+                    "tone": row.tone,
+                    "created_at": row.created_at,
+                    "title": row.title,
+                    "company": row.company,
+                    "application_url": row.url,
+                }
+                for row in rows
+            ]

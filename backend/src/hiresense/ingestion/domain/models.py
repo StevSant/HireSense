@@ -29,6 +29,11 @@ class NormalizedJob(BaseModel):
     department: str | None = None
     platform: str | None = None
     categories: list[str] = Field(default_factory=list)
+    # "remote" (fully remote), "hybrid", "on_site", or None if the source
+    # doesn't expose it. Used by the strict-location filter to let through
+    # only postings the candidate can actually take.
+    remote_modality: str | None = None
+    countries: list[str] = Field(default_factory=list)
     match_score: float | None = None
     semantic_score: float | None = None
 

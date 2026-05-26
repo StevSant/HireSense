@@ -13,6 +13,7 @@ from hiresense.applications.api.dependencies import (
 )
 from hiresense.applications.api.schemas import (
     ApplicationListItemResponse,
+    CoverLetterLibraryItem,
     CreateApplicationRequest,
     GenerateCoverLetterRequest,
     GenerateMatchRequest,
@@ -39,6 +40,14 @@ router = APIRouter(
 
 
 # -------- application CRUD --------------------------------------------
+
+@router.get("/cover-letters", response_model=list[CoverLetterLibraryItem])
+def list_all_cover_letters(
+    service: ApplicationService = Depends(get_application_service),
+) -> list[CoverLetterLibraryItem]:
+    """Cross-application cover letter library — one row per generated letter."""
+    return [CoverLetterLibraryItem(**row) for row in service.list_all_cover_letters()]
+
 
 @router.post("", response_model=ApplicationAggregate, status_code=201)
 async def create_application(
@@ -218,18 +227,34 @@ async def generate_cover_letter(
 async def download_cv_pdf(
     application_id: uuid_mod.UUID,
     optimization_id: uuid_mod.UUID | None = None,
+    original: bool = False,
+    language: str = "en",
     service: ApplyService = Depends(get_apply_service),
 ) -> StreamingResponse:
+    """Compile a CV PDF for this application.
+
+    Default behaviour returns the latest *optimized* CV. Pass `?original=true`
+    to compile the untouched profile CV (in `language`, default `en`), which
+    is useful before any optimization has been run.
+    """
     try:
-        pdf = await service.compile_cv_pdf(application_id, optimization_id=optimization_id)
+        pdf = await service.compile_cv_pdf(
+            application_id,
+            optimization_id=optimization_id,
+            original=original,
+            language=language,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except LatexCompileError as exc:
         raise HTTPException(status_code=500, detail=f"LaTeX compile failed: {exc}") from exc
+    suffix = "original" if original else "tailored"
     return StreamingResponse(
         iter([pdf]),
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="cv_{application_id}.pdf"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="cv_{suffix}_{application_id}.pdf"',
+        },
     )
 
 

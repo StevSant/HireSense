@@ -3,13 +3,24 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ProfileService } from '../../core/services/profile.service';
 import { CandidateProfile } from './models/candidate-profile.model';
+import { CvSectionContentComponent } from './components/cv-section-content/cv-section-content.component';
+import { ManualFieldsFormComponent } from './components/manual-fields-form/manual-fields-form.component';
+import { CoverLetterLibraryComponent } from './components/cover-letter-library/cover-letter-library.component';
+import { CoverLetterTemplatesComponent } from './components/cover-letter-templates/cover-letter-templates.component';
 
 type ProfilePageTab = 'cv' | 'personal' | 'cover-letters';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [
+    FormsModule,
+    RouterLink,
+    CvSectionContentComponent,
+    ManualFieldsFormComponent,
+    CoverLetterLibraryComponent,
+    CoverLetterTemplatesComponent,
+  ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
 })

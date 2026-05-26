@@ -131,9 +131,23 @@
 .table-container { overflow-x: auto; }
 
 table {
+  width: 100%;
+  table-layout: fixed;
   min-width: 900px;
-  th, td { padding: 0.625rem 0.75rem; font-size: 0.8125rem; white-space: nowrap; }
-  th { font-size: 0.6875rem; }
+  th, td { padding: 0.625rem 0.75rem; font-size: 0.8125rem; }
+  th { font-size: 0.6875rem; white-space: nowrap; }
+}
+
+/* Column sizing — fixed layout prevents long cells from blowing out the row. */
+.col-match { width: 72px; }
+.col-source { width: 110px; }
+.col-posted { width: 110px; }
+.col-actions { width: 140px; }
+
+.cell-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .clickable-row {
@@ -144,9 +158,9 @@ table {
 .title {
   font-weight: 500;
   color: var(--text-primary);
-  max-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .date-cell {

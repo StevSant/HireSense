@@ -1,0 +1,284 @@
+$primary: #4f46e5;
+$primary-dark: #4338ca;
+$primary-light: #e0e7ff;
+$text-dark: #1a1a2e;
+$text-mid: #444;
+$text-light: #6b7280;
+$border: #e2e5ea;
+$surface: #ffffff;
+$bg-soft: #f8f9fb;
+$danger: #dc2626;
+$danger-bg: #fef2f2;
+
+:host {
+  display: block;
+}
+
+.templates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+
+  h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $text-dark;
+  }
+}
+
+.templates-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: $text-light;
+  max-width: 70ch;
+}
+
+.templates-empty,
+.templates-error {
+  padding: 2rem 1.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+  border: 1px dashed $border;
+  border-radius: 8px;
+  color: $text-light;
+}
+
+.templates-error {
+  border-color: rgba($danger, 0.25);
+  background: $danger-bg;
+  color: $danger;
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+}
+
+.template-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid rgba($primary, 0.25);
+  border-radius: 10px;
+  background: rgba($primary, 0.025);
+  margin-bottom: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.85rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  &.field-narrow {
+    min-width: 160px;
+  }
+}
+
+.field-label {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: $text-light;
+}
+
+input,
+select,
+textarea {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid $border;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: $surface;
+  color: $text-dark;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &::placeholder { color: #9ca3af; }
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+  }
+}
+
+textarea {
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.btn-primary {
+  padding: 0.55rem 1.1rem;
+  background: $primary;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: $primary-dark;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.btn-ghost {
+  padding: 0.5rem 0.9rem;
+  background: transparent;
+  color: $text-light;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    color: $text-dark;
+    background: rgba(0, 0, 0, 0.04);
+  }
+}
+
+.btn-danger {
+  padding: 0.5rem 0.9rem;
+  background: transparent;
+  color: $danger;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: $danger-bg;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.template-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.template-row {
+  border: 1px solid $border;
+  border-radius: 10px;
+  background: $surface;
+  padding: 1rem 1.15rem;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: rgba($primary, 0.35);
+  }
+}
+
+.template-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.template-name {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: $text-dark;
+}
+
+.template-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.15rem 0.6rem;
+  background: $primary-light;
+  color: $primary-dark;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.badge-soft {
+  background: rgba(0, 0, 0, 0.05);
+  color: $text-mid;
+}
+
+.template-date {
+  font-size: 0.75rem;
+  color: $text-light;
+}
+
+.template-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.template-preview {
+  margin: 0.85rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba($border, 0.7);
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 0.4rem 1rem;
+}
+
+.preview-row {
+  display: contents;
+
+  dt {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    color: $text-light;
+    padding-top: 0.1rem;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: $text-mid;
+    white-space: pre-wrap;
+    max-height: 8em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+  }
+}

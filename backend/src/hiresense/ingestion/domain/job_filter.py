@@ -6,6 +6,11 @@ from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
 from hiresense.ingestion.domain.models import NormalizedJob
+from hiresense.ingestion.domain.seniority import (
+    SeniorityLevel,
+    detect_seniority,
+    extract_min_years,
+)
 
 _DATETIME_MIN_UTC = datetime.min.replace(tzinfo=timezone.utc)
 
@@ -26,6 +31,12 @@ class JobQueryParams(BaseModel):
     # None, no filter is applied. Jobs with match_score == None (not yet
     # scored, e.g. no profile) are passed through regardless.
     min_score: float | None = None
+    # Seniority filter. When set, only jobs whose detected seniority is in
+    # this set are returned. UNKNOWN passes through unless explicitly excluded.
+    seniority_levels: list[SeniorityLevel] | None = None
+    # Maximum minimum-years-experience the user is willing to consider.
+    # Jobs with no extractable years string pass through.
+    max_years_experience: int | None = None
 
 
 class PaginatedResult(BaseModel):
@@ -82,19 +93,45 @@ def filter_and_paginate(
             if j.match_score is None or j.match_score >= threshold
         ]
 
+    if params.seniority_levels:
+        allowed = set(params.seniority_levels)
+        filtered = [
+            j for j in filtered
+            if detect_seniority(j.title, j.description) in allowed
+        ]
+
+    if params.max_years_experience is not None:
+        cap = params.max_years_experience
+        filtered = [
+            j for j in filtered
+            if (extract_min_years(j.description) or 0) <= cap
+        ]
+
     if params.strict_location and params.user_location:
         user_loc = params.user_location.strip().lower()
-        open_keywords = ("worldwide", "anywhere", "global")
+        open_keywords = ("worldwide", "anywhere", "global", "remote")
 
-        def _is_open(job_location: str) -> bool:
-            if not job_location:
+        def _matches_country(job: NormalizedJob) -> bool:
+            # Fully-remote postings: treat as applyable from anywhere. Some
+            # sources do restrict remote roles to specific countries, but
+            # that's the minority — rather than false-reject, surface them
+            # and let the user verify on the listing itself.
+            if job.remote_modality == "remote":
                 return True
-            loc = job_location.lower()
+            # Hybrid / on-site with a structured countries list: must be one
+            # of those countries. The list is authoritative.
+            if job.countries:
+                return any(user_loc == c.strip().lower() for c in job.countries)
+            # Free-text fallback for sources that don't expose structured
+            # data (linkedin, hn_hiring, etc.).
+            loc = (job.location or "").lower()
+            if not loc:
+                return True
             if any(kw in loc for kw in open_keywords):
                 return True
             return user_loc in loc
 
-        filtered = [j for j in filtered if _is_open(j.location)]
+        filtered = [j for j in filtered if _matches_country(j)]
 
     if params.sort == "match_desc":
         filtered = sorted(

@@ -1,0 +1,30 @@
+@for (block of blocks(); track $index) {
+  @switch (block.kind) {
+    @case ('heading') {
+      <h4 class="block-heading">{{ block.text }}</h4>
+    }
+    @case ('role') {
+      <p class="block-role">{{ block.text }}</p>
+    }
+    @case ('paragraph') {
+      <p class="block-paragraph">{{ block.text }}</p>
+    }
+    @case ('list') {
+      <ul class="block-list">
+        @for (item of block.items; track item) {
+          <li>{{ item }}</li>
+        }
+      </ul>
+    }
+    @case ('definitions') {
+      <dl class="block-definitions">
+        @for (entry of block.entries; track entry.term) {
+          <div class="definition">
+            <dt>{{ entry.term }}</dt>
+            <dd>{{ entry.description }}</dd>
+          </div>
+        }
+      </dl>
+    }
+  }
+}

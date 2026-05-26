@@ -36,6 +36,10 @@ from hiresense.applications.domain.apply_service import ApplyService
 from hiresense.applications.domain.cover_letter_generator import CoverLetterGenerator
 from hiresense.applications.infrastructure import ApplicationRepository
 from hiresense.config import Settings
+from hiresense.cover_letter_templates.api import router as cover_letter_templates_router
+from hiresense.cover_letter_templates.api.provider import CoverLetterTemplateProvider
+from hiresense.cover_letter_templates.domain import CoverLetterTemplateService
+from hiresense.cover_letter_templates.infrastructure import CoverLetterTemplateRepository
 from hiresense.identity.api import router as auth_router
 from hiresense.identity.api.provider import IdentityProvider
 from hiresense.ingestion.adapters import (
@@ -55,6 +59,7 @@ from hiresense.ingestion.adapters import (
 from hiresense.ingestion.api import router as ingestion_router
 from hiresense.ingestion.api.provider import IngestionProvider
 from hiresense.ingestion.domain import IngestionOrchestrator, PortalScanner, load_portals_config
+from hiresense.ingestion.infrastructure import JobsRepository
 from hiresense.ingestion.domain.normalizers import (
     AshbyNormalizer,
     CSVNormalizer,
@@ -220,7 +225,11 @@ def create_app() -> FastAPI:
             sources.append(WeWorkRemotelyAdapter(http_client=http_client, rss_url=settings.weworkremotely_rss_url))
             normalizers["weworkremotely"] = WeWorkRemotelyNormalizer()
         elif source_name == "getonboard":
-            sources.append(GetOnBoardAdapter(http_client=http_client, base_url=settings.getonboard_api_url))
+            sources.append(GetOnBoardAdapter(
+                http_client=http_client,
+                base_url=settings.getonboard_api_url,
+                categories=settings.getonboard_categories,
+            ))
             normalizers["getonboard"] = GetOnBoardNormalizer()
         elif source_name == "linkedin":
             sources.append(LinkedInAdapter(
@@ -231,11 +240,16 @@ def create_app() -> FastAPI:
             ))
             normalizers["linkedin"] = LinkedInNormalizer()
 
+    boards_jobs_repo = JobsRepository(session_factory=sync_session_factory, bucket="boards")
+    portals_jobs_repo = JobsRepository(session_factory=sync_session_factory, bucket="portals")
+
     ingestion_orchestrator = IngestionOrchestrator(
         sources=sources,
         normalizers=normalizers,
         event_bus=event_bus,
         cooldown_seconds=settings.ingestion_cooldown_seconds,
+        repository=boards_jobs_repo,
+        retention_days=settings.ingestion_job_retention_days,
     )
 
     portals_config_path = Path(__file__).parent / settings.portals_config_path
@@ -270,6 +284,8 @@ def create_app() -> FastAPI:
         adapters=portal_adapters,
         normalizers=portal_normalizers,
         event_bus=event_bus,
+        repository=portals_jobs_repo,
+        retention_days=settings.ingestion_job_retention_days,
     )
 
     from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
@@ -391,6 +407,12 @@ def create_app() -> FastAPI:
         apply_service=apply_service,
     )
     app.include_router(applications_router)
+
+    # --- Cover letter templates ---
+    template_repo = CoverLetterTemplateRepository(session_factory=sync_session_factory)
+    template_service = CoverLetterTemplateService(repository=template_repo)
+    app.state.cover_letter_templates = CoverLetterTemplateProvider(service=template_service)
+    app.include_router(cover_letter_templates_router)
 
     # --- Research ---
     research_repo = CompanyResearchRepository(session_factory=sync_session_factory)

@@ -8,7 +8,7 @@ class _CommaSeparatedMixin:
     """Mixin that splits comma-separated strings into lists for known fields."""
 
     _COMMA_FIELDS: ClassVar[frozenset[str]] = frozenset(
-        {"enabled_job_sources", "supported_languages"}
+        {"enabled_job_sources", "supported_languages", "getonboard_categories"}
     )
 
     def prepare_field_value(
@@ -86,8 +86,11 @@ class Settings(BaseSettings):
 
     # Ingestion job-listing default minimum match score (0.0–1.0). Jobs with
     # match_score below this value are hidden from the listing. Override per
-    # request with the ?min_score= query param (e.g. min_score=0 to show all).
-    ingestion_min_match_score: float = 0.25
+    # request with the ?min_score= query param. Default 0.0 (show all) — the
+    # match column + sort=match_desc are the primary triage path. Bumping
+    # this re-introduces the tag-dilution failure mode for verbose-tag
+    # sources like getonboard; only raise if scoring is also fixed.
+    ingestion_min_match_score: float = 0.0
 
     # Language
     supported_languages: list[str] = ["en", "es"]
@@ -96,12 +99,29 @@ class Settings(BaseSettings):
     # Ingestion cooldown (seconds between manual triggers)
     ingestion_cooldown_seconds: int = 300
 
+    # Days to retain ingested jobs before pruning at the start of each
+    # /ingestion/fetch and /ingestion/scan-portals call. 0 disables pruning.
+    ingestion_job_retention_days: int = 30
+
     # Job source URLs
     jobicy_api_url: str = "https://jobicy.com/api/v2/remote-jobs"
     himalayas_api_url: str = "https://himalayas.app/jobs/api"
     hn_algolia_api_url: str = "https://hn.algolia.com/api/v1"
     weworkremotely_rss_url: str = "https://weworkremotely.com/remote-jobs.rss"
     getonboard_api_url: str = "https://www.getonbrd.com/api/v0"
+    # Getonbrd category IDs to ingest. Empty list falls back to /search/jobs
+    # (no category filter). Tech-leaning defaults; widen via env if you want
+    # design / marketing / support roles too.
+    getonboard_categories: list[str] = [
+        "programming",
+        "mobile-developer",
+        "design-ux",
+        "machine-learning-ai",
+        "sysadmin-devops-qa",
+        "data-science-analytics",
+        "cybersecurity",
+        "hardware-electronics",
+    ]
     linkedin_jobs_url: str = "https://www.linkedin.com/jobs-guest/jobs/api"
     # LinkedIn per-job detail fetch rate-limit knobs (guest endpoint is aggressive)
     linkedin_detail_concurrency: int = 1

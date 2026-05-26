@@ -127,6 +127,15 @@
   @if (jobs().length > 0) {
     <div class="table-container">
       <table>
+        <colgroup>
+          <col class="col-match" />
+          <col />
+          <col />
+          <col />
+          <col class="col-source" />
+          <col class="col-posted" />
+          <col class="col-actions" />
+        </colgroup>
         <thead>
           <tr>
             <th>Match</th>
@@ -150,9 +159,9 @@
                   <span class="score-badge score-na">—</span>
                 }
               </td>
-              <td class="title">{{ job.title }}</td>
-              <td>{{ job.company }}</td>
-              <td>{{ job.location }}</td>
+              <td class="title" [title]="job.title">{{ job.title || '—' }}</td>
+              <td class="cell-truncate" [title]="job.company">{{ job.company }}</td>
+              <td class="cell-truncate" [title]="job.location">{{ job.location }}</td>
               <td><span class="badge source-badge-{{ job.source }}">{{ job.source }}</span></td>
               <td class="date-cell">{{ job.posted_date ? (job.posted_date | date:'mediumDate') : '—' }}</td>
               <td class="actions-cell">

@@ -34,13 +34,26 @@ class GetOnBoardNormalizer:
                 posted_date = datetime.fromtimestamp(published_at, tz=timezone.utc)
             except (ValueError, TypeError, OSError):
                 pass
-        countries = attrs.get("countries", [])
+        countries = attrs.get("countries", []) or []
         remote = attrs.get("remote", False)
-        location = ", ".join(countries) if countries else ""
-        if remote and not location:
+        remote_modality_raw = (attrs.get("remote_modality") or "").lower()
+        # Getonbrd uses: "remote_local" (fully remote), "hybrid", "in_office".
+        # Normalise to the three values the filter reasons about.
+        if remote and remote_modality_raw != "hybrid":
+            remote_modality = "remote"
+        elif remote_modality_raw == "hybrid":
+            remote_modality = "hybrid"
+        else:
+            remote_modality = "on_site"
+        clean_countries = [c for c in countries if c and c.lower() != "remote"]
+        if remote_modality == "remote" and not clean_countries:
             location = "Remote"
-        elif remote:
-            location = f"{location} (Remote)"
+        elif remote_modality == "remote":
+            location = f"{', '.join(clean_countries)} (Remote)"
+        elif remote_modality == "hybrid":
+            location = f"{', '.join(clean_countries)} (Hybrid)" if clean_countries else "Hybrid"
+        else:
+            location = ", ".join(clean_countries)
         tags = [
             tag_ref.get("id", "")
             for tag_ref in relationships.get("tags", {}).get("data", [])
@@ -66,4 +79,6 @@ class GetOnBoardNormalizer:
             "url": links.get("public_url", ""),
             "language": language,
             "posted_date": posted_date,
+            "remote_modality": remote_modality,
+            "countries": clean_countries,
         }

@@ -30,6 +30,9 @@ class ApplicationService:
         self._ingestion = ingestion_orchestrator
         self._extractor = skill_extractor
 
+    def list_all_cover_letters(self) -> list[dict[str, Any]]:
+        return self._repo.list_all_cover_letters_with_context()
+
     async def create_from_ingested(self, job_id: str) -> ApplicationAggregate:
         job = self._ingestion.get_job_by_id(job_id)
         if job is None:

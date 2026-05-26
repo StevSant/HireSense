@@ -1,0 +1,165 @@
+<div class="templates-header">
+  <div>
+    <h3>Templates</h3>
+    <p class="templates-hint">
+      Save reusable opening lines, signatures, and body skeletons you'd otherwise rewrite per job.
+    </p>
+  </div>
+  @if (editing().mode === 'closed') {
+    <button type="button" class="btn-primary" (click)="startNew()">+ New template</button>
+  }
+</div>
+
+@if (loading()) {
+  <div class="templates-empty">Loading…</div>
+} @else if (error() && editing().mode === 'closed') {
+  <div class="templates-error">{{ error() }}</div>
+}
+
+@if (editing().mode !== 'closed') {
+  <form class="template-form" (ngSubmit)="save()">
+    <div class="form-row">
+      <label class="field">
+        <span class="field-label">Name</span>
+        <input
+          type="text"
+          name="name"
+          [ngModel]="form().name"
+          (ngModelChange)="setField('name', $event)"
+          placeholder="e.g. Standard professional"
+          required
+        />
+      </label>
+      <label class="field field-narrow">
+        <span class="field-label">Tone</span>
+        <select
+          name="tone"
+          [ngModel]="form().tone"
+          (ngModelChange)="setField('tone', $event)"
+        >
+          <option value="professional">Professional</option>
+          <option value="enthusiastic">Enthusiastic</option>
+          <option value="formal">Formal</option>
+          <option value="conversational">Conversational</option>
+        </select>
+      </label>
+      <label class="field field-narrow">
+        <span class="field-label">Language</span>
+        <select
+          name="language"
+          [ngModel]="form().language"
+          (ngModelChange)="setField('language', $event)"
+        >
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+        </select>
+      </label>
+    </div>
+
+    <label class="field">
+      <span class="field-label">Opening</span>
+      <textarea
+        rows="3"
+        name="opening"
+        [ngModel]="form().opening"
+        (ngModelChange)="setField('opening', $event)"
+        placeholder="Dear Hiring Team, ..."
+      ></textarea>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Body skeleton</span>
+      <textarea
+        rows="6"
+        name="body"
+        [ngModel]="form().body"
+        (ngModelChange)="setField('body', $event)"
+        placeholder="Paragraph(s) describing your strengths and fit. Use {company} or {title} placeholders if helpful."
+      ></textarea>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Signature</span>
+      <textarea
+        rows="3"
+        name="signature"
+        [ngModel]="form().signature"
+        (ngModelChange)="setField('signature', $event)"
+        placeholder="Best regards,&#10;Your name&#10;Phone · Email"
+      ></textarea>
+    </label>
+
+    @if (error()) {
+      <div class="templates-error">{{ error() }}</div>
+    }
+
+    <div class="form-actions">
+      <button type="button" class="btn-ghost" (click)="cancel()" [disabled]="saving()">
+        Cancel
+      </button>
+      <button type="submit" class="btn-primary" [disabled]="saving()">
+        @if (saving()) { Saving... } @else { Save template }
+      </button>
+    </div>
+  </form>
+}
+
+@if (editing().mode === 'closed' && !loading() && templates().length === 0) {
+  <div class="templates-empty">
+    No templates yet. Click <strong>New template</strong> to create your first.
+  </div>
+}
+
+@if (editing().mode === 'closed' && templates().length > 0) {
+  <ul class="template-list">
+    @for (template of templates(); track template.id) {
+      <li class="template-row">
+        <div class="template-header">
+          <div class="template-title-block">
+            <h4 class="template-name">{{ template.name }}</h4>
+            <div class="template-meta">
+              <span class="badge">{{ template.tone }}</span>
+              <span class="badge badge-soft">{{ template.language === 'es' ? 'Spanish' : 'English' }}</span>
+              @if (template.updated_at) {
+                <span class="template-date">Updated {{ template.updated_at | date: 'mediumDate' }}</span>
+              }
+            </div>
+          </div>
+          <div class="template-actions">
+            <button type="button" class="btn-ghost" (click)="startEdit(template)">Edit</button>
+            <button
+              type="button"
+              class="btn-danger"
+              (click)="remove(template)"
+              [disabled]="deletingId() === template.id"
+            >
+              @if (deletingId() === template.id) { Deleting… } @else { Delete }
+            </button>
+          </div>
+        </div>
+        @if (template.opening || template.body || template.signature) {
+          <dl class="template-preview">
+            @if (template.opening) {
+              <div class="preview-row">
+                <dt>Opening</dt>
+                <dd>{{ template.opening }}</dd>
+              </div>
+            }
+            @if (template.body) {
+              <div class="preview-row">
+                <dt>Body</dt>
+                <dd>{{ template.body }}</dd>
+              </div>
+            }
+            @if (template.signature) {
+              <div class="preview-row">
+                <dt>Signature</dt>
+                <dd>{{ template.signature }}</dd>
+              </div>
+            }
+          </dl>
+        }
+      </li>
+    }
+  </ul>
+}

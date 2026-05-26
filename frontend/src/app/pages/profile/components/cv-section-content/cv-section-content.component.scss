@@ -1,0 +1,104 @@
+$text-dark: #1a1a2e;
+$text-mid: #444;
+$text-light: #6b7280;
+$primary: #4f46e5;
+$primary-light: #e0e7ff;
+$border-subtle: rgba(226, 229, 234, 0.7);
+
+:host {
+  display: block;
+  color: $text-mid;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.block-heading {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: $text-dark;
+  letter-spacing: -0.01em;
+  margin: 1.5rem 0 0.15rem;
+
+  // First heading sits flush with the section top.
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+.block-role {
+  margin: 0 0 0.65rem;
+  font-size: 0.85rem;
+  color: $text-light;
+  font-style: italic;
+}
+
+.block-paragraph {
+  margin: 0 0 0.9rem;
+  max-width: 85ch;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.block-list {
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  max-width: 85ch;
+
+  li {
+    position: relative;
+    padding-left: 1.1rem;
+    margin-bottom: 0.4rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.65em;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: $primary;
+      opacity: 0.55;
+    }
+  }
+}
+
+.block-definitions {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(140px, max-content) 1fr;
+  column-gap: 1.5rem;
+  row-gap: 0.5rem;
+  max-width: 90ch;
+
+  .definition {
+    display: contents;
+  }
+
+  dt {
+    color: $text-dark;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  dd {
+    margin: 0;
+    color: $text-mid;
+  }
+}
+
+// Visual rhythm: when a list ends an entry, add a gentle separator before the
+// next heading so consecutive entries (e.g. multiple jobs) don't blur.
+.block-list + .block-heading,
+.block-paragraph + .block-heading {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid $border-subtle;
+}

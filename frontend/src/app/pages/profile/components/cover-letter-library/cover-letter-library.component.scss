@@ -1,0 +1,211 @@
+$primary: #4f46e5;
+$primary-dark: #4338ca;
+$primary-light: #e0e7ff;
+$text-dark: #1a1a2e;
+$text-mid: #444;
+$text-light: #6b7280;
+$border: #e2e5ea;
+$surface: #ffffff;
+$bg-soft: #f8f9fb;
+$danger: #dc2626;
+$danger-bg: #fef2f2;
+
+:host {
+  display: block;
+}
+
+.library-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+
+  h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $text-dark;
+  }
+}
+
+.library-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: $text-light;
+  max-width: 60ch;
+}
+
+.search-input {
+  flex: 0 0 320px;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid $border;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: $surface;
+  color: $text-dark;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &::placeholder { color: #9ca3af; }
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+  }
+}
+
+.library-empty,
+.library-error {
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: $text-light;
+  font-size: 0.9rem;
+  border: 1px dashed $border;
+  border-radius: 8px;
+}
+
+.library-error {
+  border-color: rgba($danger, 0.25);
+  background: $danger-bg;
+  color: $danger;
+}
+
+.letter-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.letter-row {
+  border: 1px solid $border;
+  border-radius: 10px;
+  background: $surface;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: rgba($primary, 0.35);
+  }
+
+  &.expanded {
+    border-color: rgba($primary, 0.6);
+    box-shadow: 0 4px 16px rgba($primary, 0.08);
+  }
+}
+
+.letter-summary {
+  display: block;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.letter-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  font-size: 0.875rem;
+  color: $text-mid;
+}
+
+.letter-company {
+  font-weight: 600;
+  color: $text-dark;
+}
+
+.letter-divider {
+  color: $text-light;
+  opacity: 0.6;
+}
+
+.letter-title {
+  color: $text-mid;
+}
+
+.letter-tone {
+  padding: 0.1rem 0.5rem;
+  background: $primary-light;
+  color: $primary-dark;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.letter-date {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: $text-light;
+}
+
+.letter-preview {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: $text-light;
+  line-height: 1.5;
+}
+
+.letter-body {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid rgba($border, 0.7);
+  margin-top: -1px;
+}
+
+.letter-text {
+  margin: 0.85rem 0 0;
+  padding: 0.85rem 1rem;
+  background: $bg-soft;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: $text-dark;
+  white-space: pre-wrap;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.letter-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.85rem;
+}
+
+.btn-copy {
+  padding: 0.45rem 0.9rem;
+  background: $primary;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.825rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover { background: $primary-dark; }
+}
+
+.btn-link {
+  padding: 0.45rem 0.6rem;
+  color: $primary;
+  font-size: 0.825rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 6px;
+
+  &:hover {
+    background: $primary-light;
+  }
+}

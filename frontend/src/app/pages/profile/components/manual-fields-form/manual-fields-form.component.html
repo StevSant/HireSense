@@ -1,0 +1,118 @@
+<form (ngSubmit)="save()" autocomplete="off">
+  <div class="form-header">
+    <div>
+      <h3>Edit personal details</h3>
+      <p class="form-hint">
+        Overrides what was parsed from your CV. Leave a field blank to keep using the parsed value.
+      </p>
+    </div>
+    @if (savedFlash()) {
+      <span class="saved-flash" aria-live="polite">Saved</span>
+    }
+  </div>
+
+  <div class="form-grid">
+    <label class="field">
+      <span class="field-label">Name</span>
+      <input
+        type="text"
+        name="name"
+        [ngModel]="form().name"
+        (ngModelChange)="set('name', $event)"
+        autocomplete="off"
+      />
+    </label>
+
+    <label class="field">
+      <span class="field-label">Location</span>
+      <input
+        type="text"
+        name="location"
+        [ngModel]="form().location"
+        (ngModelChange)="set('location', $event)"
+        placeholder="e.g. Quito, Ecuador"
+        autocomplete="off"
+      />
+    </label>
+
+    <label class="field">
+      <span class="field-label">Email</span>
+      <input
+        type="email"
+        name="email"
+        [ngModel]="form().email"
+        (ngModelChange)="set('email', $event)"
+        autocomplete="off"
+      />
+    </label>
+
+    <label class="field">
+      <span class="field-label">Phone</span>
+      <input
+        type="tel"
+        name="phone"
+        [ngModel]="form().phone"
+        (ngModelChange)="set('phone', $event)"
+        autocomplete="off"
+      />
+    </label>
+
+    <label class="field">
+      <span class="field-label">LinkedIn</span>
+      <input
+        type="url"
+        name="linkedin_url"
+        [ngModel]="form().linkedin_url"
+        (ngModelChange)="set('linkedin_url', $event)"
+        placeholder="https://linkedin.com/in/username"
+        autocomplete="off"
+      />
+    </label>
+
+    <label class="field">
+      <span class="field-label">GitHub</span>
+      <input
+        type="url"
+        name="github_url"
+        [ngModel]="form().github_url"
+        (ngModelChange)="set('github_url', $event)"
+        placeholder="https://github.com/username"
+        autocomplete="off"
+      />
+    </label>
+
+    <label class="field field-wide">
+      <span class="field-label">Portfolio / website</span>
+      <input
+        type="url"
+        name="portfolio_url"
+        [ngModel]="form().portfolio_url"
+        (ngModelChange)="set('portfolio_url', $event)"
+        placeholder="https://your-site.com"
+        autocomplete="off"
+      />
+    </label>
+  </div>
+
+  @if (error()) {
+    <div class="form-error">{{ error() }}</div>
+  }
+
+  <div class="form-actions">
+    <button
+      type="button"
+      class="btn-ghost"
+      (click)="reset()"
+      [disabled]="!isDirty() || saving()"
+    >
+      Discard changes
+    </button>
+    <button
+      type="submit"
+      class="btn-primary"
+      [disabled]="!isDirty() || saving()"
+    >
+      @if (saving()) { Saving... } @else { Save changes }
+    </button>
+  </div>
+</form>

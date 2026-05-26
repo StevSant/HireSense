@@ -1,5 +1,5 @@
 import { Component, OnInit, input, output } from '@angular/core';
-import { JobFilters } from '../../../../core/services/ingestion.service';
+import { JobFilters, SeniorityLevel } from '../../../../core/services/ingestion.service';
 import { detectUserLocation } from '../../../../core/utils/detect-user-location';
 
 const LS_USER_LOCATION = 'hiresense.user_location';
@@ -22,11 +22,11 @@ export class JobFiltersComponent implements OnInit {
 
   ngOnInit(): void {
     let storedLocation = localStorage.getItem(LS_USER_LOCATION);
-    if (storedLocation === null) {
+    if (!storedLocation) {
       const detected = detectUserLocation();
       if (detected) {
-        localStorage.setItem(LS_USER_LOCATION, detected);
         storedLocation = detected;
+        localStorage.setItem(LS_USER_LOCATION, detected);
       }
     }
     const storedStrict = localStorage.getItem(LS_STRICT_LOCATION) === 'true';
@@ -36,6 +36,13 @@ export class JobFiltersComponent implements OnInit {
         strict_location: storedStrict || undefined,
       });
     }
+  }
+
+  useDetectedLocation(): void {
+    const detected = detectUserLocation();
+    if (!detected) return;
+    localStorage.setItem(LS_USER_LOCATION, detected);
+    this.emitFilters({ user_location: detected });
   }
 
   onSourceChange(event: Event): void {
@@ -83,6 +90,34 @@ export class JobFiltersComponent implements OnInit {
     const checked = (event.target as HTMLInputElement).checked;
     localStorage.setItem(LS_STRICT_LOCATION, checked ? 'true' : 'false');
     this.emitFilters({ strict_location: checked || undefined });
+  }
+
+  onSeniorityToggle(level: SeniorityLevel, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    const current = new Set(this.filters().seniority ?? []);
+    if (checked) {
+      current.add(level);
+    } else {
+      current.delete(level);
+    }
+    const next = current.size ? Array.from(current) : undefined;
+    this.emitFilters({ seniority: next });
+  }
+
+  onMaxYearsInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value.trim();
+    if (!value) {
+      this.emitFilters({ max_years_experience: undefined });
+      return;
+    }
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      this.emitFilters({ max_years_experience: parsed });
+    }
+  }
+
+  isSenioritySelected(level: SeniorityLevel): boolean {
+    return (this.filters().seniority ?? []).includes(level);
   }
 
   clearAll(): void {

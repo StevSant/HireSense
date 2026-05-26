@@ -60,3 +60,14 @@ class ApplicationListItemResponse(BaseModel):
     has_optimization: bool
     has_prep: bool
     latest_match_score: float | None
+
+
+class CoverLetterLibraryItem(BaseModel):
+    id: uuid.UUID
+    application_id: uuid.UUID
+    title: str
+    company: str
+    application_url: str | None
+    tone: str
+    body: str
+    created_at: datetime | None

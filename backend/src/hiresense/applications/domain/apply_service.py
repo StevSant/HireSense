@@ -83,7 +83,24 @@ class ApplyService:
         self,
         application_id: uuid.UUID,
         optimization_id: uuid.UUID | None = None,
+        *,
+        original: bool = False,
+        language: str = "en",
     ) -> bytes:
+        """Compile the application CV to PDF.
+
+        Defaults to the latest optimization (or `optimization_id` if given).
+        Pass `original=True` to compile the user's untouched profile CV in
+        the requested language — useful before an optimization has been run.
+        """
+        if original:
+            profile_view = self._profiles.get_for_language(language)
+            if profile_view is None or not profile_view.raw_tex:
+                raise ValueError(
+                    f"No profile CV found for language '{language}' — upload one first"
+                )
+            return await self._latex.compile_to_pdf(profile_view.raw_tex)
+
         if optimization_id is None:
             opt = self._repo.get_latest_optimization(application_id)
         else:

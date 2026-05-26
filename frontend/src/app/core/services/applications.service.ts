@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApplicationAggregate } from '../../pages/applications/models/application-aggregate.model';
@@ -8,6 +8,7 @@ import { ApplicationMatch } from '../../pages/applications/models/application-ma
 import { CvOptimization } from '../../pages/applications/models/cv-optimization.model';
 import { ApplicationInterviewPrep } from '../../pages/applications/models/application-interview-prep.model';
 import { CoverLetter } from '../../pages/applications/models/cover-letter.model';
+import { CoverLetterLibraryItem } from '../../pages/applications/models/cover-letter-library-item.model';
 
 @Injectable({ providedIn: 'root' })
 export class ApplicationsService {
@@ -16,6 +17,10 @@ export class ApplicationsService {
 
   list(): Observable<ApplicationListItem[]> {
     return this.http.get<ApplicationListItem[]>(this.base);
+  }
+
+  listAllCoverLetters(): Observable<CoverLetterLibraryItem[]> {
+    return this.http.get<CoverLetterLibraryItem[]>(`${this.base}/cover-letters`);
   }
 
   get(id: string): Observable<ApplicationAggregate> {
@@ -80,6 +85,12 @@ export class ApplicationsService {
 
   downloadCvPdf(id: string): Observable<Blob> {
     return this.http.get(`${this.base}/${id}/cv.pdf`, { responseType: 'blob' });
+  }
+
+  /** Compile the user's untouched profile CV (no optimization required). */
+  downloadOriginalCvPdf(id: string, language: 'en' | 'es' = 'en'): Observable<Blob> {
+    const params = new HttpParams().set('original', 'true').set('language', language);
+    return this.http.get(`${this.base}/${id}/cv.pdf`, { params, responseType: 'blob' });
   }
 
   downloadCoverLetterPdf(id: string): Observable<Blob> {

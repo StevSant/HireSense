@@ -1,13 +1,13 @@
 <div class="cv-tab">
   <div class="controls">
     <label>CV language:</label>
-    <select [value]="cvLanguage()" (change)="onLangChange($event)">
+    <select [value]="cvLanguage()" (change)="onLangChange($event)" [disabled]="running()">
       <option value="en">English</option>
       <option value="es">Spanish</option>
     </select>
     <button class="btn-primary" (click)="run()" [disabled]="running() || !hasMatch()">
       @if (running()) {
-        Optimizing...
+        Optimizing…
       } @else if (optimization()) {
         ↻ Re-run optimization
       } @else {
@@ -15,18 +15,37 @@
       }
     </button>
     @if (optimization()) {
+      <button class="btn-secondary" (click)="copyTex()">
+        @if (copyFlash()) { Copied! } @else { Copy .tex }
+      </button>
       <button class="btn-secondary" (click)="downloadTex()">Download .tex</button>
       <button class="btn-secondary" (click)="downloadPdf()" [disabled]="downloadingPdf()">
-        @if (downloadingPdf()) { Downloading... } @else { Download .pdf }
+        @if (downloadingPdf()) { Downloading… } @else { Download tailored .pdf }
       </button>
     }
+    <button
+      class="btn-secondary"
+      (click)="downloadOriginalPdf()"
+      [disabled]="downloadingOriginal()"
+      title="Compile and download your profile CV without any optimization"
+    >
+      @if (downloadingOriginal()) { Compiling… } @else { Download original .pdf }
+    </button>
   </div>
 
+  @if (running()) {
+    <div class="alert alert-running">
+      Optimization in progress. You can switch tabs — the result will appear here when it's done.
+    </div>
+  }
   @if (!hasMatch()) {
     <div class="alert">Run a match first — optimization uses the missing-skills list from the latest match.</div>
   }
-  @if (error()) {
-    <div class="alert alert-error">{{ error() }}</div>
+  @if (runnerError()) {
+    <div class="alert alert-error">{{ runnerError() }}</div>
+  }
+  @if (downloadError()) {
+    <div class="alert alert-error">{{ downloadError() }}</div>
   }
 
   @if (optimization(); as opt) {
@@ -36,30 +55,53 @@
         <p>{{ opt.improvement_summary }}</p>
       </div>
     }
-    @if (opt.changes.length) {
-      <h3 class="section-title">Changes ({{ opt.changes.length }})</h3>
-      @for (c of opt.changes; track $index) {
-        <div class="change-card">
-          <div class="change-header">{{ c.section_name ?? c.section ?? 'section' }}</div>
-          <div class="diff">
-            <div class="diff-side">
-              <span class="diff-label">Original</span>
-              <pre>{{ c.original ?? c.before ?? '' }}</pre>
+
+    <div class="view-toggle" role="tablist" aria-label="Optimization view">
+      <button
+        role="tab"
+        [class.active]="viewMode() === 'changes'"
+        (click)="setViewMode('changes')"
+      >
+        Changes ({{ opt.changes.length }})
+      </button>
+      <button
+        role="tab"
+        [class.active]="viewMode() === 'full'"
+        (click)="setViewMode('full')"
+      >
+        Full optimized CV
+      </button>
+    </div>
+
+    @if (viewMode() === 'changes') {
+      @if (opt.changes.length) {
+        @for (c of opt.changes; track $index) {
+          <div class="change-card">
+            <div class="change-header">{{ c.section_name ?? c.section ?? 'section' }}</div>
+            <div class="diff">
+              <div class="diff-side">
+                <span class="diff-label">Original</span>
+                <pre>{{ c.original ?? c.before ?? '' }}</pre>
+              </div>
+              <div class="diff-side">
+                <span class="diff-label">Optimized</span>
+                <pre>{{ c.optimized ?? c.after ?? '' }}</pre>
+              </div>
             </div>
-            <div class="diff-side">
-              <span class="diff-label">Optimized</span>
-              <pre>{{ c.optimized ?? c.after ?? '' }}</pre>
-            </div>
+            @if (c.reason) {
+              <div class="change-reason">{{ c.reason }}</div>
+            }
           </div>
-          @if (c.reason) {
-            <div class="change-reason">{{ c.reason }}</div>
-          }
-        </div>
+        }
+      } @else {
+        <p class="muted">No structured diff was returned. View the full CV instead.</p>
       }
-    } @else if (opt.improvement_summary) {
-      <p class="muted">No structured diff returned, but optimization PDF is available.</p>
+    } @else {
+      <div class="full-cv">
+        <pre>{{ opt.optimized_tex }}</pre>
+      </div>
     }
-  } @else {
+  } @else if (!running()) {
     <p class="muted">No optimization yet. Run one to tailor the CV.</p>
   }
 </div>

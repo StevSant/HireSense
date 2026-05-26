@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Protocol
+from typing import Any, Protocol
 
 from hiresense.applications.domain.models import (
     ApplicationCoverLetter,
@@ -40,3 +40,4 @@ class ApplicationRepositoryPort(Protocol):
     def list_cover_letters(self, application_id: uuid.UUID) -> list[ApplicationCoverLetter]: ...
     def get_latest_cover_letter(self, application_id: uuid.UUID) -> ApplicationCoverLetter | None: ...
     def get_cover_letter(self, cover_letter_id: uuid.UUID) -> ApplicationCoverLetter | None: ...
+    def list_all_cover_letters_with_context(self) -> list[dict[str, Any]]: ...

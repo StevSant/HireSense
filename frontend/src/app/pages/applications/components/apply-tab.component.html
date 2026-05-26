@@ -24,14 +24,28 @@
       </div>
       <button class="btn-primary" (click)="generate()" [disabled]="generating()">
         @if (generating()) {
-          Generating...
+          Generating…
         } @else if (letter()) {
           ↻ Regenerate
         } @else {
           Generate cover letter
         }
       </button>
+      @if (letter()) {
+        <button class="btn-secondary" (click)="copyLetter()">
+          @if (copyFlash()) { Copied! } @else { Copy text }
+        </button>
+      }
     </div>
+
+    @if (generating()) {
+      <div class="alert alert-running">
+        Generating cover letter. You can switch tabs — the result will appear here when it's done.
+      </div>
+    }
+    @if (runnerError()) {
+      <div class="alert alert-error">{{ runnerError() }}</div>
+    }
 
     @if (letter(); as l) {
       <div class="letter-preview">
@@ -41,7 +55,7 @@
         </div>
         <pre class="letter-body">{{ l.body }}</pre>
       </div>
-    } @else {
+    } @else if (!generating()) {
       <p class="muted">No cover letter yet. Generate one tailored to this job.</p>
     }
   </section>
@@ -54,15 +68,17 @@
     </div>
 
     @if (!hasCv()) {
-      <div class="alert">Optimize the CV first (CV tab) so the bundle includes a tailored PDF.</div>
+      <div class="alert">No optimization yet — the CV button below downloads your <em>original</em> profile CV. Optimize the CV (CV tab) to get a tailored version and enable the bundle.</div>
     }
     @if (!letter()) {
       <div class="alert">Generate a cover letter (above) before downloading the bundle.</div>
     }
 
     <div class="downloads">
-      <button class="btn-secondary" (click)="downloadCv()" [disabled]="!hasCv() || downloadingCv()">
-        @if (downloadingCv()) { Downloading... } @else { 📄 CV (PDF) }
+      <button class="btn-secondary" (click)="downloadCv()" [disabled]="downloadingCv()">
+        @if (downloadingCv()) { Downloading... }
+        @else if (hasCv()) { 📄 Tailored CV (PDF) }
+        @else { 📄 Original CV (PDF) }
       </button>
       <button class="btn-secondary" (click)="downloadLetter()" [disabled]="!letter() || downloadingLetter()">
         @if (downloadingLetter()) { Downloading... } @else { 📄 Cover letter (PDF) }

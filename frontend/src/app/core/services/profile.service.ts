@@ -9,6 +9,16 @@ export interface UploadCVRequest {
   language: string;
 }
 
+export interface ProfileManualFieldsUpdate {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  linkedin_url?: string | null;
+  github_url?: string | null;
+  portfolio_url?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProfileService {
   /** All uploaded profiles keyed by language. */
@@ -68,5 +78,18 @@ export class ProfileService {
         this.profiles.set(byLang);
       }),
     );
+  }
+
+  updateManualFields(
+    profileId: string,
+    update: ProfileManualFieldsUpdate,
+  ): Observable<CandidateProfile> {
+    return this.http
+      .patch<CandidateProfile>(`${environment.apiUrl}/profile/${profileId}`, update)
+      .pipe(
+        tap((profile) => {
+          this.profiles.update((all) => ({ ...all, [profile.language]: profile }));
+        }),
+      );
   }
 }

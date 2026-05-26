@@ -1,6 +1,9 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { ApplicationsService } from '../../../core/services/applications.service';
+import { CvOptimizationRunnerService } from '../../../core/services/cv-optimization-runner.service';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
+
+type ViewMode = 'changes' | 'full';
 
 @Component({
   selector: 'app-cv-tab',
@@ -10,32 +13,42 @@ import { ApplicationAggregate } from '../models/application-aggregate.model';
 })
 export class CvTabComponent {
   private service = inject(ApplicationsService);
+  private runner = inject(CvOptimizationRunnerService);
 
   aggregate = input.required<ApplicationAggregate>();
   changed = output<void>();
 
   cvLanguage = signal<'en' | 'es'>('en');
-  running = signal(false);
-  error = signal('');
+  viewMode = signal<ViewMode>('changes');
+  copyFlash = signal(false);
+  downloadingPdf = signal(false);
+  downloadingOriginal = signal(false);
+  downloadError = signal('');
 
+  running = computed(() => this.runner.isRunning(this.aggregate().id));
+  runnerError = computed(() => this.runner.lastError());
   optimization = computed(() => this.aggregate().latest_optimization);
   hasMatch = computed(() => this.aggregate().latest_match !== null);
 
   run(): void {
-    this.running.set(true);
-    this.error.set('');
-    this.service
-      .generateOptimization(this.aggregate().id, { cv_language: this.cvLanguage() })
-      .subscribe({
-        next: () => {
-          this.running.set(false);
-          this.changed.emit();
-        },
-        error: (err) => {
-          this.error.set(err?.error?.detail ?? 'Optimization failed');
-          this.running.set(false);
-        },
-      });
+    this.downloadError.set('');
+    this.runner.run(this.aggregate().id, this.cvLanguage());
+  }
+
+  setViewMode(mode: ViewMode): void {
+    this.viewMode.set(mode);
+  }
+
+  async copyTex(): Promise<void> {
+    const opt = this.optimization();
+    if (!opt) return;
+    try {
+      await navigator.clipboard.writeText(opt.optimized_tex);
+      this.copyFlash.set(true);
+      setTimeout(() => this.copyFlash.set(false), 1800);
+    } catch {
+      this.downloadError.set('Clipboard access denied — use Download .tex instead.');
+    }
   }
 
   downloadTex(): void {
@@ -50,11 +63,9 @@ export class CvTabComponent {
     URL.revokeObjectURL(url);
   }
 
-  downloadingPdf = signal(false);
-
   downloadPdf(): void {
     this.downloadingPdf.set(true);
-    this.error.set('');
+    this.downloadError.set('');
     this.service.downloadCvPdf(this.aggregate().id).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
@@ -66,8 +77,29 @@ export class CvTabComponent {
         this.downloadingPdf.set(false);
       },
       error: (err) => {
-        this.error.set(err?.error?.detail ?? 'PDF download failed');
+        this.downloadError.set(err?.error?.detail ?? 'PDF download failed');
         this.downloadingPdf.set(false);
+      },
+    });
+  }
+
+  /** Compile and download the untouched profile CV — no optimization needed. */
+  downloadOriginalPdf(): void {
+    this.downloadingOriginal.set(true);
+    this.downloadError.set('');
+    this.service.downloadOriginalCvPdf(this.aggregate().id, this.cvLanguage()).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cv_original_${this.cvLanguage()}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.downloadingOriginal.set(false);
+      },
+      error: (err) => {
+        this.downloadError.set(err?.error?.detail ?? 'Original CV PDF download failed');
+        this.downloadingOriginal.set(false);
       },
     });
   }

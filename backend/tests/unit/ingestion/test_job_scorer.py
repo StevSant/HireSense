@@ -60,3 +60,19 @@ def test_score_jobs_does_not_mutate_input() -> None:
     jobs = [_job(["Python"])]
     score_jobs(jobs, ["python"])
     assert jobs[0].match_score is None
+
+
+def test_score_caps_divisor_for_tag_heavy_sources() -> None:
+    """Getonboard-style jobs ship 15–30+ tag IDs; the divisor must be capped
+    so 1 hit / 20 tags scores like 1 hit / 10 tags, not 1/20 = 0.05."""
+    tag_heavy = _job([f"tag{i}" for i in range(20)] + ["Python"])
+    result = score_job_against_skills(tag_heavy, {"python"})
+    assert result is not None
+    assert abs(result - 0.1) < 1e-9
+
+
+def test_score_clamps_above_one_when_many_matches() -> None:
+    skills = ["Python", "Go", "Rust", "FastAPI", "Django", "AWS", "GCP",
+              "Kubernetes", "Docker", "Postgres", "Redis", "React"]
+    result = score_job_against_skills(_job(skills), {s.lower() for s in skills})
+    assert result == 1.0

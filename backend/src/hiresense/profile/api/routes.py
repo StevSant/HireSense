@@ -19,6 +19,16 @@ class UploadCVRequest(BaseModel):
     language: str = "en"
 
 
+class ProfileManualFieldsRequest(BaseModel):
+    name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    location: str | None = None
+    linkedin_url: str | None = None
+    github_url: str | None = None
+    portfolio_url: str | None = None
+
+
 @router.post("/upload", response_model=CandidateProfile)
 async def upload_cv(
     body: UploadCVRequest,
@@ -83,3 +93,17 @@ async def get_profile(
     if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
     return profile
+
+
+@router.patch("/{profile_id}", response_model=CandidateProfile)
+async def update_manual_fields(
+    profile_id: str,
+    body: ProfileManualFieldsRequest,
+    service: Annotated[object, Depends(get_profile_service)],
+) -> CandidateProfile:
+    updated = await service.update_manual_fields(
+        profile_id, body.model_dump(exclude_unset=True)
+    )
+    if updated is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+    return updated

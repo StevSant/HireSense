@@ -35,3 +35,30 @@ class ProfileRepository:
             session.commit()
             session.refresh(profile)
             return profile
+
+    def update(self, id: uuid.UUID, fields: dict[str, Any]) -> Profile | None:
+        with self._session_factory() as session:
+            row = session.get(Profile, id)
+            if row is None:
+                return None
+            for key, value in fields.items():
+                if hasattr(row, key):
+                    setattr(row, key, value)
+            session.commit()
+            session.refresh(row)
+            return row
+
+    def update_all(self, fields: dict[str, Any]) -> int:
+        """Set the given fields on every profile row. Used for fields that
+        are conceptually one-per-person (linkedin/github/portfolio) so a
+        Spanish-vs-English language switch doesn't lose them."""
+        if not fields:
+            return 0
+        with self._session_factory() as session:
+            rows = list(session.scalars(select(Profile)).all())
+            for row in rows:
+                for key, value in fields.items():
+                    if hasattr(row, key):
+                        setattr(row, key, value)
+            session.commit()
+            return len(rows)

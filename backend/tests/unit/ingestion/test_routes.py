@@ -52,10 +52,19 @@ class FakeOrchestrator:
     def list_jobs(self) -> list[NormalizedJob]:
         return [BOARD_JOB]
 
+    def persist_scores(self, job_id, match_score, semantic_score) -> None:
+        pass
+
 
 class FakeScanner:
     def list_jobs(self) -> list[NormalizedJob]:
         return [PORTAL_JOB]
+
+    def get_job_by_id(self, job_id):
+        return None
+
+    def persist_scores(self, job_id, match_score, semantic_score) -> None:
+        pass
 
 
 def _make_app() -> tuple[FastAPI, FakeOrchestrator, FakeScanner]:
@@ -185,6 +194,9 @@ async def test_list_jobs_strict_location_filters_non_matching() -> None:
         def list_jobs(self) -> list[NormalizedJob]:
             return [chile_job, restricted_job, ambiguous_remote_job, worldwide_job]
 
+        def persist_scores(self, job_id, match_score, semantic_score) -> None:
+            pass
+
     app = FastAPI()
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: MultiJobOrchestrator()
     app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
@@ -201,4 +213,6 @@ async def test_list_jobs_strict_location_filters_non_matching() -> None:
     assert resp.status_code == 200
     data = resp.json()
     returned_ids = {j["id"] for j in data["jobs"]}
-    assert returned_ids == {"job-chile", "job-worldwide"}
+    # Ambiguous "Remote (Remote)" jobs now pass through — fully-remote
+    # postings are treated as applyable from anywhere.
+    assert returned_ids == {"job-chile", "job-worldwide", "job-remote-remote"}

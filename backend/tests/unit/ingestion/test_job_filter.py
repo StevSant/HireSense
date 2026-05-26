@@ -19,6 +19,8 @@ def _job(
     posted_date: datetime | None = None,
     description: str = "Do stuff",
     url: str = "https://example.com",
+    remote_modality: str | None = None,
+    countries: list[str] | None = None,
 ) -> NormalizedJob:
     return NormalizedJob(
         id=id,
@@ -31,6 +33,8 @@ def _job(
         source_type=source_type,
         url=url,
         posted_date=posted_date,
+        remote_modality=remote_modality,
+        countries=countries or [],
     )
 
 
@@ -220,12 +224,34 @@ def test_strict_location_includes_user_country_substring() -> None:
 def test_strict_location_excludes_non_matching() -> None:
     jobs = [
         _job(id="1", location="USA only"),
-        _job(id="2", location="Remote (Remote)"),
-        _job(id="3", location="Europe"),
+        _job(id="2", location="Europe"),
     ]
     params = JobQueryParams(user_location="Chile", strict_location=True)
     result = filter_and_paginate(jobs, params)
     assert result.total == 0
+
+
+def test_strict_location_passes_remote_jobs() -> None:
+    """Fully-remote postings should be applyable regardless of country."""
+    jobs = [
+        _job(id="1", location="USA only"),
+        _job(id="2", location="Remote"),
+        _job(id="3", remote_modality="remote", countries=["Argentina"]),
+    ]
+    params = JobQueryParams(user_location="Chile", strict_location=True)
+    result = filter_and_paginate(jobs, params)
+    assert {j.id for j in result.jobs} == {"2", "3"}
+
+
+def test_strict_location_hybrid_requires_country_match() -> None:
+    jobs = [
+        _job(id="1", remote_modality="hybrid", countries=["Chile"]),
+        _job(id="2", remote_modality="hybrid", countries=["Argentina"]),
+        _job(id="3", remote_modality="on_site", countries=["Chile", "Peru"]),
+    ]
+    params = JobQueryParams(user_location="chile", strict_location=True)
+    result = filter_and_paginate(jobs, params)
+    assert {j.id for j in result.jobs} == {"1", "3"}
 
 
 def test_strict_location_case_insensitive() -> None:

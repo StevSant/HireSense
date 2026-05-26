@@ -1,5 +1,9 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { ApplicationsService } from '../../../core/services/applications.service';
+import {
+  CoverLetterRunnerService,
+  CoverLetterTone,
+} from '../../../core/services/cover-letter-runner.service';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
 
 @Component({
@@ -10,30 +14,58 @@ import { ApplicationAggregate } from '../models/application-aggregate.model';
 })
 export class ApplyTabComponent {
   private service = inject(ApplicationsService);
+  private runner = inject(CoverLetterRunnerService);
 
   aggregate = input.required<ApplicationAggregate>();
   changed = output<void>();
 
   cvLanguage = signal<'en' | 'es'>('en');
-  tone = signal<'professional' | 'enthusiastic' | 'concise'>('professional');
-  generating = signal(false);
+  tone = signal<CoverLetterTone>('professional');
   marking = signal(false);
+  copyFlash = signal(false);
   error = signal('');
 
+  generating = computed(() => this.runner.isRunning(this.aggregate().id));
+  runnerError = computed(() => this.runner.lastError());
   letter = computed(() => this.aggregate().latest_cover_letter);
   hasCv = computed(() => this.aggregate().latest_optimization !== null);
-  isApplied = computed(() => this.aggregate().status === 'applied' || !!this.aggregate().applied_at);
+  isApplied = computed(
+    () => this.aggregate().status === 'applied' || !!this.aggregate().applied_at,
+  );
 
   downloadingCv = signal(false);
   downloadingLetter = signal(false);
   downloadingBundle = signal(false);
 
+  generate(): void {
+    this.error.set('');
+    this.runner.run(this.aggregate().id, this.cvLanguage(), this.tone());
+  }
+
+  async copyLetter(): Promise<void> {
+    const body = this.letter()?.body;
+    if (!body) return;
+    try {
+      await navigator.clipboard.writeText(body);
+      this.copyFlash.set(true);
+      setTimeout(() => this.copyFlash.set(false), 1800);
+    } catch {
+      this.error.set('Clipboard access denied — use Download or select & copy.');
+    }
+  }
+
   downloadCv(): void {
     this.downloadingCv.set(true);
     this.error.set('');
-    this.service.downloadCvPdf(this.aggregate().id).subscribe({
+    // Prefer the tailored optimization when available, fall back to the
+    // untouched profile CV so the user can still grab a PDF mid-process.
+    const obs = this.hasCv()
+      ? this.service.downloadCvPdf(this.aggregate().id)
+      : this.service.downloadOriginalCvPdf(this.aggregate().id, this.cvLanguage());
+    obs.subscribe({
       next: (blob) => {
-        this.triggerDownload(blob, `cv_${this.safeCompany()}.pdf`);
+        const suffix = this.hasCv() ? '' : '_original';
+        this.triggerDownload(blob, `cv${suffix}_${this.safeCompany()}.pdf`);
         this.downloadingCv.set(false);
       },
       error: (err) => {
@@ -86,26 +118,6 @@ export class ApplyTabComponent {
     return (this.aggregate().company || 'company').replace(/[^a-zA-Z0-9]+/g, '_').slice(0, 40);
   }
 
-  generate(): void {
-    this.generating.set(true);
-    this.error.set('');
-    this.service
-      .generateCoverLetter(this.aggregate().id, {
-        cv_language: this.cvLanguage(),
-        tone: this.tone(),
-      })
-      .subscribe({
-        next: () => {
-          this.generating.set(false);
-          this.changed.emit();
-        },
-        error: (err) => {
-          this.error.set(err?.error?.detail ?? 'Cover letter generation failed');
-          this.generating.set(false);
-        },
-      });
-  }
-
   openJobAndMarkApplied(): void {
     const url = this.aggregate().url;
     if (url) {
@@ -134,6 +146,6 @@ export class ApplyTabComponent {
   }
 
   onToneChange(ev: Event): void {
-    this.tone.set((ev.target as HTMLSelectElement).value as 'professional' | 'enthusiastic' | 'concise');
+    this.tone.set((ev.target as HTMLSelectElement).value as CoverLetterTone);
   }
 }

@@ -14,8 +14,13 @@ from hiresense.ingestion.api.dependencies import (
     get_semantic_scoring,
 )
 from hiresense.ingestion.domain.job_filter import JobQueryParams, PaginatedResult, filter_and_paginate
-from hiresense.ingestion.domain.job_scorer import combine_fit_score, score_jobs
+from hiresense.ingestion.domain.job_scorer import (
+    combine_fit_score,
+    score_job_against_skills,
+    score_jobs,
+)
 from hiresense.ingestion.domain.models import NormalizedJob
+from hiresense.ingestion.domain.seniority import SeniorityLevel
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner, ScanFilters, ScanResult
 from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
@@ -74,6 +79,8 @@ async def list_jobs(
     strict_location: bool = False,
     sort: str | None = None,
     min_score: float | None = None,
+    seniority: Annotated[list[SeniorityLevel] | None, Query()] = None,
+    max_years_experience: int | None = None,
 ) -> PaginatedResult:
     # Default min_score from settings when the client doesn't specify one
     # (pass min_score=0 explicitly to disable the filter). Tests mount the
@@ -93,8 +100,25 @@ async def list_jobs(
             candidate_summary_parts.append(section.content)
     candidate_summary = "\n".join(candidate_summary_parts)
 
+    persist_scores = orchestrator.persist_scores if tab == "boards" else scanner.persist_scores
+
+    # Pre-compute skill-overlap per job (cheap) and fold in any *persisted*
+    # semantic score so the sort key matches the displayed value. Keep the
+    # raw skill score in a side dict so we can re-combine after page-level
+    # semantic scoring without recomputing the overlap.
+    skill_by_id: dict[str, float | None] = {}
     if candidate_skills:
-        all_jobs = score_jobs(all_jobs, candidate_skills)
+        skill_set = {s.lower() for s in candidate_skills if s}
+        for job in all_jobs:
+            skill_by_id[job.id] = score_job_against_skills(job, skill_set)
+        all_jobs = [
+            j.model_copy(
+                update={"match_score": combine_fit_score(skill_by_id[j.id], j.semantic_score)}
+            )
+            for j in all_jobs
+        ]
+        for job in all_jobs:
+            persist_scores(job.id, job.match_score, job.semantic_score)
 
     params = JobQueryParams(
         page=page,
@@ -109,25 +133,55 @@ async def list_jobs(
         strict_location=strict_location,
         sort=sort,
         min_score=min_score,
+        seniority_levels=seniority,
+        max_years_experience=max_years_experience,
     )
     result = filter_and_paginate(all_jobs, params)
 
     # Semantic scoring is bounded to the visible page so the first request
-    # after a backend restart doesn't block on 1000+ embeddings. Subsequent
-    # pages incrementally warm the cache; the per-job cache persists for
-    # the lifetime of the process.
+    # after a backend restart doesn't block on 1000+ embeddings. Each request
+    # only computes semantic for jobs on this page that don't yet have one;
+    # the persisted score feeds back into the sort on subsequent calls.
+    needs_semantic = [j for j in result.jobs if j.semantic_score is None]
     if (
         semantic_scoring is not None
         and (candidate_skills or candidate_summary)
-        and result.jobs
+        and needs_semantic
     ):
-        scored_page = await semantic_scoring.score_jobs(
-            result.jobs, candidate_skills, candidate_summary
+        scored = await semantic_scoring.score_jobs(
+            needs_semantic, candidate_skills, candidate_summary
         )
+        scored_by_id = {j.id: j.semantic_score for j in scored}
         result.jobs = [
-            j.model_copy(update={"match_score": combine_fit_score(j.match_score, j.semantic_score)})
-            for j in scored_page
+            j.model_copy(
+                update={
+                    "semantic_score": scored_by_id.get(j.id, j.semantic_score),
+                }
+            )
+            for j in result.jobs
         ]
+        # Re-combine match_score using the skill side dict + fresh semantic.
+        result.jobs = [
+            j.model_copy(
+                update={
+                    "match_score": combine_fit_score(
+                        skill_by_id.get(j.id), j.semantic_score
+                    )
+                }
+            )
+            for j in result.jobs
+        ]
+        for job in result.jobs:
+            persist_scores(job.id, job.match_score, job.semantic_score)
+        # Page-level re-sort so the order reflects the post-semantic match_score
+        # that the user actually sees. Phase-1 sort happens pre-pagination on
+        # skill-only scores; without this the displayed % column looks unsorted.
+        if sort == "match_desc":
+            result.jobs = sorted(
+                result.jobs,
+                key=lambda j: (j.match_score if j.match_score is not None else -1.0),
+                reverse=True,
+            )
 
     return result
 
@@ -138,12 +192,7 @@ async def get_job(
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
 ) -> NormalizedJob:
-    job = orchestrator.get_job_by_id(job_id)
-    if job is None:
-        for j in scanner.list_jobs():
-            if j.id == job_id:
-                job = j
-                break
+    job = orchestrator.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return job

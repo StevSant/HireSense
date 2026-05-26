@@ -2,54 +2,30 @@
   <div class="panel">
     <!-- Header -->
     <div class="panel-header">
-      <div>
-        <h2 class="panel-title">{{ job().title }}</h2>
+      <div class="header-text">
+        <h2 class="panel-title">{{ job().title || 'Untitled role' }}</h2>
         <p class="panel-company">{{ job().company }}</p>
+        <div class="header-chips">
+          <span class="chip chip-source">{{ job().source }}</span>
+          @if (job().location) {
+            <span class="chip" [title]="job().location">📍 {{ job().location }}</span>
+          }
+          @if (job().posted_date) {
+            <span class="chip">📅 {{ job().posted_date | date:'mediumDate' }}</span>
+          }
+          @if (compensationHighlight()) {
+            <span class="chip chip-comp" [title]="compensationHighlight()!">💰 {{ compensationHighlight() }}</span>
+          }
+          @if (job().department) {
+            <span class="chip">🏷 {{ job().department }}</span>
+          }
+        </div>
       </div>
-      <button (click)="close.emit()" class="btn-close">✕</button>
+      <button (click)="close.emit()" class="btn-close" aria-label="Close">✕</button>
     </div>
 
     <!-- Scrollable body -->
     <div class="panel-body">
-      <!-- Meta grid -->
-      <div class="panel-section meta-grid">
-        <div class="meta-item">
-          <span class="meta-label">Location</span>
-          <span class="meta-value">{{ job().location || '—' }}</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Posted</span>
-          <span class="meta-value">{{ job().posted_date ? (job().posted_date | date:'longDate') : '—' }}</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Salary Range</span>
-          <span class="meta-value">{{ job().salary_range || '—' }}</span>
-        </div>
-        <div class="meta-item">
-          <span class="meta-label">Department</span>
-          <span class="meta-value">{{ job().department || '—' }}</span>
-        </div>
-      </div>
-
-      <!-- Source -->
-      <div class="panel-section">
-        <span class="section-label">Source</span>
-        <div class="source-badges">
-          <span class="badge source-badge">{{ job().source }}</span>
-          <span class="badge type-badge">{{ job().source_type }}</span>
-          @if (job().platform) {
-            <span class="badge platform-badge">{{ job().platform }}</span>
-          }
-        </div>
-        @if (job().categories.length > 0) {
-          <div class="category-tags">
-            @for (cat of job().categories; track cat) {
-              <span class="badge category-badge">{{ cat }}</span>
-            }
-          </div>
-        }
-      </div>
-
       <!-- Skills -->
       @if (job().skills.length > 0) {
         <div class="panel-section">
@@ -62,11 +38,38 @@
         </div>
       }
 
-      <!-- Description -->
-      <div class="panel-section">
-        <span class="section-label">Description</span>
-        <div class="description-text">{{ job().description }}</div>
-      </div>
+      <!-- Description: structured (HN with *Headers*) or plain -->
+      @if (hasStructuredSections()) {
+        @if (parsedDescription().intro) {
+          <div class="panel-section">
+            <span class="section-label">Overview</span>
+            <p class="prose">{{ parsedDescription().intro }}</p>
+          </div>
+        }
+        @for (section of parsedDescription().sections; track section.title) {
+          <div class="panel-section section-card" [attr.data-emphasis]="section.emphasis">
+            <span class="section-label">{{ section.title }}</span>
+            <p class="prose">{{ section.body }}</p>
+          </div>
+        }
+      } @else {
+        <div class="panel-section">
+          <span class="section-label">Description</span>
+          <p class="prose">{{ job().description }}</p>
+        </div>
+      }
+
+      <!-- Categories (portal scans) -->
+      @if (job().categories.length > 0) {
+        <div class="panel-section">
+          <span class="section-label">Categories</span>
+          <div class="skill-chips">
+            @for (cat of job().categories; track cat) {
+              <span class="category-tag">{{ cat }}</span>
+            }
+          </div>
+        </div>
+      }
     </div>
 
     <!-- Use-this-job shortcuts -->

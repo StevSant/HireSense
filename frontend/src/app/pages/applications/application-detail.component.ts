@@ -1,7 +1,10 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TitleCasePipe, DatePipe } from '@angular/common';
 import { ApplicationsService } from '../../core/services/applications.service';
+import { CoverLetterRunnerService } from '../../core/services/cover-letter-runner.service';
+import { CvOptimizationRunnerService } from '../../core/services/cv-optimization-runner.service';
 import { ApplicationAggregate } from './models/application-aggregate.model';
 import { JobTabComponent } from './components/job-tab.component';
 import { MatchTabComponent } from './components/match-tab.component';
@@ -30,6 +33,9 @@ export class ApplicationDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private service = inject(ApplicationsService);
+  private optimizationRunner = inject(CvOptimizationRunnerService);
+  private coverLetterRunner = inject(CoverLetterRunnerService);
+  private destroyRef = inject(DestroyRef);
 
   aggregate = signal<ApplicationAggregate | null>(null);
   loading = signal(true);
@@ -48,6 +54,20 @@ export class ApplicationDetailComponent implements OnInit {
       this.activeTab.set(tab);
     }
     this.load(id);
+
+    // Refetch the aggregate whenever a background CV optimization or cover
+    // letter generation finishes — even if the user has switched tabs since
+    // clicking Generate.
+    const refetchIfMatch = (finishedId: string) => {
+      const current = this.aggregate();
+      if (current && current.id === finishedId) this.load(current.id);
+    };
+    this.optimizationRunner.completed$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(refetchIfMatch);
+    this.coverLetterRunner.completed$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(refetchIfMatch);
   }
 
   load(id: string): void {

@@ -21,7 +21,7 @@
   </div>
 
   <div class="filter-item">
-    <label class="filter-label">Location</label>
+    <label class="filter-label">Job location</label>
     <input
       type="text"
       [value]="filters().location ?? ''"
@@ -69,14 +69,24 @@
 
 <div class="location-pref-bar">
   <div class="filter-item">
-    <label class="filter-label">My location</label>
-    <input
-      type="text"
-      [value]="filters().user_location ?? ''"
-      (input)="onUserLocationInput($event)"
-      placeholder="e.g. Chile, USA, Spain"
-      class="filter-control"
-    />
+    <label class="filter-label">My country</label>
+    <div class="user-location-row">
+      <input
+        type="text"
+        [value]="filters().user_location ?? ''"
+        (input)="onUserLocationInput($event)"
+        placeholder="e.g. Chile, USA, Spain"
+        class="filter-control"
+      />
+      <button
+        type="button"
+        class="btn-detect"
+        (click)="useDetectedLocation()"
+        title="Detect from your browser timezone"
+      >
+        Use my timezone
+      </button>
+    </div>
   </div>
   <label class="strict-toggle">
     <input
@@ -84,6 +94,38 @@
       [checked]="filters().strict_location ?? false"
       (change)="onStrictLocationChange($event)"
     />
-    <span>Only show jobs I can apply to from my location</span>
+    <span>Only show jobs I can apply to from my country</span>
   </label>
+</div>
+
+<div class="seniority-bar">
+  <div class="seniority-group">
+    <span class="filter-label">Seniority</span>
+    <div class="seniority-pills">
+      @for (level of ['intern', 'junior', 'mid', 'senior', 'lead']; track level) {
+        <label class="seniority-pill" [class.active]="isSenioritySelected($any(level))">
+          <input
+            type="checkbox"
+            [checked]="isSenioritySelected($any(level))"
+            (change)="onSeniorityToggle($any(level), $event)"
+          />
+          <span>{{ level }}</span>
+        </label>
+      }
+    </div>
+  </div>
+
+  <div class="filter-item filter-item-narrow">
+    <label class="filter-label">Max years experience</label>
+    <input
+      type="number"
+      min="0"
+      max="30"
+      step="1"
+      [value]="filters().max_years_experience ?? ''"
+      (input)="onMaxYearsInput($event)"
+      placeholder="e.g. 3"
+      class="filter-control"
+    />
+  </div>
 </div>

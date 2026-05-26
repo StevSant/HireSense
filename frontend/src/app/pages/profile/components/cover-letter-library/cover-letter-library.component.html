@@ -1,0 +1,70 @@
+<div class="library-header">
+  <div>
+    <h3>Library</h3>
+    <p class="library-hint">
+      Every cover letter you've generated, across all applications. Search and copy — no need to dig through each job.
+    </p>
+  </div>
+  <input
+    type="search"
+    class="search-input"
+    placeholder="Search by company, title, or body..."
+    [ngModel]="query()"
+    (ngModelChange)="query.set($event)"
+    aria-label="Search cover letters"
+  />
+</div>
+
+@if (loading()) {
+  <div class="library-empty">Loading…</div>
+} @else if (error()) {
+  <div class="library-error">{{ error() }}</div>
+} @else if (letters().length === 0) {
+  <div class="library-empty">
+    No cover letters yet. Open an application and use the <strong>Apply</strong> tab to generate one.
+  </div>
+} @else if (filtered().length === 0) {
+  <div class="library-empty">No matches for “{{ query() }}”.</div>
+} @else {
+  <ul class="letter-list">
+    @for (letter of filtered(); track letter.id) {
+      <li class="letter-row" [class.expanded]="expandedId() === letter.id">
+        <button class="letter-summary" type="button" (click)="toggle(letter.id)">
+          <div class="letter-meta">
+            <span class="letter-company">{{ letter.company }}</span>
+            <span class="letter-divider">·</span>
+            <span class="letter-title">{{ letter.title }}</span>
+            <span class="letter-tone">{{ letter.tone }}</span>
+            @if (letter.created_at) {
+              <span class="letter-date">{{ letter.created_at | date: 'mediumDate' }}</span>
+            }
+          </div>
+          @if (expandedId() !== letter.id) {
+            <p class="letter-preview">{{ preview(letter.body) }}</p>
+          }
+        </button>
+
+        @if (expandedId() === letter.id) {
+          <div class="letter-body">
+            <pre class="letter-text">{{ letter.body }}</pre>
+            <div class="letter-actions">
+              <button
+                type="button"
+                class="btn-copy"
+                (click)="copy(letter, $event)"
+              >
+                @if (copiedId() === letter.id) { Copied! } @else { Copy text }
+              </button>
+              <a
+                class="btn-link"
+                [routerLink]="['/dashboard/applications', letter.application_id]"
+              >
+                Open application →
+              </a>
+            </div>
+          </div>
+        }
+      </li>
+    }
+  </ul>
+}

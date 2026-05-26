@@ -46,6 +46,7 @@ class ProfileService:
         sections = [CVSection(name=s.name, content=s.content) for s in cleaned_sections]
 
         profile_id = str(uuid.uuid4())
+        shared_links = self._inherit_shared_links()
         profile = CandidateProfile(
             id=profile_id,
             name=parsed.name,
@@ -56,6 +57,7 @@ class ProfileService:
             raw_tex=tex_content,
             language=language,
             skills=skills,
+            **shared_links,
         )
 
         if self._repository is not None:
@@ -92,6 +94,7 @@ class ProfileService:
         cleaned_sections = self._parser.strip_section_content(parsed.sections)
         sections = [CVSection(name=s.name, content=s.content) for s in cleaned_sections]
 
+        shared_links = self._inherit_shared_links()
         profile = CandidateProfile(
             id=profile_id,
             name=parsed.name,
@@ -102,6 +105,7 @@ class ProfileService:
             raw_tex=parsed.raw_tex,
             language=language,
             skills=skills,
+            **shared_links,
         )
 
         if self._repository is not None:
@@ -151,6 +155,66 @@ class ProfileService:
         profiles = [p for p in self._profiles.values() if p.language == language]
         return profiles[-1] if profiles else None
 
+    EDITABLE_FIELDS = (
+        "name",
+        "email",
+        "phone",
+        "location",
+        "linkedin_url",
+        "github_url",
+        "portfolio_url",
+    )
+
+    # Fields that belong to the person, not the language variant. Edits to
+    # these are broadcast across all profile rows so the Spanish and English
+    # CVs share the same LinkedIn/GitHub/portfolio link.
+    _SHARED_FIELDS = ("linkedin_url", "github_url", "portfolio_url")
+
+    async def update_manual_fields(
+        self, profile_id: str, fields: dict[str, str | None]
+    ) -> CandidateProfile | None:
+        """Apply user-editable overrides to a stored profile.
+
+        Only whitelisted fields are accepted. Empty strings are stored as
+        NULL so the UI can fall back to CV-parsed values when needed.
+        """
+        sanitised: dict[str, str | None] = {}
+        for key in self.EDITABLE_FIELDS:
+            if key not in fields:
+                continue
+            value = fields[key]
+            if isinstance(value, str):
+                value = value.strip()
+                value = value or None
+            sanitised[key] = value
+
+        if not sanitised:
+            return await self.get_profile(profile_id)
+
+        shared = {k: v for k, v in sanitised.items() if k in self._SHARED_FIELDS}
+        per_language = {k: v for k, v in sanitised.items() if k not in self._SHARED_FIELDS}
+
+        if self._repository is not None:
+            if shared:
+                self._repository.update_all(shared)
+            if per_language:
+                orm = self._repository.update(uuid.UUID(profile_id), per_language)
+            else:
+                orm = self._repository.get_by_id(uuid.UUID(profile_id))
+            return self._to_response(orm) if orm else None
+
+        # In-memory fallback (tests / legacy path)
+        profile = self._profiles.get(profile_id)
+        if profile is None:
+            return None
+        if shared:
+            for pid, p in list(self._profiles.items()):
+                self._profiles[pid] = p.model_copy(update=shared)
+        if per_language:
+            current = self._profiles[profile_id]
+            self._profiles[profile_id] = current.model_copy(update=per_language)
+        return self._profiles[profile_id]
+
     async def list_profiles(self) -> list[CandidateProfile]:
         """Return the latest profile per language (deduplicated)."""
         if self._repository is not None:
@@ -169,6 +233,21 @@ class ProfileService:
         return result
 
     _SKILL_SECTION_KEYWORDS = {"SKILL", "HABILIDAD", "COMPETENCIA", "TÉCNICA", "TECNICA"}
+
+    def _inherit_shared_links(self) -> dict[str, str | None]:
+        """Read shared link fields from any existing profile so newly uploaded
+        language variants don't lose the user's LinkedIn/GitHub/portfolio."""
+        source: CandidateProfile | None = None
+        if self._repository is not None:
+            orm = self._repository.get_latest()
+            if orm is not None:
+                source = self._to_response(orm)
+        else:
+            profiles = list(self._profiles.values())
+            source = profiles[-1] if profiles else None
+        if source is None:
+            return {}
+        return {field: getattr(source, field) for field in self._SHARED_FIELDS}
 
     def _extract_skills_from_parsed(self, parsed: ParsedCV) -> list[str]:
         for section in parsed.sections:
@@ -199,6 +278,9 @@ class ProfileService:
             language=profile.language,
             skills=profile.skills,
             original_filename=original_filename,
+            linkedin_url=profile.linkedin_url,
+            github_url=profile.github_url,
+            portfolio_url=profile.portfolio_url,
         )
 
     def _to_response(self, orm: Profile) -> CandidateProfile:
@@ -216,4 +298,7 @@ class ProfileService:
             raw_tex=orm.raw_tex or "",
             language=orm.language,
             skills=orm.skills or [],
+            linkedin_url=orm.linkedin_url,
+            github_url=orm.github_url,
+            portfolio_url=orm.portfolio_url,
         )

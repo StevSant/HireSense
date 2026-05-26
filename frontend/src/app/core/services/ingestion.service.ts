@@ -9,6 +9,8 @@ import { PortalEntry } from '../../pages/ingestion/models/portal-entry.model';
 import { ScanPortalsRequest } from '../../pages/ingestion/models/scan-portals-request.model';
 import { ScanResult } from '../../pages/ingestion/models/scan-result.model';
 
+export type SeniorityLevel = 'intern' | 'junior' | 'mid' | 'senior' | 'lead' | 'unknown';
+
 export interface JobFilters {
   source?: string;
   keyword?: string;
@@ -19,6 +21,8 @@ export interface JobFilters {
   user_location?: string;
   strict_location?: boolean;
   sort?: 'match_desc' | 'date_desc';
+  seniority?: SeniorityLevel[];
+  max_years_experience?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -51,6 +55,14 @@ export class IngestionService {
     if (filters.user_location) params = params.set('user_location', filters.user_location);
     if (filters.strict_location) params = params.set('strict_location', 'true');
     if (filters.sort) params = params.set('sort', filters.sort);
+    if (filters.seniority && filters.seniority.length) {
+      for (const level of filters.seniority) {
+        params = params.append('seniority', level);
+      }
+    }
+    if (filters.max_years_experience !== undefined && filters.max_years_experience !== null) {
+      params = params.set('max_years_experience', filters.max_years_experience.toString());
+    }
 
     return this.http.get<PaginatedJobsResponse>(`${environment.apiUrl}/ingestion/jobs`, { params });
   }

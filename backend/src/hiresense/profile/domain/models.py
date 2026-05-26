@@ -26,6 +26,9 @@ class CandidateProfile(BaseModel):
     language: str = "en"
     skills: list[str] = Field(default_factory=list)
     embedding: list[float] | None = None
+    linkedin_url: str | None = None
+    github_url: str | None = None
+    portfolio_url: str | None = None
 
 
 class Profile(Base):
@@ -46,6 +49,9 @@ class Profile(Base):
     language: Mapped[str] = mapped_column(String(10), default="en")
     skills: Mapped[list | None] = mapped_column(JSON, nullable=True)
     original_filename: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    linkedin_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    github_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    portfolio_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     created_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

@@ -206,9 +206,11 @@
       </div>
 
       @if (uploadedLanguages().length > 1) {
-        <div class="language-tabs">
+        <div class="language-tabs" role="tablist" aria-label="CV language">
+          <span class="language-tabs-label">Viewing</span>
           @for (lang of uploadedLanguages(); track lang) {
             <button
+              role="tab"
               class="lang-tab"
               [class.active]="activeLanguage() === lang"
               (click)="switchLanguage(lang)"
@@ -279,6 +281,24 @@
             <span class="value">{{ profile()!.phone }}</span>
           </div>
         }
+        @if (profile()!.linkedin_url) {
+          <div class="info-item">
+            <span class="label">LinkedIn</span>
+            <a class="value info-link" [href]="profile()!.linkedin_url!" target="_blank" rel="noopener">{{ profile()!.linkedin_url }}</a>
+          </div>
+        }
+        @if (profile()!.github_url) {
+          <div class="info-item">
+            <span class="label">GitHub</span>
+            <a class="value info-link" [href]="profile()!.github_url!" target="_blank" rel="noopener">{{ profile()!.github_url }}</a>
+          </div>
+        }
+        @if (profile()!.portfolio_url) {
+          <div class="info-item">
+            <span class="label">Portfolio</span>
+            <a class="value info-link" [href]="profile()!.portfolio_url!" target="_blank" rel="noopener">{{ profile()!.portfolio_url }}</a>
+          </div>
+        }
         <div class="info-item">
           <span class="label">CV Language</span>
           <span class="language-badge">{{ profile()!.language === 'es' ? 'Espanol' : 'English' }}</span>
@@ -299,7 +319,7 @@
       @for (section of profile()!.sections; track section.name) {
         <div class="section">
           <h3>{{ section.name }}</h3>
-          <p class="section-content">{{ section.content }}</p>
+          <app-cv-section-content [content]="section.content" />
         </div>
       }
     </div>
@@ -332,16 +352,38 @@
             <span class="details-label">Primary language</span>
             <span class="details-value">{{ p.language === 'es' ? 'Espanol' : 'English' }}</span>
           </div>
+          <div class="details-item">
+            <span class="details-label">LinkedIn</span>
+            @if (p.linkedin_url) {
+              <a class="details-value details-link" [href]="p.linkedin_url" target="_blank" rel="noopener">{{ p.linkedin_url }}</a>
+            } @else {
+              <span class="details-value details-empty">Not set</span>
+            }
+          </div>
+          <div class="details-item">
+            <span class="details-label">GitHub</span>
+            @if (p.github_url) {
+              <a class="details-value details-link" [href]="p.github_url" target="_blank" rel="noopener">{{ p.github_url }}</a>
+            } @else {
+              <span class="details-value details-empty">Not set</span>
+            }
+          </div>
+          <div class="details-item">
+            <span class="details-label">Portfolio</span>
+            @if (p.portfolio_url) {
+              <a class="details-value details-link" [href]="p.portfolio_url" target="_blank" rel="noopener">{{ p.portfolio_url }}</a>
+            } @else {
+              <span class="details-value details-empty">Not set</span>
+            }
+          </div>
         </div>
         <p class="details-source-note">
-          These fields were parsed from your uploaded CV.
+          Parsed from your uploaded CV. Edit them in the form below.
         </p>
       </div>
 
-      <div class="coming-soon-card">
-        <div class="coming-soon-badge">Coming soon</div>
-        <h3>Manual fields</h3>
-        <p>Edit your name and location directly, and add LinkedIn, GitHub, and portfolio links that aren't on your CV.</p>
+      <div class="details-card">
+        <app-manual-fields-form [profile]="p" />
       </div>
     } @else {
       <div class="empty-state">
@@ -376,16 +418,12 @@
       </div>
     </div>
 
-    <div class="coming-soon-card">
-      <div class="coming-soon-badge">Coming soon</div>
-      <h3>Library</h3>
-      <p>A single view of every cover letter you've generated, across all applications. Search, copy, and reuse without digging through each job.</p>
+    <div class="details-card">
+      <app-cover-letter-library />
     </div>
 
-    <div class="coming-soon-card">
-      <div class="coming-soon-badge">Coming soon</div>
-      <h3>Templates</h3>
-      <p>Reusable cover letter templates you can pick from when applying — set the tone, opening, and signature once.</p>
+    <div class="details-card">
+      <app-cover-letter-templates />
     </div>
   </section>
   }

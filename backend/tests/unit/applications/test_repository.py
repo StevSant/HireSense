@@ -15,7 +15,8 @@ from hiresense.applications.domain.models import (
 )
 from hiresense.applications.infrastructure.repository import ApplicationRepository
 from hiresense.infrastructure.database import Base
-from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
+from hiresense.tracking.domain.models import ApplicationStatus
+from hiresense.tracking.infrastructure import TrackedApplicationOrm
 
 
 @pytest.fixture()
@@ -31,9 +32,9 @@ def repo(session_factory):
 
 
 @pytest.fixture()
-def tracked_app(session_factory) -> TrackedApplication:
+def tracked_app(session_factory) -> TrackedApplicationOrm:
     with session_factory() as session:
-        app = TrackedApplication(
+        app = TrackedApplicationOrm(
             title="Software Engineer",
             company="Fieldguide",
             status=ApplicationStatus.SAVED.value,

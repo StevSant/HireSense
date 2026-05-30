@@ -95,6 +95,24 @@ FEATURE_REGISTRY: tuple[FeatureDescriptor, ...] = (
         name="Company Research",
         description="Analyzes companies for research notes.",
     ),
+    FeatureDescriptor(
+        key="match_quick_scorer",
+        name="Quick Match Scorer",
+        description=(
+            "Fast, batched per-job match scoring shown on the job list. Gates on "
+            "seniority overshoot, missing core skills, and role discipline. Use a "
+            "cheap model here."
+        ),
+    ),
+    FeatureDescriptor(
+        key="match_deep_analyzer",
+        name="Deep Match Analyzer",
+        description=(
+            "On-demand, single-job match analysis for the detail panel: dimension "
+            "breakdown, matched/missing skills, pros/cons, recommendations, and a "
+            "narrative. Use a strong model here."
+        ),
+    ),
 )
 
 _BY_KEY = {f.key: f for f in FEATURE_REGISTRY}

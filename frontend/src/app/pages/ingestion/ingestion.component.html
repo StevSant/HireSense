@@ -152,7 +152,11 @@
             <tr (click)="openDetail(job)" class="clickable-row">
               <td>
                 @if (job.match_score !== null && job.match_score !== undefined) {
-                  <span class="score-badge" [class]="scoreBadgeClass(job.match_score)">
+                  <span
+                    class="score-badge"
+                    [class]="scoreBadgeClass(job.match_score)"
+                    [title]="job.verdict ? job.verdict + ' match' : ''"
+                  >
                     {{ (job.match_score * 100).toFixed(0) }}%
                   </span>
                 } @else {

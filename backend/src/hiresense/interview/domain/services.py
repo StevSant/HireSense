@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import re
 import uuid as uuid_mod
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -134,7 +133,7 @@ class InterviewPrepService:
                 technical_topics=data.get("technical_topics", []),
                 negotiation_points=data.get("negotiation_points", []),
             )
-        except Exception as exc:
+        except Exception:
             return InterviewPrep(
                 job_title=title, company=company,
                 matched_stories=[], competencies_to_probe=[],

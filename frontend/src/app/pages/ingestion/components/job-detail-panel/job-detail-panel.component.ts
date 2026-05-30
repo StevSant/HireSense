@@ -1,25 +1,47 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { NormalizedJob } from '../../models/normalized-job.model';
+import { JobAnalysis } from '../../models/job-analysis.model';
 import { parseJobDescription } from '../../lib/parse-job-description';
+import { IngestionService } from '../../../../core/services/ingestion.service';
+import { formatScorePercent } from '../../../../core/utils/format-score-percent';
+import { scoreColor } from '../../../../core/utils/score-color';
+import { DeepAnalysisComponent } from '../deep-analysis/deep-analysis.component';
 
 @Component({
   selector: 'app-job-detail-panel',
   standalone: true,
-  imports: [DatePipe],
+  imports: [DatePipe, DeepAnalysisComponent],
   templateUrl: './job-detail-panel.component.html',
   styleUrl: './job-detail-panel.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JobDetailPanelComponent {
   private router = inject(Router);
+  private ingestionService = inject(IngestionService);
 
   job = input.required<NormalizedJob>();
   tracked = input<boolean>(false);
 
   close = output<void>();
   track = output<string>();
+
+  // Exposed for the template (shared single-source score util).
+  scoreColor = scoreColor;
+
+  // Match header: prefer the LLM quick score, fall back to the heuristic blend.
+  pillScore = computed<number | null>(() => this.job().llm_score ?? this.job().match_score);
+  scorePercent = computed(() => formatScorePercent(this.pillScore()));
+
+  // Deep analysis (lazy, advanced model). The result is cached in the service
+  // (keyed by job id) so it survives the panel being destroyed on close.
+  analysis = computed<JobAnalysis | null>(
+    () => this.ingestionService.getCachedAnalysis(this.job().id) ?? null,
+  );
+  analysisExpanded = signal(false);
+  analysisLoading = signal(false);
+  analysisError = signal('');
 
   parsedDescription = computed(() => parseJobDescription(this.job().description ?? ''));
 
@@ -48,6 +70,30 @@ export class JobDetailPanelComponent {
 
   onTrack(): void {
     this.track.emit(this.job().id);
+  }
+
+  toggleDeepAnalysis(): void {
+    const next = !this.analysisExpanded();
+    this.analysisExpanded.set(next);
+    if (next && this.analysis() === null && !this.analysisLoading()) {
+      this.loadAnalysis();
+    }
+  }
+
+  loadAnalysis(force = false): void {
+    this.analysisLoading.set(true);
+    this.analysisError.set('');
+    this.ingestionService.getJobAnalysis(this.job().id, force).subscribe({
+      next: () => this.analysisLoading.set(false),
+      error: (err) => {
+        this.analysisError.set(err.error?.detail || 'Deep analysis failed');
+        this.analysisLoading.set(false);
+      },
+    });
+  }
+
+  retryAnalysis(): void {
+    this.loadAnalysis();
   }
 
   goToMatching(): void {

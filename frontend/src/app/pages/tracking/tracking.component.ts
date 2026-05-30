@@ -10,6 +10,7 @@ import { BatchResult } from './models/batch-result.model';
 import { CompanyResearch } from './models/company-research.model';
 import { TrackedApplication } from './models/tracked-application.model';
 import { UpdateApplicationRequest } from './models/update-application-request.model';
+import { scoreColor as toScoreColor } from '../../core/utils/score-color';
 
 @Component({
   selector: 'app-tracking',
@@ -166,9 +167,7 @@ export class TrackingComponent implements OnInit {
   }
 
   scoreColor(score: number): string {
-    if (score >= 0.7) return '#16a34a';
-    if (score >= 0.4) return '#ca8a04';
-    return '#dc2626';
+    return toScoreColor(score);
   }
 
   dimensionLabel(dimension: string): string {

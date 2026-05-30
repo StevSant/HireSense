@@ -6,6 +6,22 @@ from typing import Any
 from sqlalchemy import select
 
 from hiresense.interview.domain.models import Competency, Story
+from hiresense.interview.infrastructure.orm import StoryOrm
+
+_CONTENT_FIELDS = (
+    "title",
+    "competency",
+    "situation",
+    "task",
+    "action",
+    "result",
+    "reflection",
+    "tags",
+)
+
+
+def _to_domain(row: StoryOrm) -> Story:
+    return Story.model_validate(row)
 
 
 class StoryRepository:
@@ -14,34 +30,42 @@ class StoryRepository:
 
     def get_by_id(self, id: uuid.UUID) -> Story | None:
         with self._session_factory() as session:
-            return session.get(Story, id)
+            row = session.get(StoryOrm, id)
+            return _to_domain(row) if row is not None else None
 
     def list_all(self, competency: Competency | None = None) -> list[Story]:
         with self._session_factory() as session:
-            stmt = select(Story)
+            stmt = select(StoryOrm)
             if competency is not None:
-                stmt = stmt.where(Story.competency == competency.value)
-            return list(session.scalars(stmt).all())
+                stmt = stmt.where(StoryOrm.competency == competency.value)
+            return [_to_domain(r) for r in session.scalars(stmt).all()]
 
     def create(self, story: Story) -> Story:
         with self._session_factory() as session:
-            session.add(story)
+            row = StoryOrm(**{field: getattr(story, field) for field in _CONTENT_FIELDS})
+            session.add(row)
             session.commit()
-            session.refresh(story)
-            return story
+            session.refresh(row)
+            return _to_domain(row)
 
     def save(self, story: Story) -> Story:
         with self._session_factory() as session:
-            story = session.merge(story)
+            row = session.get(StoryOrm, story.id) if story.id else None
+            if row is None:
+                row = StoryOrm(**{field: getattr(story, field) for field in _CONTENT_FIELDS})
+                session.add(row)
+            else:
+                for field in _CONTENT_FIELDS:
+                    setattr(row, field, getattr(story, field))
             session.commit()
-            session.refresh(story)
-            return story
+            session.refresh(row)
+            return _to_domain(row)
 
     def delete(self, id: uuid.UUID) -> bool:
         with self._session_factory() as session:
-            story = session.get(Story, id)
-            if story is None:
+            row = session.get(StoryOrm, id)
+            if row is None:
                 return False
-            session.delete(story)
+            session.delete(row)
             session.commit()
             return True

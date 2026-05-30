@@ -3,12 +3,12 @@ from __future__ import annotations
 import io
 import uuid
 import zipfile
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 import logging
 
-from hiresense.adapters.latex import LatexCompileError, LatexCompiler
+from hiresense.ports import LatexCompileError, LatexCompilerPort
 from hiresense.applications.domain.aggregate import CoverLetterView
 from hiresense.applications.domain.cover_letter_generator import CoverLetterGenerator
 from hiresense.applications.domain.models import ApplicationCoverLetter
@@ -23,7 +23,7 @@ class ApplyService:
         self,
         repository: ApplicationRepositoryPort,
         cover_letter_generator: CoverLetterGenerator,
-        latex_compiler: LatexCompiler,
+        latex_compiler: LatexCompilerPort,
         profile_service: Any,
         tracking_service: Any,
     ) -> None:

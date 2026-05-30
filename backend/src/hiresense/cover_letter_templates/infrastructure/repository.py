@@ -5,34 +5,65 @@ from typing import Any
 
 from sqlalchemy import select
 
-from hiresense.cover_letter_templates.domain.orm import CoverLetterTemplateOrm
+from hiresense.cover_letter_templates.domain.models import CoverLetterTemplate
+from hiresense.cover_letter_templates.infrastructure.orm import CoverLetterTemplateOrm
+
+
+def _to_domain(row: CoverLetterTemplateOrm) -> CoverLetterTemplate:
+    return CoverLetterTemplate(
+        id=row.id,
+        name=row.name,
+        tone=row.tone,
+        language=row.language,
+        opening=row.opening,
+        body=row.body,
+        signature=row.signature,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+    )
 
 
 class CoverLetterTemplateRepository:
     def __init__(self, session_factory: Any) -> None:
         self._session_factory = session_factory
 
-    def list_all(self) -> list[CoverLetterTemplateOrm]:
+    def list_all(self) -> list[CoverLetterTemplate]:
         with self._session_factory() as session:
             stmt = select(CoverLetterTemplateOrm).order_by(
                 CoverLetterTemplateOrm.updated_at.desc()
             )
-            return list(session.scalars(stmt).all())
+            return [_to_domain(r) for r in session.scalars(stmt).all()]
 
-    def get(self, id: uuid.UUID) -> CoverLetterTemplateOrm | None:
+    def get(self, id: uuid.UUID) -> CoverLetterTemplate | None:
         with self._session_factory() as session:
-            return session.get(CoverLetterTemplateOrm, id)
+            row = session.get(CoverLetterTemplateOrm, id)
+            return _to_domain(row) if row is not None else None
 
-    def create(self, template: CoverLetterTemplateOrm) -> CoverLetterTemplateOrm:
+    def create(
+        self,
+        *,
+        name: str,
+        tone: str,
+        language: str,
+        opening: str,
+        body: str,
+        signature: str,
+    ) -> CoverLetterTemplate:
         with self._session_factory() as session:
-            session.add(template)
+            row = CoverLetterTemplateOrm(
+                name=name,
+                tone=tone,
+                language=language,
+                opening=opening,
+                body=body,
+                signature=signature,
+            )
+            session.add(row)
             session.commit()
-            session.refresh(template)
-            return template
+            session.refresh(row)
+            return _to_domain(row)
 
-    def update(
-        self, id: uuid.UUID, fields: dict[str, Any]
-    ) -> CoverLetterTemplateOrm | None:
+    def update(self, id: uuid.UUID, fields: dict[str, Any]) -> CoverLetterTemplate | None:
         with self._session_factory() as session:
             row = session.get(CoverLetterTemplateOrm, id)
             if row is None:
@@ -42,7 +73,7 @@ class CoverLetterTemplateRepository:
                     setattr(row, key, value)
             session.commit()
             session.refresh(row)
-            return row
+            return _to_domain(row)
 
     def delete(self, id: uuid.UUID) -> bool:
         with self._session_factory() as session:

@@ -4,6 +4,8 @@ import { DatePipe, TitleCasePipe } from '@angular/common';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { ApplicationListItem } from './models/application-list-item.model';
 import { ApplicationCreateDialogComponent } from './components/application-create-dialog.component';
+import { scoreColor as toScoreColor } from '../../core/utils/score-color';
+import { formatScorePercent } from '../../core/utils/format-score-percent';
 
 @Component({
   selector: 'app-applications',
@@ -55,15 +57,11 @@ export class ApplicationsComponent implements OnInit {
   }
 
   scoreColor(score: number | null): string {
-    if (score === null) return '#9ca3af';
-    if (score >= 0.7) return '#16a34a';
-    if (score >= 0.4) return '#ca8a04';
-    return '#dc2626';
+    return toScoreColor(score);
   }
 
   scorePct(score: number | null): string {
-    if (score === null) return '—';
-    return (score * 100).toFixed(0) + '%';
+    return formatScorePercent(score);
   }
 
   remove(app: ApplicationListItem, event: MouseEvent): void {

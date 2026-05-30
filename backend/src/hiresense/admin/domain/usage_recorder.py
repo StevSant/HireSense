@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from hiresense.admin.infrastructure.llm_usage_log_repository import LLMUsageLogRepository
+from hiresense.admin.ports import LLMUsageLogRepositoryPort
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ class UsageRecorder:
     usage row is preferable to failing the user's LLM call.
     """
 
-    def __init__(self, repo: LLMUsageLogRepository) -> None:
+    def __init__(self, repo: LLMUsageLogRepositoryPort) -> None:
         self._repo = repo
 
     def record(

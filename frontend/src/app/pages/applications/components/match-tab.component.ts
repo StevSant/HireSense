@@ -2,6 +2,8 @@ import { Component, computed, inject, input, output, signal } from '@angular/cor
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
 import { SkillChipsComponent } from './skill-chips.component';
+import { scoreColor as toScoreColor } from '../../../core/utils/score-color';
+import { formatScorePercent } from '../../../core/utils/format-score-percent';
 
 @Component({
   selector: 'app-match-tab',
@@ -23,13 +25,11 @@ export class MatchTabComponent {
   match = computed(() => this.aggregate().latest_match);
 
   pct(score: number): string {
-    return (score * 100).toFixed(0);
+    return formatScorePercent(score, false);
   }
 
   color(score: number): string {
-    if (score >= 0.7) return '#16a34a';
-    if (score >= 0.4) return '#ca8a04';
-    return '#dc2626';
+    return toScoreColor(score);
   }
 
   run(): void {

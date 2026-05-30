@@ -36,6 +36,14 @@ class NormalizedJob(BaseModel):
     countries: list[str] = Field(default_factory=list)
     match_score: float | None = None
     semantic_score: float | None = None
+    # Transient, per-request LLM scoring (populated by the quick scorer in the
+    # list endpoint; not persisted on the job row — the durable store is the
+    # job_match_cache table). `match_score` above mirrors `llm_score` when an
+    # LLM score is available, else the heuristic skill+semantic blend.
+    llm_score: float | None = None
+    verdict: str | None = None
+    reasons: list[str] = Field(default_factory=list)
+    dealbreakers: list[str] = Field(default_factory=list)
 
     def dedup_key(self) -> str:
         raw = f"{self.source}:{self.title.lower().strip()}:{self.company.lower().strip()}:{self.url}"

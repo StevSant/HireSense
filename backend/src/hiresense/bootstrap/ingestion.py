@@ -1,0 +1,176 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import hiresense
+from hiresense.ingestion.adapters import (
+    AshbyAdapter,
+    CSVImportAdapter,
+    GetOnBoardAdapter,
+    GreenhouseAdapter,
+    HimalayasAdapter,
+    HNHiringAdapter,
+    JobicyAdapter,
+    LeverAdapter,
+    LinkedInAdapter,
+    RemoteOKAdapter,
+    RemotiveAdapter,
+    WeWorkRemotelyAdapter,
+)
+from hiresense.ingestion.api.provider import IngestionProvider
+from hiresense.ingestion.domain import IngestionOrchestrator, PortalScanner, load_portals_config
+from hiresense.ingestion.domain.normalizers import (
+    AshbyNormalizer,
+    CSVNormalizer,
+    GetOnBoardNormalizer,
+    GreenhouseNormalizer,
+    HimalayasNormalizer,
+    HNHiringNormalizer,
+    JobicyNormalizer,
+    LeverNormalizer,
+    LinkedInNormalizer,
+    RemoteOKNormalizer,
+    RemotiveNormalizer,
+    WeWorkRemotelyNormalizer,
+)
+from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
+from hiresense.ingestion.infrastructure import JobMatchCacheRepository, JobsRepository
+from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
+from hiresense.bootstrap.shared_infra import SharedInfra
+
+
+@dataclass(frozen=True)
+class IngestionBuild:
+    provider: IngestionProvider
+    orchestrator: IngestionOrchestrator
+
+
+def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any]) -> IngestionBuild:
+    s = infra.settings
+    http_client = infra.http_client
+
+    sources = []
+    normalizers = {}
+    for source_name in s.enabled_job_sources:
+        if source_name == "remotive":
+            sources.append(RemotiveAdapter(http_client=http_client))
+            normalizers["remotive"] = RemotiveNormalizer()
+        elif source_name == "remoteok":
+            sources.append(RemoteOKAdapter(http_client=http_client))
+            normalizers["remoteok"] = RemoteOKNormalizer()
+        elif source_name == "csv":
+            sources.append(CSVImportAdapter())
+            normalizers["csv"] = CSVNormalizer()
+        elif source_name == "jobicy":
+            sources.append(JobicyAdapter(http_client=http_client, base_url=s.jobicy_api_url))
+            normalizers["jobicy"] = JobicyNormalizer()
+        elif source_name == "himalayas":
+            sources.append(HimalayasAdapter(http_client=http_client, base_url=s.himalayas_api_url))
+            normalizers["himalayas"] = HimalayasNormalizer()
+        elif source_name == "hn_hiring":
+            sources.append(HNHiringAdapter(http_client=http_client, base_url=s.hn_algolia_api_url))
+            normalizers["hn_hiring"] = HNHiringNormalizer()
+        elif source_name == "weworkremotely":
+            sources.append(
+                WeWorkRemotelyAdapter(http_client=http_client, rss_url=s.weworkremotely_rss_url)
+            )
+            normalizers["weworkremotely"] = WeWorkRemotelyNormalizer()
+        elif source_name == "getonboard":
+            sources.append(
+                GetOnBoardAdapter(
+                    http_client=http_client,
+                    base_url=s.getonboard_api_url,
+                    categories=s.getonboard_categories,
+                )
+            )
+            normalizers["getonboard"] = GetOnBoardNormalizer()
+        elif source_name == "linkedin":
+            sources.append(
+                LinkedInAdapter(
+                    http_client=http_client,
+                    base_url=s.linkedin_jobs_url,
+                    detail_concurrency=s.linkedin_detail_concurrency,
+                    detail_delay=s.linkedin_detail_delay,
+                )
+            )
+            normalizers["linkedin"] = LinkedInNormalizer()
+
+    boards_jobs_repo = JobsRepository(session_factory=infra.sync_session_factory, bucket="boards")
+    portals_jobs_repo = JobsRepository(session_factory=infra.sync_session_factory, bucket="portals")
+
+    ingestion_orchestrator = IngestionOrchestrator(
+        sources=sources,
+        normalizers=normalizers,
+        event_bus=infra.event_bus,
+        cooldown_seconds=s.ingestion_cooldown_seconds,
+        repository=boards_jobs_repo,
+        retention_days=s.ingestion_job_retention_days,
+    )
+
+    # Resolve the portals config relative to the hiresense package root (not
+    # this module), preserving the original create_app() behaviour.
+    portals_config_path = Path(hiresense.__file__).parent / s.portals_config_path
+    portals_config = load_portals_config(portals_config_path)
+
+    portal_adapters = {
+        "greenhouse": GreenhouseAdapter(
+            http_client=http_client,
+            base_url=s.greenhouse_api_url,
+            timeout=s.portal_scan_timeout,
+        ),
+        "lever": LeverAdapter(
+            http_client=http_client,
+            base_url=s.lever_api_url,
+            timeout=s.portal_scan_timeout,
+        ),
+        "ashby": AshbyAdapter(
+            http_client=http_client,
+            base_url=s.ashby_api_url,
+            timeout=s.portal_scan_timeout,
+        ),
+    }
+
+    portal_normalizers = {
+        "greenhouse": GreenhouseNormalizer(),
+        "lever": LeverNormalizer(),
+        "ashby": AshbyNormalizer(),
+    }
+
+    portal_scanner = PortalScanner(
+        config=portals_config,
+        adapters=portal_adapters,
+        normalizers=portal_normalizers,
+        event_bus=infra.event_bus,
+        repository=portals_jobs_repo,
+        retention_days=s.ingestion_job_retention_days,
+    )
+
+    from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
+
+    semantic_scoring = SemanticScoringService(embedding_port=infra.embedding)
+
+    match_cache_repo = JobMatchCacheRepository(session_factory=infra.sync_session_factory)
+    quick_scoring = QuickScoringService(
+        llm=tracked("match_quick_scorer"),
+        cache_repo=match_cache_repo,
+        batch_size=s.match_quick_batch_size,
+        job_char_limit=s.match_quick_job_char_limit,
+    )
+    deep_analysis = DeepAnalysisService(
+        llm=tracked("match_deep_analyzer"),
+        cache_repo=match_cache_repo,
+        job_char_limit=s.match_deep_job_char_limit,
+    )
+
+    provider = IngestionProvider(
+        orchestrator=ingestion_orchestrator,
+        portal_scanner=portal_scanner,
+        portals_config=portals_config,
+        semantic_scoring=semantic_scoring,
+        quick_scoring=quick_scoring,
+        deep_analysis=deep_analysis,
+    )
+    return IngestionBuild(provider=provider, orchestrator=ingestion_orchestrator)

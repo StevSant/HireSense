@@ -169,9 +169,21 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any]) -> Ingest
         indexer=portals_indexer,
     )
 
+    from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
     from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
 
     semantic_scoring = SemanticScoringService(embedding_port=infra.embedding)
+
+    # SemanticPreRanker wires vector store + embedding for global ANN pre-ranking.
+    # When vector store is None (no pgvector configured), pre_ranker is still
+    # constructed — its own passthrough logic handles the None vector_store case.
+    pre_ranker = SemanticPreRanker(
+        infra.vector_store,
+        infra.embedding,
+        top_k_cap=s.prerank_top_k_cap,
+        skill_weight=s.prerank_weight_skill,
+        semantic_weight=s.prerank_weight_semantic,
+    )
 
     match_cache_repo = JobMatchCacheRepository(session_factory=infra.sync_session_factory)
     quick_scoring = QuickScoringService(
@@ -193,5 +205,6 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any]) -> Ingest
         semantic_scoring=semantic_scoring,
         quick_scoring=quick_scoring,
         deep_analysis=deep_analysis,
+        pre_ranker=pre_ranker,
     )
     return IngestionBuild(provider=provider, orchestrator=ingestion_orchestrator)

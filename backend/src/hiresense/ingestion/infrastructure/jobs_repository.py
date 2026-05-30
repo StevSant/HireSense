@@ -113,29 +113,28 @@ class JobsRepository:
             session.commit()
 
     def bulk_update_scores(self, updates: list[ScoreUpdate]) -> None:
-        """Persist score updates for multiple jobs in a single DB round-trip.
+        """Persist score updates for multiple jobs in a single executemany round-trip.
 
-        Issues one UPDATE … WHERE id IN (…) statement per non-empty batch.
-        Bucket-scoped: only rows belonging to this instance's bucket are
-        touched. Unknown IDs produce no rows in the WHERE clause and are
-        silently ignored. An empty list is a no-op (no DB call at all).
+        Issues a single bulk UPDATE keyed by primary key via SQLAlchemy ORM
+        executemany — one session, one commit. Both score fields (including
+        None values) are written as supplied; partial-None updates are
+        intentional and overwrite the stored value. Unknown IDs are silently
+        ignored by the DB engine. An empty list is a no-op (no DB call at all).
         """
         if not updates:
             return
         with self._session_factory() as session:
-            for su in updates:
-                stmt = (
-                    update(IngestedJob)
-                    .where(
-                        IngestedJob.id == su.job_id,
-                        IngestedJob.bucket == self._bucket,
-                    )
-                    .values(
-                        match_score=su.match_score,
-                        semantic_score=su.semantic_score,
-                    )
-                )
-                session.execute(stmt)
+            session.execute(
+                update(IngestedJob),
+                [
+                    {
+                        "id": su.job_id,
+                        "match_score": su.match_score,
+                        "semantic_score": su.semantic_score,
+                    }
+                    for su in updates
+                ],
+            )
             session.commit()
 
     def prune_older_than(self, cutoff: datetime) -> int:

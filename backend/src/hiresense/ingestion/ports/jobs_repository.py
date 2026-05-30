@@ -44,9 +44,9 @@ class JobsRepositoryPort(Protocol):
         """Persist score updates for multiple jobs in a single batched write.
 
         Unknown IDs are silently ignored. An empty list is a no-op.
-        Implementations MUST use a single I/O round-trip (one UPDATE…WHERE id IN
-        for SQL, a loop over in-memory dict for test doubles) — never N individual
-        get+set cycles.
+        SQL implementations MUST use a single executemany bulk UPDATE keyed by
+        primary key (one session, one commit) — never N individual UPDATE
+        statements. In-memory implementations iterate the dict in a single pass.
         """
         ...
 

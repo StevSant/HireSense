@@ -21,7 +21,12 @@ from hiresense.ingestion.adapters import (
     WeWorkRemotelyAdapter,
 )
 from hiresense.ingestion.api.provider import IngestionProvider
-from hiresense.ingestion.domain import IngestionOrchestrator, PortalScanner, load_portals_config
+from hiresense.ingestion.domain import (
+    IngestionOrchestrator,
+    JobEmbeddingIndexer,
+    PortalScanner,
+    load_portals_config,
+)
 from hiresense.ingestion.domain.normalizers import (
     AshbyNormalizer,
     CSVNormalizer,
@@ -101,6 +106,20 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any]) -> Ingest
     boards_jobs_repo = JobsRepository(session_factory=infra.sync_session_factory, bucket="boards")
     portals_jobs_repo = JobsRepository(session_factory=infra.sync_session_factory, bucket="portals")
 
+    # Persist embeddings of newly ingested jobs into the vector store (when one is
+    # configured) so semantic search survives restarts. Per-bucket so search can
+    # filter by tab. None when no vector store is wired (e.g. tests) → no-op.
+    boards_indexer = (
+        JobEmbeddingIndexer(infra.embedding, infra.vector_store, bucket="boards")
+        if infra.vector_store is not None
+        else None
+    )
+    portals_indexer = (
+        JobEmbeddingIndexer(infra.embedding, infra.vector_store, bucket="portals")
+        if infra.vector_store is not None
+        else None
+    )
+
     ingestion_orchestrator = IngestionOrchestrator(
         sources=sources,
         normalizers=normalizers,
@@ -108,6 +127,7 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any]) -> Ingest
         cooldown_seconds=s.ingestion_cooldown_seconds,
         repository=boards_jobs_repo,
         retention_days=s.ingestion_job_retention_days,
+        indexer=boards_indexer,
     )
 
     # Resolve the portals config relative to the hiresense package root (not
@@ -146,6 +166,7 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any]) -> Ingest
         event_bus=infra.event_bus,
         repository=portals_jobs_repo,
         retention_days=s.ingestion_job_retention_days,
+        indexer=portals_indexer,
     )
 
     from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService

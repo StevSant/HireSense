@@ -59,6 +59,11 @@ class Settings(BaseSettings):
     llm_settings_encryption_key: str = ""
     embedding_model: str = "all-mpnet-base-v2"
     embedding_device: str = "cpu"
+    # Embedding vector dimension — must match the model above (all-mpnet-base-v2
+    # produces 768-dim vectors). The pgvector column and ANN index are sized to
+    # this; changing the model means changing this and re-running the embedding
+    # migration/backfill.
+    embedding_dim: int = 768
 
     # Vector Store
     vector_store_provider: str = "pgvector"

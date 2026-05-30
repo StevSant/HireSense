@@ -1,0 +1,55 @@
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from hiresense.ingestion.domain.models import NormalizedJob
+
+logger = logging.getLogger(__name__)
+
+_JOB_TEXT_CHAR_LIMIT = 4000
+
+
+def _job_text(job: NormalizedJob) -> str:
+    parts = [job.title, " ".join(job.skills), job.description]
+    return "\n".join(p for p in parts if p)[:_JOB_TEXT_CHAR_LIMIT]
+
+
+class JobEmbeddingIndexer:
+    """Embeds newly ingested jobs and upserts them into the vector store.
+
+    Wired per bucket ("boards" / "portals") so semantic search can filter by tab
+    via the stored metadata. Embedding/upsert failures are logged, never raised —
+    a missing embedding must not fail ingestion. Returns the count actually
+    indexed so callers can surface coverage (no silent drops).
+    """
+
+    def __init__(self, embedding: Any, vector_store: Any, *, bucket: str) -> None:
+        self._embedding = embedding
+        self._vector_store = vector_store
+        self._bucket = bucket
+
+    async def index(self, jobs: list[NormalizedJob]) -> int:
+        if not jobs:
+            return 0
+        texts = [_job_text(j) for j in jobs]
+        try:
+            vectors = await self._embedding.embed(texts)
+        except Exception:
+            logger.exception("Job embedding batch failed (size=%d)", len(jobs))
+            return 0
+
+        indexed = 0
+        for job, vec in zip(jobs, vectors):
+            if not vec:
+                continue
+            try:
+                await self._vector_store.upsert(
+                    job.id,
+                    vec,
+                    {"bucket": self._bucket, "source": job.source},
+                )
+                indexed += 1
+            except Exception:
+                logger.exception("Vector upsert failed for job %s", job.id)
+        return indexed

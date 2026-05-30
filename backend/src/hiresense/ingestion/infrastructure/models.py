@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, Index, JSON, String, Text, UniqueConstraint, func
+from sqlalchemy import DateTime, Float, Index, Integer, JSON, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from hiresense.infrastructure.database import Base
@@ -14,6 +14,7 @@ class IngestedJob(Base):
         UniqueConstraint("bucket", "dedup_key", name="ux_ingested_jobs_bucket_dedup"),
         Index("ix_ingested_jobs_bucket_fetched_at", "bucket", "fetched_at"),
         Index("ix_ingested_jobs_source", "source"),
+        Index("ix_ingested_jobs_bucket_status_checked", "bucket", "status", "last_checked_at"),
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -42,3 +43,20 @@ class IngestedJob(Base):
     fetched_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+    identity_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    status: Mapped[str] = mapped_column(String(10), nullable=False, default="open", server_default="open")
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False, default="", server_default="")
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    last_checked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    closed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    missed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")

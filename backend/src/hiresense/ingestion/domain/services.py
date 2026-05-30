@@ -9,6 +9,7 @@ from typing import Any
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.normalizer import JobNormalizer
 from hiresense.ingestion.ports import JobsRepositoryPort
+from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
 from hiresense.kernel.events import JobsIngestedEvent
 
 logger = logging.getLogger(__name__)
@@ -107,6 +108,14 @@ class IngestionOrchestrator:
         semantic_score: float | None,
     ) -> None:
         self._repository.update_scores(job_id, match_score, semantic_score)
+
+    def persist_scores_batch(self, updates: list[ScoreUpdate]) -> None:
+        """Persist score updates for multiple jobs in a single batched write.
+
+        Delegates directly to repo.bulk_update_scores so the call site
+        executes one I/O round-trip regardless of corpus size.
+        """
+        self._repository.bulk_update_scores(updates)
 
     def _prune_expired(self) -> None:
         if not self._retention_days or self._retention_days <= 0:

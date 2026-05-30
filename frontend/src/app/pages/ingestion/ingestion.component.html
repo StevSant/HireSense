@@ -105,8 +105,16 @@
     <div class="loading-card">
       <div class="spinner"></div>
       <div class="loading-text">
-        <h3>{{ scanning() ? 'Scanning portals...' : 'Loading jobs...' }}</h3>
-        <p>Pulling from configured sources. This may take a moment.</p>
+        @if (scanning()) {
+          <h3>Scanning portals...</h3>
+          <p>Pulling from configured company career pages. This may take a moment.</p>
+        } @else if (fetching()) {
+          <h3>Fetching new jobs...</h3>
+          <p>Pulling from configured job boards. This may take a moment.</p>
+        } @else {
+          <h3>Loading saved jobs...</h3>
+          <p>Showing jobs already in your library — scoring them for your profile.</p>
+        }
       </div>
     </div>
   }
@@ -172,8 +180,14 @@
                 <a [href]="job.url" target="_blank" class="link" (click)="$event.stopPropagation()">View</a>
                 @if (isTracked(job.id)) {
                   <button class="btn-tracked" disabled (click)="$event.stopPropagation()">Tracked</button>
+                } @else if (isTracking(job.id)) {
+                  <button class="btn-track" disabled (click)="$event.stopPropagation()">Tracking…</button>
                 } @else {
-                  <button (click)="trackJob(job.id); $event.stopPropagation()" class="btn-track">Track</button>
+                  <button
+                    (click)="trackJob(job.id); $event.stopPropagation()"
+                    [disabled]="trackingJobId() !== null"
+                    class="btn-track"
+                  >Track</button>
                 }
               </td>
             </tr>
@@ -207,6 +221,7 @@
   <app-job-detail-panel
     [job]="selectedJob()!"
     [tracked]="isTracked(selectedJob()!.id)"
+    [tracking]="isTracking(selectedJob()!.id)"
     (close)="closeDetail()"
     (track)="trackJob($event)"
   />

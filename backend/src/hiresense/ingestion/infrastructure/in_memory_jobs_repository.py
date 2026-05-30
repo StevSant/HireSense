@@ -52,14 +52,14 @@ class InMemoryJobsRepository:
 
         Unknown IDs are silently skipped; an empty list is a no-op.
         """
-        for update in updates:
-            job = self._jobs.get(update.job_id)
+        for score_update in updates:
+            job = self._jobs.get(score_update.job_id)
             if job is None:
                 continue
-            self._jobs[update.job_id] = job.model_copy(
+            self._jobs[score_update.job_id] = job.model_copy(
                 update={
-                    "match_score": update.match_score,
-                    "semantic_score": update.semantic_score,
+                    "match_score": score_update.match_score,
+                    "semantic_score": score_update.semantic_score,
                 }
             )
 

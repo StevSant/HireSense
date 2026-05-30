@@ -10,7 +10,6 @@ from hiresense.admin.domain import (
     LLMFactory,
     LLMSettingsService,
     LLMTestRunner,
-    TrackedLLMAdapter,
     UsageAggregator,
     UsageRecorder,
 )
@@ -22,12 +21,13 @@ from hiresense.admin.infrastructure import (
 )
 from hiresense.bootstrap.shared_infra import SharedInfra
 from hiresense.bootstrap.tracked_factory import make_tracked
+from hiresense.ports import LLMPort
 
 
 @dataclass(frozen=True)
 class AdminBuild:
     provider: AdminProvider
-    tracked: Callable[[str], TrackedLLMAdapter | None]
+    tracked: Callable[[str], LLMPort | None]
 
 
 def build_admin(infra: SharedInfra) -> AdminBuild:

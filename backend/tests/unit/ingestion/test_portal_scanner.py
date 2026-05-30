@@ -10,6 +10,7 @@ from hiresense.ingestion.domain.portal_scanner import (
     PortalScanner,
     ScanFilters,
 )
+from hiresense.ingestion.infrastructure import InMemoryJobsRepository
 from hiresense.kernel.events import DomainEvent
 
 
@@ -93,7 +94,13 @@ async def test_scan_all_portals() -> None:
     normalizers = {"greenhouse": FakeNormalizer(), "lever": FakeNormalizer()}
     bus = FakeEventBus()
 
-    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    scanner = PortalScanner(
+        config=config,
+        adapters=adapters,
+        normalizers=normalizers,
+        event_bus=bus,
+        repository=InMemoryJobsRepository(),
+    )
     result = await scanner.scan(ScanFilters())
 
     assert result.total_fetched == 2
@@ -120,7 +127,13 @@ async def test_scan_filters_by_category() -> None:
     normalizers = {"greenhouse": FakeNormalizer(), "lever": FakeNormalizer()}
     bus = FakeEventBus()
 
-    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    scanner = PortalScanner(
+        config=config,
+        adapters=adapters,
+        normalizers=normalizers,
+        event_bus=bus,
+        repository=InMemoryJobsRepository(),
+    )
     result = await scanner.scan(ScanFilters(categories=["engineering"]))
 
     assert result.new == 1
@@ -143,7 +156,13 @@ async def test_scan_filters_by_company() -> None:
     normalizers = {"greenhouse": FakeNormalizer(), "lever": FakeNormalizer()}
     bus = FakeEventBus()
 
-    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    scanner = PortalScanner(
+        config=config,
+        adapters=adapters,
+        normalizers=normalizers,
+        event_bus=bus,
+        repository=InMemoryJobsRepository(),
+    )
     result = await scanner.scan(ScanFilters(companies=["CompanyA"]))
 
     assert result.new == 1
@@ -164,7 +183,13 @@ async def test_scan_deduplicates() -> None:
     normalizers = {"greenhouse": FakeNormalizer("Engineer", "Acme", "https://example.com/1")}
     bus = FakeEventBus()
 
-    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    scanner = PortalScanner(
+        config=config,
+        adapters=adapters,
+        normalizers=normalizers,
+        event_bus=bus,
+        repository=InMemoryJobsRepository(),
+    )
     result = await scanner.scan(ScanFilters())
 
     assert result.total_fetched == 2
@@ -188,7 +213,13 @@ async def test_scan_collects_errors() -> None:
     normalizers = {"greenhouse": FakeNormalizer(), "lever": FakeNormalizer()}
     bus = FakeEventBus()
 
-    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    scanner = PortalScanner(
+        config=config,
+        adapters=adapters,
+        normalizers=normalizers,
+        event_bus=bus,
+        repository=InMemoryJobsRepository(),
+    )
     result = await scanner.scan(ScanFilters())
 
     assert result.new == 1
@@ -211,7 +242,13 @@ async def test_scan_publishes_event_when_jobs_found() -> None:
     normalizers = {"greenhouse": FakeNormalizer()}
     bus = FakeEventBus()
 
-    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    scanner = PortalScanner(
+        config=config,
+        adapters=adapters,
+        normalizers=normalizers,
+        event_bus=bus,
+        repository=InMemoryJobsRepository(),
+    )
     result = await scanner.scan(ScanFilters())
 
     assert result.new == 1
@@ -234,7 +271,13 @@ async def test_scan_no_event_when_no_new_jobs() -> None:
     normalizers = {"greenhouse": FakeNormalizer()}
     bus = FakeEventBus()
 
-    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    scanner = PortalScanner(
+        config=config,
+        adapters=adapters,
+        normalizers=normalizers,
+        event_bus=bus,
+        repository=InMemoryJobsRepository(),
+    )
     result = await scanner.scan(ScanFilters())
 
     assert result.new == 0
@@ -255,7 +298,13 @@ async def test_scan_filters_by_keyword() -> None:
     normalizers = {"greenhouse": FakeNormalizer()}
     bus = FakeEventBus()
 
-    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    scanner = PortalScanner(
+        config=config,
+        adapters=adapters,
+        normalizers=normalizers,
+        event_bus=bus,
+        repository=InMemoryJobsRepository(),
+    )
     result = await scanner.scan(ScanFilters(keyword="engineer"))
 
     assert result.total_fetched == 2
@@ -276,7 +325,13 @@ async def test_scan_stores_jobs_internally() -> None:
     normalizers = {"greenhouse": FakeNormalizer()}
     bus = FakeEventBus()
 
-    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    scanner = PortalScanner(
+        config=config,
+        adapters=adapters,
+        normalizers=normalizers,
+        event_bus=bus,
+        repository=InMemoryJobsRepository(),
+    )
     assert scanner.list_jobs() == []
 
     await scanner.scan(ScanFilters())
@@ -298,7 +353,13 @@ async def test_scan_sets_platform_and_categories() -> None:
     normalizers = {"greenhouse": FakeNormalizer()}
     bus = FakeEventBus()
 
-    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    scanner = PortalScanner(
+        config=config,
+        adapters=adapters,
+        normalizers=normalizers,
+        event_bus=bus,
+        repository=InMemoryJobsRepository(),
+    )
     result = await scanner.scan(ScanFilters())
 
     assert result.jobs[0].source == "Acme"
@@ -321,7 +382,13 @@ async def test_scan_skips_disabled_portals() -> None:
     normalizers = {"greenhouse": FakeNormalizer(), "lever": FakeNormalizer()}
     bus = FakeEventBus()
 
-    scanner = PortalScanner(config=config, adapters=adapters, normalizers=normalizers, event_bus=bus)
+    scanner = PortalScanner(
+        config=config,
+        adapters=adapters,
+        normalizers=normalizers,
+        event_bus=bus,
+        repository=InMemoryJobsRepository(),
+    )
     result = await scanner.scan(ScanFilters())
 
     assert result.new == 1

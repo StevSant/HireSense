@@ -17,7 +17,6 @@ from hiresense.admin.domain.llm_test_runner import LLMTestRunner, TestResult
 from hiresense.admin.domain.masking import mask_api_key
 from hiresense.admin.domain.pricing import DEFAULT_PRICING, ModelPricing, estimate_cost_usd
 from hiresense.admin.domain.resolved_config import ResolvedConfig
-from hiresense.admin.domain.tracked_llm_adapter import TrackedLLMAdapter
 from hiresense.admin.domain.usage_aggregator import DashboardSummary, UsageAggregator
 from hiresense.admin.domain.usage_recorder import UsageRecorder
 
@@ -38,7 +37,6 @@ __all__ = [
     "ModelPricing",
     "ResolvedConfig",
     "TestResult",
-    "TrackedLLMAdapter",
     "UnsupportedProviderError",
     "UsageAggregator",
     "UsageRecorder",

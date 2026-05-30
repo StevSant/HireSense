@@ -15,6 +15,8 @@ class RawJobListing(BaseModel):
 
 class NormalizedJob(BaseModel):
     id: str
+    source_id: str | None = None
+    status: str = "open"
     title: str
     company: str
     description: str

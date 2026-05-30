@@ -63,8 +63,11 @@ class FakeVectorStore:
 class FakeEmbeddingPort:
     """Fake embedding port that returns canned vectors."""
 
+    _SENTINEL: list[list[float]] = [[0.1, 0.2, 0.3]]
+
     def __init__(self, vectors: list[list[float]] | None = None, raises: Exception | None = None) -> None:
-        self._vectors = vectors or [[0.1, 0.2, 0.3]]
+        # Use sentinel to distinguish "not provided" from an explicit empty list
+        self._vectors = self._SENTINEL if vectors is None else vectors
         self._raises = raises
         self.embed_call_count = 0
 
@@ -424,3 +427,47 @@ class TestSemanticPreRankerWeights:
         )
 
         assert result[0].id == "a"
+
+
+class TestSemanticPreRankerEmptyEmbedding:
+    """Guard: empty vector from embedding port → passthrough, no vector store call."""
+
+    @pytest.mark.asyncio
+    async def test_passthrough_when_embedding_returns_empty_vector(self) -> None:
+        """Embedding port returns [[]] (list with one empty vector) → passthrough, no search."""
+        jobs = [_job("a"), _job("b")]
+        skill_by_id = {"a": 0.5, "b": 0.8}
+        vs = FakeVectorStore(results=[ScoredResult(id="a", score=0.9, metadata={})])
+        emb = FakeEmbeddingPort(vectors=[[]])  # returns a single empty vector
+        ranker = SemanticPreRanker(vs, emb, top_k_cap=100, skill_weight=0.4, semantic_weight=0.6)
+
+        result = await ranker.rerank(
+            jobs=jobs,
+            skill_by_id=skill_by_id,
+            candidate_skills=PROFILE_SKILLS,
+            candidate_summary=PROFILE_SUMMARY,
+            bucket="boards",
+        )
+
+        assert [j.id for j in result] == ["a", "b"]
+        assert vs.last_call is None  # vector_store.search() must NOT have been called
+
+    @pytest.mark.asyncio
+    async def test_passthrough_when_embedding_returns_empty_list(self) -> None:
+        """Embedding port returns [] (fully empty list) → passthrough, no search."""
+        jobs = [_job("a"), _job("b")]
+        skill_by_id = {"a": 0.5, "b": 0.8}
+        vs = FakeVectorStore(results=[ScoredResult(id="a", score=0.9, metadata={})])
+        emb = FakeEmbeddingPort(vectors=[])  # returns empty list (no vectors at all)
+        ranker = SemanticPreRanker(vs, emb, top_k_cap=100, skill_weight=0.4, semantic_weight=0.6)
+
+        result = await ranker.rerank(
+            jobs=jobs,
+            skill_by_id=skill_by_id,
+            candidate_skills=PROFILE_SKILLS,
+            candidate_summary=PROFILE_SUMMARY,
+            bucket="boards",
+        )
+
+        assert [j.id for j in result] == ["a", "b"]
+        assert vs.last_call is None

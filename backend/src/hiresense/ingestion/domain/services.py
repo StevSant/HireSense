@@ -28,17 +28,13 @@ class IngestionOrchestrator:
         sources: list[Any],
         normalizers: dict[str, JobNormalizer],
         event_bus: Any,
+        repository: JobsRepositoryPort,
         cooldown_seconds: int = 300,
-        repository: JobsRepositoryPort | None = None,
         retention_days: int | None = None,
     ) -> None:
         self._sources = sources
         self._normalizers = normalizers
         self._event_bus = event_bus
-        if repository is None:
-            from hiresense.ingestion.infrastructure import InMemoryJobsRepository
-
-            repository = InMemoryJobsRepository()
         self._repository: JobsRepositoryPort = repository
         self._cooldown_seconds = cooldown_seconds
         self._retention_days = retention_days

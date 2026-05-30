@@ -4,10 +4,7 @@ import enum
 import uuid as uuid_mod
 from datetime import datetime
 
-from sqlalchemy import DateTime, Index, String, Text, Uuid, event, func
-from sqlalchemy.orm import Mapped, mapped_column
-
-from hiresense.infrastructure.database import Base
+from pydantic import BaseModel
 
 
 class ApplicationStatus(str, enum.Enum):
@@ -19,36 +16,18 @@ class ApplicationStatus(str, enum.Enum):
     REJECTED = "rejected"
 
 
-class TrackedApplication(Base):
-    __tablename__ = "tracked_applications"
-    __table_args__ = (
-        Index("ix_tracked_applications_status", "status"),
-        Index("ix_tracked_applications_job_id", "job_id"),
-    )
+class TrackedApplication(BaseModel):
+    """A job application the candidate is tracking (pure domain model)."""
 
-    id: Mapped[uuid_mod.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid_mod.uuid4
-    )
-    job_id: Mapped[uuid_mod.UUID | None] = mapped_column(Uuid, nullable=True)
-    title: Mapped[str] = mapped_column(String(255))
-    company: Mapped[str] = mapped_column(String(255))
-    url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
-    status: Mapped[ApplicationStatus] = mapped_column(
-        String(20), default=ApplicationStatus.SAVED
-    )
-    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    applied_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    created_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    updated_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
+    id: uuid_mod.UUID | None = None
+    job_id: uuid_mod.UUID | None = None
+    title: str
+    company: str
+    url: str | None = None
+    status: str = ApplicationStatus.SAVED.value
+    notes: str | None = None
+    applied_at: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
-
-@event.listens_for(TrackedApplication, "init")
-def _set_defaults(target: TrackedApplication, args: tuple, kwargs: dict) -> None:
-    if "status" not in kwargs:
-        target.status = ApplicationStatus.SAVED
+    model_config = {"from_attributes": True}

@@ -5,6 +5,7 @@ import pytest
 from hiresense.adapters.event_bus.in_memory_bus import InMemoryEventBus
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.ingestion.infrastructure import InMemoryJobsRepository
 from hiresense.kernel.events import DomainEvent
 from hiresense.kernel.value_objects import SourceType
 
@@ -64,6 +65,7 @@ async def test_orchestrator_fetches_and_publishes() -> None:
         sources=[FakeJobSource()],
         normalizers=normalizers,
         event_bus=bus,
+        repository=InMemoryJobsRepository(),
     )
     result = await orchestrator.run()
     assert len(result) == 1

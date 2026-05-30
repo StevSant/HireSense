@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from hiresense.profile.domain.latex_parser import LaTeXParser, ParsedCV
-from hiresense.profile.domain.models import CandidateProfile, CVSection, Profile
+from hiresense.profile.domain.models import CandidateProfile, CVSection
 from hiresense.profile.domain.profile_language_view import ProfileLanguageView
 from hiresense.profile.domain.skill_extractor import SkillExtractor
 
@@ -61,8 +61,7 @@ class ProfileService:
         )
 
         if self._repository is not None:
-            orm_profile = self._to_orm(profile)
-            self._repository.create(orm_profile)
+            self._repository.create(profile)
         else:
             self._profiles[profile.id] = profile
 
@@ -109,8 +108,7 @@ class ProfileService:
         )
 
         if self._repository is not None:
-            orm_profile = self._to_orm(profile, original_filename=filename)
-            self._repository.create(orm_profile)
+            self._repository.create(profile, original_filename=filename)
         else:
             self._profiles[profile.id] = profile
 
@@ -118,14 +116,12 @@ class ProfileService:
 
     async def get_profile(self, profile_id: str) -> CandidateProfile | None:
         if self._repository is not None:
-            orm = self._repository.get_by_id(uuid.UUID(profile_id))
-            return self._to_response(orm) if orm else None
+            return self._repository.get_by_id(uuid.UUID(profile_id))
         return self._profiles.get(profile_id)
 
     async def get_current_profile(self, language: str | None = None) -> CandidateProfile | None:
         if self._repository is not None:
-            orm = self._repository.get_latest(language=language)
-            return self._to_response(orm) if orm else None
+            return self._repository.get_latest(language=language)
         # In-memory fallback
         profiles = list(self._profiles.values())
         if language:
@@ -150,8 +146,7 @@ class ProfileService:
 
     def _get_latest_for_language_sync(self, language: str) -> CandidateProfile | None:
         if self._repository is not None:
-            orm = self._repository.get_latest(language=language)
-            return self._to_response(orm) if orm else None
+            return self._repository.get_latest(language=language)
         profiles = [p for p in self._profiles.values() if p.language == language]
         return profiles[-1] if profiles else None
 
@@ -198,10 +193,8 @@ class ProfileService:
             if shared:
                 self._repository.update_all(shared)
             if per_language:
-                orm = self._repository.update(uuid.UUID(profile_id), per_language)
-            else:
-                orm = self._repository.get_by_id(uuid.UUID(profile_id))
-            return self._to_response(orm) if orm else None
+                return self._repository.update(uuid.UUID(profile_id), per_language)
+            return self._repository.get_by_id(uuid.UUID(profile_id))
 
         # In-memory fallback (tests / legacy path)
         profile = self._profiles.get(profile_id)
@@ -218,8 +211,7 @@ class ProfileService:
     async def list_profiles(self) -> list[CandidateProfile]:
         """Return the latest profile per language (deduplicated)."""
         if self._repository is not None:
-            orms = self._repository.list_all()
-            all_profiles = [self._to_response(orm) for orm in orms]
+            all_profiles = self._repository.list_all()
         else:
             all_profiles = list(self._profiles.values())
 
@@ -239,9 +231,7 @@ class ProfileService:
         language variants don't lose the user's LinkedIn/GitHub/portfolio."""
         source: CandidateProfile | None = None
         if self._repository is not None:
-            orm = self._repository.get_latest()
-            if orm is not None:
-                source = self._to_response(orm)
+            source = self._repository.get_latest()
         else:
             profiles = list(self._profiles.values())
             source = profiles[-1] if profiles else None
@@ -263,42 +253,3 @@ class ProfileService:
         dest = originals_dir / f"{profile_id}_{safe_name}"
         dest.write_bytes(file_bytes)
         logger.info("Saved original CV to %s", dest)
-
-    def _to_orm(
-        self, profile: CandidateProfile, original_filename: str | None = None
-    ) -> Profile:
-        return Profile(
-            id=uuid.UUID(profile.id),
-            name=profile.name,
-            email=profile.email,
-            phone=profile.phone,
-            location=profile.location,
-            sections=[{"name": s.name, "content": s.content} for s in profile.sections],
-            raw_tex=profile.raw_tex,
-            language=profile.language,
-            skills=profile.skills,
-            original_filename=original_filename,
-            linkedin_url=profile.linkedin_url,
-            github_url=profile.github_url,
-            portfolio_url=profile.portfolio_url,
-        )
-
-    def _to_response(self, orm: Profile) -> CandidateProfile:
-        sections = [
-            CVSection(name=s.get("name", ""), content=s.get("content", ""))
-            for s in (orm.sections or [])
-        ]
-        return CandidateProfile(
-            id=str(orm.id),
-            name=orm.name,
-            email=orm.email,
-            phone=orm.phone,
-            location=orm.location,
-            sections=sections,
-            raw_tex=orm.raw_tex or "",
-            language=orm.language,
-            skills=orm.skills or [],
-            linkedin_url=orm.linkedin_url,
-            github_url=orm.github_url,
-            portfolio_url=orm.portfolio_url,
-        )

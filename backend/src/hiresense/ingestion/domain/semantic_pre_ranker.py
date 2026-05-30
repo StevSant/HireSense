@@ -130,9 +130,8 @@ class SemanticPreRanker:
         if not results:
             return jobs
 
-        # Build id → (score, rank) map from ANN results (already sorted best-first)
+        # Build id → score map from ANN results (already sorted best-first by pgvector)
         score_by_id: dict[str, float] = {r.id: r.score for r in results}
-        rank_by_id: dict[str, int] = {r.id: i for i, r in enumerate(results)}
 
         # Partition into indexed and unindexed sets preserving original order
         indexed: list[NormalizedJob] = []
@@ -181,5 +180,9 @@ class SemanticPreRanker:
                 return None
             if not vectors:
                 return None
-            self._profile_cache[key] = vectors[0]
-            return vectors[0]
+            vec = vectors[0]
+            if not vec:
+                # Port returned an empty vector — treat as "no embedding"
+                return None
+            self._profile_cache[key] = vec
+            return vec

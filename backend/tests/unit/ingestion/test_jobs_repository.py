@@ -4,10 +4,16 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
+from hiresense.infrastructure.database import Base
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.infrastructure import InMemoryJobsRepository
+from hiresense.ingestion.infrastructure.jobs_repository import JobsRepository
+from hiresense.ingestion.infrastructure.models import IngestedJob  # noqa: F401 (registers table)
 
 
 def _make_job(title: str = "SWE", company: str = "Acme", url: str = "https://x/1") -> NormalizedJob:
@@ -124,3 +130,69 @@ async def test_orchestrator_skips_duplicate_across_runs() -> None:
     # Second run sees the same source data — dedup skips it.
     assert second == []
     assert len(repo.list_all()) == 1
+
+
+@pytest.fixture
+def sync_session_factory():
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    yield factory
+    Base.metadata.drop_all(engine)
+
+
+@pytest.fixture
+def repo(sync_session_factory):
+    return JobsRepository(session_factory=sync_session_factory, bucket="boards")
+
+
+def _job(repo_id: str, **over):
+    base = dict(
+        id=repo_id, title="Engineer", company="Acme", description="D",
+        source="remotive", source_type="api", url="https://e.com/1",
+        source_id="native-1",
+    )
+    base.update(over)
+    return NormalizedJob(**base)
+
+
+def test_upsert_inserts_then_unchanged(repo):  # `repo` = existing fixture/sync repo
+    assert repo.upsert(_job("a")) == UpsertResult.INSERTED
+    assert repo.upsert(_job("b")) == UpsertResult.UNCHANGED  # same identity+content
+
+
+def test_upsert_updates_changed_fields_and_preserves_id(repo):
+    repo.upsert(_job("a"))
+    assert repo.upsert(_job("b", salary_range="$200k")) == UpsertResult.UPDATED
+    stored = repo.list_all()
+    assert len(stored) == 1
+    assert stored[0].id == "a"               # original id preserved
+    assert stored[0].salary_range == "$200k" # field updated
+
+
+def test_upsert_reopens_a_closed_job(repo):
+    repo.upsert(_job("a"))
+    closed = repo.list_all()[0].id
+    repo.mark_closed([closed])
+    result = repo.upsert(_job("b"))           # same identity re-seen
+    assert result == UpsertResult.REOPENED    # signals caller to re-index
+    assert repo.list_all()[0].status == "open"
+
+
+def test_bump_missed_and_close_persists_per_row(repo):
+    from hiresense.ingestion.domain.identity import identity_key
+
+    seen_job = _job("a", source_id="n1", url="https://e.com/1")
+    gone_job = _job("b", source_id="n2", url="https://e.com/2")
+    repo.upsert(seen_job)
+    repo.upsert(gone_job)
+
+    # Only seen_job is present in this fetch; threshold 1 closes the missing one immediately.
+    closed = repo.bump_missed_and_close(
+        "remotive", {identity_key(seen_job)}, threshold=1
+    )
+
+    by_sid = {j.source_id: j for j in repo.list_all()}
+    assert by_sid["n2"].id in closed
+    assert by_sid["n2"].status == "closed"     # missing -> closed
+    assert by_sid["n1"].status == "open"       # seen -> stays open

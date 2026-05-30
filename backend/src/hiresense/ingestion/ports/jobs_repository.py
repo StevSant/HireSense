@@ -1,9 +1,23 @@
 from __future__ import annotations
 
+import dataclasses
 from datetime import datetime
 from typing import Protocol
 
 from hiresense.ingestion.domain.models import NormalizedJob
+
+
+@dataclasses.dataclass(frozen=True)
+class ScoreUpdate:
+    """Immutable value object carrying a single job's score update payload.
+
+    Both fields accept None to allow partial updates where only one signal
+    is available (e.g. skill-only fallback when semantic scoring is skipped).
+    """
+
+    job_id: str
+    match_score: float | None
+    semantic_score: float | None
 
 
 class JobsRepositoryPort(Protocol):
@@ -25,6 +39,16 @@ class JobsRepositoryPort(Protocol):
         match_score: float | None,
         semantic_score: float | None,
     ) -> None: ...
+
+    def bulk_update_scores(self, updates: list[ScoreUpdate]) -> None:
+        """Persist score updates for multiple jobs in a single batched write.
+
+        Unknown IDs are silently ignored. An empty list is a no-op.
+        Implementations MUST use a single I/O round-trip (one UPDATE…WHERE id IN
+        for SQL, a loop over in-memory dict for test doubles) — never N individual
+        get+set cycles.
+        """
+        ...
 
     def prune_older_than(self, cutoff: datetime) -> int:
         """Delete rows with fetched_at < cutoff. Returns the count deleted."""

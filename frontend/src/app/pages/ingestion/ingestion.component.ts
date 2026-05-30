@@ -51,7 +51,15 @@ export class IngestionComponent implements OnInit {
 
   // Loading
   loading = signal(false);
+  // Distinct from `loading`: true only while pulling *new* jobs from external
+  // sources via "Fetch Jobs". A plain page load reads already-stored jobs and
+  // must not imply we're hitting the job boards.
+  fetching = signal(false);
   error = signal('');
+
+  // Per-job tracking feedback: the id of the job currently being tracked, so
+  // its "Track" button can show progress while the request is in flight.
+  trackingJobId = signal<string | null>(null);
 
   // Portal scan state
   portals = signal<PortalEntry[]>([]);
@@ -114,13 +122,16 @@ export class IngestionComponent implements OnInit {
 
   fetchJobs(): void {
     this.loading.set(true);
+    this.fetching.set(true);
     this.error.set('');
     this.ingestionService.fetchJobs().subscribe({
       next: () => {
+        this.fetching.set(false);
         this.loadJobs();
       },
       error: (err) => {
         this.error.set(err.error?.detail || 'Failed to fetch jobs');
+        this.fetching.set(false);
         this.loading.set(false);
       },
     });
@@ -209,20 +220,32 @@ export class IngestionComponent implements OnInit {
   }
 
   trackJob(jobId: string): void {
+    // Avoid double-submits while a track request is already in flight.
+    if (this.trackingJobId() !== null) return;
+    this.trackingJobId.set(jobId);
+    this.error.set('');
     this.applicationsService.createFromJob(jobId).subscribe({
       next: (agg) => {
         this.ingestionService.markTracked(jobId);
+        this.trackingJobId.set(null);
         this.router.navigate(['/dashboard/applications', agg.id]);
       },
       error: (err) => {
+        this.trackingJobId.set(null);
         if (err.status === 409) {
           // Already tracked — mark it and fall back to the applications list
           // so the user can find the existing application.
           this.ingestionService.markTracked(jobId);
           this.router.navigate(['/dashboard/applications']);
+          return;
         }
+        this.error.set(err.error?.detail || 'Failed to track this job. Please try again.');
       },
     });
+  }
+
+  isTracking(jobId: string): boolean {
+    return this.trackingJobId() === jobId;
   }
 
   isTracked(jobId: string): boolean {

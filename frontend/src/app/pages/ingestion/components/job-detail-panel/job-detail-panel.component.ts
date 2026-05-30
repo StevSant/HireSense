@@ -23,6 +23,7 @@ export class JobDetailPanelComponent {
 
   job = input.required<NormalizedJob>();
   tracked = input<boolean>(false);
+  tracking = input<boolean>(false);
 
   close = output<void>();
   track = output<string>();

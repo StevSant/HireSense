@@ -162,6 +162,8 @@
       </a>
       @if (tracked()) {
         <button class="btn-tracked btn-action" disabled>Tracked ✓</button>
+      } @else if (tracking()) {
+        <button class="btn-secondary btn-action" disabled>Tracking…</button>
       } @else {
         <button (click)="onTrack()" class="btn-secondary btn-action">Track</button>
       }

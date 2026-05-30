@@ -1,21 +1,28 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import delete, select
 
+from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
+from hiresense.ingestion.domain.content_hash import content_hash
+from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.models import NormalizedJob
+from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.infrastructure.models import IngestedJob
 
 
-def _to_orm(job: NormalizedJob, bucket: str, dedup_key: str) -> IngestedJob:
+def _to_orm(job: NormalizedJob, bucket: str) -> IngestedJob:
     return IngestedJob(
         id=job.id,
         bucket=bucket,
-        dedup_key=dedup_key,
+        identity_key=identity_key(job),
         source=job.source,
+        source_id=job.source_id,
         source_type=job.source_type,
+        status=job.status,
+        content_hash=content_hash(job),
         platform=job.platform,
         title=job.title,
         company=job.company,
@@ -38,6 +45,8 @@ def _to_orm(job: NormalizedJob, bucket: str, dedup_key: str) -> IngestedJob:
 def _to_domain(row: IngestedJob) -> NormalizedJob:
     return NormalizedJob(
         id=row.id,
+        source_id=row.source_id,
+        status=row.status,
         title=row.title,
         company=row.company,
         description=row.description,
@@ -73,17 +82,110 @@ class JobsRepository:
         self._bucket = bucket
 
     def add_if_absent(self, job: NormalizedJob) -> bool:
-        dedup_key = job.dedup_key()
+        # Transitional shim until orchestrator/scanner migrate to upsert (T11/T12). Removed in T12.
+        return self.upsert(job) == UpsertResult.INSERTED
+
+    def upsert(self, job: NormalizedJob) -> UpsertResult:
+        ident = identity_key(job)
+        new_hash = content_hash(job)
+        now = datetime.now(timezone.utc)
         with self._session_factory() as session:
-            stmt = select(IngestedJob.id).where(
-                IngestedJob.bucket == self._bucket,
-                IngestedJob.dedup_key == dedup_key,
-            )
-            if session.scalars(stmt).first() is not None:
-                return False
-            session.add(_to_orm(job, self._bucket, dedup_key))
+            row = session.scalars(
+                select(IngestedJob).where(
+                    IngestedJob.bucket == self._bucket,
+                    IngestedJob.source == job.source,
+                    IngestedJob.identity_key == ident,
+                )
+            ).first()
+            if row is None:
+                session.add(_to_orm(job, self._bucket))  # computes ident + hash internally
+                session.commit()
+                return UpsertResult.INSERTED
+
+            row.last_seen_at = now
+            row.missed_count = 0
+            reopened = row.status == "closed"
+            if reopened:
+                row.status = "open"
+                row.closed_at = None
+
+            changed = row.content_hash != new_hash
+            if changed:
+                row.title = job.title
+                row.company = job.company
+                row.description = job.description
+                row.location = job.location
+                row.salary_range = job.salary_range
+                row.skills = list(job.skills)
+                row.categories = list(job.categories)
+                row.countries = list(job.countries)
+                row.remote_modality = job.remote_modality
+                row.content_hash = new_hash
+                row.updated_at = now
+
+            if reopened:
+                session.commit()
+                return UpsertResult.REOPENED
+            if changed:
+                session.commit()
+                return UpsertResult.UPDATED
+
             session.commit()
-            return True
+            return UpsertResult.UNCHANGED
+
+    def get_id_by_identity(self, source: str, job: NormalizedJob) -> str | None:
+        with self._session_factory() as session:
+            row = session.scalars(
+                select(IngestedJob).where(
+                    IngestedJob.bucket == self._bucket,
+                    IngestedJob.source == source,
+                    IngestedJob.identity_key == identity_key(job),
+                )
+            ).first()
+            return row.id if row else None
+
+    def mark_closed(self, job_ids: list[str]) -> None:
+        if not job_ids:
+            return
+        now = datetime.now(timezone.utc)
+        with self._session_factory() as session:
+            for row in session.scalars(
+                select(IngestedJob).where(
+                    IngestedJob.bucket == self._bucket, IngestedJob.id.in_(job_ids)
+                )
+            ).all():
+                row.status = "closed"
+                row.closed_at = now
+            session.commit()
+
+    def bump_missed_and_close(
+        self, source: str, seen_identity_keys: set[str], threshold: int
+    ) -> list[str]:
+        """Apply the disappearance rule to open jobs of `source`. Delegates the
+        decision to the pure `detect_closures` (Task 9), then persists. Returns
+        ids closed this run."""
+        now = datetime.now(timezone.utc)
+        with self._session_factory() as session:
+            rows = session.scalars(
+                select(IngestedJob).where(
+                    IngestedJob.bucket == self._bucket,
+                    IngestedJob.source == source,
+                    IngestedJob.status == "open",
+                )
+            ).all()
+            updated, to_close = detect_closures(
+                seen=seen_identity_keys,
+                open_jobs=[OpenJob(r.id, r.identity_key, r.missed_count) for r in rows],
+                threshold=threshold,
+            )
+            close_set = set(to_close)
+            for row in rows:
+                row.missed_count = updated[row.id]
+                if row.id in close_set:
+                    row.status = "closed"
+                    row.closed_at = now
+            session.commit()
+        return to_close
 
     def list_all(self) -> list[NormalizedJob]:
         with self._session_factory() as session:

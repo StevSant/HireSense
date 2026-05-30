@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { FetchResponse } from '../../pages/ingestion/models/fetch-response.model';
+import { JobAnalysis } from '../../pages/ingestion/models/job-analysis.model';
 import { NormalizedJob } from '../../pages/ingestion/models/normalized-job.model';
 import { PaginatedJobsResponse } from '../../pages/ingestion/models/paginated-jobs-response.model';
 import { PortalEntry } from '../../pages/ingestion/models/portal-entry.model';
@@ -28,6 +29,10 @@ export interface JobFilters {
 @Injectable({ providedIn: 'root' })
 export class IngestionService {
   readonly trackedJobIds = signal<Set<string>>(new Set());
+  // Deep-analysis results cached by job id. Lives in the (root) service so it
+  // survives the detail panel being destroyed on close — re-opening a job
+  // shows its analysis instantly without refetching.
+  readonly jobAnalysisCache = signal<Record<string, JobAnalysis>>({});
 
   constructor(private http: HttpClient) {}
 
@@ -69,6 +74,22 @@ export class IngestionService {
 
   getJob(jobId: string): Observable<NormalizedJob> {
     return this.http.get<NormalizedJob>(`${environment.apiUrl}/ingestion/jobs/${jobId}`);
+  }
+
+  getCachedAnalysis(jobId: string): JobAnalysis | undefined {
+    return this.jobAnalysisCache()[jobId];
+  }
+
+  getJobAnalysis(jobId: string, force = false): Observable<JobAnalysis> {
+    let params = new HttpParams();
+    if (force) params = params.set('force', 'true');
+    return this.http
+      .get<JobAnalysis>(`${environment.apiUrl}/ingestion/jobs/${jobId}/analysis`, { params })
+      .pipe(
+        tap((analysis) =>
+          this.jobAnalysisCache.update((cache) => ({ ...cache, [jobId]: analysis })),
+        ),
+      );
   }
 
   loadPortals(): Observable<PortalEntry[]> {

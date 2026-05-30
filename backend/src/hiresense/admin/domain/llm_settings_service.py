@@ -10,11 +10,11 @@ from hiresense.admin.domain.llm_factory import LLMFactory
 from hiresense.admin.domain.llm_test_runner import LLMTestRunner, TestResult
 from hiresense.admin.domain.masking import mask_api_key
 from hiresense.admin.domain.resolved_config import ResolvedConfig
-from hiresense.admin.infrastructure.llm_audit_log_repository import LLMAuditLogRepository
-from hiresense.admin.infrastructure.llm_feature_override_repository import (
-    LLMFeatureOverrideRepository,
+from hiresense.admin.ports import (
+    LLMAuditLogRepositoryPort,
+    LLMFeatureOverrideRepositoryPort,
+    LLMSettingsRepositoryPort,
 )
-from hiresense.admin.infrastructure.llm_settings_repository import LLMSettingsRepository
 
 
 class LLMSettingsServiceError(RuntimeError):
@@ -44,9 +44,9 @@ class LLMSettingsService:
     def __init__(
         self,
         *,
-        settings_repo: LLMSettingsRepository,
-        override_repo: LLMFeatureOverrideRepository,
-        audit_repo: LLMAuditLogRepository,
+        settings_repo: LLMSettingsRepositoryPort,
+        override_repo: LLMFeatureOverrideRepositoryPort,
+        audit_repo: LLMAuditLogRepositoryPort,
         cipher: APIKeyCipher,
         config_service: LLMConfigService,
         factory: LLMFactory,

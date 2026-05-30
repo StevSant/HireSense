@@ -5,11 +5,8 @@ import io
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
-from hiresense.admin.infrastructure.llm_usage_log_repository import (
-    LLMUsageLogRepository,
-    UsageBucket,
-    UsageTotals,
-)
+from hiresense.admin.infrastructure import UsageBucket, UsageTotals
+from hiresense.admin.ports import LLMUsageLogRepositoryPort
 
 
 @dataclass(frozen=True)
@@ -22,7 +19,7 @@ class DashboardSummary:
 class UsageAggregator:
     """Read-side service for the admin usage dashboard."""
 
-    def __init__(self, repo: LLMUsageLogRepository) -> None:
+    def __init__(self, repo: LLMUsageLogRepositoryPort) -> None:
         self._repo = repo
 
     def summary(self) -> DashboardSummary:

@@ -5,6 +5,7 @@ from fastapi import Request
 from hiresense.ingestion.domain.portal_config import PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
 from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
+from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
 from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
@@ -36,3 +37,10 @@ def get_quick_scoring(request: Request) -> QuickScoringService | None:
 def get_deep_analysis(request: Request) -> DeepAnalysisService | None:
     ingestion = getattr(request.app.state, "ingestion", None)
     return ingestion.get_deep_analysis() if ingestion is not None else None
+
+
+def get_pre_ranker(request: Request) -> SemanticPreRanker | None:
+    # Defensive: tests and bare apps without app.state.ingestion → None.
+    # Routes receiving None must fall back to skill-only ordering (never crash).
+    ingestion = getattr(request.app.state, "ingestion", None)
+    return ingestion.get_pre_ranker() if ingestion is not None else None

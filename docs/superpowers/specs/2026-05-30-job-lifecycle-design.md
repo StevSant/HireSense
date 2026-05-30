@@ -139,9 +139,14 @@ Add `supports_snapshot_closure() -> bool` to the adapter protocol — default
 Per source, after a successful fetch:
 
 1. **Safety gate** — run disappearance only if the source
-   `supports_snapshot_closure()` **and** the fetch succeeded **and** returned a
-   non-empty result. A fetch that errored (already caught + `continue`d) or
-   returned zero jobs is "no signal" — never mass-close on a bad fetch.
+   `supports_snapshot_closure()` **and** the fetch **succeeded** (did not
+   raise). A fetch that errored is already caught + `continue`d, so it never
+   reaches the detector. An *empty but successful* fetch from a snapshot source
+   IS a valid signal (a company board can legitimately drop to zero open
+   roles), so it is allowed to drive closure — the miss-threshold below, not an
+   empty-result gate, is what guards against a transient/soft-error empty
+   response. (An empty-result gate would make the last open role of any board
+   un-closeable, which is wrong.)
 2. Build the set of identities seen this run. For each stored **open** job of
    that `(bucket, source)` not in the seen set → `missed_count += 1`; for seen
    ones → `missed_count = 0`.

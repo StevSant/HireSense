@@ -8,12 +8,12 @@ call site.
 from __future__ import annotations
 
 import uuid
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import pytest
 
 from hiresense.ingestion.domain.models import NormalizedJob
-from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
+from hiresense.ingestion.domain.portal_config import PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.ingestion.infrastructure import InMemoryJobsRepository

@@ -1,6 +1,5 @@
 from typing import Any, ClassVar
 
-from pydantic import model_validator
 from pydantic_settings import BaseSettings, DotEnvSettingsSource, EnvSettingsSource, SettingsConfigDict
 
 

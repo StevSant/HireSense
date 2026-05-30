@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from datetime import datetime, timezone
 
 import pytest
 
-from hiresense.profile.domain.models import CandidateProfile, Profile
+from hiresense.profile.domain.models import CandidateProfile
 from hiresense.profile.domain.services import ProfileService
 
 
@@ -21,11 +20,13 @@ class _NullSkillExtractor:
 
 
 class FakeProfileRepository:
+    """In-memory repository dealing in domain CandidateProfile models."""
+
     def __init__(self) -> None:
-        self._rows: dict[uuid.UUID, Profile] = {}
+        self._rows: dict[str, CandidateProfile] = {}
 
     def get_by_id(self, id: uuid.UUID):
-        return self._rows.get(id)
+        return self._rows.get(str(id))
 
     def get_latest(self, language=None):
         rows = list(self._rows.values())
@@ -36,12 +37,12 @@ class FakeProfileRepository:
     def list_all(self):
         return list(self._rows.values())
 
-    def create(self, profile: Profile):
-        self._rows[profile.id] = profile
+    def create(self, profile: CandidateProfile, *, original_filename: str | None = None):
+        self._rows[str(profile.id)] = profile
         return profile
 
     def update(self, id: uuid.UUID, fields):
-        row = self._rows.get(id)
+        row = self._rows.get(str(id))
         if row is None:
             return None
         for key, value in fields.items():
@@ -55,9 +56,9 @@ class FakeProfileRepository:
         return len(self._rows)
 
 
-def _make_orm() -> Profile:
-    row = Profile(
-        id=uuid.uuid4(),
+def _make_profile() -> CandidateProfile:
+    return CandidateProfile(
+        id=str(uuid.uuid4()),
         name="Parsed Name",
         email="parsed@example.com",
         phone="+1 555",
@@ -67,13 +68,11 @@ def _make_orm() -> Profile:
         language="en",
         skills=[],
     )
-    row.created_at = datetime.now(timezone.utc)
-    return row
 
 
-def _service_with(orm: Profile) -> tuple[ProfileService, FakeProfileRepository]:
+def _service_with(profile: CandidateProfile) -> tuple[ProfileService, FakeProfileRepository]:
     repo = FakeProfileRepository()
-    repo.create(orm)
+    repo.create(profile)
     service = ProfileService(
         parser=_NullParser(),
         skill_extractor=_NullSkillExtractor(),
@@ -83,12 +82,12 @@ def _service_with(orm: Profile) -> tuple[ProfileService, FakeProfileRepository]:
 
 
 def test_update_manual_fields_overwrites_parsed_values() -> None:
-    orm = _make_orm()
-    service, _ = _service_with(orm)
+    profile = _make_profile()
+    service, _ = _service_with(profile)
 
     result = asyncio.run(
         service.update_manual_fields(
-            str(orm.id),
+            profile.id,
             {
                 "name": "Manual Name",
                 "linkedin_url": "https://linkedin.com/in/me",
@@ -106,17 +105,17 @@ def test_update_manual_fields_overwrites_parsed_values() -> None:
 
 
 def test_update_manual_fields_ignores_unknown_keys() -> None:
-    orm = _make_orm()
-    service, repo = _service_with(orm)
+    profile = _make_profile()
+    service, repo = _service_with(profile)
 
     asyncio.run(
         service.update_manual_fields(
-            str(orm.id),
+            profile.id,
             {"name": "X", "raw_tex": "MALICIOUS", "skills": ["x"]},
         )
     )
 
-    stored = repo.get_by_id(orm.id)
+    stored = repo.get_by_id(uuid.UUID(profile.id))
     assert stored is not None
     assert stored.name == "X"
     assert stored.raw_tex == ""
@@ -124,8 +123,8 @@ def test_update_manual_fields_ignores_unknown_keys() -> None:
 
 
 def test_shared_links_broadcast_across_language_profiles() -> None:
-    en = _make_orm()
-    es = _make_orm()
+    en = _make_profile()
+    es = _make_profile()
     es.language = "es"
     repo = FakeProfileRepository()
     repo.create(en)
@@ -138,7 +137,7 @@ def test_shared_links_broadcast_across_language_profiles() -> None:
 
     asyncio.run(
         service.update_manual_fields(
-            str(en.id),
+            en.id,
             {
                 "name": "Only English Name",
                 "linkedin_url": "https://linkedin.com/in/me",
@@ -147,16 +146,16 @@ def test_shared_links_broadcast_across_language_profiles() -> None:
     )
 
     # Per-language field stays scoped to the edited profile.
-    assert repo.get_by_id(en.id).name == "Only English Name"
-    assert repo.get_by_id(es.id).name == "Parsed Name"
+    assert repo.get_by_id(uuid.UUID(en.id)).name == "Only English Name"
+    assert repo.get_by_id(uuid.UUID(es.id)).name == "Parsed Name"
     # Shared link is mirrored across all profiles.
-    assert repo.get_by_id(en.id).linkedin_url == "https://linkedin.com/in/me"
-    assert repo.get_by_id(es.id).linkedin_url == "https://linkedin.com/in/me"
+    assert repo.get_by_id(uuid.UUID(en.id)).linkedin_url == "https://linkedin.com/in/me"
+    assert repo.get_by_id(uuid.UUID(es.id)).linkedin_url == "https://linkedin.com/in/me"
 
 
 def test_update_manual_fields_returns_none_for_missing_profile() -> None:
-    orm = _make_orm()
-    service, _ = _service_with(orm)
+    profile = _make_profile()
+    service, _ = _service_with(profile)
 
     result = asyncio.run(
         service.update_manual_fields(str(uuid.uuid4()), {"name": "X"})

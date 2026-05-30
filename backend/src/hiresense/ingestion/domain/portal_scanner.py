@@ -45,6 +45,7 @@ class PortalScanner:
         event_bus: Any,
         repository: JobsRepositoryPort,
         retention_days: int | None = None,
+        indexer: Any | None = None,
     ) -> None:
         self._config = config
         self._adapters = adapters
@@ -52,6 +53,7 @@ class PortalScanner:
         self._event_bus = event_bus
         self._repository: JobsRepositoryPort = repository
         self._retention_days = retention_days
+        self._indexer = indexer
 
     def list_jobs(self) -> list[NormalizedJob]:
         return self._repository.list_all()
@@ -151,6 +153,8 @@ class PortalScanner:
                 source="portal_scan",
             )
             await self._event_bus.publish(event)
+            if self._indexer is not None:
+                await self._indexer.index(new_jobs)
 
         return ScanResult(
             total_fetched=total_fetched,

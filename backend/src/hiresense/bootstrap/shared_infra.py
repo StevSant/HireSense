@@ -20,6 +20,7 @@ class SharedInfra:
     event_bus: InMemoryEventBus
     sync_session_factory: Any
     embedding: Any
+    vector_store: Any
 
 
 def build_shared_infra(settings: Settings, http_client: httpx.AsyncClient) -> SharedInfra:
@@ -38,10 +39,19 @@ def build_shared_infra(settings: Settings, http_client: httpx.AsyncClient) -> Sh
         device=settings.embedding_device,
     )
 
+    vector_store = None
+    if settings.vector_store_provider == "pgvector":
+        from hiresense.adapters.vector_store import PgVectorStore
+
+        vector_store = PgVectorStore(
+            sync_session_factory, dim=settings.embedding_dim
+        )
+
     return SharedInfra(
         settings=settings,
         http_client=http_client,
         event_bus=event_bus,
         sync_session_factory=sync_session_factory,
         embedding=embedding,
+        vector_store=vector_store,
     )

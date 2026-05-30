@@ -31,6 +31,7 @@ class IngestionOrchestrator:
         repository: JobsRepositoryPort,
         cooldown_seconds: int = 300,
         retention_days: int | None = None,
+        indexer: Any | None = None,
     ) -> None:
         self._sources = sources
         self._normalizers = normalizers
@@ -38,6 +39,7 @@ class IngestionOrchestrator:
         self._repository: JobsRepositoryPort = repository
         self._cooldown_seconds = cooldown_seconds
         self._retention_days = retention_days
+        self._indexer = indexer
         self._last_run_at: float = 0.0
 
     async def run(
@@ -84,6 +86,8 @@ class IngestionOrchestrator:
                 source="batch",
             )
             await self._event_bus.publish(event)
+            if self._indexer is not None:
+                await self._indexer.index(new_jobs)
 
         return new_jobs
 

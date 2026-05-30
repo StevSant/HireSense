@@ -135,3 +135,23 @@ DB session factory, embedding, vector store) that every builder receives.
 5. Add `bootstrap/<module>.py` with `build_<module>(...)` and wire it in `main.py:create_app()`.
 6. Keep every `__init__.py` re-exporting the package's public symbols (import from the contextual
    package, not the implementation file).
+
+## Known follow-ups
+
+- `admin/domain/llm_factory.py` and `admin/domain/llm_test_runner.py` still import `langchain_*`
+  (they build/exercise LangChain chat models) and are therefore really infrastructure. They should
+  move to `admin/infrastructure/`. They are left in `domain/` for now only because relocating them
+  touches the `admin.domain ↔ admin.ports ↔ admin.infrastructure` import graph; do this as an
+  isolated follow-up. The usage-tracking LLM adapter itself has already been moved out of the domain
+  layer (see the LLM adapter chain above).
+- `admin/ports/*_repository_port.py` import ORM model classes from `admin/infrastructure` for typing;
+  a port should reference domain types instead. Worth tidying when the admin ORM grows a domain model.
+- **pgvector search swap:** job embeddings are now persisted to the `vector_embeddings` table on
+  ingestion (`JobEmbeddingIndexer`), and `PgVectorStore` implements ANN search. The job-list endpoint
+  still ranks via the in-memory `SemanticScoringService`; swapping it to `vector_store.search(...)`
+  is the remaining integration. It was left out here because it can't be validated without a live
+  Postgres+pgvector instance — do it alongside that validation.
+- **pgvector prune cleanup:** `JobsRepository.prune_older_than` returns a count, not ids, so pruned
+  jobs leave orphaned rows in `vector_embeddings`. They're harmless (a search hit whose job no longer
+  exists is dropped when the full job is fetched), but a periodic `VectorStorePort.delete(...)` sweep
+  or a `RETURNING`-based prune would reclaim the space.

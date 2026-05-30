@@ -1,3 +1,4 @@
+from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
 from hiresense.ingestion.domain.job_embedding_indexer import JobEmbeddingIndexer
 from hiresense.ingestion.domain.job_filter import JobQueryParams, PaginatedResult, filter_and_paginate
@@ -10,6 +11,8 @@ from hiresense.ingestion.domain.services import IngestionOrchestrator
 __all__ = [
     "IngestionOrchestrator",
     "JobEmbeddingIndexer",
+    "OpenJob",
+    "detect_closures",
     "JobQueryParams",
     "PaginatedResult",
     "PortalScanner",

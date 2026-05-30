@@ -252,3 +252,151 @@
   border: 1px solid #bbf7d0;
   cursor: default;
 }
+
+/* ---- Match score header ---- */
+.match-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.match-score-num {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.match-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.match-meta-label {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.verdict-chip {
+  align-self: flex-start;
+  padding: 0.1rem 0.55rem;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: var(--bg-card);
+}
+
+.match-na-note {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* ---- Why this score ---- */
+.reason-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.reason-item {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.dealbreaker-list {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 0.5rem;
+}
+
+.dealbreaker-item {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #991b1b;
+  font-weight: 500;
+}
+
+/* ---- Deep analysis ---- */
+.deep-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+
+  .section-label {
+    margin-bottom: 0;
+  }
+}
+
+.deep-toggle-action {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.deep-state {
+  margin-top: 0.85rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.deep-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.spinner-sm {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: deep-spin 0.7s linear infinite;
+}
+
+@keyframes deep-spin {
+  to { transform: rotate(360deg); }
+}
+
+.deep-error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+  color: #991b1b;
+}
+
+.btn-retry {
+  padding: 0.35rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+
+.deep-empty {
+  color: var(--text-muted);
+}

@@ -10,6 +10,7 @@ import { PortalEntry } from './models/portal-entry.model';
 import { ScanPortalsRequest } from './models/scan-portals-request.model';
 import { ScanError } from './models/scan-result.model';
 import { PaginationComponent } from './components/pagination/pagination.component';
+import { scoreClass } from '../../core/utils/score-class';
 import { JobFiltersComponent } from './components/job-filters/job-filters.component';
 import { JobDetailPanelComponent } from './components/job-detail-panel/job-detail-panel.component';
 import { DatePipe } from '@angular/common';
@@ -215,15 +216,10 @@ export class IngestionComponent implements OnInit {
       },
       error: (err) => {
         if (err.status === 409) {
-          // Already tracked — find existing app and navigate.
+          // Already tracked — mark it and fall back to the applications list
+          // so the user can find the existing application.
           this.ingestionService.markTracked(jobId);
-          this.applicationsService.list().subscribe({
-            next: (rows) => {
-              // Match by job_id requires fetching aggregates; fall back to
-              // applications list nav so the user can find it.
-              this.router.navigate(['/dashboard/applications']);
-            },
-          });
+          this.router.navigate(['/dashboard/applications']);
         }
       },
     });
@@ -241,8 +237,6 @@ export class IngestionComponent implements OnInit {
   }
 
   scoreBadgeClass(score: number): string {
-    if (score >= 0.7) return 'score-high';
-    if (score >= 0.4) return 'score-mid';
-    return 'score-low';
+    return scoreClass(score);
   }
 }

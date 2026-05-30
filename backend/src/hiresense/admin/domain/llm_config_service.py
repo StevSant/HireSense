@@ -6,10 +6,7 @@ import time
 
 from hiresense.admin.domain.encryption import APIKeyCipher, EncryptionUnavailableError
 from hiresense.admin.domain.resolved_config import ResolvedConfig
-from hiresense.admin.infrastructure.llm_feature_override_repository import (
-    LLMFeatureOverrideRepository,
-)
-from hiresense.admin.infrastructure.llm_settings_repository import LLMSettingsRepository
+from hiresense.admin.ports import LLMFeatureOverrideRepositoryPort, LLMSettingsRepositoryPort
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +24,13 @@ class LLMConfigService:
     def __init__(
         self,
         *,
-        settings_repo: LLMSettingsRepository,
-        override_repo: LLMFeatureOverrideRepository,
+        settings_repo: LLMSettingsRepositoryPort,
+        override_repo: LLMFeatureOverrideRepositoryPort,
         cipher: APIKeyCipher,
         env_provider: str,
         env_model: str,
         env_api_key: str,
+        feature_default_models: dict[str, str] | None = None,
     ) -> None:
         self._settings_repo = settings_repo
         self._override_repo = override_repo
@@ -40,6 +38,12 @@ class LLMConfigService:
         self._env_provider = env_provider
         self._env_model = env_model
         self._env_api_key = env_api_key
+        # Per-feature default model used only when there is no admin override
+        # and no global settings row (i.e. the .env fallback path). Lets a
+        # feature ship with a different default model than the global env one
+        # (e.g. a cheap model for the quick scorer) while still letting the
+        # admin override it. Keys are feature_keys.
+        self._feature_default_models = feature_default_models or {}
         self._cache: dict[str, tuple[float, ResolvedConfig]] = {}
         self._lock = threading.Lock()
 
@@ -69,7 +73,7 @@ class LLMConfigService:
             source = "global"
         else:
             provider = self._env_provider
-            model = self._env_model
+            model = self._feature_default_models.get(feature_key, self._env_model)
             api_key = self._env_api_key
             extra_params = {}
             source = "env"

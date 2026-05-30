@@ -4,8 +4,10 @@ from fastapi import Request
 
 from hiresense.ingestion.domain.portal_config import PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
+from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
 from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
 from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
 
 
 def get_ingestion_orchestrator(request: Request) -> IngestionOrchestrator:
@@ -22,3 +24,15 @@ def get_portals_config(request: Request) -> PortalsConfig:
 
 def get_semantic_scoring(request: Request) -> SemanticScoringService | None:
     return request.app.state.ingestion.get_semantic_scoring()
+
+
+def get_quick_scoring(request: Request) -> QuickScoringService | None:
+    # Defensive: tests mount the router on a bare app without app.state.ingestion.
+    # Returning None there makes the list endpoint fall back to heuristic scores.
+    ingestion = getattr(request.app.state, "ingestion", None)
+    return ingestion.get_quick_scoring() if ingestion is not None else None
+
+
+def get_deep_analysis(request: Request) -> DeepAnalysisService | None:
+    ingestion = getattr(request.app.state, "ingestion", None)
+    return ingestion.get_deep_analysis() if ingestion is not None else None

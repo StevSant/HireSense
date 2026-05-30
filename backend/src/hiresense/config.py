@@ -146,6 +146,21 @@ class Settings(BaseSettings):
     weight_application: int = 10
     weight_interview: int = 10
 
+    # Match scoring (LLM model routing). The job list shows an LLM-gated quick
+    # score (cheap model, batched per visible page); the detail panel can run a
+    # deeper single-job analysis (advanced model). These are the out-of-the-box
+    # default models per feature — the admin can override either in the LLM
+    # Settings UI (feature keys: match_quick_scorer / match_deep_analyzer).
+    match_quick_model: str = "claude-haiku-4-5"
+    match_deep_model: str = "claude-sonnet-4-6"
+    # Jobs scored per quick-scorer LLM call (the page is scored in one batched
+    # request). Defaults to the listing page size.
+    match_quick_batch_size: int = 20
+    # Per-job description truncation (chars) inside the batched quick prompt.
+    match_quick_job_char_limit: int = 1500
+    # Per-job description truncation (chars) for the deeper single-job analysis.
+    match_deep_job_char_limit: int = 6000
+
     # Upload
     max_upload_bytes: int = 10 * 1024 * 1024  # 10 MB
 

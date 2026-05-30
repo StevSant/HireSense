@@ -6,11 +6,9 @@ import tempfile
 import textwrap
 from pathlib import Path
 
+from hiresense.ports.latex_compiler_port import LatexCompileError
+
 logger = logging.getLogger(__name__)
-
-
-class LatexCompileError(RuntimeError):
-    """Raised when xelatex fails to compile the source."""
 
 
 class LatexCompiler:

@@ -26,6 +26,82 @@
 
     <!-- Scrollable body -->
     <div class="panel-body">
+      <!-- Match score header -->
+      <div class="panel-section match-header">
+        @if (pillScore() !== null) {
+          <span class="match-score-num" [style.color]="scoreColor(pillScore())">
+            {{ scorePercent() }}
+          </span>
+          <div class="match-meta">
+            <span class="match-meta-label">match score</span>
+            @if (job().verdict) {
+              <span
+                class="verdict-chip"
+                [style.color]="scoreColor(pillScore())"
+                [style.border-color]="scoreColor(pillScore())"
+              >{{ job().verdict }} fit</span>
+            }
+          </div>
+        } @else {
+          <p class="match-na-note">No score yet — add a profile/CV to see your match.</p>
+        }
+      </div>
+
+      <!-- Why this score (quick reasons + dealbreakers) -->
+      @if (job().reasons.length > 0 || job().dealbreakers.length > 0) {
+        <div class="panel-section">
+          <span class="section-label">Why this score</span>
+          @if (job().reasons.length > 0) {
+            <ul class="reason-list">
+              @for (r of job().reasons; track r) {
+                <li class="reason-item">{{ r }}</li>
+              }
+            </ul>
+          }
+          @if (job().dealbreakers.length > 0) {
+            <ul class="reason-list dealbreaker-list">
+              @for (d of job().dealbreakers; track d) {
+                <li class="dealbreaker-item">⚠ {{ d }}</li>
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      <!-- Deep analysis (lazy, advanced model) -->
+      <div class="panel-section section-card" [attr.data-emphasis]="'role'">
+        <button type="button" class="deep-toggle" (click)="toggleDeepAnalysis()">
+          <span class="section-label">Deep analysis</span>
+          <span class="deep-toggle-action">
+            @if (analysisExpanded()) {
+              Hide
+            } @else if (analysis()) {
+              Show
+            } @else {
+              Run advanced analysis ▸
+            }
+          </span>
+        </button>
+
+        @if (analysisExpanded()) {
+          @if (analysisLoading()) {
+            <div class="deep-state deep-loading">
+              <div class="spinner-sm"></div>
+              <span>Running advanced model…</span>
+            </div>
+          } @else if (analysisError()) {
+            <div class="deep-state deep-error">
+              <p>{{ analysisError() }}</p>
+              <button type="button" class="btn-retry" (click)="retryAnalysis()">Retry</button>
+            </div>
+          } @else if (analysis(); as a) {
+            <app-deep-analysis [analysis]="a" />
+          } @else {
+            <p class="deep-state deep-empty">No deep analysis available.</p>
+          }
+        }
+      </div>
+
       <!-- Skills -->
       @if (job().skills.length > 0) {
         <div class="panel-section">

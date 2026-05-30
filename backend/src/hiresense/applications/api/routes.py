@@ -5,7 +5,7 @@ import uuid as uuid_mod
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
 
-from hiresense.adapters.latex import LatexCompileError
+from hiresense.ports import LatexCompileError
 from hiresense.applications.api.dependencies import (
     get_application_service,
     get_apply_service,

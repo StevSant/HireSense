@@ -8,9 +8,11 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from hiresense.ingestion.api.dependencies import (
+    get_deep_analysis,
     get_ingestion_orchestrator,
     get_portal_scanner,
     get_portals_config,
+    get_quick_scoring,
     get_semantic_scoring,
 )
 from hiresense.ingestion.domain.job_filter import JobQueryParams, PaginatedResult, filter_and_paginate
@@ -20,15 +22,54 @@ from hiresense.ingestion.domain.job_scorer import (
     score_jobs,
 )
 from hiresense.ingestion.domain.models import NormalizedJob
+from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
+from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
 from hiresense.ingestion.domain.seniority import SeniorityLevel
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner, ScanFilters, ScanResult
 from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
 from hiresense.ingestion.domain.services import IngestionCooldownError, IngestionOrchestrator
+from hiresense.matching.domain.deep_analysis_result import DeepAnalysisResult
+from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
 from hiresense.profile.api.dependencies import get_profile_service
 from hiresense.profile.domain import ProfileService
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
+
+
+async def _gather_profile(profile_service: ProfileService) -> tuple[list[str], str]:
+    """Flatten all stored profiles into candidate skills + a summary blob.
+
+    Shared by the list endpoint (quick scoring) and the analysis endpoint
+    (deep scoring) so both score against the same profile representation.
+    """
+    candidate_skills: list[str] = []
+    summary_parts: list[str] = []
+    for profile in await profile_service.list_profiles():
+        candidate_skills.extend(profile.skills)
+        for section in profile.sections:
+            summary_parts.append(section.content)
+    return candidate_skills, "\n".join(summary_parts)
+
+
+def _apply_quick(job: NormalizedJob, quick: QuickMatchResult | None) -> NormalizedJob:
+    """Overlay an LLM quick result onto a job for the response.
+
+    The displayed `match_score` becomes the LLM score (more accurate than the
+    heuristic), and the quick verdict/reasons/dealbreakers ride along for the
+    detail panel. Jobs without a quick result keep their heuristic score.
+    """
+    if quick is None:
+        return job
+    return job.model_copy(
+        update={
+            "match_score": quick.score,
+            "llm_score": quick.score,
+            "verdict": quick.verdict.value,
+            "reasons": list(quick.reasons),
+            "dealbreakers": list(quick.dealbreakers),
+        }
+    )
 
 
 class FetchResponse(BaseModel):
@@ -67,6 +108,7 @@ async def list_jobs(
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
     semantic_scoring: Annotated[SemanticScoringService | None, Depends(get_semantic_scoring)],
+    quick_scoring: Annotated[QuickScoringService | None, Depends(get_quick_scoring)],
     page: int = 1,
     page_size: int = 20,
     source: str | None = None,
@@ -92,13 +134,7 @@ async def list_jobs(
             min_score = settings.ingestion_min_match_score
     all_jobs = orchestrator.list_jobs() if tab == "boards" else scanner.list_jobs()
 
-    candidate_skills: list[str] = []
-    candidate_summary_parts: list[str] = []
-    for profile in await profile_service.list_profiles():
-        candidate_skills.extend(profile.skills)
-        for section in profile.sections:
-            candidate_summary_parts.append(section.content)
-    candidate_summary = "\n".join(candidate_summary_parts)
+    candidate_skills, candidate_summary = await _gather_profile(profile_service)
 
     persist_scores = orchestrator.persist_scores if tab == "boards" else scanner.persist_scores
 
@@ -183,7 +219,46 @@ async def list_jobs(
                 reverse=True,
             )
 
+    # Tier-1 LLM quick scoring of the visible page (cheap model, one batched
+    # call, cached per (job_id, profile_hash)). Runs *after* pagination so the
+    # min_score gate never culls a job on a not-yet-computed LLM score. The LLM
+    # score replaces the displayed match_score when available; jobs without one
+    # keep the heuristic blend. Cache hits make repeat views instant.
+    if quick_scoring is not None and (candidate_skills or candidate_summary):
+        quick_results = await quick_scoring.score_page(
+            result.jobs, candidate_skills, candidate_summary
+        )
+        if quick_results:
+            result.jobs = [_apply_quick(j, quick_results.get(j.id)) for j in result.jobs]
+            if sort == "match_desc":
+                result.jobs = sorted(
+                    result.jobs,
+                    key=lambda j: (j.match_score if j.match_score is not None else -1.0),
+                    reverse=True,
+                )
+
     return result
+
+
+@router.get("/jobs/{job_id}/analysis", response_model=DeepAnalysisResult)
+async def analyze_job(
+    job_id: str,
+    orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
+    scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
+    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
+    deep_analysis: Annotated[DeepAnalysisService | None, Depends(get_deep_analysis)],
+    force: bool = False,
+) -> DeepAnalysisResult:
+    """Deep, single-job match analysis (advanced model, cached, on demand)."""
+    job = orchestrator.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if deep_analysis is None:
+        raise HTTPException(status_code=503, detail="Deep analysis is not available")
+    candidate_skills, candidate_summary = await _gather_profile(profile_service)
+    return await deep_analysis.analyze(
+        job, candidate_skills, candidate_summary, force=force
+    )
 
 
 @router.get("/jobs/{job_id}", response_model=NormalizedJob)

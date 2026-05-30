@@ -2,6 +2,7 @@ import uuid
 
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.ingestion.infrastructure import InMemoryJobsRepository
 
 
 def _make_job(title: str = "SWE", company: str = "Acme") -> NormalizedJob:
@@ -22,12 +23,16 @@ class FakeEventBus:
 
 
 def test_get_job_by_id_returns_none_initially() -> None:
-    orchestrator = IngestionOrchestrator(sources=[], normalizers={}, event_bus=FakeEventBus())
+    orchestrator = IngestionOrchestrator(
+        sources=[], normalizers={}, event_bus=FakeEventBus(), repository=InMemoryJobsRepository()
+    )
     assert orchestrator.get_job_by_id("nonexistent") is None
 
 
 def test_store_and_retrieve_job() -> None:
-    orchestrator = IngestionOrchestrator(sources=[], normalizers={}, event_bus=FakeEventBus())
+    orchestrator = IngestionOrchestrator(
+        sources=[], normalizers={}, event_bus=FakeEventBus(), repository=InMemoryJobsRepository()
+    )
     job = _make_job()
     orchestrator.store_job(job)
     result = orchestrator.get_job_by_id(job.id)
@@ -36,7 +41,9 @@ def test_store_and_retrieve_job() -> None:
 
 
 def test_store_multiple_and_retrieve() -> None:
-    orchestrator = IngestionOrchestrator(sources=[], normalizers={}, event_bus=FakeEventBus())
+    orchestrator = IngestionOrchestrator(
+        sources=[], normalizers={}, event_bus=FakeEventBus(), repository=InMemoryJobsRepository()
+    )
     job1 = _make_job("A", "X")
     job2 = _make_job("B", "Y")
     orchestrator.store_job(job1)

@@ -1,5 +1,4 @@
-"""HireSense - AI-powered job matching and CV optimization."""
-
+from hiresense.profile.infrastructure.orm import ProfileOrm
 from hiresense.profile.infrastructure.repository import ProfileRepository
 
-__all__ = ["ProfileRepository"]
+__all__ = ["ProfileOrm", "ProfileRepository"]

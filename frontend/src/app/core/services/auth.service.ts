@@ -2,6 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { isTokenExpired } from '../utils/is-token-expired';
 
 interface LoginResponse {
   access_token: string;
@@ -11,7 +12,7 @@ interface LoginResponse {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly tokenSignal = signal<string | null>(this.getStoredToken());
-  readonly isAuthenticated = computed(() => !!this.tokenSignal());
+  readonly isAuthenticated = computed(() => !isTokenExpired(this.tokenSignal()));
 
   constructor(private http: HttpClient, private router: Router) {}
 

@@ -43,17 +43,13 @@ class PortalScanner:
         adapters: dict[str, Any],
         normalizers: dict[str, JobNormalizer],
         event_bus: Any,
-        repository: JobsRepositoryPort | None = None,
+        repository: JobsRepositoryPort,
         retention_days: int | None = None,
     ) -> None:
         self._config = config
         self._adapters = adapters
         self._normalizers = normalizers
         self._event_bus = event_bus
-        if repository is None:
-            from hiresense.ingestion.infrastructure import InMemoryJobsRepository
-
-            repository = InMemoryJobsRepository()
         self._repository: JobsRepositoryPort = repository
         self._retention_days = retention_days
 

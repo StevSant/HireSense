@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import pytest
 
 from hiresense.admin.domain.resolved_config import ResolvedConfig
-from hiresense.admin.domain.tracked_llm_adapter import TrackedLLMAdapter
+from hiresense.admin.infrastructure import (
+    FeatureConfiguredLLMAdapter,
+    UsageTrackingLLMAdapter,
+)
 
 
 @dataclass
@@ -69,6 +72,15 @@ class _FakeFactory:
         return self._chat_model
 
 
+def _build(config: ResolvedConfig, chat, recorder, feature_key: str) -> UsageTrackingLLMAdapter:
+    configured = FeatureConfiguredLLMAdapter(
+        config_service=_FakeConfigService(config),
+        factory=_FakeFactory(chat),
+        feature_key=feature_key,
+    )
+    return UsageTrackingLLMAdapter(configured, recorder=recorder, feature_key=feature_key)
+
+
 @pytest.mark.asyncio
 async def test_success_records_token_counts_and_cost() -> None:
     config = ResolvedConfig(
@@ -81,12 +93,7 @@ async def test_success_records_token_counts_and_cost() -> None:
         ),
     )
     recorder = _FakeRecorder()
-    adapter = TrackedLLMAdapter(
-        config_service=_FakeConfigService(config),
-        factory=_FakeFactory(chat),
-        recorder=recorder,
-        feature_key="cv_parser",
-    )
+    adapter = _build(config, chat, recorder, "cv_parser")
 
     result = await adapter.complete("hi", system="sys")
     assert result == "hello"
@@ -105,23 +112,21 @@ async def test_success_records_token_counts_and_cost() -> None:
 
 
 @pytest.mark.asyncio
-async def test_error_path_records_failure() -> None:
+async def test_error_path_records_failure_and_reraises_original() -> None:
     config = ResolvedConfig(
         provider="anthropic", model="claude-sonnet-4-6", api_key="k", extra_params={}, source="global",
     )
     chat = _FakeChatModel(raise_exc=RuntimeError("api outage"))
     recorder = _FakeRecorder()
-    adapter = TrackedLLMAdapter(
-        config_service=_FakeConfigService(config),
-        factory=_FakeFactory(chat),
-        recorder=recorder,
-        feature_key="culture_scorer",
-    )
+    adapter = _build(config, chat, recorder, "culture_scorer")
+
     with pytest.raises(RuntimeError, match="api outage"):
         await adapter.complete("hi")
     assert len(recorder.records) == 1
     rec = recorder.records[0]
     assert rec.success is False
+    assert rec.provider == "anthropic"
+    assert rec.model == "claude-sonnet-4-6"
     assert rec.error is not None and "api outage" in rec.error
     assert rec.input_tokens == 0 and rec.output_tokens == 0
 
@@ -133,12 +138,8 @@ async def test_missing_usage_metadata_records_zero_tokens() -> None:
     )
     chat = _FakeChatModel(response=_FakeResponse(content="ok", usage_metadata=None))
     recorder = _FakeRecorder()
-    adapter = TrackedLLMAdapter(
-        config_service=_FakeConfigService(config),
-        factory=_FakeFactory(chat),
-        recorder=recorder,
-        feature_key="cv_parser",
-    )
+    adapter = _build(config, chat, recorder, "cv_parser")
+
     result = await adapter.complete("hi")
     assert result == "ok"
     rec = recorder.records[0]

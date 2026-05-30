@@ -12,7 +12,51 @@ from hiresense.applications.domain.models import (
     ApplicationJobSnapshot,
     ApplicationMatch,
 )
-from hiresense.tracking.domain.models import TrackedApplication
+from hiresense.applications.infrastructure.orm import (
+    ApplicationCoverLetterOrm,
+    ApplicationCvOptimizationOrm,
+    ApplicationInterviewPrepOrm,
+    ApplicationJobSnapshotOrm,
+    ApplicationMatchOrm,
+)
+from hiresense.tracking.infrastructure.orm import TrackedApplicationOrm
+
+_SNAPSHOT_FIELDS = ("application_id", "description", "required_skills", "source")
+_MATCH_FIELDS = (
+    "application_id",
+    "overall_score",
+    "semantic_score",
+    "skill_score",
+    "experience_score",
+    "language_score",
+    "matched_skills",
+    "missing_skills",
+    "pros",
+    "cons",
+    "recommendations",
+    "cv_language",
+)
+_OPT_FIELDS = (
+    "application_id",
+    "match_id",
+    "cv_language",
+    "original_tex",
+    "optimized_tex",
+    "improvement_summary",
+    "changes",
+)
+_LETTER_FIELDS = ("application_id", "match_id", "body", "tone")
+_PREP_FIELDS = (
+    "application_id",
+    "competencies_to_probe",
+    "technical_topics",
+    "negotiation_points",
+    "matched_stories",
+)
+
+
+def _orm_kwargs(model: Any, fields: tuple[str, ...]) -> dict[str, Any]:
+    return {field: getattr(model, field) for field in fields}
 
 
 class ApplicationRepository:
@@ -23,42 +67,55 @@ class ApplicationRepository:
 
     def create_snapshot(self, snapshot: ApplicationJobSnapshot) -> ApplicationJobSnapshot:
         with self._session_factory() as session:
-            session.add(snapshot)
+            row = ApplicationJobSnapshotOrm(**_orm_kwargs(snapshot, _SNAPSHOT_FIELDS))
+            session.add(row)
             session.commit()
-            session.refresh(snapshot)
-            return snapshot
+            session.refresh(row)
+            return ApplicationJobSnapshot.model_validate(row)
 
     def get_snapshot(self, application_id: uuid.UUID) -> ApplicationJobSnapshot | None:
         with self._session_factory() as session:
-            stmt = select(ApplicationJobSnapshot).where(
-                ApplicationJobSnapshot.application_id == application_id
+            stmt = select(ApplicationJobSnapshotOrm).where(
+                ApplicationJobSnapshotOrm.application_id == application_id
             )
-            return session.scalars(stmt).first()
+            row = session.scalars(stmt).first()
+            return ApplicationJobSnapshot.model_validate(row) if row else None
 
     def save_snapshot(self, snapshot: ApplicationJobSnapshot) -> ApplicationJobSnapshot:
         with self._session_factory() as session:
-            merged = session.merge(snapshot)
+            row = (
+                session.get(ApplicationJobSnapshotOrm, snapshot.id)
+                if snapshot.id
+                else None
+            )
+            if row is None:
+                row = ApplicationJobSnapshotOrm(**_orm_kwargs(snapshot, _SNAPSHOT_FIELDS))
+                session.add(row)
+            else:
+                for field in _SNAPSHOT_FIELDS:
+                    setattr(row, field, getattr(snapshot, field))
             session.commit()
-            session.refresh(merged)
-            return merged
+            session.refresh(row)
+            return ApplicationJobSnapshot.model_validate(row)
 
     # ---- matches ------------------------------------------------------
 
     def create_match(self, match: ApplicationMatch) -> ApplicationMatch:
         with self._session_factory() as session:
-            session.add(match)
+            row = ApplicationMatchOrm(**_orm_kwargs(match, _MATCH_FIELDS))
+            session.add(row)
             session.commit()
-            session.refresh(match)
-            return match
+            session.refresh(row)
+            return ApplicationMatch.model_validate(row)
 
     def list_matches(self, application_id: uuid.UUID) -> list[ApplicationMatch]:
         with self._session_factory() as session:
             stmt = (
-                select(ApplicationMatch)
-                .where(ApplicationMatch.application_id == application_id)
-                .order_by(ApplicationMatch.created_at.desc())
+                select(ApplicationMatchOrm)
+                .where(ApplicationMatchOrm.application_id == application_id)
+                .order_by(ApplicationMatchOrm.created_at.desc())
             )
-            return list(session.scalars(stmt).all())
+            return [ApplicationMatch.model_validate(r) for r in session.scalars(stmt).all()]
 
     def get_latest_match(self, application_id: uuid.UUID) -> ApplicationMatch | None:
         matches = self.list_matches(application_id)
@@ -66,7 +123,8 @@ class ApplicationRepository:
 
     def get_match(self, match_id: uuid.UUID) -> ApplicationMatch | None:
         with self._session_factory() as session:
-            return session.get(ApplicationMatch, match_id)
+            row = session.get(ApplicationMatchOrm, match_id)
+            return ApplicationMatch.model_validate(row) if row else None
 
     # ---- optimizations -----------------------------------------------
 
@@ -74,21 +132,25 @@ class ApplicationRepository:
         self, opt: ApplicationCvOptimization
     ) -> ApplicationCvOptimization:
         with self._session_factory() as session:
-            session.add(opt)
+            row = ApplicationCvOptimizationOrm(**_orm_kwargs(opt, _OPT_FIELDS))
+            session.add(row)
             session.commit()
-            session.refresh(opt)
-            return opt
+            session.refresh(row)
+            return ApplicationCvOptimization.model_validate(row)
 
     def list_optimizations(
         self, application_id: uuid.UUID
     ) -> list[ApplicationCvOptimization]:
         with self._session_factory() as session:
             stmt = (
-                select(ApplicationCvOptimization)
-                .where(ApplicationCvOptimization.application_id == application_id)
-                .order_by(ApplicationCvOptimization.created_at.desc())
+                select(ApplicationCvOptimizationOrm)
+                .where(ApplicationCvOptimizationOrm.application_id == application_id)
+                .order_by(ApplicationCvOptimizationOrm.created_at.desc())
             )
-            return list(session.scalars(stmt).all())
+            return [
+                ApplicationCvOptimization.model_validate(r)
+                for r in session.scalars(stmt).all()
+            ]
 
     def get_latest_optimization(
         self, application_id: uuid.UUID
@@ -96,27 +158,38 @@ class ApplicationRepository:
         opts = self.list_optimizations(application_id)
         return opts[0] if opts else None
 
+    def get_optimization(
+        self, optimization_id: uuid.UUID
+    ) -> ApplicationCvOptimization | None:
+        with self._session_factory() as session:
+            row = session.get(ApplicationCvOptimizationOrm, optimization_id)
+            return ApplicationCvOptimization.model_validate(row) if row else None
+
     # ---- interview preps ---------------------------------------------
 
     def create_interview_prep(
         self, prep: ApplicationInterviewPrep
     ) -> ApplicationInterviewPrep:
         with self._session_factory() as session:
-            session.add(prep)
+            row = ApplicationInterviewPrepOrm(**_orm_kwargs(prep, _PREP_FIELDS))
+            session.add(row)
             session.commit()
-            session.refresh(prep)
-            return prep
+            session.refresh(row)
+            return ApplicationInterviewPrep.model_validate(row)
 
     def list_interview_preps(
         self, application_id: uuid.UUID
     ) -> list[ApplicationInterviewPrep]:
         with self._session_factory() as session:
             stmt = (
-                select(ApplicationInterviewPrep)
-                .where(ApplicationInterviewPrep.application_id == application_id)
-                .order_by(ApplicationInterviewPrep.created_at.desc())
+                select(ApplicationInterviewPrepOrm)
+                .where(ApplicationInterviewPrepOrm.application_id == application_id)
+                .order_by(ApplicationInterviewPrepOrm.created_at.desc())
             )
-            return list(session.scalars(stmt).all())
+            return [
+                ApplicationInterviewPrep.model_validate(r)
+                for r in session.scalars(stmt).all()
+            ]
 
     def get_latest_interview_prep(
         self, application_id: uuid.UUID
@@ -124,33 +197,31 @@ class ApplicationRepository:
         preps = self.list_interview_preps(application_id)
         return preps[0] if preps else None
 
-    def get_optimization(
-        self, optimization_id: uuid.UUID
-    ) -> ApplicationCvOptimization | None:
-        with self._session_factory() as session:
-            return session.get(ApplicationCvOptimization, optimization_id)
-
     # ---- cover letters -----------------------------------------------
 
     def create_cover_letter(
         self, letter: ApplicationCoverLetter
     ) -> ApplicationCoverLetter:
         with self._session_factory() as session:
-            session.add(letter)
+            row = ApplicationCoverLetterOrm(**_orm_kwargs(letter, _LETTER_FIELDS))
+            session.add(row)
             session.commit()
-            session.refresh(letter)
-            return letter
+            session.refresh(row)
+            return ApplicationCoverLetter.model_validate(row)
 
     def list_cover_letters(
         self, application_id: uuid.UUID
     ) -> list[ApplicationCoverLetter]:
         with self._session_factory() as session:
             stmt = (
-                select(ApplicationCoverLetter)
-                .where(ApplicationCoverLetter.application_id == application_id)
-                .order_by(ApplicationCoverLetter.created_at.desc())
+                select(ApplicationCoverLetterOrm)
+                .where(ApplicationCoverLetterOrm.application_id == application_id)
+                .order_by(ApplicationCoverLetterOrm.created_at.desc())
             )
-            return list(session.scalars(stmt).all())
+            return [
+                ApplicationCoverLetter.model_validate(r)
+                for r in session.scalars(stmt).all()
+            ]
 
     def get_latest_cover_letter(
         self, application_id: uuid.UUID
@@ -162,27 +233,28 @@ class ApplicationRepository:
         self, cover_letter_id: uuid.UUID
     ) -> ApplicationCoverLetter | None:
         with self._session_factory() as session:
-            return session.get(ApplicationCoverLetter, cover_letter_id)
+            row = session.get(ApplicationCoverLetterOrm, cover_letter_id)
+            return ApplicationCoverLetter.model_validate(row) if row else None
 
     def list_all_cover_letters_with_context(self) -> list[dict[str, Any]]:
         """Cross-application listing for the Cover Letter Library view."""
         with self._session_factory() as session:
             stmt = (
                 select(
-                    ApplicationCoverLetter.id,
-                    ApplicationCoverLetter.application_id,
-                    ApplicationCoverLetter.body,
-                    ApplicationCoverLetter.tone,
-                    ApplicationCoverLetter.created_at,
-                    TrackedApplication.title,
-                    TrackedApplication.company,
-                    TrackedApplication.url,
+                    ApplicationCoverLetterOrm.id,
+                    ApplicationCoverLetterOrm.application_id,
+                    ApplicationCoverLetterOrm.body,
+                    ApplicationCoverLetterOrm.tone,
+                    ApplicationCoverLetterOrm.created_at,
+                    TrackedApplicationOrm.title,
+                    TrackedApplicationOrm.company,
+                    TrackedApplicationOrm.url,
                 )
                 .join(
-                    TrackedApplication,
-                    TrackedApplication.id == ApplicationCoverLetter.application_id,
+                    TrackedApplicationOrm,
+                    TrackedApplicationOrm.id == ApplicationCoverLetterOrm.application_id,
                 )
-                .order_by(ApplicationCoverLetter.created_at.desc())
+                .order_by(ApplicationCoverLetterOrm.created_at.desc())
             )
             rows = session.execute(stmt).all()
             return [

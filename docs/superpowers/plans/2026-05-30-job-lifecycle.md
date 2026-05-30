@@ -204,25 +204,32 @@ git commit -m "feat(ingestion): add source_id and status to NormalizedJob"
 
 (No standalone unit test — exercised by the repository tests in Task 5/6 and the migration in Task 4. This step only changes the SQLAlchemy mapping so sqlite test tables include the columns.)
 
+> **⚠ Keep the build green:** unit tests build tables from this ORM, and the
+> repository (`_to_orm`/`add_if_absent`) still uses `dedup_key` until Task 5.
+> So THIS task must (a) ADD the new columns in an insert-safe way (every new
+> column nullable or defaulted, so the *unchanged* old repo can still insert),
+> (b) KEEP `dedup_key` and its existing `UniqueConstraint`, and (c) NOT add the
+> new `(bucket, source, identity_key)` unique constraint yet — `identity_key`
+> is empty-default for now and would collide. Task 5 finalizes: it makes
+> `identity_key` authoritative in `_to_orm`, swaps the constraint, and drops
+> `dedup_key` — all together with the repo switch, in one green commit.
+
 - [ ] **Step 1: Add columns to `IngestedJob`**
 
-In `backend/src/hiresense/ingestion/infrastructure/models.py`, replace the `dedup_key` column and the `UniqueConstraint`, and add the new columns:
+In `backend/src/hiresense/ingestion/infrastructure/models.py`, ADD a new index and the new columns. **Leave the existing `dedup_key` column and `UniqueConstraint("bucket","dedup_key", name="ux_ingested_jobs_bucket_dedup")` untouched.** All new columns are nullable or defaulted so existing inserts keep working:
 
 ```python
     __table_args__ = (
-        UniqueConstraint(
-            "bucket", "source", "identity_key",
-            name="ux_ingested_jobs_bucket_source_identity",
-        ),
+        UniqueConstraint("bucket", "dedup_key", name="ux_ingested_jobs_bucket_dedup"),  # unchanged; removed in Task 5
         Index("ix_ingested_jobs_bucket_fetched_at", "bucket", "fetched_at"),
         Index("ix_ingested_jobs_source", "source"),
         Index("ix_ingested_jobs_bucket_status_checked", "bucket", "status", "last_checked_at"),
     )
-    # ...
-    identity_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    # ... existing columns (incl. dedup_key) stay ...
+    identity_key: Mapped[str | None] = mapped_column(String(64), nullable=True)  # tightened to NOT NULL in Task 5
     source_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    status: Mapped[str] = mapped_column(String(10), nullable=False, default="open")
-    content_hash: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(10), nullable=False, default="open", server_default="open")
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False, default="", server_default="")
     last_seen_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -235,15 +242,18 @@ In `backend/src/hiresense/ingestion/infrastructure/models.py`, replace the `dedu
     updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    missed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    missed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
 ```
 
-Remove the old `dedup_key: Mapped[str]` line. Add `Integer` to the `from sqlalchemy import ...` line.
+Add `Integer` to the `from sqlalchemy import ...` line. Do NOT remove `dedup_key`.
 
-- [ ] **Step 2: Verify it imports**
+- [ ] **Step 2: Verify it imports AND the existing repo suite still passes**
 
 Run: `cd backend && uv run python -c "from hiresense.ingestion.infrastructure.models import IngestedJob; print(sorted(IngestedJob.__table__.columns.keys()))"`
-Expected: list includes `identity_key`, `source_id`, `status`, `content_hash`, `last_seen_at`, `last_checked_at`, `closed_at`, `updated_at`, `missed_count`, and NO `dedup_key`.
+Expected: list includes the 9 new columns AND still includes `dedup_key`.
+
+Run: `cd backend && uv run python -m pytest tests/unit/ingestion/test_jobs_repository.py -v`
+Expected: PASS — the old `add_if_absent`/`dedup_key` path is untouched and the new columns are insert-safe.
 
 - [ ] **Step 3: Commit**
 
@@ -448,7 +458,16 @@ def identity_key(job: NormalizedJob) -> str:
 
 Re-export `identity_key` from `domain/__init__.py` and add to `__all__`.
 
-- [ ] **Step 5: Implement repository changes**
+- [ ] **Step 5a: Finalize the ORM schema** (now that the repo will populate `identity_key`)
+
+In `backend/src/hiresense/ingestion/infrastructure/models.py` (Task 3 left these transitional):
+- Remove the `dedup_key` column and the `UniqueConstraint("bucket","dedup_key", name="ux_ingested_jobs_bucket_dedup")`.
+- Tighten `identity_key` to `Mapped[str] = mapped_column(String(64), nullable=False)`.
+- Add the new constraint to `__table_args__`: `UniqueConstraint("bucket", "source", "identity_key", name="ux_ingested_jobs_bucket_source_identity")`.
+
+This is safe because the same commit switches `_to_orm` to always set `identity_key` (below), so inserts never leave it null.
+
+- [ ] **Step 5b: Implement repository changes**
 
 In `jobs_repository.py`:
 
@@ -461,7 +480,7 @@ from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 ```
 
-Update `_to_orm` to set `identity_key=identity_key(job)`, `source_id=job.source_id`, `status=job.status`, `content_hash=content_hash(job)`, and drop `dedup_key`. Update `_to_domain` to read `source_id=row.source_id`, `status=row.status`.
+Update `_to_orm` to set `identity_key=identity_key(job)`, `source_id=job.source_id`, `status=job.status`, `content_hash=content_hash(job)`, and drop the `dedup_key=` assignment. Update `_to_domain` to read `source_id=row.source_id`, `status=row.status`. Remove the now-unused `dedup_key` param/logic.
 
 Replace `add_if_absent` with `upsert` (keep a thin `add_if_absent` delegating to `upsert(...) != UNCHANGED` only if other callers still need a bool — but Task 6 migrates them, so remove `add_if_absent`):
 
@@ -571,7 +590,7 @@ Expected: PASS (including the 3 new upsert tests).
 - [ ] **Step 7: Commit**
 
 ```bash
-git add backend/src/hiresense/ingestion/domain/upsert_result.py backend/src/hiresense/ingestion/domain/identity.py backend/src/hiresense/ingestion/domain/__init__.py backend/src/hiresense/ingestion/infrastructure/jobs_repository.py backend/tests/unit/ingestion/test_jobs_repository.py
+git add backend/src/hiresense/ingestion/domain/upsert_result.py backend/src/hiresense/ingestion/domain/identity.py backend/src/hiresense/ingestion/domain/__init__.py backend/src/hiresense/ingestion/infrastructure/models.py backend/src/hiresense/ingestion/infrastructure/jobs_repository.py backend/tests/unit/ingestion/test_jobs_repository.py
 git commit -m "feat(ingestion): identity-keyed upsert + closure methods on JobsRepository"
 ```
 

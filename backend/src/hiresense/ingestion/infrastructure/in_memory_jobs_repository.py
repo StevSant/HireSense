@@ -25,6 +25,7 @@ class InMemoryJobsRepository:
         self._content_hash: dict[str, str] = {}
         self._missed: dict[str, int] = {}
         self._fetched_at: dict[str, datetime] = {}
+        self._last_checked: dict[str, datetime | None] = {}
 
     def upsert(self, job: NormalizedJob) -> UpsertResult:
         key = (job.source, identity_key(job))
@@ -37,6 +38,7 @@ class InMemoryJobsRepository:
             self._content_hash[job.id] = new_hash
             self._missed[job.id] = 0
             self._fetched_at[job.id] = datetime.now(timezone.utc)
+            self._last_checked[job.id] = None
             return UpsertResult.INSERTED
 
         existing = self._jobs[existing_id]
@@ -103,6 +105,21 @@ class InMemoryJobsRepository:
                 self._jobs[jid] = job.model_copy(update={"status": "closed"})
         return to_close
 
+    def find_open_stale(self, sources: list[str], limit: int) -> list[NormalizedJob]:
+        if not sources:
+            return []
+        src = set(sources)
+        open_jobs = [j for j in self._jobs.values() if j.status == "open" and j.source in src]
+        _min = datetime.min.replace(tzinfo=timezone.utc)
+        open_jobs.sort(key=lambda j: self._last_checked.get(j.id) or _min)
+        return open_jobs[:limit]
+
+    def mark_checked(self, job_ids: list[str]) -> None:
+        now = datetime.now(timezone.utc)
+        for jid in job_ids:
+            if jid in self._jobs:
+                self._last_checked[jid] = now
+
     def list_all(self) -> list[NormalizedJob]:
         return list(self._jobs.values())
 
@@ -129,6 +146,7 @@ class InMemoryJobsRepository:
             self._fetched_at.pop(jid, None)
             self._content_hash.pop(jid, None)
             self._missed.pop(jid, None)
+            self._last_checked.pop(jid, None)
             if job is not None:
                 self._identity_to_id.pop((job.source, identity_key(job)), None)
         return len(stale)

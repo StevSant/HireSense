@@ -32,3 +32,15 @@ def test_id_and_scores_do_not_affect_hash() -> None:
     assert content_hash(_job(id="a", match_score=0.9)) == content_hash(
         _job(id="b", match_score=0.1)
     )
+
+
+def test_remote_modality_change_changes_hash() -> None:
+    assert content_hash(_job(remote_modality="remote")) != content_hash(
+        _job(remote_modality="on_site")
+    )
+
+
+def test_categories_change_changes_hash() -> None:
+    assert content_hash(_job(categories=["engineering"])) != content_hash(
+        _job(categories=["design"])
+    )

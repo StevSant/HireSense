@@ -11,7 +11,10 @@ from hiresense.infrastructure.database import Base
 class IngestedJob(Base):
     __tablename__ = "ingested_jobs"
     __table_args__ = (
-        UniqueConstraint("bucket", "dedup_key", name="ux_ingested_jobs_bucket_dedup"),
+        UniqueConstraint(
+            "bucket", "source", "identity_key",
+            name="ux_ingested_jobs_bucket_source_identity",
+        ),
         Index("ix_ingested_jobs_bucket_fetched_at", "bucket", "fetched_at"),
         Index("ix_ingested_jobs_source", "source"),
         Index("ix_ingested_jobs_bucket_status_checked", "bucket", "status", "last_checked_at"),
@@ -19,7 +22,6 @@ class IngestedJob(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     bucket: Mapped[str] = mapped_column(String(20), nullable=False, default="boards")
-    dedup_key: Mapped[str] = mapped_column(String(64), nullable=False)
     source: Mapped[str] = mapped_column(String(50), nullable=False)
     source_type: Mapped[str] = mapped_column(String(20), nullable=False)
     platform: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -43,7 +45,7 @@ class IngestedJob(Base):
     fetched_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    identity_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    identity_key: Mapped[str] = mapped_column(String(64), nullable=False)
     source_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     status: Mapped[str] = mapped_column(String(10), nullable=False, default="open", server_default="open")
     content_hash: Mapped[str] = mapped_column(String(64), nullable=False, default="", server_default="")

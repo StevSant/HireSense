@@ -160,3 +160,12 @@ def test_greenhouse_normalizer_strips_html() -> None:
     assert "<p>" not in result["description"]
     assert "Line one" in result["description"]
     assert "Line two" in result["description"]
+
+
+def test_greenhouse_supports_snapshot_closure() -> None:
+    adapter = GreenhouseAdapter(
+        http_client=None,
+        base_url="https://boards-api.greenhouse.io/v1/boards",
+        timeout=10.0,
+    )
+    assert adapter.supports_snapshot_closure() is True

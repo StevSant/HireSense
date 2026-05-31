@@ -65,8 +65,8 @@ class TestInMemoryBulkUpdateScores:
         repo = InMemoryJobsRepository()
         job_a = _make_job("A")
         job_b = _make_job("B")
-        repo.add_if_absent(job_a)
-        repo.add_if_absent(job_b)
+        repo.upsert(job_a)
+        repo.upsert(job_b)
 
         updates = [
             ScoreUpdate(job_id=job_a.id, match_score=0.8, semantic_score=0.9),
@@ -89,7 +89,7 @@ class TestInMemoryBulkUpdateScores:
 
         repo = InMemoryJobsRepository()
         job = _make_job()
-        repo.add_if_absent(job)
+        repo.upsert(job)
 
         updates = [
             ScoreUpdate(job_id=job.id, match_score=0.5, semantic_score=0.6),
@@ -106,7 +106,7 @@ class TestInMemoryBulkUpdateScores:
         """An empty update list must be a no-op (no error, no mutation)."""
         repo = InMemoryJobsRepository()
         job = _make_job()
-        repo.add_if_absent(job)
+        repo.upsert(job)
 
         # Should not raise
         repo.bulk_update_scores([])
@@ -122,8 +122,8 @@ class TestInMemoryBulkUpdateScores:
         repo = InMemoryJobsRepository()
         job_a = _make_job("A")
         job_b = _make_job("B")
-        repo.add_if_absent(job_a)
-        repo.add_if_absent(job_b)
+        repo.upsert(job_a)
+        repo.upsert(job_b)
         # Pre-set a score on job_b via the single-item method
         repo.update_scores(job_b.id, match_score=0.99, semantic_score=0.88)
 

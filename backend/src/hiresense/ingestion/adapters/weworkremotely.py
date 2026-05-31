@@ -13,6 +13,9 @@ class WeWorkRemotelyAdapter:
         self._http = http_client
         self._rss_url = rss_url
 
+    def supports_snapshot_closure(self) -> bool:
+        return False
+
     def source_name(self) -> str:
         return "weworkremotely"
 

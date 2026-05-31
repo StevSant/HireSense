@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import Request
 
+from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.portal_config import PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
 from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
@@ -36,3 +37,8 @@ def get_quick_scoring(request: Request) -> QuickScoringService | None:
 def get_deep_analysis(request: Request) -> DeepAnalysisService | None:
     ingestion = getattr(request.app.state, "ingestion", None)
     return ingestion.get_deep_analysis() if ingestion is not None else None
+
+
+def get_revalidation_service(request: Request) -> JobRevalidationService | None:
+    ingestion = getattr(request.app.state, "ingestion", None)
+    return ingestion.get_revalidation_service() if ingestion is not None else None

@@ -51,3 +51,8 @@ def test_remotive_source_name() -> None:
     adapter = RemotiveAdapter(http_client=None)
     assert adapter.source_name() == "remotive"
     assert adapter.source_type() == SourceType.API
+
+
+def test_remotive_does_not_support_snapshot_closure() -> None:
+    adapter = RemotiveAdapter(http_client=None)
+    assert adapter.supports_snapshot_closure() is False

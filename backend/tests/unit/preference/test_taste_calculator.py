@@ -63,3 +63,26 @@ def test_blend_with_zero_delta_returns_normalized_baseline() -> None:
     taste = calc.blend([3.0, 4.0], [0.0, 0.0])
     assert math.isclose(taste[0], 0.6, rel_tol=1e-6)
     assert math.isclose(taste[1], 0.8, rel_tol=1e-6)
+
+
+def test_decay_with_nonpositive_tau_returns_one() -> None:
+    zero_tau = TasteVectorCalculator(alpha=1.0, beta=1.0, gamma=1.0, tau_days=0.0)
+    assert zero_tau.decay(50.0) == 1.0
+    negative_tau = TasteVectorCalculator(alpha=1.0, beta=1.0, gamma=1.0, tau_days=-1.0)
+    assert negative_tau.decay(50.0) == 1.0
+
+
+def test_compute_delta_skips_dimension_mismatch() -> None:
+    calc = TasteVectorCalculator(alpha=1.0, beta=1.0, gamma=1.0, tau_days=90.0)
+    valid = SignalContribution(embedding=[1.0, 0.0], polarity=1, weight=1.0, age_days=0.0)
+    mismatched = SignalContribution(
+        embedding=[1.0, 1.0, 1.0], polarity=1, weight=1.0, age_days=0.0
+    )
+    delta_mixed = calc.compute_delta([valid, mismatched], dim=2)
+    delta_valid_only = calc.compute_delta([valid], dim=2)
+    assert delta_mixed == delta_valid_only
+
+
+def test_blend_with_zero_baseline_and_zero_delta_returns_zeros() -> None:
+    calc = TasteVectorCalculator(alpha=1.0, beta=1.0, gamma=1.0, tau_days=90.0)
+    assert calc.blend([0.0, 0.0], [0.0, 0.0]) == [0.0, 0.0]

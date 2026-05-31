@@ -12,6 +12,9 @@ class RemoteOKAdapter:
     def __init__(self, http_client: Any) -> None:
         self._http = http_client
 
+    def supports_snapshot_closure(self) -> bool:
+        return False
+
     def source_name(self) -> str:
         return "remoteok"
 

@@ -20,6 +20,9 @@ class GetOnBoardAdapter:
         # Empty/None → ingest from /search/jobs with no filter.
         self._categories = list(categories) if categories else []
 
+    def supports_snapshot_closure(self) -> bool:
+        return False
+
     def source_name(self) -> str:
         return "getonboard"
 

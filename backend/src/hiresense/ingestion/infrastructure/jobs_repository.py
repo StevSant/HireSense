@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
@@ -11,6 +11,7 @@ from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.infrastructure.models import IngestedJob
+from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
 
 
 def _to_orm(job: NormalizedJob, bucket: str) -> IngestedJob:
@@ -238,6 +239,31 @@ class JobsRepository:
                 return
             row.match_score = match_score
             row.semantic_score = semantic_score
+            session.commit()
+
+    def bulk_update_scores(self, updates: list[ScoreUpdate]) -> None:
+        """Persist score updates for multiple jobs in a single executemany round-trip.
+
+        Issues a single bulk UPDATE keyed by primary key via SQLAlchemy ORM
+        executemany — one session, one commit. Both score fields (including
+        None values) are written as supplied; partial-None updates are
+        intentional and overwrite the stored value. Unknown IDs are silently
+        ignored by the DB engine. An empty list is a no-op (no DB call at all).
+        """
+        if not updates:
+            return
+        with self._session_factory() as session:
+            session.execute(
+                update(IngestedJob),
+                [
+                    {
+                        "id": su.job_id,
+                        "match_score": su.match_score,
+                        "semantic_score": su.semantic_score,
+                    }
+                    for su in updates
+                ],
+            )
             session.commit()
 
     def prune_older_than(self, cutoff: datetime) -> int:

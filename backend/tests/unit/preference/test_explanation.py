@@ -35,3 +35,8 @@ def test_drift_magnitude_is_delta_norm() -> None:
     exp = build_explanation([_sig(FeedbackKind.THUMBS_UP)], delta_vector=[3.0, 4.0])
     assert exp.active is True
     assert abs(exp.drift_magnitude - 5.0) < 1e-9
+
+
+def test_build_explanation_summary_defaults_none():
+    exp = build_explanation([], delta_vector=None)
+    assert exp.summary is None

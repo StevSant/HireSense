@@ -15,6 +15,7 @@ class PreferenceExplanation(BaseModel):
     negative_count: int
     counts_by_kind: dict[str, int]
     drift_magnitude: float
+    summary: str | None = None
 
 
 def build_explanation(

@@ -28,10 +28,10 @@ def list_signals(
 
 
 @router.get("/explain", response_model=PreferenceExplanation)
-def explain(
+async def explain(
     service: PreferenceService = Depends(get_preference_service),
 ) -> PreferenceExplanation:
-    return service.explain()
+    return await service.explain()
 
 
 @router.post("/reset", status_code=204)

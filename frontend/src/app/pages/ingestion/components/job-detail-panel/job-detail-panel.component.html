@@ -47,6 +47,14 @@
         }
       </div>
 
+      <!-- Preference feedback -->
+      <div class="panel-section feedback-section">
+        <app-feedback-controls
+          [jobId]="job().id"
+          (feedbackSubmitted)="feedbackSubmitted.emit($event)"
+        />
+      </div>
+
       <!-- Why this score (quick reasons + dealbreakers) -->
       @if (job().reasons.length > 0 || job().dealbreakers.length > 0) {
         <div class="panel-section">

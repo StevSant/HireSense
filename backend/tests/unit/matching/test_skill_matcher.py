@@ -122,3 +122,29 @@ def test_missing_skill_absent_from_both_list_and_evidence() -> None:
     )
     assert sorted(result.matched) == ["python"]
     assert result.missing == ["rust"]
+
+
+def test_matches_skill_from_inferred_present_verdict() -> None:
+    # "backend development" is neither in the skills list nor a literal
+    # phrase in the evidence, but an upstream (LLM) judgement says it's present.
+    matcher = SkillMatcher()
+    result = matcher.match(
+        candidate_skills=["python"],
+        required_skills=["python", "backend development"],
+        evidence_text="Built REST services.",
+        inferred_present=["Backend Development"],
+    )
+    assert sorted(result.matched) == ["backend development", "python"]
+    assert result.missing == []
+
+
+def test_inferred_present_is_normalized_and_scoped_to_required() -> None:
+    # Inferred verdicts are normalized; ones not in the required set are ignored.
+    matcher = SkillMatcher()
+    result = matcher.match(
+        candidate_skills=[],
+        required_skills=["postgresql"],
+        inferred_present=["Postgres", "kubernetes"],
+    )
+    assert result.matched == ["postgresql"]
+    assert result.missing == []

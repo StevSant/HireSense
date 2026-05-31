@@ -55,6 +55,9 @@ class FakeOrchestrator:
     def persist_scores(self, job_id, match_score, semantic_score) -> None:
         pass
 
+    def persist_scores_batch(self, updates) -> None:
+        pass
+
 
 class FakeScanner:
     def list_jobs(self) -> list[NormalizedJob]:
@@ -64,6 +67,9 @@ class FakeScanner:
         return None
 
     def persist_scores(self, job_id, match_score, semantic_score) -> None:
+        pass
+
+    def persist_scores_batch(self, updates) -> None:
         pass
 
 
@@ -197,6 +203,9 @@ async def test_list_jobs_strict_location_filters_non_matching() -> None:
         def persist_scores(self, job_id, match_score, semantic_score) -> None:
             pass
 
+        def persist_scores_batch(self, updates) -> None:
+            pass
+
     app = FastAPI()
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: MultiJobOrchestrator()
     app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
@@ -296,3 +305,46 @@ async def test_revalidate_endpoint_503_when_unconfigured() -> None:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post("/ingestion/revalidate")
     assert resp.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_pre_ranker_promotes_job_to_page_one_before_pagination() -> None:
+    """#18 fix: global pre-rank runs BEFORE pagination, so a job the ANN ranks
+    best reaches page 1 even if it was last in insertion order — and with no
+    explicit sort param (default match_desc)."""
+    from hiresense.ingestion.api.dependencies import get_pre_ranker
+
+    jobs = [
+        NormalizedJob(id=f"job-{i}", title=f"T{i}", company="Co", description="d",
+                      source="remotive", source_type="api", language="en",
+                      url=f"https://e.com/{i}")
+        for i in range(3)
+    ]
+
+    class _Orch:
+        async def run(self, filters=None): return []
+        def list_jobs(self): return list(jobs)
+        def persist_scores(self, *a): pass
+        def persist_scores_batch(self, updates): pass
+
+    class _PreRanker:
+        # Simulate ANN deciding job-2 is the best match (was last in order).
+        async def rerank(self, corpus, skill_by_id, skills, summary, bucket):
+            by_id = {j.id: j for j in corpus}
+            return [by_id["job-2"], by_id["job-0"], by_id["job-1"]]
+
+    app = FastAPI()
+    app.dependency_overrides[get_ingestion_orchestrator] = lambda: _Orch()
+    app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
+    app.dependency_overrides[get_profile_service] = lambda: FakeProfileService()
+    app.dependency_overrides[get_semantic_scoring] = lambda: None
+    app.dependency_overrides[get_pre_ranker] = lambda: _PreRanker()
+    app.include_router(router)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # page_size=1, no `sort` param -> default match_desc, pre-rank decides page 1
+        resp = await client.get("/ingestion/jobs", params={"tab": "boards", "page_size": 1, "min_score": 0})
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["jobs"][0]["id"] == "job-2"  # pre-ranked to the top, reached page 1

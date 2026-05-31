@@ -183,6 +183,37 @@ class JobsRepository:
             session.commit()
         return to_close
 
+    def find_open_stale(self, sources: list[str], limit: int) -> list[NormalizedJob]:
+        """Open jobs of the given sources, oldest-checked first (never-checked
+        first), capped at `limit`. Used to pace the URL-probe sweep."""
+        if not sources:
+            return []
+        with self._session_factory() as session:
+            rows = session.scalars(
+                select(IngestedJob)
+                .where(
+                    IngestedJob.bucket == self._bucket,
+                    IngestedJob.status == "open",
+                    IngestedJob.source.in_(sources),
+                )
+                .order_by(IngestedJob.last_checked_at.asc().nullsfirst())
+                .limit(limit)
+            ).all()
+            return [_to_domain(r) for r in rows]
+
+    def mark_checked(self, job_ids: list[str]) -> None:
+        if not job_ids:
+            return
+        now = datetime.now(timezone.utc)
+        with self._session_factory() as session:
+            for row in session.scalars(
+                select(IngestedJob).where(
+                    IngestedJob.bucket == self._bucket, IngestedJob.id.in_(job_ids)
+                )
+            ).all():
+                row.last_checked_at = now
+            session.commit()
+
     def list_all(self) -> list[NormalizedJob]:
         with self._session_factory() as session:
             stmt = select(IngestedJob).where(IngestedJob.bucket == self._bucket)

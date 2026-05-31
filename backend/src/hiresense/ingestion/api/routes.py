@@ -123,6 +123,7 @@ async def list_jobs(
     min_score: float | None = None,
     seniority: Annotated[list[SeniorityLevel] | None, Query()] = None,
     max_years_experience: int | None = None,
+    include_closed: bool = False,
 ) -> PaginatedResult:
     # Default min_score from settings when the client doesn't specify one
     # (pass min_score=0 explicitly to disable the filter). Tests mount the
@@ -171,6 +172,7 @@ async def list_jobs(
         min_score=min_score,
         seniority_levels=seniority,
         max_years_experience=max_years_experience,
+        include_closed=include_closed,
     )
     result = filter_and_paginate(all_jobs, params)
 

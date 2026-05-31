@@ -12,6 +12,9 @@ class GreenhouseAdapter:
         self._base_url = base_url
         self._timeout = timeout
 
+    def supports_snapshot_closure(self) -> bool:
+        return True
+
     def source_name(self) -> str:
         return "greenhouse"
 

@@ -216,3 +216,31 @@ async def test_list_jobs_strict_location_filters_non_matching() -> None:
     # Ambiguous "Remote (Remote)" jobs now pass through — fully-remote
     # postings are treated as applyable from anywhere.
     assert returned_ids == {"job-chile", "job-worldwide", "job-remote-remote"}
+
+
+@pytest.mark.asyncio
+async def test_revalidate_endpoint_returns_closed_count() -> None:
+    from hiresense.ingestion.api.dependencies import get_revalidation_service
+
+    class FakeRevalidation:
+        async def sweep(self):
+            return ["x", "y", "z"]
+
+    app = FastAPI()
+    app.dependency_overrides[get_revalidation_service] = lambda: FakeRevalidation()
+    app.include_router(router)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/ingestion/revalidate")
+
+    assert resp.status_code == 200
+    assert resp.json() == {"closed": 3}
+
+
+@pytest.mark.asyncio
+async def test_revalidate_endpoint_503_when_unconfigured() -> None:
+    app = FastAPI()  # no override -> dependency returns None (no app.state.ingestion)
+    app.include_router(router)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/ingestion/revalidate")
+    assert resp.status_code == 503

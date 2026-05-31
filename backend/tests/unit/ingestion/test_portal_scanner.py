@@ -25,6 +25,9 @@ class FakeAdapter:
         self._raise_on_fetch = raise_on_fetch
         self.calls: list[tuple[str, str]] = []
 
+    def supports_snapshot_closure(self) -> bool:
+        return True
+
     async def fetch_jobs(self, board_id: str, company_name: str) -> list[RawJobListing]:
         self.calls.append((board_id, company_name))
         if self._raise_on_fetch:
@@ -394,3 +397,77 @@ async def test_scan_skips_disabled_portals() -> None:
     assert result.new == 1
     assert len(adapter_enabled.calls) == 1
     assert len(adapter_disabled.calls) == 0
+
+
+# ---------------------------------------------------------------------------
+# Lifecycle: disappearance closure for snapshot portals (Task 12)
+# ---------------------------------------------------------------------------
+
+
+class ScriptedAdapter:
+    """Returns a pre-scripted batch of RawJobListing per successive scan."""
+
+    def __init__(self, batches: list[list[RawJobListing]]) -> None:
+        self._batches = batches
+        self._i = 0
+        self.calls: list[tuple[str, str]] = []
+
+    def supports_snapshot_closure(self) -> bool:
+        return True
+
+    async def fetch_jobs(self, board_id: str, company_name: str) -> list[RawJobListing]:
+        self.calls.append((board_id, company_name))
+        batch = self._batches[min(self._i, len(self._batches) - 1)]
+        self._i += 1
+        return batch
+
+
+class FakeIndexer:
+    def __init__(self) -> None:
+        self.indexed: list[list[str]] = []
+        self.removed: list[list[str]] = []
+
+    async def index(self, jobs) -> int:
+        self.indexed.append([j.id for j in jobs])
+        return len(jobs)
+
+    async def remove(self, job_ids) -> None:
+        self.removed.append(list(job_ids))
+
+
+def _portal_raw(sid: str) -> RawJobListing:
+    return RawJobListing(
+        source="Acme",
+        source_id=sid,
+        raw_data={"title": "Engineer", "company": "Acme", "url": f"https://acme.example.com/{sid}"},
+    )
+
+
+@pytest.mark.asyncio
+async def test_scan_closes_portal_job_missing_after_threshold() -> None:
+    adapter = ScriptedAdapter(
+        [[_portal_raw("1"), _portal_raw("2")], [_portal_raw("1")], [_portal_raw("1")]]
+    )
+    config = _make_config(
+        PortalEntry(name="Acme", platform="greenhouse", board_id="acme", categories=[]),
+    )
+    indexer = FakeIndexer()
+    repo = InMemoryJobsRepository()
+    scanner = PortalScanner(
+        config=config,
+        adapters={"greenhouse": adapter},
+        normalizers={"greenhouse": FakeNormalizer()},
+        event_bus=FakeEventBus(),
+        repository=repo,
+        indexer=indexer,
+    )  # default threshold 2
+
+    await scanner.scan(ScanFilters())  # scan 1: jobs 1 & 2 open
+    gone_id = next(j.id for j in repo.list_all() if j.source_id == "2")
+
+    await scanner.scan(ScanFilters())  # scan 2: job 2 missed -> 1
+    assert repo.get_by_id(gone_id).status == "open"
+
+    await scanner.scan(ScanFilters())  # scan 3: job 2 missed -> 2 -> closed
+    assert repo.get_by_id(gone_id).status == "closed"
+    assert indexer.removed[-1] == [gone_id]

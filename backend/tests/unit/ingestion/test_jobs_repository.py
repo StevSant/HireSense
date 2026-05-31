@@ -211,3 +211,31 @@ def test_bump_missed_and_close_persists_per_row(repo):
     assert by_sid["n2"].id in closed
     assert by_sid["n2"].status == "closed"     # missing -> closed
     assert by_sid["n1"].status == "open"       # seen -> stays open
+
+
+def test_find_open_stale_prioritizes_unchecked_and_caps(repo):
+    for i in range(3):
+        repo.upsert(_job(str(i), source_id=f"n{i}", url=f"https://e.com/{i}"))
+    assert len(repo.find_open_stale(["remotive"], limit=2)) == 2  # cap respected
+    repo.mark_checked([j.id for j in repo.list_all()])
+    repo.upsert(_job("new", source_id="nnew", url="https://e.com/new"))  # last_checked None
+    stale = repo.find_open_stale(["remotive"], limit=1)
+    assert len(stale) == 1 and stale[0].source_id == "nnew"  # NULLS FIRST
+
+
+def test_find_open_stale_excludes_closed_and_other_sources(repo):
+    repo.upsert(_job("a", source_id="n1", url="https://e.com/1"))               # remotive
+    repo.upsert(_job("b", source="other", source_id="n2", url="https://e.com/2"))
+    a_id = next(j.id for j in repo.list_all() if j.source == "remotive")
+    repo.mark_closed([a_id])
+    assert repo.find_open_stale(["remotive"], 5) == []     # closed excluded
+    assert len(repo.find_open_stale(["other"], 5)) == 1    # different source, open
+
+
+def test_find_open_stale_in_memory_parity():
+    mem = InMemoryJobsRepository()
+    mem.upsert(_job("a", source_id="n1", url="https://e.com/1"))
+    mem.upsert(_job("b", source_id="n2", url="https://e.com/2"))
+    assert len(mem.find_open_stale(["remotive"], 5)) == 2
+    mem.mark_closed([mem.list_all()[0].id])
+    assert len(mem.find_open_stale(["remotive"], 5)) == 1

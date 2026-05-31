@@ -92,6 +92,9 @@ async def test_orchestrator_skips_duplicate_across_runs() -> None:
         def source_type(self) -> SourceType:
             return SourceType.API
 
+        def supports_snapshot_closure(self) -> bool:
+            return False
+
         async def fetch_jobs(self, filters=None) -> list[RawJobListing]:  # noqa: ARG002
             return [
                 RawJobListing(

@@ -203,6 +203,13 @@ class Settings(BaseSettings):
     preference_weight_more_like_this: float = 1.0
     preference_weight_thumbs_down: float = 1.0
     preference_weight_not_interested: float = 1.5
+    # Implicit (Phase 2) per-kind magnitudes — outcomes from the tracking pipeline.
+    # Tiered: stronger ground-truth outcomes weigh more than a thumbs-up.
+    preference_weight_applied: float = 1.0
+    preference_weight_interviewing: float = 1.5
+    preference_weight_offered: float = 2.5
+    preference_weight_accepted: float = 3.0
+    preference_weight_rejected: float = 1.5
 
     # Match scoring (LLM model routing). The job list shows an LLM-gated quick
     # score (cheap model, batched per visible page); the detail panel can run a

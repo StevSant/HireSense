@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from hiresense.admin.domain import LLMConfigService, LLMFactory, UsageRecorder
+from hiresense.admin.domain import LLMConfigService, UsageRecorder
+from hiresense.admin.infrastructure import LLMFactory
 from hiresense.admin.infrastructure import (
     FeatureConfiguredLLMAdapter,
     UsageTrackingLLMAdapter,

@@ -1,12 +1,10 @@
-import uuid as uuid_mod
-from datetime import datetime, timezone
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from hiresense.infrastructure.database import Base
-from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
+from hiresense.tracking.domain.models import TrackedApplication
 from hiresense.tracking.infrastructure.orm import TrackedApplicationOrm  # noqa: F401
 from hiresense.tracking.infrastructure.status_history_orm import ApplicationStatusHistoryOrm  # noqa: F401
 from hiresense.tracking.infrastructure.repository import TrackingRepository

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PreferenceService } from '../../../../core/services/preference.service';
 import { FeedbackControl } from '../../models/feedback-control.model';
 import { FeedbackKind } from '../../models/feedback-kind.model';
@@ -12,6 +13,7 @@ import { FeedbackKind } from '../../models/feedback-kind.model';
 })
 export class FeedbackControlsComponent {
   private preferenceService = inject(PreferenceService);
+  private destroyRef = inject(DestroyRef);
 
   jobId = input.required<string>();
   /** Compact = icon-only, for list rows. Default shows labels (detail panel). */
@@ -34,16 +36,19 @@ export class FeedbackControlsComponent {
     if (this.pending() !== null) return;
     this.pending.set(kind);
     this.failed.set(false);
-    this.preferenceService.submitFeedback(this.jobId(), kind).subscribe({
-      next: () => {
-        this.pending.set(null);
-        this.lastSent.set(kind);
-        this.feedbackSubmitted.emit(kind);
-      },
-      error: () => {
-        this.pending.set(null);
-        this.failed.set(true);
-      },
-    });
+    this.preferenceService
+      .submitFeedback(this.jobId(), kind)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.pending.set(null);
+          this.lastSent.set(kind);
+          this.feedbackSubmitted.emit(kind);
+        },
+        error: () => {
+          this.pending.set(null);
+          this.failed.set(true);
+        },
+      });
   }
 }

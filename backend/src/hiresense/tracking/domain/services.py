@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import uuid as uuid_mod
 from datetime import datetime, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from hiresense.kernel.events import TrackingStatusChangedEvent
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
-from hiresense.tracking.ports import TrackingRepositoryPort
+
+if TYPE_CHECKING:
+    from hiresense.tracking.ports import TrackingRepositoryPort
 
 
 class TrackingService:

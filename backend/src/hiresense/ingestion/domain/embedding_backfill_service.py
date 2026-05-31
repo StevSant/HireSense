@@ -2,17 +2,15 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Protocol
 
 from hiresense.ingestion.domain.models import NormalizedJob
+from hiresense.ingestion.ports.jobs_repository import JobsRepositoryPort
+from hiresense.ports.embedding import EmbeddingPort
+from hiresense.ports.vector_store import VectorStorePort
 
 logger = logging.getLogger(__name__)
 
 _JOB_TEXT_CHAR_LIMIT = 4000
-
-
-class _RepositoryPort(Protocol):
-    def list_all(self) -> list[NormalizedJob]: ...
 
 
 def _job_text(job: NormalizedJob) -> str:
@@ -44,10 +42,10 @@ class EmbeddingBackfillService:
     def __init__(
         self,
         *,
-        boards_repo: _RepositoryPort,
-        portals_repo: _RepositoryPort,
-        embedding: Any,
-        vector_store: Any,
+        boards_repo: JobsRepositoryPort,
+        portals_repo: JobsRepositoryPort,
+        embedding: EmbeddingPort,
+        vector_store: VectorStorePort | None,
     ) -> None:
         self._boards_repo = boards_repo
         self._portals_repo = portals_repo
@@ -55,17 +53,17 @@ class EmbeddingBackfillService:
         self._vector_store = vector_store
 
     async def run(self) -> BackfillResult:
-        """Embed + upsert all jobs in both buckets. Returns per-bucket counts."""
+        """Embed + upsert open jobs in both buckets. Returns per-bucket counts."""
         if self._vector_store is None:
             logger.warning("EmbeddingBackfillService: vector store not configured, skipping")
             return BackfillResult(boards=0, portals=0)
 
-        boards_count = await self._backfill_bucket(
-            self._boards_repo.list_all(), bucket="boards"
-        )
-        portals_count = await self._backfill_bucket(
-            self._portals_repo.list_all(), bucket="portals"
-        )
+        # NOTE: single-batch embed; chunk if corpus grows large
+        boards_jobs = [j for j in self._boards_repo.list_all() if j.status == "open"]
+        portals_jobs = [j for j in self._portals_repo.list_all() if j.status == "open"]
+
+        boards_count = await self._backfill_bucket(boards_jobs, bucket="boards")
+        portals_count = await self._backfill_bucket(portals_jobs, bucket="portals")
         return BackfillResult(boards=boards_count, portals=portals_count)
 
     async def _backfill_bucket(self, jobs: list[NormalizedJob], *, bucket: str) -> int:

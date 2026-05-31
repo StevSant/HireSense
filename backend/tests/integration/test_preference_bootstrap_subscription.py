@@ -98,7 +98,7 @@ async def test_build_preference_subscribes_to_status_changed() -> None:
     )
 
     # Code under test: build_preference must perform the real subscribe().
-    build = build_preference(infra)
+    build = build_preference(infra, lambda name: None)
 
     try:
         # No signals before any event.

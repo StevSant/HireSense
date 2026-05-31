@@ -6,6 +6,7 @@ from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationS
 from hiresense.ingestion.domain.portal_config import PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
 from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
+from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
 from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
@@ -20,6 +21,7 @@ class IngestionProvider:
         semantic_scoring: SemanticScoringService | None = None,
         quick_scoring: QuickScoringService | None = None,
         deep_analysis: DeepAnalysisService | None = None,
+        pre_ranker: SemanticPreRanker | None = None,
         revalidation_service: JobRevalidationService | None = None,
     ) -> None:
         self._orchestrator = orchestrator
@@ -28,6 +30,7 @@ class IngestionProvider:
         self._semantic_scoring = semantic_scoring
         self._quick_scoring = quick_scoring
         self._deep_analysis = deep_analysis
+        self._pre_ranker = pre_ranker
         self._revalidation_service = revalidation_service
 
     def get_orchestrator(self) -> IngestionOrchestrator:
@@ -47,6 +50,9 @@ class IngestionProvider:
 
     def get_deep_analysis(self) -> DeepAnalysisService | None:
         return self._deep_analysis
+
+    def get_pre_ranker(self) -> SemanticPreRanker | None:
+        return self._pre_ranker
 
     def get_revalidation_service(self) -> JobRevalidationService | None:
         return self._revalidation_service

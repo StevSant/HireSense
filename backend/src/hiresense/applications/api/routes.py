@@ -296,13 +296,13 @@ async def download_bundle(
 
 
 @router.post("/{application_id}/mark-applied", response_model=ApplicationAggregate)
-def mark_applied(
+async def mark_applied(
     application_id: uuid_mod.UUID,
     apply_service: ApplyService = Depends(get_apply_service),
     app_service: ApplicationService = Depends(get_application_service),
 ) -> ApplicationAggregate:
     try:
-        apply_service.mark_applied(application_id)
+        await apply_service.mark_applied(application_id)
         return app_service.get(application_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

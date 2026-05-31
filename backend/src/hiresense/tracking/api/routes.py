@@ -89,7 +89,7 @@ def get_application(
 
 
 @router.patch("/{id}", response_model=TrackedApplicationResponse)
-def update_application(
+async def update_application(
     id: uuid_mod.UUID,
     request: UpdateApplicationRequest,
     service: TrackingService = Depends(get_tracking_service),
@@ -97,7 +97,7 @@ def update_application(
 ) -> TrackedApplicationResponse:
     try:
         if request.status is not None:
-            app = service.update_status(id, request.status, notes=request.notes)
+            app = await service.update_status(id, request.status, notes=request.notes)
         elif request.notes is not None:
             app = service.update_notes(id, request.notes)
         else:

@@ -4,9 +4,6 @@ import re
 
 from hiresense.ingestion.domain.models import NormalizedJob
 
-_SKILL_WEIGHT = 0.4
-_SEMANTIC_WEIGHT = 0.6
-
 # Each candidate-skill mention in a job's title/description adds this much to
 # the fallback text score, capped at 1.0. 4 mentions = "strong fit".
 _TEXT_MENTION_WEIGHT = 0.25
@@ -19,17 +16,28 @@ _TEXT_MENTION_CAP = 1.0
 # well-curated sources — so overlap dominates above that.
 _SKILL_DILUTION_CAP = 10
 
+# Default pre-ranking blend weights. These reproduce the previous hardcoded
+# 0.4/0.6 behaviour and match Settings.prerank_weight_skill/semantic defaults.
+# Call sites that read from Settings should pass explicit values instead.
+_DEFAULT_SKILL_WEIGHT = 0.4
+_DEFAULT_SEMANTIC_WEIGHT = 0.6
+
 
 def combine_fit_score(
     skill_score: float | None,
     semantic_score: float | None,
+    *,
+    skill_weight: float = _DEFAULT_SKILL_WEIGHT,
+    semantic_weight: float = _DEFAULT_SEMANTIC_WEIGHT,
 ) -> float | None:
     """Combine skill-overlap and semantic-similarity into a single fit score.
 
-    Both signals are independently informative, so we weight semantic higher
-    (it captures meaning beyond exact skill-name matches) but still let skill
-    overlap pull the score up when the job actually lists matching skills.
-    Falls back gracefully when either input is missing.
+    Both signals are independently informative. The caller controls the blend
+    via ``skill_weight`` / ``semantic_weight``; the defaults reproduce the
+    previous hardcoded 0.4/0.6 behaviour so existing call sites are unaffected.
+
+    Falls back gracefully when either input is missing: a single non-None
+    signal is returned as-is regardless of weight values.
     """
     if skill_score is None and semantic_score is None:
         return None
@@ -37,7 +45,7 @@ def combine_fit_score(
         return semantic_score
     if semantic_score is None:
         return skill_score
-    return _SKILL_WEIGHT * skill_score + _SEMANTIC_WEIGHT * semantic_score
+    return skill_weight * skill_score + semantic_weight * semantic_score
 
 
 def _text_mention_score(text: str, candidate_skills: set[str]) -> float | None:

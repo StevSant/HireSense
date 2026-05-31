@@ -26,6 +26,9 @@ class TasteVectorCalculator:
     def compute_delta(self, contributions: list[SignalContribution], *, dim: int) -> list[float]:
         acc = [0.0] * dim
         for c in contributions:
+            # Skip stale-dimension vectors rather than crash: if the embedding
+            # model changes mid-corpus, old vectors of the wrong dim must be
+            # dropped so a recompute over mixed-vintage signals still succeeds.
             if len(c.embedding) != dim:
                 continue
             coeff = self.decay(c.age_days) * c.weight

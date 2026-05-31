@@ -297,3 +297,83 @@ def test_get_backfill_service_returns_none_on_bare_app() -> None:
     request = Request(scope)
     result = get_backfill_service(request)
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# T7: Closed jobs are NOT embedded (W1)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_backfill_skips_closed_jobs() -> None:
+    """Closed/expired jobs must not be embedded or upserted into the vector store."""
+    open_job = NormalizedJob(
+        id="open-1",
+        title="Open Engineer",
+        company="Acme",
+        description="Open role",
+        skills=["python"],
+        source="remotive",
+        source_type="api",
+        language="en",
+        url="https://example.com/open",
+        status="open",
+    )
+    closed_job = NormalizedJob(
+        id="closed-1",
+        title="Closed Engineer",
+        company="Acme",
+        description="Closed role",
+        skills=["python"],
+        source="remotive",
+        source_type="api",
+        language="en",
+        url="https://example.com/closed",
+        status="closed",
+    )
+
+    boards_repo = _FakeRepo([open_job, closed_job])
+    portals_repo = _FakeRepo([])
+    embedding = _FakeEmbedding()
+    store = _FakeVectorStore()
+
+    svc = EmbeddingBackfillService(
+        boards_repo=boards_repo,
+        portals_repo=portals_repo,
+        embedding=embedding,
+        vector_store=store,
+    )
+    result = await svc.run()
+
+    # Only the open job was counted and upserted
+    assert result.boards == 1
+    assert "open-1" in store.store
+    assert "closed-1" not in store.store
+
+
+# ---------------------------------------------------------------------------
+# T8: HTTP 503 when get_backfill_service resolves to None (W2)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_backfill_returns_503_when_service_unavailable() -> None:
+    """POST /ingestion/backfill-embeddings must return 503 when service is None."""
+    auth_service = _make_auth_service()
+    app = FastAPI()
+
+    from hiresense.identity.api.dependencies import get_auth_service
+
+    app.dependency_overrides[get_auth_service] = lambda: auth_service
+    app.dependency_overrides[get_backfill_service] = lambda: None
+    app.include_router(router)
+
+    token = auth_service.login("admin", "secret")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post(
+            "/ingestion/backfill-embeddings",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert resp.status_code == 503

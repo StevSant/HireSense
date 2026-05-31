@@ -112,14 +112,14 @@ class IngestionOrchestrator:
                 if closed_ids and self._indexer is not None:
                     await self._indexer.remove(closed_ids)
 
+        # Indexing already happened per-source via `touched` (inserted/updated/
+        # reopened). Here we only announce the newly inserted jobs.
         if new_jobs:
             event = JobsIngestedEvent(
                 job_ids=[j.id for j in new_jobs],
                 source="batch",
             )
             await self._event_bus.publish(event)
-            if self._indexer is not None:
-                await self._indexer.index(new_jobs)
 
         return new_jobs
 

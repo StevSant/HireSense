@@ -5,6 +5,7 @@ import uuid as uuid_mod
 from datetime import datetime, timezone
 from typing import Any
 
+from hiresense.preference.domain.explanation import PreferenceExplanation, build_explanation
 from hiresense.preference.domain.feedback_kind import FeedbackKind
 from hiresense.preference.domain.feedback_signal import FeedbackSignal
 from hiresense.preference.domain.feedback_source import FeedbackSource
@@ -69,6 +70,11 @@ class PreferenceService:
 
     def list_signals(self) -> list[FeedbackSignal]:
         return self._repo.list_signals()
+
+    def explain(self) -> PreferenceExplanation:
+        model = self._repo.get_model()
+        delta = model.delta_vector if model is not None else None
+        return build_explanation(self._repo.list_signals(), delta_vector=delta)
 
     def reset(self) -> None:
         self._repo.clear()

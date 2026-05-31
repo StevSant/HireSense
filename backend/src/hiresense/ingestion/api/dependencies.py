@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import Request
 
+from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.portal_config import PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
 from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
@@ -44,3 +45,8 @@ def get_pre_ranker(request: Request) -> SemanticPreRanker | None:
     # Routes receiving None must fall back to skill-only ordering (never crash).
     ingestion = getattr(request.app.state, "ingestion", None)
     return ingestion.get_pre_ranker() if ingestion is not None else None
+
+
+def get_revalidation_service(request: Request) -> JobRevalidationService | None:
+    ingestion = getattr(request.app.state, "ingestion", None)
+    return ingestion.get_revalidation_service() if ingestion is not None else None

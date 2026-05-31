@@ -36,9 +36,13 @@ class _FakeEmbedding:
 class _FakeVectorStore:
     def __init__(self) -> None:
         self.upserts: list[tuple[str, list[float], dict]] = []
+        self.deletes: list[list[str]] = []
 
     async def upsert(self, id: str, embedding: list[float], metadata: dict) -> None:
         self.upserts.append((id, embedding, metadata))
+
+    async def delete(self, ids: list[str]) -> None:
+        self.deletes.append(list(ids))
 
 
 @pytest.mark.asyncio
@@ -82,3 +86,19 @@ async def test_index_swallows_embedding_failure() -> None:
 
     assert indexed == 0
     assert store.upserts == []
+
+
+@pytest.mark.asyncio
+async def test_remove_deletes_from_vector_store() -> None:
+    store = _FakeVectorStore()
+    indexer = JobEmbeddingIndexer(embedding=_FakeEmbedding(), vector_store=store, bucket="boards")
+    await indexer.remove(["j1", "j2"])
+    assert store.deletes == [["j1", "j2"]]
+
+
+@pytest.mark.asyncio
+async def test_remove_noop_on_empty() -> None:
+    store = _FakeVectorStore()
+    indexer = JobEmbeddingIndexer(embedding=_FakeEmbedding(), vector_store=store, bucket="boards")
+    await indexer.remove([])
+    assert store.deletes == []

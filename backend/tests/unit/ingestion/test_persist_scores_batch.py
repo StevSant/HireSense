@@ -95,8 +95,8 @@ class TestOrchestratorPersistScoresBatch:
         repo = InMemoryJobsRepository()
         job_a = _make_job("A")
         job_b = _make_job("B")
-        repo.add_if_absent(job_a)
-        repo.add_if_absent(job_b)
+        repo.upsert(job_a)
+        repo.upsert(job_b)
 
         orchestrator = _make_orchestrator(repo)
         updates = [
@@ -157,7 +157,7 @@ class TestPortalScannerPersistScoresBatch:
         """End-to-end: persist_scores_batch reaches the in-memory store."""
         repo = InMemoryJobsRepository()
         job = _make_job()
-        repo.add_if_absent(job)
+        repo.upsert(job)
 
         scanner = _make_portal_scanner(repo)
         scanner.persist_scores_batch([

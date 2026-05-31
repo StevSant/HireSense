@@ -268,3 +268,31 @@ async def test_get_pre_ranker_returns_instance_when_provider_has_it() -> None:
         resp = await client.get("/test-pre-ranker")
     assert resp.status_code == 200
     assert resp.json()["is_none"] is False
+
+
+@pytest.mark.asyncio
+async def test_revalidate_endpoint_returns_closed_count() -> None:
+    from hiresense.ingestion.api.dependencies import get_revalidation_service
+
+    class FakeRevalidation:
+        async def sweep(self):
+            return ["x", "y", "z"]
+
+    app = FastAPI()
+    app.dependency_overrides[get_revalidation_service] = lambda: FakeRevalidation()
+    app.include_router(router)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/ingestion/revalidate")
+
+    assert resp.status_code == 200
+    assert resp.json() == {"closed": 3}
+
+
+@pytest.mark.asyncio
+async def test_revalidate_endpoint_503_when_unconfigured() -> None:
+    app = FastAPI()  # no override -> dependency returns None (no app.state.ingestion)
+    app.include_router(router)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/ingestion/revalidate")
+    assert resp.status_code == 503

@@ -14,6 +14,7 @@ from hiresense.applications.domain.models import (
     ApplicationMatch,
 )
 from hiresense.applications.ports import ApplicationRepositoryPort
+from hiresense.matching.domain import SkillMatcher
 
 
 class ArtifactService:
@@ -48,6 +49,7 @@ class ArtifactService:
 
         cv_summary = getattr(profile, "summary", "") or ""
         cv_skills = list(getattr(profile, "skills", []) or [])
+        cv_text = getattr(profile, "raw_tex", "") or ""
 
         result = await self._matching.analyze(
             job_id=str(application_id),
@@ -56,13 +58,19 @@ class ArtifactService:
             job_skills=list(snapshot.required_skills or []),
             cv_summary=cv_summary,
             cv_skills=cv_skills,
+            cv_text=cv_text,
         )
 
-        # Re-compute missing skills server-side from snapshot vs profile (case-insensitive)
-        required_lower = {s.lower() for s in (snapshot.required_skills or [])}
-        cv_skills_lower = {s.lower() for s in cv_skills}
-        missing = sorted(required_lower - cv_skills_lower)
-        matched = sorted(required_lower & cv_skills_lower)
+        # Fallback when the orchestrator returns no skill verdict: use the same
+        # normalization + evidence logic so the result stays consistent with
+        # what analyze() produces (no divergent exact-string set math).
+        fallback = SkillMatcher().match(
+            cv_skills,
+            list(snapshot.required_skills or []),
+            evidence_text="\n".join(filter(None, [cv_summary, cv_text])),
+        )
+        matched = fallback.matched
+        missing = fallback.missing
 
         row = ApplicationMatch(
             application_id=application_id,

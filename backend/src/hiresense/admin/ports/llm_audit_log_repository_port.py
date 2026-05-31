@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
-from hiresense.admin.infrastructure import LLMAuditLog
+if TYPE_CHECKING:
+    from hiresense.admin.infrastructure import LLMAuditLog
 
 
 class LLMAuditLogRepositoryPort(Protocol):

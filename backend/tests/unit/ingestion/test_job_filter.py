@@ -21,6 +21,7 @@ def _job(
     url: str = "https://example.com",
     remote_modality: str | None = None,
     countries: list[str] | None = None,
+    status: str = "open",
 ) -> NormalizedJob:
     return NormalizedJob(
         id=id,
@@ -35,6 +36,7 @@ def _job(
         posted_date=posted_date,
         remote_modality=remote_modality,
         countries=countries or [],
+        status=status,
     )
 
 
@@ -271,3 +273,16 @@ def test_strict_location_trims_user_location() -> None:
     result = filter_and_paginate(jobs, params)
     assert result.total == 1
     assert result.jobs[0].location == "Chile"
+
+
+def test_closed_hidden_by_default() -> None:
+    jobs = [_job(id="1", status="open"), _job(id="2", status="closed")]
+    out = filter_and_paginate(jobs, JobQueryParams())
+    assert out.total == 1
+    assert all(j.status == "open" for j in out.jobs)
+
+
+def test_include_closed_shows_all() -> None:
+    jobs = [_job(id="1", status="open"), _job(id="2", status="closed")]
+    out = filter_and_paginate(jobs, JobQueryParams(include_closed=True))
+    assert out.total == 2

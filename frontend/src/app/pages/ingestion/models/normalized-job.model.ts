@@ -23,4 +23,5 @@ export interface NormalizedJob {
   verdict: JobVerdict | null;
   reasons: string[];
   dealbreakers: string[];
+  status?: 'open' | 'closed';
 }

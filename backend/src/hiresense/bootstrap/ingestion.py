@@ -24,6 +24,7 @@ from hiresense.ingestion.api.provider import IngestionProvider
 from hiresense.ingestion.domain import (
     IngestionOrchestrator,
     JobEmbeddingIndexer,
+    JobRevalidationService,
     PortalScanner,
     load_portals_config,
 )
@@ -128,6 +129,28 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any]) -> Ingest
         repository=boards_jobs_repo,
         retention_days=s.ingestion_job_retention_days,
         indexer=boards_indexer,
+        closure_miss_threshold=s.job_closure_miss_threshold,
+    )
+
+    # URL-probe revalidation sweep for the boards bucket. Snapshot sources
+    # (portals) get disappearance-based closure during ingestion, so the sweep
+    # only targets feed/search sources whose listings stay live after closing.
+    # hn_hiring is excluded (frozen HN comment URLs never 404 / carry markers);
+    # csv has no live URL to probe.
+    revalidation_sources = [
+        name
+        for name in s.enabled_job_sources
+        if name not in ("hn_hiring", "csv")
+    ]
+    revalidation_service = JobRevalidationService(
+        http_client=http_client,
+        repository=boards_jobs_repo,
+        indexer=boards_indexer,
+        sources=revalidation_sources,
+        markers=s.job_closed_markers,
+        batch=s.job_revalidation_batch,
+        concurrency=s.job_revalidation_concurrency,
+        delay=s.job_revalidation_delay,
     )
 
     # Resolve the portals config relative to the hiresense package root (not
@@ -167,6 +190,7 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any]) -> Ingest
         repository=portals_jobs_repo,
         retention_days=s.ingestion_job_retention_days,
         indexer=portals_indexer,
+        closure_miss_threshold=s.job_closure_miss_threshold,
     )
 
     from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
@@ -206,5 +230,6 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any]) -> Ingest
         quick_scoring=quick_scoring,
         deep_analysis=deep_analysis,
         pre_ranker=pre_ranker,
+        revalidation_service=revalidation_service,
     )
     return IngestionBuild(provider=provider, orchestrator=ingestion_orchestrator)

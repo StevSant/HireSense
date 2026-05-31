@@ -34,6 +34,9 @@ class JobQueryParams(BaseModel):
     # Seniority filter. When set, only jobs whose detected seniority is in
     # this set are returned. UNKNOWN passes through unless explicitly excluded.
     seniority_levels: list[SeniorityLevel] | None = None
+    # When False (default), jobs with status == "closed" are hidden. Set True
+    # to surface them (e.g. the frontend "Show closed" toggle).
+    include_closed: bool = False
     # Maximum minimum-years-experience the user is willing to consider.
     # Jobs with no extractable years string pass through.
     max_years_experience: int | None = None
@@ -52,6 +55,9 @@ def filter_and_paginate(
     params: JobQueryParams,
 ) -> PaginatedResult:
     filtered = jobs
+
+    if not params.include_closed:
+        filtered = [j for j in filtered if j.status != "closed"]
 
     if params.source:
         filtered = [j for j in filtered if j.source == params.source]

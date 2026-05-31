@@ -32,8 +32,8 @@ class PreferenceService:
         self._weights = weights
         self._enabled = enabled
 
-    async def record_signal(
-        self, job_id: uuid_mod.UUID, kind: FeedbackKind
+    async def _record(
+        self, job_id: uuid_mod.UUID, kind: FeedbackKind, source: FeedbackSource
     ) -> FeedbackSignal:
         embedding: list[float] | None = None
         if self._vector_store is not None:
@@ -51,12 +51,22 @@ class PreferenceService:
             FeedbackSignal(
                 job_id=job_id,
                 kind=kind,
-                source=FeedbackSource.EXPLICIT,
+                source=source,
                 job_embedding=embedding,
             )
         )
         self._recompute()
         return signal
+
+    async def record_signal(
+        self, job_id: uuid_mod.UUID, kind: FeedbackKind
+    ) -> FeedbackSignal:
+        return await self._record(job_id, kind, FeedbackSource.EXPLICIT)
+
+    async def record_implicit_signal(
+        self, job_id: uuid_mod.UUID, kind: FeedbackKind
+    ) -> FeedbackSignal:
+        return await self._record(job_id, kind, FeedbackSource.IMPLICIT)
 
     def query_vector(self, baseline: list[float]) -> list[float]:
         if not self._enabled:

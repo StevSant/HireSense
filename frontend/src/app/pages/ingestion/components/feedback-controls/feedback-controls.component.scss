@@ -1,0 +1,50 @@
+.feedback-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.fb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--border, #d0d0d0);
+  border-radius: 6px;
+  background: var(--surface, #fff);
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover:not(:disabled) {
+    background: var(--surface-hover, #f3f4f6);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  &.active {
+    border-color: var(--accent, #4f46e5);
+    background: var(--accent-soft, #eef2ff);
+  }
+}
+
+.fb-icon {
+  font-size: 1rem;
+}
+
+.compact {
+  gap: 0.25rem;
+
+  .fb-btn {
+    padding: 0.2rem 0.35rem;
+    font-size: 0.95rem;
+  }
+}
+
+.fb-error {
+  font-size: 0.75rem;
+  color: var(--danger, #dc2626);
+}

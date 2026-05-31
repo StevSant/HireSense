@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { IngestionService, JobFilters } from '../../core/services/ingestion.service';
 import { TrackingService } from '../../core/services/tracking.service';
@@ -14,11 +14,25 @@ import { scoreClass } from '../../core/utils/score-class';
 import { JobFiltersComponent } from './components/job-filters/job-filters.component';
 import { JobDetailPanelComponent } from './components/job-detail-panel/job-detail-panel.component';
 import { DatePipe } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
+import { FeedbackControlsComponent } from './components/feedback-controls/feedback-controls.component';
+import { PreferenceTuningComponent } from './components/preference-tuning/preference-tuning.component';
+import { FeedbackKind } from './models/feedback-kind.model';
 
 @Component({
   selector: 'app-ingestion',
   standalone: true,
-  imports: [PaginationComponent, JobFiltersComponent, JobDetailPanelComponent, DatePipe],
+  imports: [
+    PaginationComponent,
+    JobFiltersComponent,
+    JobDetailPanelComponent,
+    DatePipe,
+    FeedbackControlsComponent,
+    PreferenceTuningComponent,
+  ],
   templateUrl: './ingestion.component.html',
   styleUrl: './ingestion.component.scss',
 })
@@ -28,6 +42,7 @@ export class IngestionComponent implements OnInit {
   private applicationsService = inject(ApplicationsService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
 
   trackedJobIds = computed(() => this.ingestionService.trackedJobIds());
 
@@ -75,6 +90,13 @@ export class IngestionComponent implements OnInit {
   // Detail panel
   selectedJob = signal<NormalizedJob | null>(null);
 
+  // Jobs the user marked "not interested" this session — dimmed locally until
+  // the next refetch (no backend "hidden" persistence; see plan/spec).
+  dimmedJobIds = signal<Set<string>>(new Set<string>());
+
+  // Coalesces rapid feedback into one re-rank refetch.
+  private feedbackRefetch$ = new Subject<void>();
+
   // Sort
   sortMode = signal<'' | 'match_desc' | 'date_desc'>('');
 
@@ -82,6 +104,9 @@ export class IngestionComponent implements OnInit {
   includeClosed = signal(false);
 
   ngOnInit(): void {
+    this.feedbackRefetch$
+      .pipe(debounceTime(environment.feedbackRefetchDebounceMs), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.loadJobs());
     this.loadPortals();
     this.loadJobs();
     this.openDetailFromQueryParam();
@@ -111,6 +136,7 @@ export class IngestionComponent implements OnInit {
       .queryJobs(this.activeTab(), this.page(), this.pageSize(), filtersWithSort, this.includeClosed())
       .subscribe({
         next: (res) => {
+          this.dimmedJobIds.set(new Set<string>());
           this.jobs.set(res.jobs);
           this.total.set(res.total);
           this.totalPages.set(res.total_pages);
@@ -266,6 +292,19 @@ export class IngestionComponent implements OnInit {
     this.sortMode.set(value);
     this.page.set(1);
     this.loadJobs();
+  }
+
+  onFeedback(jobId: string, kind: FeedbackKind): void {
+    if (kind === 'not_interested') {
+      const next = new Set(this.dimmedJobIds());
+      next.add(jobId);
+      this.dimmedJobIds.set(next);
+    }
+    this.feedbackRefetch$.next();
+  }
+
+  isDimmed(jobId: string): boolean {
+    return this.dimmedJobIds().has(jobId);
   }
 
   scoreBadgeClass(score: number): string {

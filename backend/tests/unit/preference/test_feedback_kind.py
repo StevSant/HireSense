@@ -1,4 +1,13 @@
-from hiresense.preference.domain import FeedbackKind, FeedbackSource
+import uuid
+from datetime import datetime, timezone
+
+from hiresense.preference.domain import (
+    FeedbackKind,
+    FeedbackSignal,
+    FeedbackSource,
+    PreferenceModel,
+    SignalContribution,
+)
 
 
 def test_explicit_kinds_exist() -> None:
@@ -26,3 +35,37 @@ def test_weight_key_maps_to_settings_attribute() -> None:
 def test_source_values() -> None:
     assert FeedbackSource.EXPLICIT == "explicit"
     assert FeedbackSource.IMPLICIT == "implicit"
+
+
+def test_feedback_signal_defaults() -> None:
+    sig = FeedbackSignal(
+        job_id=uuid.uuid4(),
+        kind=FeedbackKind.THUMBS_UP,
+        source=FeedbackSource.EXPLICIT,
+    )
+    assert sig.id is None
+    assert sig.job_embedding is None
+    assert sig.created_at is None
+
+
+def test_feedback_signal_holds_embedding() -> None:
+    sig = FeedbackSignal(
+        job_id=uuid.uuid4(),
+        kind=FeedbackKind.NOT_INTERESTED,
+        source=FeedbackSource.EXPLICIT,
+        job_embedding=[0.1, 0.2, 0.3],
+        created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    )
+    assert sig.job_embedding == [0.1, 0.2, 0.3]
+
+
+def test_preference_model_defaults() -> None:
+    model = PreferenceModel(delta_vector=[0.0, 0.0])
+    assert model.version == 1
+    assert model.delta_vector == [0.0, 0.0]
+
+
+def test_signal_contribution_fields() -> None:
+    c = SignalContribution(embedding=[1.0, 0.0], polarity=1, weight=2.0, age_days=10.0)
+    assert c.polarity == 1
+    assert c.age_days == 10.0

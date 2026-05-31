@@ -57,6 +57,63 @@ async def test_orchestrator_produces_match_result() -> None:
 
 
 @pytest.mark.asyncio
+async def test_orchestrator_matches_skill_from_cv_text_evidence() -> None:
+    # "kubernetes" is absent from the explicit skills list but demonstrated in
+    # the full CV text, so it should be matched rather than reported missing.
+    bus = InMemoryEventBus()
+    orchestrator = MatchingOrchestrator(llm=FakeLLM(), event_bus=bus)
+    result = await orchestrator.analyze(
+        job_id="job-3",
+        cv_id="cv-3",
+        job_description="Backend engineer",
+        job_skills=["python", "kubernetes"],
+        cv_summary="Backend developer",
+        cv_skills=["python"],
+        cv_text="Deployed services to a Kubernetes cluster with Helm.",
+    )
+    assert "kubernetes" in result.matched_skills
+    assert "kubernetes" not in result.missing_skills
+
+
+class FakeLLMWithPresentSkills:
+    def __init__(self) -> None:
+        self.last_prompt = ""
+
+    async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+        self.last_prompt = prompt
+        return """{
+            "experience_score": 0.6,
+            "language_score": 1.0,
+            "present_skills": ["backend development"],
+            "pros": [],
+            "cons": [],
+            "recommendations": []
+        }"""
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_uses_llm_present_skills_verdict() -> None:
+    # "backend development" is not in the skills list nor a literal phrase in
+    # the CV text, but the LLM judges it present from the experience.
+    bus = InMemoryEventBus()
+    llm = FakeLLMWithPresentSkills()
+    orchestrator = MatchingOrchestrator(llm=llm, event_bus=bus)
+    result = await orchestrator.analyze(
+        job_id="job-4",
+        cv_id="cv-4",
+        job_description="Backend engineer",
+        job_skills=["python", "backend development"],
+        cv_summary="Engineer",
+        cv_skills=["python"],
+        cv_text="Designed and shipped microservices and REST endpoints.",
+    )
+    assert "backend development" in result.matched_skills
+    assert "backend development" not in result.missing_skills
+    # full CV text is handed to the LLM, not just the summary
+    assert "microservices" in llm.last_prompt
+
+
+@pytest.mark.asyncio
 async def test_orchestrator_without_embedding_port() -> None:
     bus = InMemoryEventBus()
     orchestrator = MatchingOrchestrator(llm=FakeLLM(), event_bus=bus)

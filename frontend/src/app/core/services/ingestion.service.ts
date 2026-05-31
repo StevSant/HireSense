@@ -45,11 +45,14 @@ export class IngestionService {
     page: number,
     pageSize: number,
     filters: JobFilters = {},
+    includeClosed = false,
   ): Observable<PaginatedJobsResponse> {
     let params = new HttpParams()
       .set('tab', tab)
       .set('page', page.toString())
       .set('page_size', pageSize.toString());
+
+    if (includeClosed) params = params.set('include_closed', 'true');
 
     if (filters.source) params = params.set('source', filters.source);
     if (filters.keyword) params = params.set('keyword', filters.keyword);

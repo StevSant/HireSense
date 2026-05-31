@@ -9,6 +9,9 @@ from hiresense.kernel.value_objects import SourceType
 
 
 class CSVImportAdapter:
+    def supports_snapshot_closure(self) -> bool:
+        return False
+
     def source_name(self) -> str:
         return "csv"
 

@@ -121,10 +121,17 @@ def content_hash(job: NormalizedJob) -> str:
         job.location.strip(),
         (job.salary_range or "").strip(),
         "|".join(sorted(s.strip().lower() for s in job.skills)),
+        "|".join(sorted(c.strip().lower() for c in job.categories)),
+        "|".join(sorted(c.strip().lower() for c in job.countries)),
+        (job.remote_modality or ""),
     ]
     raw = "\x1f".join(parts).encode("utf-8")
     return hashlib.sha256(raw).hexdigest()
 ```
+
+> The hash field-set MUST match the fields `JobsRepository.upsert` rewrites on
+> change (Task 5) — including `categories`, `countries`, `remote_modality` —
+> otherwise a change to one of those is silently dropped.
 
 Add to `backend/src/hiresense/ingestion/domain/__init__.py`:
 
@@ -427,8 +434,11 @@ from enum import Enum
 class UpsertResult(str, Enum):
     INSERTED = "inserted"
     UPDATED = "updated"
+    REOPENED = "reopened"   # was closed, now re-seen — caller must re-index
     UNCHANGED = "unchanged"
 ```
+
+`upsert`'s "found" branch returns `REOPENED` when the row was closed and is now re-seen (takes precedence over UPDATED/UNCHANGED for the re-index signal); field updates still apply when `content_hash` differs.
 
 Re-export from `domain/__init__.py` and add to `__all__`.
 
@@ -482,7 +492,15 @@ from hiresense.ingestion.domain.upsert_result import UpsertResult
 
 Update `_to_orm` to set `identity_key=identity_key(job)`, `source_id=job.source_id`, `status=job.status`, `content_hash=content_hash(job)`, and drop the `dedup_key=` assignment. Update `_to_domain` to read `source_id=row.source_id`, `status=row.status`. Remove the now-unused `dedup_key` param/logic.
 
-Replace `add_if_absent` with `upsert` (keep a thin `add_if_absent` delegating to `upsert(...) != UNCHANGED` only if other callers still need a bool — but Task 6 migrates them, so remove `add_if_absent`):
+Add `upsert` and the closure methods. **KEEP `add_if_absent` as a thin shim** — `services.py` and `portal_scanner.py` still call it until Tasks 11/12, so removing it now would redden their tests. The shim preserves the "was it newly inserted?" bool:
+
+```python
+    def add_if_absent(self, job: NormalizedJob) -> bool:
+        # Transitional shim until orchestrator/scanner migrate to upsert (T11/T12). Removed in T12.
+        return self.upsert(job) == UpsertResult.INSERTED
+```
+
+Now the new methods:
 
 ```python
     def upsert(self, job: NormalizedJob) -> UpsertResult:
@@ -613,7 +631,7 @@ Expected: FAIL — no `upsert` on in-memory repo.
 
 - [ ] **Step 3: Implement**
 
-Mirror the Task 5 surface in `in_memory_jobs_repository.py` using a dict keyed by `(bucket, source, identity_key)` and storing `NormalizedJob` plus `content_hash`, `status`, `missed_count`. Implement `upsert`, `mark_closed`, `bump_missed_and_close` (delegating to `detect_closures`, same as the DB repo), and `get_id_by_identity` with the same semantics (preserve stored id on update; reopen on re-seen). Import `identity_key` from `hiresense.ingestion.domain.identity`.
+Mirror the Task 5 surface in `in_memory_jobs_repository.py` using a dict keyed by `(bucket, source, identity_key)` and storing `NormalizedJob` plus `content_hash`, `status`, `missed_count`. Implement `upsert`, `mark_closed`, `bump_missed_and_close` (delegating to `detect_closures`, same as the DB repo), and `get_id_by_identity` with the same semantics (preserve stored id on update; reopen on re-seen). Keep its existing `add_if_absent` as a shim delegating to `upsert` (same as the DB repo — removed in T12). Import `identity_key` from `hiresense.ingestion.domain.identity`.
 
 - [ ] **Step 4: Run to verify it passes**
 
@@ -637,7 +655,7 @@ git commit -m "feat(ingestion): in-memory repository upsert + closure parity"
 
 - [ ] **Step 1: Update `JobsRepositoryPort`**
 
-Replace `add_if_absent` with the new surface:
+ADD the new surface (keep `add_if_absent` in the Protocol for now — callers still use it until T11/T12; T12 removes it):
 
 ```python
     def upsert(self, job: NormalizedJob) -> "UpsertResult": ...
@@ -646,7 +664,7 @@ Replace `add_if_absent` with the new surface:
     def bump_missed_and_close(self, source: str, seen_identity_keys: set[str], threshold: int) -> list[str]: ...
 ```
 
-Import `UpsertResult` under `TYPE_CHECKING`. Keep `list_all`, `get_by_id`, `update_scores`, `prune_older_than`.
+Import `UpsertResult` under `TYPE_CHECKING`. Keep `add_if_absent`, `list_all`, `get_by_id`, `update_scores`, `prune_older_than`.
 
 - [ ] **Step 2: Update `JobSourcePort`**
 
@@ -955,7 +973,9 @@ Add `closure_miss_threshold: int = 2` to `IngestionOrchestrator.__init__`. Rewri
                     job = job.model_copy(update={"id": existing_id})
                 seen_keys.add(identity_key(job))  # from hiresense.ingestion.domain.identity
                 result = self._repository.upsert(job)
-                if result in (UpsertResult.INSERTED, UpsertResult.UPDATED):
+                # INSERTED/UPDATED/REOPENED all need (re-)indexing. REOPENED matters:
+                # closure removed the job from the vector store, so re-listing must re-add it.
+                if result in (UpsertResult.INSERTED, UpsertResult.UPDATED, UpsertResult.REOPENED):
                     touched.append(job)
                     if result == UpsertResult.INSERTED:
                         new_jobs.append(job)
@@ -1006,20 +1026,24 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
-Add `closure_miss_threshold: int = 2` to `PortalScanner.__init__`. In `scan`, per portal: build `seen_keys`, set `job.source_id = raw.source_id`, look up existing id and reuse, call `upsert`, collect `INSERTED`/`UPDATED` into a `touched` list (and `INSERTED` into `new_jobs`), index `touched`. After the per-portal loop iteration, if `adapter.supports_snapshot_closure()`, call `bump_missed_and_close(portal.name, seen_keys, threshold)` and `indexer.remove(closed_ids)`. Recompute `duplicates = total_fetched - len(new_jobs)`.
+Add `closure_miss_threshold: int = 2` to `PortalScanner.__init__`. In `scan`, per portal: build `seen_keys`, set `job.source_id = raw.source_id`, look up existing id and reuse, call `upsert`, collect `INSERTED`/`UPDATED`/`REOPENED` into a `touched` list (and `INSERTED` into `new_jobs`), index `touched`. After the per-portal loop iteration, if `adapter.supports_snapshot_closure()`, call `bump_missed_and_close(portal.name, seen_keys, threshold)` and `indexer.remove(closed_ids)`. Recompute `duplicates = total_fetched - len(new_jobs)`.
 
 > Note: scope closure per `portal.name` (the `source`), not per platform — each company board is its own complete snapshot. Run closure even when a portal returns zero jobs (legit "no open roles"), but only when the fetch did not raise (the existing `except` path `continue`s before reaching closure).
 
-- [ ] **Step 4: Run to verify it passes**
+- [ ] **Step 4: Remove the transitional `add_if_absent` shim**
 
-Run: `cd backend && uv run python -m pytest tests/unit/ingestion/test_portal_scanner.py -v`
-Expected: PASS.
+Now that BOTH callers (orchestrator in T11, scanner here) use `upsert`, `add_if_absent` is dead. Remove it from: `jobs_repository.py`, `in_memory_jobs_repository.py`, and the `JobsRepositoryPort` Protocol. Grep first to confirm no remaining references: `cd backend && grep -rn "add_if_absent" src/ tests/` should return nothing in `src/` (test references, if any, must be updated to `upsert`).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Run to verify it passes (full ingestion suite — both wirings + shim removal)**
+
+Run: `cd backend && uv run python -m pytest tests/unit/ingestion -v`
+Expected: PASS (all green — orchestrator, scanner, repos, filters).
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add backend/src/hiresense/ingestion/domain/portal_scanner.py backend/tests/unit/ingestion/test_portal_scanner.py
-git commit -m "feat(ingestion): upsert + disappearance closure in portal scanner"
+git add backend/src/hiresense/ingestion/domain/portal_scanner.py backend/src/hiresense/ingestion/infrastructure/jobs_repository.py backend/src/hiresense/ingestion/infrastructure/in_memory_jobs_repository.py backend/src/hiresense/ingestion/ports/jobs_repository.py backend/tests/unit/ingestion/test_portal_scanner.py
+git commit -m "feat(ingestion): upsert + disappearance closure in portal scanner; drop add_if_absent shim"
 ```
 
 ---

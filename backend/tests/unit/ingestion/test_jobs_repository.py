@@ -60,8 +60,8 @@ def test_update_scores_persists_to_listed_job() -> None:
 
 def test_prune_older_than_removes_only_stale_rows() -> None:
     repo = InMemoryJobsRepository()
-    repo.add_if_absent(_make_job(title="A"))
-    repo.add_if_absent(_make_job(title="B"))
+    repo.add_if_absent(_make_job(title="A", url="https://x/a"))
+    repo.add_if_absent(_make_job(title="B", url="https://x/b"))
 
     # Cutoff in the future — everything is "older" than that.
     future_cutoff = datetime.now(timezone.utc) + timedelta(days=1)
@@ -177,6 +177,18 @@ def test_upsert_reopens_a_closed_job(repo):
     result = repo.upsert(_job("b"))           # same identity re-seen
     assert result == UpsertResult.REOPENED    # signals caller to re-index
     assert repo.list_all()[0].status == "open"
+
+
+def test_in_memory_repo_upsert_parity():
+    mem = InMemoryJobsRepository()
+    assert mem.upsert(_job("a")) == UpsertResult.INSERTED
+    assert mem.upsert(_job("b")) == UpsertResult.UNCHANGED
+    assert mem.upsert(_job("c", salary_range="$200k")) == UpsertResult.UPDATED
+    stored = mem.list_all()
+    assert len(stored) == 1 and stored[0].id == "a" and stored[0].salary_range == "$200k"
+    mem.mark_closed(["a"])
+    assert mem.upsert(_job("d")) == UpsertResult.REOPENED
+    assert mem.list_all()[0].status == "open"
 
 
 def test_bump_missed_and_close_persists_per_row(repo):

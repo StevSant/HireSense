@@ -91,6 +91,10 @@ class PreferenceService:
 
     def _to_contribution(self, signal: FeedbackSignal, now: datetime) -> SignalContribution:
         created = signal.created_at or now
+        # SQLite returns naive datetimes even for timezone=True columns.
+        # Treat a naive created_at as UTC so the subtraction doesn't crash.
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
         age_days = max(0.0, (now - created).total_seconds() / 86400.0)
         return SignalContribution(
             embedding=signal.job_embedding or [],

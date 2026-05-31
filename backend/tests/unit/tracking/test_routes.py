@@ -64,7 +64,7 @@ class FakeTrackingService:
             apps = [a for a in apps if a.status == status.value]
         return apps
 
-    def update_status(
+    async def update_status(
         self,
         id: uuid_mod.UUID,
         status: ApplicationStatus,

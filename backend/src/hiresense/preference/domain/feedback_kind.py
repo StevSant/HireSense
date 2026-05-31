@@ -12,6 +12,13 @@ class FeedbackKind(str, enum.Enum):
     NOT_INTERESTED = "not_interested"
     MORE_LIKE_THIS = "more_like_this"
 
+    # Implicit (Phase 2) — emitted from tracking status transitions.
+    APPLIED = "applied"
+    INTERVIEWING = "interviewing"
+    OFFERED = "offered"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
     @property
     def polarity(self) -> int:
         """+1 pulls the taste vector toward the job, -1 pushes away."""

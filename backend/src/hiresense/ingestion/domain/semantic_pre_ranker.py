@@ -11,6 +11,7 @@ Fallback contract (REQ-04):
     - candidate profile is empty (no skills and no summary)
     - embedding call raises
     - vector store search() raises
+    - preference.query_vector() raises or returns None (baseline is used)
     - search returns empty results
 
 Unindexed jobs (not present in ANN results) are appended to the TAIL
@@ -64,12 +65,14 @@ class SemanticPreRanker:
         top_k_cap: int,
         skill_weight: float,
         semantic_weight: float,
+        preference: Any = None,
     ) -> None:
         self._vector_store = vector_store
         self._embedding = embedding
         self._top_k_cap = top_k_cap
         self._skill_weight = skill_weight
         self._semantic_weight = semantic_weight
+        self._preference = preference
         # In-process profile embedding cache: sha256(profile_text) → vector
         self._profile_cache: dict[str, list[float]] = {}
         self._lock = asyncio.Lock()
@@ -113,6 +116,18 @@ class SemanticPreRanker:
 
         # Obtain profile embedding (cached or cold-start)
         profile_vec = await self._get_profile_embedding(candidate_skills, candidate_summary)
+        if profile_vec is None:
+            return jobs
+
+        # Apply the learned taste vector (preference loop). Passthrough when no
+        # preference port is wired or no model exists — baseline is returned.
+        if self._preference is not None:
+            try:
+                profile_vec = self._preference.query_vector(profile_vec)
+            except Exception:
+                logger.exception("SemanticPreRanker: preference.query_vector failed — using baseline")
+
+        # A rogue preference port could return None; never pass None to search().
         if profile_vec is None:
             return jobs
 

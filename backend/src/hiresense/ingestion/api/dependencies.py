@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import Request
 
+from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.portal_config import PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
@@ -50,3 +51,10 @@ def get_pre_ranker(request: Request) -> SemanticPreRanker | None:
 def get_revalidation_service(request: Request) -> JobRevalidationService | None:
     ingestion = getattr(request.app.state, "ingestion", None)
     return ingestion.get_revalidation_service() if ingestion is not None else None
+
+
+def get_backfill_service(request: Request) -> EmbeddingBackfillService | None:
+    # Defensive: tests and bare apps without app.state.ingestion → None.
+    # The endpoint handles None with a 503 response.
+    ingestion = getattr(request.app.state, "ingestion", None)
+    return ingestion.get_backfill_service() if ingestion is not None else None

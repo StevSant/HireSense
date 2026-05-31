@@ -8,11 +8,13 @@ import { IngestionService } from '../../../../core/services/ingestion.service';
 import { formatScorePercent } from '../../../../core/utils/format-score-percent';
 import { scoreColor } from '../../../../core/utils/score-color';
 import { DeepAnalysisComponent } from '../deep-analysis/deep-analysis.component';
+import { FeedbackControlsComponent } from '../feedback-controls/feedback-controls.component';
+import { FeedbackKind } from '../../models/feedback-kind.model';
 
 @Component({
   selector: 'app-job-detail-panel',
   standalone: true,
-  imports: [DatePipe, DeepAnalysisComponent],
+  imports: [DatePipe, DeepAnalysisComponent, FeedbackControlsComponent],
   templateUrl: './job-detail-panel.component.html',
   styleUrl: './job-detail-panel.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,6 +29,7 @@ export class JobDetailPanelComponent {
 
   close = output<void>();
   track = output<string>();
+  feedbackSubmitted = output<FeedbackKind>();
 
   // Exposed for the template (shared single-source score util).
   scoreColor = scoreColor;

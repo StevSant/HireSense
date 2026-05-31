@@ -31,6 +31,17 @@ class FakeIngestionOrchestrator:
         return self._jobs.get(job_id)
 
 
+class FakeEventBus:
+    def __init__(self) -> None:
+        self.published: list = []
+
+    async def publish(self, event) -> None:
+        self.published.append(event)
+
+    def subscribe(self, event_type, handler) -> None:
+        pass
+
+
 class FakeRepository:
     def __init__(self) -> None:
         self._store: dict[uuid_mod.UUID, TrackedApplication] = {}
@@ -81,10 +92,12 @@ class FakeRepository:
 def make_service(
     repo: FakeRepository | None = None,
     orchestrator: FakeIngestionOrchestrator | None = None,
+    event_bus: FakeEventBus | None = None,
 ) -> TrackingService:
     return TrackingService(
         repository=repo or FakeRepository(),
         ingestion_orchestrator=orchestrator or FakeIngestionOrchestrator(),
+        event_bus=event_bus or FakeEventBus(),
     )
 
 
@@ -170,13 +183,13 @@ def test_list_applications() -> None:
     assert len(apps) == 2
 
 
-def test_list_filter_by_status() -> None:
+async def test_list_filter_by_status() -> None:
     repo = FakeRepository()
     svc = make_service(repo=repo)
     app_a = svc.track_job(title="Job A", company="Co A")
     svc.track_job(title="Job B", company="Co B")
 
-    svc.update_status(app_a.id, ApplicationStatus.APPLIED)
+    await svc.update_status(app_a.id, ApplicationStatus.APPLIED)
 
     saved = svc.list(status=ApplicationStatus.SAVED)
     applied = svc.list(status=ApplicationStatus.APPLIED)
@@ -186,40 +199,87 @@ def test_list_filter_by_status() -> None:
     assert applied[0].id == app_a.id
 
 
-def test_update_status() -> None:
+async def test_update_status() -> None:
     repo = FakeRepository()
     svc = make_service(repo=repo)
     app = svc.track_job(title="Data Scientist", company="OpenAI")
 
-    updated = svc.update_status(app.id, ApplicationStatus.INTERVIEWING)
+    updated = await svc.update_status(app.id, ApplicationStatus.INTERVIEWING)
 
     assert updated.status == ApplicationStatus.INTERVIEWING.value
 
 
-def test_update_status_to_applied_sets_applied_at() -> None:
+async def test_update_status_to_applied_sets_applied_at() -> None:
     repo = FakeRepository()
     svc = make_service(repo=repo)
     app = svc.track_job(title="Product Manager", company="Meta")
     assert app.applied_at is None
 
-    updated = svc.update_status(app.id, ApplicationStatus.APPLIED)
+    updated = await svc.update_status(app.id, ApplicationStatus.APPLIED)
 
     assert updated.applied_at is not None
 
 
-def test_update_status_to_applied_does_not_overwrite_applied_at() -> None:
+async def test_update_status_to_applied_does_not_overwrite_applied_at() -> None:
     repo = FakeRepository()
     svc = make_service(repo=repo)
     app = svc.track_job(title="Frontend Dev", company="Vercel")
 
-    first = svc.update_status(app.id, ApplicationStatus.APPLIED)
+    first = await svc.update_status(app.id, ApplicationStatus.APPLIED)
     original_applied_at = first.applied_at
 
     # transition to another status then back to APPLIED
-    svc.update_status(app.id, ApplicationStatus.INTERVIEWING)
-    second = svc.update_status(app.id, ApplicationStatus.APPLIED)
+    await svc.update_status(app.id, ApplicationStatus.INTERVIEWING)
+    second = await svc.update_status(app.id, ApplicationStatus.APPLIED)
 
     assert second.applied_at == original_applied_at
+
+
+async def test_update_status_emits_event_on_actual_change() -> None:
+    job_id = str(uuid_mod.uuid4())
+    job = FakeJob(id=job_id, title="Backend Engineer", company="Acme")
+    repo = FakeRepository()
+    orchestrator = FakeIngestionOrchestrator(jobs={job_id: job})
+    bus = FakeEventBus()
+    svc = make_service(repo=repo, orchestrator=orchestrator, event_bus=bus)
+    app = svc.track_from_ingestion(job_id)
+
+    await svc.update_status(app.id, ApplicationStatus.APPLIED)
+
+    assert len(bus.published) == 1
+    event = bus.published[0]
+    assert event.event_type == "tracking.status_changed"
+    assert event.status == "applied"
+    assert event.job_id == str(uuid_mod.UUID(job_id))
+
+
+async def test_update_status_no_event_when_status_unchanged() -> None:
+    job_id = str(uuid_mod.uuid4())
+    job = FakeJob(id=job_id, title="SRE", company="Google")
+    repo = FakeRepository()
+    orchestrator = FakeIngestionOrchestrator(jobs={job_id: job})
+    bus = FakeEventBus()
+    svc = make_service(repo=repo, orchestrator=orchestrator, event_bus=bus)
+    app = svc.track_from_ingestion(job_id)
+
+    await svc.update_status(app.id, ApplicationStatus.APPLIED)
+    bus.published.clear()
+
+    await svc.update_status(app.id, ApplicationStatus.APPLIED)
+
+    assert bus.published == []
+
+
+async def test_update_status_no_event_when_job_id_none() -> None:
+    repo = FakeRepository()
+    bus = FakeEventBus()
+    svc = make_service(repo=repo, event_bus=bus)
+    app = svc.track_job(title="Manual Job", company="NoCorp")
+    assert app.job_id is None
+
+    await svc.update_status(app.id, ApplicationStatus.OFFERED)
+
+    assert bus.published == []
 
 
 def test_update_notes() -> None:

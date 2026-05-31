@@ -54,7 +54,7 @@ class IngestionBuild:
     orchestrator: IngestionOrchestrator
 
 
-def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any]) -> IngestionBuild:
+def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, preference_query: Any = None) -> IngestionBuild:
     s = infra.settings
     http_client = infra.http_client
 
@@ -207,6 +207,7 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any]) -> Ingest
         top_k_cap=s.prerank_top_k_cap,
         skill_weight=s.prerank_weight_skill,
         semantic_weight=s.prerank_weight_semantic,
+        preference=preference_query,
     )
 
     match_cache_repo = JobMatchCacheRepository(session_factory=infra.sync_session_factory)

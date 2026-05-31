@@ -277,3 +277,8 @@ tr.closed {
 .source-badge-lever { background: #e0e7ff; color: #3730a3; }
 .source-badge-ashby { background: #cffafe; color: #155e75; }
 .source-badge-csv { background: #f3f4f6; color: #374151; }
+
+.clickable-row.dimmed {
+  opacity: 0.45;
+  transition: opacity 0.2s;
+}

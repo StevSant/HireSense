@@ -18,6 +18,7 @@
       </button>
     </div>
     <div class="tab-actions">
+      <app-preference-tuning />
       @if (activeTab() === 'boards') {
         <button (click)="fetchJobs()" [disabled]="loading()" class="btn-primary">
           @if (loading()) { Fetching... } @else { Fetch Jobs }
@@ -166,7 +167,7 @@
         </thead>
         <tbody>
           @for (job of jobs(); track job.id) {
-            <tr (click)="openDetail(job)" class="clickable-row" [class.closed]="job.status === 'closed'">
+            <tr (click)="openDetail(job)" class="clickable-row" [class.closed]="job.status === 'closed'" [class.dimmed]="isDimmed(job.id)">
               <td>
                 @if (job.match_score !== null && job.match_score !== undefined) {
                   <span
@@ -192,6 +193,12 @@
               <td class="date-cell">{{ job.posted_date ? (job.posted_date | date:'mediumDate') : '—' }}</td>
               <td class="actions-cell">
                 <a [href]="job.url" target="_blank" class="link" (click)="$event.stopPropagation()">View</a>
+                <app-feedback-controls
+                  [jobId]="job.id"
+                  [compact]="true"
+                  (feedbackSubmitted)="onFeedback(job.id, $event)"
+                  (click)="$event.stopPropagation()"
+                />
                 @if (isTracked(job.id)) {
                   <button class="btn-tracked" disabled (click)="$event.stopPropagation()">Tracked</button>
                 } @else if (isTracking(job.id)) {
@@ -238,5 +245,6 @@
     [tracking]="isTracking(selectedJob()!.id)"
     (close)="closeDetail()"
     (track)="trackJob($event)"
+    (feedbackSubmitted)="onFeedback(selectedJob()!.id, $event)"
   />
 }

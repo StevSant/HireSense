@@ -19,11 +19,13 @@ class SkillMatcher:
         candidate_skills: list[str],
         required_skills: list[str],
         evidence_text: str | None = None,
+        inferred_present: list[str] | None = None,
     ) -> SkillMatchResult:
         if not required_skills:
             return SkillMatchResult(score=1.0)
 
         candidate_canonical = {normalize_skill(s) for s in candidate_skills}
+        inferred_canonical = {normalize_skill(s) for s in (inferred_present or [])}
         evidence = (evidence_text or "").lower()
 
         matched: set[str] = set()
@@ -33,7 +35,11 @@ class SkillMatcher:
             canonical = normalize_skill(skill)
             if not canonical:
                 continue
-            if canonical in candidate_canonical or self._evidenced(canonical, evidence):
+            if (
+                canonical in candidate_canonical
+                or canonical in inferred_canonical
+                or self._evidenced(canonical, evidence)
+            ):
                 matched.add(canonical)
             else:
                 missing.add(canonical)

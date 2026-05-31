@@ -20,6 +20,7 @@ def build_tracking(infra: SharedInfra, ingestion_orchestrator: Any) -> TrackingB
     tracking_service = TrackingService(
         repository=tracking_repo,
         ingestion_orchestrator=ingestion_orchestrator,
+        event_bus=infra.event_bus,
     )
     provider = TrackingProvider(tracking_service=tracking_service)
     return TrackingBuild(provider=provider, service=tracking_service)

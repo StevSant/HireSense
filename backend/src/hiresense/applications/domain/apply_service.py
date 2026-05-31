@@ -158,9 +158,9 @@ class ApplyService:
             zf.writestr(f"cover_letter_{safe_company}.pdf", letter_pdf)
         return buf.getvalue()
 
-    def mark_applied(self, application_id: uuid.UUID) -> None:
+    async def mark_applied(self, application_id: uuid.UUID) -> None:
         # Idempotent: set status=APPLIED, set applied_at if not already set.
-        self._tracking.update_status(
+        await self._tracking.update_status(
             application_id,
             ApplicationStatus.APPLIED,
         )

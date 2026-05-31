@@ -6,6 +6,7 @@ import pytest
 from hiresense.preference.domain import (
     FeedbackKind,
     FeedbackSignal,
+    FeedbackSource,
     PreferenceModel,
     PreferenceService,
     TasteVectorCalculator,
@@ -56,6 +57,32 @@ def _service(repo, vectors, *, weights=None, enabled: bool = True) -> Preference
         weights=weights or {k: 1.0 for k in FeedbackKind},
         enabled=enabled,
     )
+
+
+class _FakeLLM:
+    def __init__(self, text: str) -> None:
+        self._text = text
+        self.calls: list = []
+
+    async def complete(self, prompt: str, system: str) -> str:
+        self.calls.append((prompt, system))
+        return self._text
+
+
+class _FakeJobLookup:
+    def __init__(self, titles: dict) -> None:
+        self._titles = titles
+
+    def get_job_by_id(self, job_id: str):
+        title = self._titles.get(job_id)
+        if title is None:
+            return None
+        return type("J", (), {"title": title, "company": "Acme"})()
+
+
+class _RaisingLLM:
+    async def complete(self, prompt: str, system: str) -> str:
+        raise RuntimeError("llm down")
 
 
 @pytest.mark.asyncio
@@ -109,6 +136,26 @@ async def test_disabled_service_returns_baseline() -> None:
 
 
 @pytest.mark.asyncio
+async def test_record_implicit_signal_sets_source_implicit() -> None:
+    repo = FakeRepo()
+    jid = uuid.uuid4()
+    svc = _service(repo, {str(jid): [0.0, 1.0]})
+    signal = await svc.record_implicit_signal(jid, FeedbackKind.OFFERED)
+    assert signal.source == FeedbackSource.IMPLICIT
+    assert signal.kind == FeedbackKind.OFFERED
+    assert any(s.source == FeedbackSource.IMPLICIT for s in repo.list_signals())
+
+
+@pytest.mark.asyncio
+async def test_record_signal_still_explicit() -> None:
+    repo = FakeRepo()
+    jid = uuid.uuid4()
+    svc = _service(repo, {str(jid): [0.0, 1.0]})
+    signal = await svc.record_signal(jid, FeedbackKind.THUMBS_UP)
+    assert signal.source == FeedbackSource.EXPLICIT
+
+
+@pytest.mark.asyncio
 async def test_reset_clears_signals_and_model() -> None:
     repo = FakeRepo()
     jid = uuid.uuid4()
@@ -117,3 +164,59 @@ async def test_reset_clears_signals_and_model() -> None:
     svc.reset()
     assert repo.cleared is True
     assert svc.query_vector([1.0, 0.0]) == [1.0, 0.0]
+
+
+def _service_with_explainer(
+    repo, vectors, *, llm=None, explanation_enabled: bool = False
+) -> PreferenceService:
+    calc = TasteVectorCalculator(alpha=1.0, beta=1.0, gamma=1.0, tau_days=90.0)
+    return PreferenceService(
+        repository=repo,
+        vector_store=FakeVectorStore(vectors),
+        calculator=calc,
+        weights={k: 1.0 for k in FeedbackKind},
+        enabled=True,
+        llm=llm,
+        explanation_enabled=explanation_enabled,
+    )
+
+
+@pytest.mark.asyncio
+async def test_explain_summary_none_when_no_llm() -> None:
+    repo = FakeRepo()
+    jid = uuid.uuid4()
+    svc = _service(repo, {str(jid): [0.0, 1.0]})
+    await svc.record_signal(jid, FeedbackKind.THUMBS_UP)
+    exp = await svc.explain()
+    assert exp.summary is None
+    assert exp.total_signals == 1
+
+
+@pytest.mark.asyncio
+async def test_explain_layers_llm_summary() -> None:
+    repo = FakeRepo()
+    jid = uuid.uuid4()
+    llm = _FakeLLM("You prefer backend roles.")
+    svc = _service_with_explainer(
+        repo, {str(jid): [0.0, 1.0]}, llm=llm, explanation_enabled=True
+    )
+    svc.attach_job_lookup(_FakeJobLookup({str(jid): "Backend Engineer"}))
+    await svc.record_signal(jid, FeedbackKind.THUMBS_UP)
+    exp = await svc.explain()
+    assert exp.summary == "You prefer backend roles."
+    assert len(llm.calls) == 1
+    assert exp.total_signals == 1
+
+
+@pytest.mark.asyncio
+async def test_explain_summary_none_when_llm_raises() -> None:
+    repo = FakeRepo()
+    jid = uuid.uuid4()
+    svc = _service_with_explainer(
+        repo, {str(jid): [0.0, 1.0]}, llm=_RaisingLLM(), explanation_enabled=True
+    )
+    svc.attach_job_lookup(_FakeJobLookup({str(jid): "Backend Engineer"}))
+    await svc.record_signal(jid, FeedbackKind.THUMBS_UP)
+    exp = await svc.explain()
+    assert exp.summary is None
+    assert exp.total_signals == 1

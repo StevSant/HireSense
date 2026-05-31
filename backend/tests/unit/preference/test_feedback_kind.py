@@ -69,3 +69,21 @@ def test_signal_contribution_fields() -> None:
     c = SignalContribution(embedding=[1.0, 0.0], polarity=1, weight=2.0, age_days=10.0)
     assert c.polarity == 1
     assert c.age_days == 10.0
+
+
+def test_implicit_kinds_exist_and_have_expected_polarity():
+    assert FeedbackKind.APPLIED.value == "applied"
+    assert FeedbackKind.INTERVIEWING.value == "interviewing"
+    assert FeedbackKind.OFFERED.value == "offered"
+    assert FeedbackKind.ACCEPTED.value == "accepted"
+    assert FeedbackKind.REJECTED.value == "rejected"
+    assert FeedbackKind.APPLIED.polarity == 1
+    assert FeedbackKind.INTERVIEWING.polarity == 1
+    assert FeedbackKind.OFFERED.polarity == 1
+    assert FeedbackKind.ACCEPTED.polarity == 1
+    assert FeedbackKind.REJECTED.polarity == -1
+
+
+def test_implicit_kinds_weight_keys():
+    assert FeedbackKind.OFFERED.weight_key == "preference_weight_offered"
+    assert FeedbackKind.REJECTED.weight_key == "preference_weight_rejected"

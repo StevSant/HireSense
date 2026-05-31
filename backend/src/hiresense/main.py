@@ -70,7 +70,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
 
     # --- Preference (taste-vector learning; consumed by ingestion pre-ranking) ---
-    preference = build_preference(infra)
+    preference = build_preference(infra, tracked)
     app.state.preference = preference.provider
     app.include_router(preference_router)
 
@@ -78,6 +78,10 @@ def create_app() -> FastAPI:
     ingestion = build_ingestion(infra, tracked, preference_query=preference.service)
     app.state.ingestion = ingestion.provider
     app.include_router(ingestion_router)
+
+    # Two-phase wiring: ingestion is built after preference, so attach the
+    # job-title lookup used by the LLM explanation summary now.
+    preference.service.attach_job_lookup(ingestion.orchestrator)
 
     # --- Profile ---
     profile = build_profile(infra, tracked)

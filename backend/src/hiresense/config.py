@@ -8,7 +8,7 @@ class _CommaSeparatedMixin:
     """Mixin that splits comma-separated strings into lists for known fields."""
 
     _COMMA_FIELDS: ClassVar[frozenset[str]] = frozenset(
-        {"enabled_job_sources", "supported_languages", "getonboard_categories"}
+        {"enabled_job_sources", "supported_languages", "getonboard_categories", "job_closed_markers"}
     )
 
     def prepare_field_value(
@@ -110,6 +110,28 @@ class Settings(BaseSettings):
     # lifecycle signal, this is just a floor to bound table growth — kept long
     # enough that closed jobs linger with their badge before deletion.
     ingestion_job_retention_days: int = 90
+
+    # --- Job closure / revalidation ---
+    # Consecutive snapshot fetches a previously-seen job may be missing before
+    # it is marked closed (guards against a transient/empty fetch).
+    job_closure_miss_threshold: int = 2
+    # How often the URL-probe revalidation sweep runs (feed/search sources).
+    job_revalidation_interval_hours: int = 24
+    # Max jobs probed per sweep run (oldest-checked first) — bounds network cost.
+    job_revalidation_batch: int = 100
+    # Concurrent URL probes + per-request delay (seconds) for politeness.
+    job_revalidation_concurrency: int = 2
+    job_revalidation_delay: float = 1.0
+    # Lowercased substring phrases that mark a 200-OK listing page as actually
+    # closed (the listing stays live but says "no longer accepting", etc.).
+    job_closed_markers: list[str] = [
+        "no longer accepting applications",
+        "position has been filled",
+        "this job is closed",
+        "this position is no longer available",
+        "ya no está disponible",
+        "esta oferta ya no está disponible",
+    ]
 
     # Job source URLs
     jobicy_api_url: str = "https://jobicy.com/api/v2/remote-jobs"

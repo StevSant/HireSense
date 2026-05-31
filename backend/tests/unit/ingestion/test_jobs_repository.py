@@ -33,14 +33,14 @@ class _NoopBus:
         pass
 
 
-def test_add_if_absent_skips_duplicate_dedup_key() -> None:
+def test_upsert_skips_duplicate_identity() -> None:
     repo = InMemoryJobsRepository()
     job1 = _make_job()
-    # Same dedup_key inputs, different id — must be skipped.
+    # Same identity inputs (source + url), different id — must be deduped.
     job2 = NormalizedJob(**{**job1.model_dump(), "id": str(uuid.uuid4())})
 
-    assert repo.add_if_absent(job1) is True
-    assert repo.add_if_absent(job2) is False
+    assert repo.upsert(job1) == UpsertResult.INSERTED
+    assert repo.upsert(job2) == UpsertResult.UNCHANGED
     assert len(repo.list_all()) == 1
     assert repo.list_all()[0].id == job1.id
 
@@ -48,7 +48,7 @@ def test_add_if_absent_skips_duplicate_dedup_key() -> None:
 def test_update_scores_persists_to_listed_job() -> None:
     repo = InMemoryJobsRepository()
     job = _make_job()
-    repo.add_if_absent(job)
+    repo.upsert(job)
 
     repo.update_scores(job.id, match_score=0.42, semantic_score=0.7)
 
@@ -60,8 +60,8 @@ def test_update_scores_persists_to_listed_job() -> None:
 
 def test_prune_older_than_removes_only_stale_rows() -> None:
     repo = InMemoryJobsRepository()
-    repo.add_if_absent(_make_job(title="A", url="https://x/a"))
-    repo.add_if_absent(_make_job(title="B", url="https://x/b"))
+    repo.upsert(_make_job(title="A", url="https://x/a"))
+    repo.upsert(_make_job(title="B", url="https://x/b"))
 
     # Cutoff in the future — everything is "older" than that.
     future_cutoff = datetime.now(timezone.utc) + timedelta(days=1)
@@ -72,7 +72,7 @@ def test_prune_older_than_removes_only_stale_rows() -> None:
 
 def test_prune_older_than_keeps_recent_rows() -> None:
     repo = InMemoryJobsRepository()
-    repo.add_if_absent(_make_job(title="A"))
+    repo.upsert(_make_job(title="A"))
 
     past_cutoff = datetime.now(timezone.utc) - timedelta(days=1)
     removed = repo.prune_older_than(past_cutoff)

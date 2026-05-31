@@ -71,10 +71,6 @@ class InMemoryJobsRepository:
             return UpsertResult.UPDATED
         return UpsertResult.UNCHANGED
 
-    def add_if_absent(self, job: NormalizedJob) -> bool:
-        # Transitional shim until orchestrator/scanner migrate to upsert (T11/T12).
-        return self.upsert(job) == UpsertResult.INSERTED
-
     def get_id_by_identity(self, source: str, job: NormalizedJob) -> str | None:
         return self._identity_to_id.get((source, identity_key(job)))
 

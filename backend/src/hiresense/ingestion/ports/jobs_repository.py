@@ -10,14 +10,6 @@ if TYPE_CHECKING:
 
 
 class JobsRepositoryPort(Protocol):
-    def add_if_absent(self, job: NormalizedJob) -> bool:
-        """Transitional shim over `upsert`: True iff a new row was inserted.
-
-        Kept while the orchestrator/scanner migrate to `upsert`; removed once
-        all callers use the richer surface below.
-        """
-        ...
-
     def upsert(self, job: NormalizedJob) -> "UpsertResult":
         """Insert, update-in-place (preserving id), reopen, or no-op a job,
         keyed on stable identity `(bucket, source, identity_key)`."""

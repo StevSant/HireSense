@@ -7,9 +7,9 @@ from hiresense.preference.domain import (
     FeedbackKind,
     FeedbackSignal,
     PreferenceModel,
+    PreferenceService,
     TasteVectorCalculator,
 )
-from hiresense.preference.domain.services import PreferenceService
 
 
 class FakeRepo:
@@ -47,14 +47,14 @@ class FakeVectorStore:
         return self._vectors.get(id)
 
 
-def _service(repo, vectors, *, weights=None) -> PreferenceService:
+def _service(repo, vectors, *, weights=None, enabled: bool = True) -> PreferenceService:
     calc = TasteVectorCalculator(alpha=1.0, beta=1.0, gamma=1.0, tau_days=90.0)
     return PreferenceService(
         repository=repo,
         vector_store=FakeVectorStore(vectors),
         calculator=calc,
         weights=weights or {k: 1.0 for k in FeedbackKind},
-        enabled=True,
+        enabled=enabled,
     )
 
 
@@ -103,8 +103,7 @@ async def test_record_signal_without_embedding_still_stores_signal() -> None:
 async def test_disabled_service_returns_baseline() -> None:
     repo = FakeRepo()
     jid = uuid.uuid4()
-    svc = _service(repo, {str(jid): [0.0, 1.0]})
-    svc._enabled = False  # noqa: SLF001
+    svc = _service(repo, {str(jid): [0.0, 1.0]}, enabled=False)
     await svc.record_signal(jid, FeedbackKind.THUMBS_UP)
     assert svc.query_vector([1.0, 0.0]) == [1.0, 0.0]
 

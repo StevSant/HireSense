@@ -41,8 +41,9 @@ class PreferenceService:
             except Exception:
                 logger.exception("preference: get_vector failed for %s", job_id)
         if embedding is None:
-            logger.warning(
-                "preference: no embedding for job %s — signal stored, no contribution",
+            logger.debug(
+                "preference: no embedding for job %s (not indexed yet?) — "
+                "signal stored, no contribution",
                 job_id,
             )
         signal = self._repo.add_signal(

@@ -17,6 +17,7 @@ from hiresense.bootstrap import (
     build_interview,
     build_matching,
     build_optimization,
+    build_preference,
     build_profile,
     build_research,
     build_shared_infra,
@@ -29,6 +30,7 @@ from hiresense.ingestion.api import router as ingestion_router
 from hiresense.interview.api import router as interview_router
 from hiresense.matching.api import router as matching_router
 from hiresense.optimization.api import router as optimization_router
+from hiresense.preference.api import router as preference_router
 from hiresense.profile.api import router as profile_router
 from hiresense.research.api import router as research_router
 from hiresense.tracking.api import router as tracking_router
@@ -67,8 +69,13 @@ def create_app() -> FastAPI:
     app.state.identity = build_identity(settings)
     app.include_router(auth_router)
 
+    # --- Preference (taste-vector learning; consumed by ingestion pre-ranking) ---
+    preference = build_preference(infra)
+    app.state.preference = preference.provider
+    app.include_router(preference_router)
+
     # --- Ingestion (uses the tracked-LLM factory for match scoring) ---
-    ingestion = build_ingestion(infra, tracked)
+    ingestion = build_ingestion(infra, tracked, preference_query=preference.service)
     app.state.ingestion = ingestion.provider
     app.include_router(ingestion_router)
 

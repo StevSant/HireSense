@@ -64,12 +64,14 @@ class SemanticPreRanker:
         top_k_cap: int,
         skill_weight: float,
         semantic_weight: float,
+        preference: Any = None,
     ) -> None:
         self._vector_store = vector_store
         self._embedding = embedding
         self._top_k_cap = top_k_cap
         self._skill_weight = skill_weight
         self._semantic_weight = semantic_weight
+        self._preference = preference
         # In-process profile embedding cache: sha256(profile_text) → vector
         self._profile_cache: dict[str, list[float]] = {}
         self._lock = asyncio.Lock()
@@ -115,6 +117,14 @@ class SemanticPreRanker:
         profile_vec = await self._get_profile_embedding(candidate_skills, candidate_summary)
         if profile_vec is None:
             return jobs
+
+        # Apply the learned taste vector (preference loop). Passthrough when no
+        # preference port is wired or no model exists — baseline is returned.
+        if self._preference is not None:
+            try:
+                profile_vec = self._preference.query_vector(profile_vec)
+            except Exception:
+                logger.exception("SemanticPreRanker: preference.query_vector failed — using baseline")
 
         # Call ANN search; any exception → passthrough
         try:

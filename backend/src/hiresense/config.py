@@ -189,6 +189,21 @@ class Settings(BaseSettings):
     weight_application: int = 10
     weight_interview: int = 10
 
+    # --- Preference learning loop (taste vector via Rocchio relevance feedback) ---
+    # Master switch: when False, query_vector() always returns the baseline.
+    preference_enabled: bool = True
+    # Blend coefficients: taste = normalize(alpha*baseline + beta*pos - gamma*neg)
+    preference_alpha: float = 1.0
+    preference_beta: float = 0.75
+    preference_gamma: float = 0.5
+    # Recency decay time constant in days (decay = exp(-age_days / tau)).
+    preference_decay_tau_days: float = 90.0
+    # Per-kind signal magnitudes (polarity is derived from the kind itself).
+    preference_weight_thumbs_up: float = 1.0
+    preference_weight_more_like_this: float = 1.0
+    preference_weight_thumbs_down: float = 1.0
+    preference_weight_not_interested: float = 1.5
+
     # Match scoring (LLM model routing). The job list shows an LLM-gated quick
     # score (cheap model, batched per visible page); the detail panel can run a
     # deeper single-job analysis (advanced model). These are the out-of-the-box

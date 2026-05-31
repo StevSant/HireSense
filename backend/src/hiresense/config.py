@@ -1,6 +1,5 @@
 from typing import Any, ClassVar
 
-from pydantic import model_validator
 from pydantic_settings import BaseSettings, DotEnvSettingsSource, EnvSettingsSource, SettingsConfigDict
 
 
@@ -165,6 +164,18 @@ class Settings(BaseSettings):
     greenhouse_api_url: str = "https://boards-api.greenhouse.io/v1/boards"
     lever_api_url: str = "https://api.lever.co/v0/postings"
     ashby_api_url: str = "https://api.ashbyhq.com/posting-api/job-board"
+
+    # Pre-ranking blend weights (2-signal: skill-overlap vs. semantic similarity).
+    # These are dedicated floats for the global pre-ranker and reproduce the
+    # current effective 0.4/0.6 behavior. Do NOT reuse weight_skill_match /
+    # weight_semantic — those are int percentages for the 10-dim deep matcher
+    # and normalize to ~0.571/0.429, the inverse of the intended blend.
+    prerank_weight_skill: float = 0.4
+    prerank_weight_semantic: float = 0.6
+    # Maximum number of jobs passed to PgVectorStore.search() during pre-ranking.
+    # A cap larger than the corpus keeps the global-ordering guarantee intact
+    # while bounding ANN query cost on large data sets.
+    prerank_top_k_cap: int = 2000
 
     # Matching weights (must sum to 100)
     weight_semantic: int = 15

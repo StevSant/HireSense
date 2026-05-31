@@ -7,6 +7,7 @@ from hiresense.ingestion.domain.content_hash import content_hash
 from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.upsert_result import UpsertResult
+from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
 
 
 class InMemoryJobsRepository:
@@ -138,6 +139,22 @@ class InMemoryJobsRepository:
         self._jobs[job_id] = job.model_copy(
             update={"match_score": match_score, "semantic_score": semantic_score}
         )
+
+    def bulk_update_scores(self, updates: list[ScoreUpdate]) -> None:
+        """Update multiple jobs' scores in one pass over the in-memory dict.
+
+        Unknown IDs are silently skipped; an empty list is a no-op.
+        """
+        for score_update in updates:
+            job = self._jobs.get(score_update.job_id)
+            if job is None:
+                continue
+            self._jobs[score_update.job_id] = job.model_copy(
+                update={
+                    "match_score": score_update.match_score,
+                    "semantic_score": score_update.semantic_score,
+                }
+            )
 
     def prune_older_than(self, cutoff: datetime) -> int:
         stale = [jid for jid, ts in self._fetched_at.items() if ts < cutoff]

@@ -53,3 +53,15 @@ class JobEmbeddingIndexer:
             except Exception:
                 logger.exception("Vector upsert failed for job %s", job.id)
         return indexed
+
+    async def remove(self, job_ids: list[str]) -> None:
+        """Drop closed jobs from the vector store so they leave semantic search.
+
+        Failures are logged, never raised — a stale vector entry must not fail
+        ingestion (it just lingers until the next sweep)."""
+        if not job_ids:
+            return
+        try:
+            await self._vector_store.delete(job_ids)
+        except Exception:
+            logger.exception("Vector delete failed (n=%d)", len(job_ids))

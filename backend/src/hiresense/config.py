@@ -104,9 +104,12 @@ class Settings(BaseSettings):
     # Ingestion cooldown (seconds between manual triggers)
     ingestion_cooldown_seconds: int = 300
 
-    # Days to retain ingested jobs before pruning at the start of each
-    # /ingestion/fetch and /ingestion/scan-portals call. 0 disables pruning.
-    ingestion_job_retention_days: int = 30
+    # Days to retain ingested jobs before HARD-deleting (GC backstop) at the
+    # start of each /ingestion/fetch and /ingestion/scan-portals call. 0
+    # disables pruning. With explicit closure detection now the primary
+    # lifecycle signal, this is just a floor to bound table growth — kept long
+    # enough that closed jobs linger with their badge before deletion.
+    ingestion_job_retention_days: int = 90
 
     # Job source URLs
     jobicy_api_url: str = "https://jobicy.com/api/v2/remote-jobs"

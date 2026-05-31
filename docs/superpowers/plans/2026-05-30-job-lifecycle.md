@@ -121,10 +121,17 @@ def content_hash(job: NormalizedJob) -> str:
         job.location.strip(),
         (job.salary_range or "").strip(),
         "|".join(sorted(s.strip().lower() for s in job.skills)),
+        "|".join(sorted(c.strip().lower() for c in job.categories)),
+        "|".join(sorted(c.strip().lower() for c in job.countries)),
+        (job.remote_modality or ""),
     ]
     raw = "\x1f".join(parts).encode("utf-8")
     return hashlib.sha256(raw).hexdigest()
 ```
+
+> The hash field-set MUST match the fields `JobsRepository.upsert` rewrites on
+> change (Task 5) — including `categories`, `countries`, `remote_modality` —
+> otherwise a change to one of those is silently dropped.
 
 Add to `backend/src/hiresense/ingestion/domain/__init__.py`:
 
@@ -427,8 +434,11 @@ from enum import Enum
 class UpsertResult(str, Enum):
     INSERTED = "inserted"
     UPDATED = "updated"
+    REOPENED = "reopened"   # was closed, now re-seen — caller must re-index
     UNCHANGED = "unchanged"
 ```
+
+`upsert`'s "found" branch returns `REOPENED` when the row was closed and is now re-seen (takes precedence over UPDATED/UNCHANGED for the re-index signal); field updates still apply when `content_hash` differs.
 
 Re-export from `domain/__init__.py` and add to `__all__`.
 
@@ -963,7 +973,9 @@ Add `closure_miss_threshold: int = 2` to `IngestionOrchestrator.__init__`. Rewri
                     job = job.model_copy(update={"id": existing_id})
                 seen_keys.add(identity_key(job))  # from hiresense.ingestion.domain.identity
                 result = self._repository.upsert(job)
-                if result in (UpsertResult.INSERTED, UpsertResult.UPDATED):
+                # INSERTED/UPDATED/REOPENED all need (re-)indexing. REOPENED matters:
+                # closure removed the job from the vector store, so re-listing must re-add it.
+                if result in (UpsertResult.INSERTED, UpsertResult.UPDATED, UpsertResult.REOPENED):
                     touched.append(job)
                     if result == UpsertResult.INSERTED:
                         new_jobs.append(job)
@@ -1014,7 +1026,7 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
-Add `closure_miss_threshold: int = 2` to `PortalScanner.__init__`. In `scan`, per portal: build `seen_keys`, set `job.source_id = raw.source_id`, look up existing id and reuse, call `upsert`, collect `INSERTED`/`UPDATED` into a `touched` list (and `INSERTED` into `new_jobs`), index `touched`. After the per-portal loop iteration, if `adapter.supports_snapshot_closure()`, call `bump_missed_and_close(portal.name, seen_keys, threshold)` and `indexer.remove(closed_ids)`. Recompute `duplicates = total_fetched - len(new_jobs)`.
+Add `closure_miss_threshold: int = 2` to `PortalScanner.__init__`. In `scan`, per portal: build `seen_keys`, set `job.source_id = raw.source_id`, look up existing id and reuse, call `upsert`, collect `INSERTED`/`UPDATED`/`REOPENED` into a `touched` list (and `INSERTED` into `new_jobs`), index `touched`. After the per-portal loop iteration, if `adapter.supports_snapshot_closure()`, call `bump_missed_and_close(portal.name, seen_keys, threshold)` and `indexer.remove(closed_ids)`. Recompute `duplicates = total_fetched - len(new_jobs)`.
 
 > Note: scope closure per `portal.name` (the `source`), not per platform — each company board is its own complete snapshot. Run closure even when a portal returns zero jobs (legit "no open roles"), but only when the fetch did not raise (the existing `except` path `continue`s before reaching closure).
 

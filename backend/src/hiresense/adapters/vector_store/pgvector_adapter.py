@@ -18,6 +18,14 @@ def _vector_literal(embedding: list[float]) -> str:
     return "[" + ",".join(repr(float(x)) for x in embedding) + "]"
 
 
+def _parse_vector(raw: str) -> list[float]:
+    """Parse pgvector's text form '[0.1,0.2,...]' into floats."""
+    inner = raw.strip().strip("[]").strip()
+    if not inner:
+        return []
+    return [float(part) for part in inner.split(",")]
+
+
 class PgVectorStore:
     """VectorStorePort backed by Postgres + pgvector.
 
@@ -89,6 +97,14 @@ class PgVectorStore:
             )
             for row in rows
         ]
+
+    async def get_vector(self, id: str) -> list[float] | None:
+        stmt = text(f"SELECT embedding FROM {self._table} WHERE id = :id")
+        with self._session_factory() as session:
+            row = session.execute(stmt, {"id": id}).first()
+        if row is None or row.embedding is None:
+            return None
+        return _parse_vector(str(row.embedding))
 
     async def delete(self, ids: list[str]) -> None:
         if not ids:

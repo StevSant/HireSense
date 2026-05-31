@@ -218,6 +218,58 @@ async def test_list_jobs_strict_location_filters_non_matching() -> None:
     assert returned_ids == {"job-chile", "job-worldwide", "job-remote-remote"}
 
 
+# ---------------------------------------------------------------------------
+# Work Unit E1 — get_pre_ranker dependency returns None on a bare app
+# (no app.state.ingestion wired)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_get_pre_ranker_returns_none_on_bare_app() -> None:
+    """get_pre_ranker must return None defensively when app has no ingestion state."""
+    from fastapi import FastAPI, Request
+    from hiresense.ingestion.api.dependencies import get_pre_ranker
+
+    bare_app = FastAPI()
+
+    @bare_app.get("/test-pre-ranker")
+    async def _probe(request: Request):
+        result = get_pre_ranker(request)
+        return {"is_none": result is None}
+
+    async with AsyncClient(transport=ASGITransport(app=bare_app), base_url="http://test") as client:
+        resp = await client.get("/test-pre-ranker")
+    assert resp.status_code == 200
+    assert resp.json()["is_none"] is True
+
+
+@pytest.mark.asyncio
+async def test_get_pre_ranker_returns_instance_when_provider_has_it() -> None:
+    """get_pre_ranker returns the SemanticPreRanker when wired on app state."""
+    from fastapi import FastAPI, Request
+    from hiresense.ingestion.api.dependencies import get_pre_ranker
+    from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
+
+    fake_ranker = SemanticPreRanker(None, None, top_k_cap=100, skill_weight=0.4, semantic_weight=0.6)
+
+    class FakeProvider:
+        def get_pre_ranker(self):
+            return fake_ranker
+
+    wired_app = FastAPI()
+    wired_app.state.ingestion = FakeProvider()
+
+    @wired_app.get("/test-pre-ranker")
+    async def _probe(request: Request):
+        result = get_pre_ranker(request)
+        return {"is_none": result is None}
+
+    async with AsyncClient(transport=ASGITransport(app=wired_app), base_url="http://test") as client:
+        resp = await client.get("/test-pre-ranker")
+    assert resp.status_code == 200
+    assert resp.json()["is_none"] is False
+
+
 @pytest.mark.asyncio
 async def test_revalidate_endpoint_returns_closed_count() -> None:
     from hiresense.ingestion.api.dependencies import get_revalidation_service

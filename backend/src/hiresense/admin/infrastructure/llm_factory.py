@@ -3,9 +3,10 @@ from __future__ import annotations
 import hashlib
 import logging
 import threading
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from hiresense.admin.domain.resolved_config import ResolvedConfig
+if TYPE_CHECKING:
+    from hiresense.admin.domain.resolved_config import ResolvedConfig
 
 logger = logging.getLogger(__name__)
 

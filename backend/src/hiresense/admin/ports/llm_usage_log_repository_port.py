@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
-from hiresense.admin.infrastructure import LLMUsageLog, UsageBucket, UsageTotals
+if TYPE_CHECKING:
+    from hiresense.admin.infrastructure import LLMUsageLog, UsageBucket, UsageTotals
 
 
 class LLMUsageLogRepositoryPort(Protocol):

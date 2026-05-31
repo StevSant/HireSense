@@ -210,6 +210,9 @@ class Settings(BaseSettings):
     preference_weight_offered: float = 2.5
     preference_weight_accepted: float = 3.0
     preference_weight_rejected: float = 1.5
+    # Phase 2: layer an LLM-phrased natural-language drift summary over the
+    # deterministic explanation. Falls back to summary=None on any LLM failure.
+    preference_explanation_enabled: bool = True
 
     # Match scoring (LLM model routing). The job list shows an LLM-gated quick
     # score (cheap model, batched per visible page); the detail panel can run a

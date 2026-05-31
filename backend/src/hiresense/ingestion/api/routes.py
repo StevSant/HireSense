@@ -12,16 +12,18 @@ from hiresense.ingestion.api.dependencies import (
     get_ingestion_orchestrator,
     get_portal_scanner,
     get_portals_config,
+    get_pre_ranker,
     get_quick_scoring,
     get_revalidation_service,
     get_semantic_scoring,
 )
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
+from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
+from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
 from hiresense.ingestion.domain.job_filter import JobQueryParams, PaginatedResult, filter_and_paginate
 from hiresense.ingestion.domain.job_scorer import (
     combine_fit_score,
     score_job_against_skills,
-    score_jobs,
 )
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
@@ -130,6 +132,7 @@ async def list_jobs(
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
     semantic_scoring: Annotated[SemanticScoringService | None, Depends(get_semantic_scoring)],
     quick_scoring: Annotated[QuickScoringService | None, Depends(get_quick_scoring)],
+    pre_ranker: Annotated[SemanticPreRanker | None, Depends(get_pre_ranker)],
     page: int = 1,
     page_size: int = 20,
     source: str | None = None,
@@ -158,7 +161,13 @@ async def list_jobs(
 
     candidate_skills, candidate_summary = await _gather_profile(profile_service)
 
-    persist_scores = orchestrator.persist_scores if tab == "boards" else scanner.persist_scores
+    persist_scores_batch = (
+        orchestrator.persist_scores_batch if tab == "boards" else scanner.persist_scores_batch
+    )
+
+    # Default to match-descending so the ranking is actually applied when the
+    # client omits sort (otherwise the page reflects insertion order — #18).
+    effective_sort = sort or "match_desc"
 
     # Pre-compute skill-overlap per job (cheap) and fold in any *persisted*
     # semantic score so the sort key matches the displayed value. Keep the
@@ -175,8 +184,21 @@ async def list_jobs(
             )
             for j in all_jobs
         ]
-        for job in all_jobs:
-            persist_scores(job.id, job.match_score, job.semantic_score)
+
+    # GLOBAL pre-rank BEFORE pagination (#18 fix): use the pgvector ANN to set
+    # semantic_score + combined match_score across the WHOLE corpus, so a
+    # high-semantic / low-keyword job can reach page 1 instead of being scored
+    # only after it's already been paginated off. Passthrough (no vector store,
+    # empty profile, etc.) leaves the skill-only ordering intact.
+    if pre_ranker is not None:
+        all_jobs = await pre_ranker.rerank(
+            all_jobs, skill_by_id, candidate_skills, candidate_summary, bucket=tab
+        )
+
+    if candidate_skills:
+        persist_scores_batch(
+            [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in all_jobs]
+        )
 
     params = JobQueryParams(
         page=page,
@@ -189,7 +211,7 @@ async def list_jobs(
         date_to=date_to,
         user_location=user_location,
         strict_location=strict_location,
-        sort=sort,
+        sort=effective_sort,
         min_score=min_score,
         seniority_levels=seniority,
         max_years_experience=max_years_experience,
@@ -230,12 +252,13 @@ async def list_jobs(
             )
             for j in result.jobs
         ]
-        for job in result.jobs:
-            persist_scores(job.id, job.match_score, job.semantic_score)
+        persist_scores_batch(
+            [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in result.jobs]
+        )
         # Page-level re-sort so the order reflects the post-semantic match_score
         # that the user actually sees. Phase-1 sort happens pre-pagination on
         # skill-only scores; without this the displayed % column looks unsorted.
-        if sort == "match_desc":
+        if effective_sort == "match_desc":
             result.jobs = sorted(
                 result.jobs,
                 key=lambda j: (j.match_score if j.match_score is not None else -1.0),
@@ -253,7 +276,7 @@ async def list_jobs(
         )
         if quick_results:
             result.jobs = [_apply_quick(j, quick_results.get(j.id)) for j in result.jobs]
-            if sort == "match_desc":
+            if effective_sort == "match_desc":
                 result.jobs = sorted(
                     result.jobs,
                     key=lambda j: (j.match_score if j.match_score is not None else -1.0),

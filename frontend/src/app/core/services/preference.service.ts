@@ -10,6 +10,7 @@ import { PreferenceExplanation } from '../../pages/ingestion/models/preference-e
 export class PreferenceService {
   constructor(private http: HttpClient) {}
 
+  /** `jobId` must be a UUID string; the backend rejects non-UUID values with HTTP 422. */
   submitFeedback(jobId: string, kind: FeedbackKind): Observable<FeedbackSignal> {
     return this.http.post<FeedbackSignal>(`${environment.apiUrl}/preference/feedback`, {
       job_id: jobId,

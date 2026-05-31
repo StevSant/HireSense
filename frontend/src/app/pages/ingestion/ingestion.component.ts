@@ -78,6 +78,9 @@ export class IngestionComponent implements OnInit {
   // Sort
   sortMode = signal<'' | 'match_desc' | 'date_desc'>('');
 
+  // Show closed jobs toggle
+  includeClosed = signal(false);
+
   ngOnInit(): void {
     this.loadPortals();
     this.loadJobs();
@@ -105,7 +108,7 @@ export class IngestionComponent implements OnInit {
     this.error.set('');
     const filtersWithSort = { ...this.filters(), sort: this.sortMode() || undefined };
     this.ingestionService
-      .queryJobs(this.activeTab(), this.page(), this.pageSize(), filtersWithSort)
+      .queryJobs(this.activeTab(), this.page(), this.pageSize(), filtersWithSort, this.includeClosed())
       .subscribe({
         next: (res) => {
           this.jobs.set(res.jobs);
@@ -250,6 +253,12 @@ export class IngestionComponent implements OnInit {
 
   isTracked(jobId: string): boolean {
     return this.trackedJobIds().has(jobId);
+  }
+
+  onIncludeClosedChange(event: Event): void {
+    this.includeClosed.set((event.target as HTMLInputElement).checked);
+    this.page.set(1);
+    this.loadJobs();
   }
 
   onSortChange(event: Event): void {

@@ -128,6 +128,15 @@
         <option value="match_desc">Best match for me</option>
         <option value="date_desc">Newest first</option>
       </select>
+      <label class="toggle-label">
+        <input
+          type="checkbox"
+          [checked]="includeClosed()"
+          (change)="onIncludeClosedChange($event)"
+          class="toggle-checkbox"
+        />
+        Show closed
+      </label>
     </div>
   }
 
@@ -157,7 +166,7 @@
         </thead>
         <tbody>
           @for (job of jobs(); track job.id) {
-            <tr (click)="openDetail(job)" class="clickable-row">
+            <tr (click)="openDetail(job)" class="clickable-row" [class.closed]="job.status === 'closed'">
               <td>
                 @if (job.match_score !== null && job.match_score !== undefined) {
                   <span
@@ -171,7 +180,12 @@
                   <span class="score-badge score-na">—</span>
                 }
               </td>
-              <td class="title" [title]="job.title">{{ job.title || '—' }}</td>
+              <td class="title" [title]="job.title">
+                {{ job.title || '—' }}
+                @if (job.status === 'closed') {
+                  <span class="badge badge-closed">Closed</span>
+                }
+              </td>
               <td class="cell-truncate" [title]="job.company">{{ job.company }}</td>
               <td class="cell-truncate" [title]="job.location">{{ job.location }}</td>
               <td><span class="badge source-badge-{{ job.source }}">{{ job.source }}</span></td>

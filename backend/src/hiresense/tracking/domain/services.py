@@ -4,6 +4,7 @@ import uuid as uuid_mod
 from datetime import datetime, timezone
 from typing import Any
 
+from hiresense.kernel.events import TrackingStatusChangedEvent
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 from hiresense.tracking.ports import TrackingRepositoryPort
 
@@ -71,8 +72,6 @@ class TrackingService:
             app.notes = notes
         saved = self._repo.save(app)
         if previous != saved.status and saved.job_id is not None:
-            from hiresense.kernel.events import TrackingStatusChangedEvent
-
             await self._event_bus.publish(
                 TrackingStatusChangedEvent(job_id=str(saved.job_id), status=saved.status)
             )

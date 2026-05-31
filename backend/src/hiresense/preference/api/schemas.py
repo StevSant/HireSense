@@ -9,6 +9,8 @@ from hiresense.preference.domain import FeedbackKind
 
 
 class FeedbackRequest(BaseModel):
+    # Job ids are always UUIDs in this system (generated via uuid4 at ingestion),
+    # so a non-UUID value is rejected here with 422.
     job_id: uuid_mod.UUID
     kind: FeedbackKind
 

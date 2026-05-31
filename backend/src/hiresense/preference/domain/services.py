@@ -83,6 +83,10 @@ class PreferenceService:
         signals = [s for s in self._repo.list_signals() if s.job_embedding]
         if not signals:
             return
+        # Dimension is taken from the first signal's embedding. If the embedding
+        # model's width ever changes mid-corpus, compute_delta skips off-width
+        # vectors and query_vector's dim guard discards a wrong-width delta — so
+        # the worst case is the model going inert until reset, never a bad query.
         dim = len(signals[0].job_embedding)
         now = datetime.now(timezone.utc)
         contributions = [self._to_contribution(s, now) for s in signals]

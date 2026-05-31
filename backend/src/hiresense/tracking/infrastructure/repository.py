@@ -98,6 +98,9 @@ class TrackingRepository:
                 else None
             )
             if row is None:
+                # Defensive mirror of save() for an unpersisted app. Not the
+                # seeding path: the sole caller (update_status) always passes a
+                # persisted app, so new applications are seeded via create().
                 row = TrackedApplicationOrm(
                     **{field: getattr(application, field) for field in _CONTENT_FIELDS}
                 )

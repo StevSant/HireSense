@@ -4,14 +4,16 @@ import uuid as uuid_mod
 from datetime import datetime, timezone
 from typing import Any
 
+from hiresense.kernel.events import TrackingStatusChangedEvent
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 from hiresense.tracking.ports import TrackingRepositoryPort
 
 
 class TrackingService:
-    def __init__(self, repository: TrackingRepositoryPort, ingestion_orchestrator: Any) -> None:
+    def __init__(self, repository: TrackingRepositoryPort, ingestion_orchestrator: Any, event_bus: Any) -> None:
         self._repo = repository
         self._ingestion = ingestion_orchestrator
+        self._event_bus = event_bus
 
     def track_job(
         self,
@@ -55,19 +57,25 @@ class TrackingService:
     def list(self, status: ApplicationStatus | None = None) -> list[TrackedApplication]:
         return self._repo.list_all(status=status)
 
-    def update_status(
+    async def update_status(
         self,
         id: uuid_mod.UUID,
         status: ApplicationStatus,
         notes: str | None = None,
     ) -> TrackedApplication:
         app = self.get(id)
+        previous = app.status
         app.status = status.value
         if status == ApplicationStatus.APPLIED and app.applied_at is None:
             app.applied_at = datetime.now(timezone.utc)
         if notes is not None:
             app.notes = notes
-        return self._repo.save(app)
+        saved = self._repo.save(app)
+        if previous != saved.status and saved.job_id is not None:
+            await self._event_bus.publish(
+                TrackingStatusChangedEvent(job_id=str(saved.job_id), status=saved.status)
+            )
+        return saved
 
     def update_notes(self, id: uuid_mod.UUID, notes: str) -> TrackedApplication:
         app = self.get(id)

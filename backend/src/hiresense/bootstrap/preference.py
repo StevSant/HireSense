@@ -44,6 +44,9 @@ def build_preference(infra: SharedInfra) -> PreferenceBuild:
         kind = status_to_feedback_kind(event.status)
         if kind is None or event.job_id is None:
             return
+        # The in-memory bus already isolates handler failures (see
+        # InMemoryEventBus._safe_invoke), so this guard mainly adds job-id
+        # context to the log and stays resilient if the bus is ever swapped.
         try:
             await service.record_implicit_signal(uuid_mod.UUID(event.job_id), kind)
         except Exception:

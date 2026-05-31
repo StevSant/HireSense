@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 import uuid as uuid_mod
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 from hiresense.bootstrap.shared_infra import SharedInfra
 from hiresense.kernel.events import TrackingStatusChangedEvent
@@ -24,7 +26,7 @@ class PreferenceBuild:
     service: PreferenceService
 
 
-def build_preference(infra: SharedInfra) -> PreferenceBuild:
+def build_preference(infra: SharedInfra, tracked: Callable[[str], Any]) -> PreferenceBuild:
     s = infra.settings
     calculator = TasteVectorCalculator(
         alpha=s.preference_alpha,
@@ -39,6 +41,8 @@ def build_preference(infra: SharedInfra) -> PreferenceBuild:
         calculator=calculator,
         weights=weights,
         enabled=s.preference_enabled,
+        llm=tracked("preference_explanation") if s.preference_explanation_enabled else None,
+        explanation_enabled=s.preference_explanation_enabled,
     )
     async def _on_status_changed(event: TrackingStatusChangedEvent) -> None:
         kind = status_to_feedback_kind(event.status)

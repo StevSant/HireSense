@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
-
+from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.portal_config import PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
@@ -23,6 +22,7 @@ class IngestionProvider:
         deep_analysis: DeepAnalysisService | None = None,
         pre_ranker: SemanticPreRanker | None = None,
         revalidation_service: JobRevalidationService | None = None,
+        backfill_service: EmbeddingBackfillService | None = None,
     ) -> None:
         self._orchestrator = orchestrator
         self._portal_scanner = portal_scanner
@@ -32,6 +32,7 @@ class IngestionProvider:
         self._deep_analysis = deep_analysis
         self._pre_ranker = pre_ranker
         self._revalidation_service = revalidation_service
+        self._backfill_service = backfill_service
 
     def get_orchestrator(self) -> IngestionOrchestrator:
         return self._orchestrator
@@ -56,3 +57,6 @@ class IngestionProvider:
 
     def get_revalidation_service(self) -> JobRevalidationService | None:
         return self._revalidation_service
+
+    def get_backfill_service(self) -> EmbeddingBackfillService | None:
+        return self._backfill_service

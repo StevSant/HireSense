@@ -1,3 +1,4 @@
+from hiresense.ingestion.domain.closed_listing_classifier import Verdict, classify_listing
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
 from hiresense.ingestion.domain.identity import identity_key
@@ -21,6 +22,8 @@ __all__ = [
     "PortalScanner",
     "QuickMatchResult",
     "QuickMatchVerdict",
+    "Verdict",
+    "classify_listing",
     "content_hash",
     "filter_and_paginate",
     "identity_key",

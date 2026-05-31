@@ -6,8 +6,10 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.normalizer import JobNormalizer
+from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.ports import JobsRepositoryPort
 from hiresense.kernel.events import JobsIngestedEvent
 
@@ -32,6 +34,7 @@ class IngestionOrchestrator:
         cooldown_seconds: int = 300,
         retention_days: int | None = None,
         indexer: Any | None = None,
+        closure_miss_threshold: int = 2,
     ) -> None:
         self._sources = sources
         self._normalizers = normalizers
@@ -40,6 +43,7 @@ class IngestionOrchestrator:
         self._cooldown_seconds = cooldown_seconds
         self._retention_days = retention_days
         self._indexer = indexer
+        self._closure_miss_threshold = closure_miss_threshold
         self._last_run_at: float = 0.0
 
     async def run(
@@ -67,18 +71,46 @@ class IngestionOrchestrator:
                 raw_jobs = await source.fetch_jobs(filters)
             except Exception:
                 logger.exception("Failed to fetch from %s", source_name)
-                continue
+                continue  # bad fetch: skip disappearance for this source this run
 
+            seen_keys: set[str] = set()
+            touched: list[NormalizedJob] = []
             for raw in raw_jobs:
                 normalized_data = normalizer.normalize(raw)
                 job = NormalizedJob(
                     id=str(uuid.uuid4()),
                     source=source_name,
                     source_type=source.source_type().value,
+                    source_id=raw.source_id,
                     **normalized_data,
                 )
-                if self._repository.add_if_absent(job):
-                    new_jobs.append(job)
+                existing_id = self._repository.get_id_by_identity(source_name, job)
+                if existing_id:
+                    job = job.model_copy(update={"id": existing_id})
+                seen_keys.add(identity_key(job))
+                result = self._repository.upsert(job)
+                # INSERTED/UPDATED/REOPENED all need (re-)indexing; REOPENED matters
+                # because closure removed the job from the vector store.
+                if result in (
+                    UpsertResult.INSERTED,
+                    UpsertResult.UPDATED,
+                    UpsertResult.REOPENED,
+                ):
+                    touched.append(job)
+                    if result == UpsertResult.INSERTED:
+                        new_jobs.append(job)
+
+            if touched and self._indexer is not None:
+                await self._indexer.index(touched)
+
+            # Disappearance-based closure: only for snapshot sources, only after a
+            # successful fetch (errored fetches `continue` above and never reach here).
+            if source.supports_snapshot_closure():
+                closed_ids = self._repository.bump_missed_and_close(
+                    source_name, seen_keys, self._closure_miss_threshold
+                )
+                if closed_ids and self._indexer is not None:
+                    await self._indexer.remove(closed_ids)
 
         if new_jobs:
             event = JobsIngestedEvent(
@@ -92,7 +124,7 @@ class IngestionOrchestrator:
         return new_jobs
 
     def store_job(self, job: NormalizedJob) -> None:
-        self._repository.add_if_absent(job)
+        self._repository.upsert(job)
 
     def get_job_by_id(self, job_id: str) -> NormalizedJob | None:
         return self._repository.get_by_id(job_id)

@@ -37,13 +37,10 @@ class PreferenceService:
         self._explanation_enabled = explanation_enabled
         self._job_lookup: Any | None = None
 
-    def attach_explainer(self, *, llm: Any, job_lookup: Any) -> None:
-        """Late-bind the explanation LLM + job-title lookup (two-phase wiring:
-        the ingestion orchestrator is built after the preference service)."""
-        self._llm = llm
-        self._job_lookup = job_lookup
-
     def attach_job_lookup(self, job_lookup: Any) -> None:
+        """Late-bind the job-title lookup used by the LLM explanation summary.
+        Two-phase wiring: the ingestion orchestrator is built after the
+        preference service, so it is attached once available."""
         self._job_lookup = job_lookup
 
     async def _record(
@@ -114,6 +111,9 @@ class PreferenceService:
             neg_titles = self._titles_for([s for s in signals if s.kind.polarity < 0])
             if not pos_titles and not neg_titles:
                 return None
+            # Job titles are untrusted external input (ingested from job boards);
+            # they flow into the prompt verbatim. Blast radius is tiny — the output
+            # is a cosmetic summary string with no tool access — but treat as such.
             prompt = (
                 "Summarize the candidate's evolving job preferences in one or two "
                 "short sentences, plain and specific.\n"

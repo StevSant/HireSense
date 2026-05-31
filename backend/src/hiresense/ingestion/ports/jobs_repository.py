@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import dataclasses
 from datetime import datetime
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from hiresense.ingestion.domain.models import NormalizedJob
+
+if TYPE_CHECKING:
+    from hiresense.ingestion.domain.upsert_result import UpsertResult
 
 
 @dataclasses.dataclass(frozen=True)
@@ -21,12 +24,34 @@ class ScoreUpdate:
 
 
 class JobsRepositoryPort(Protocol):
-    def add_if_absent(self, job: NormalizedJob) -> bool:
-        """Insert the job if its dedup_key is not already stored.
+    def upsert(self, job: NormalizedJob) -> "UpsertResult":
+        """Insert, update-in-place (preserving id), reopen, or no-op a job,
+        keyed on stable identity `(bucket, source, identity_key)`."""
+        ...
 
-        Returns True when the row was inserted, False when an existing row
-        with the same dedup_key already exists (skipped, not updated).
-        """
+    def get_id_by_identity(self, source: str, job: NormalizedJob) -> str | None:
+        """Stored row id for this job's identity, or None if absent."""
+        ...
+
+    def mark_closed(self, job_ids: list[str]) -> None:
+        """Mark the given rows closed (status=closed, closed_at=now)."""
+        ...
+
+    def bump_missed_and_close(
+        self, source: str, seen_identity_keys: set[str], threshold: int
+    ) -> list[str]:
+        """Disappearance rule for snapshot sources: increment missed_count for
+        open jobs of `source` not in `seen_identity_keys`, close those reaching
+        `threshold`, reset the seen ones. Returns ids closed this run."""
+        ...
+
+    def find_open_stale(self, sources: list[str], limit: int) -> list[NormalizedJob]:
+        """Open jobs of the given sources, oldest-checked first, capped at
+        `limit` — the URL-probe revalidation sweep's work queue."""
+        ...
+
+    def mark_checked(self, job_ids: list[str]) -> None:
+        """Stamp last_checked_at=now on the given rows (post-probe)."""
         ...
 
     def list_all(self) -> list[NormalizedJob]: ...

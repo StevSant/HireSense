@@ -7,9 +7,11 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.normalizer import JobNormalizer
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
+from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.ports import JobsRepositoryPort
 from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
 from hiresense.kernel.events import JobsIngestedEvent
@@ -47,6 +49,7 @@ class PortalScanner:
         repository: JobsRepositoryPort,
         retention_days: int | None = None,
         indexer: Any | None = None,
+        closure_miss_threshold: int = 2,
     ) -> None:
         self._config = config
         self._adapters = adapters
@@ -55,6 +58,7 @@ class PortalScanner:
         self._repository: JobsRepositoryPort = repository
         self._retention_days = retention_days
         self._indexer = indexer
+        self._closure_miss_threshold = closure_miss_threshold
 
     def list_jobs(self) -> list[NormalizedJob]:
         return self._repository.list_all()
@@ -135,6 +139,8 @@ class PortalScanner:
                 )
                 continue
 
+            seen_keys: set[str] = set()
+            touched: list[NormalizedJob] = []
             for raw in raw_jobs:
                 total_fetched += 1
                 normalized_data = normalizer.normalize(raw)
@@ -142,6 +148,7 @@ class PortalScanner:
                     id=str(uuid.uuid4()),
                     source=portal.name,
                     source_type="api",
+                    source_id=raw.source_id,
                     platform=portal.platform,
                     categories=list(portal.categories),
                     **normalized_data,
@@ -151,8 +158,31 @@ class PortalScanner:
                     if kw not in job.title.lower() and kw not in job.description.lower():
                         continue
 
-                if self._repository.add_if_absent(job):
-                    new_jobs.append(job)
+                existing_id = self._repository.get_id_by_identity(portal.name, job)
+                if existing_id:
+                    job = job.model_copy(update={"id": existing_id})
+                seen_keys.add(identity_key(job))
+                result = self._repository.upsert(job)
+                if result in (
+                    UpsertResult.INSERTED,
+                    UpsertResult.UPDATED,
+                    UpsertResult.REOPENED,
+                ):
+                    touched.append(job)
+                    if result == UpsertResult.INSERTED:
+                        new_jobs.append(job)
+
+            if touched and self._indexer is not None:
+                await self._indexer.index(touched)
+
+            # Disappearance closure: snapshot portals only, and never during a
+            # keyword-filtered scan (that is not a complete snapshot of the board).
+            if adapter.supports_snapshot_closure() and not filters.keyword:
+                closed_ids = self._repository.bump_missed_and_close(
+                    portal.name, seen_keys, self._closure_miss_threshold
+                )
+                if closed_ids and self._indexer is not None:
+                    await self._indexer.remove(closed_ids)
 
         duplicates = total_fetched - len(new_jobs)
 
@@ -162,8 +192,6 @@ class PortalScanner:
                 source="portal_scan",
             )
             await self._event_bus.publish(event)
-            if self._indexer is not None:
-                await self._indexer.index(new_jobs)
 
         return ScanResult(
             total_fetched=total_fetched,

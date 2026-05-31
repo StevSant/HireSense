@@ -42,6 +42,9 @@ class HNHiringAdapter:
         self._http = http_client
         self._base_url = base_url
 
+    def supports_snapshot_closure(self) -> bool:
+        return False
+
     def source_name(self) -> str:
         return "hn_hiring"
 

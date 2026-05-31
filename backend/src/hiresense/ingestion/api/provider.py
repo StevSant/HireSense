@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from typing import Any
+
+from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.portal_config import PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
 from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
@@ -19,6 +22,7 @@ class IngestionProvider:
         quick_scoring: QuickScoringService | None = None,
         deep_analysis: DeepAnalysisService | None = None,
         pre_ranker: SemanticPreRanker | None = None,
+        revalidation_service: JobRevalidationService | None = None,
     ) -> None:
         self._orchestrator = orchestrator
         self._portal_scanner = portal_scanner
@@ -27,6 +31,7 @@ class IngestionProvider:
         self._quick_scoring = quick_scoring
         self._deep_analysis = deep_analysis
         self._pre_ranker = pre_ranker
+        self._revalidation_service = revalidation_service
 
     def get_orchestrator(self) -> IngestionOrchestrator:
         return self._orchestrator
@@ -48,3 +53,6 @@ class IngestionProvider:
 
     def get_pre_ranker(self) -> SemanticPreRanker | None:
         return self._pre_ranker
+
+    def get_revalidation_service(self) -> JobRevalidationService | None:
+        return self._revalidation_service

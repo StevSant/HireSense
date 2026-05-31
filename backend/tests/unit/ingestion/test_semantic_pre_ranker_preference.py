@@ -57,3 +57,19 @@ async def test_no_preference_uses_raw_profile_vector() -> None:
     )
     await ranker.rerank([_job("a")], {"a": None}, ["python"], "summary", "boards")
     assert store.last_query == [1.0, 0.0]  # unchanged — backward compatible
+
+
+class BrokenPreference:
+    def query_vector(self, baseline: list[float]) -> list[float]:
+        raise RuntimeError("model unavailable")
+
+
+@pytest.mark.asyncio
+async def test_preference_exception_falls_back_to_baseline() -> None:
+    store = FakeVectorStore()
+    ranker = SemanticPreRanker(
+        store, FakeEmbedding(), top_k_cap=10, skill_weight=0.4, semantic_weight=0.6,
+        preference=BrokenPreference(),
+    )
+    await ranker.rerank([_job("a")], {"a": None}, ["python"], "summary", "boards")
+    assert store.last_query == [1.0, 0.0]  # baseline used on error

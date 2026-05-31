@@ -11,6 +11,7 @@ Fallback contract (REQ-04):
     - candidate profile is empty (no skills and no summary)
     - embedding call raises
     - vector store search() raises
+    - preference.query_vector() raises or returns None (baseline is used)
     - search returns empty results
 
 Unindexed jobs (not present in ANN results) are appended to the TAIL
@@ -125,6 +126,10 @@ class SemanticPreRanker:
                 profile_vec = self._preference.query_vector(profile_vec)
             except Exception:
                 logger.exception("SemanticPreRanker: preference.query_vector failed — using baseline")
+
+        # A rogue preference port could return None; never pass None to search().
+        if profile_vec is None:
+            return jobs
 
         # Call ANN search; any exception → passthrough
         try:

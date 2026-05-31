@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { KeyValuePipe } from '@angular/common';
 import { PreferenceService } from '../../../../core/services/preference.service';
 import { PreferenceExplanation } from '../../models/preference-explanation.model';
@@ -13,6 +14,7 @@ import { PreferenceExplanation } from '../../models/preference-explanation.model
 })
 export class PreferenceTuningComponent {
   private preferenceService = inject(PreferenceService);
+  private destroyRef = inject(DestroyRef);
 
   explanation = signal<PreferenceExplanation | null>(null);
   expanded = signal(false);
@@ -24,22 +26,28 @@ export class PreferenceTuningComponent {
     if (next) this.load();
   }
 
-  load(): void {
-    this.preferenceService.explain().subscribe({
-      next: (e) => this.explanation.set(e),
-      error: () => this.explanation.set(null),
-    });
+  private load(): void {
+    this.preferenceService
+      .explain()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (e) => this.explanation.set(e),
+        error: () => this.explanation.set(null),
+      });
   }
 
   reset(): void {
     if (!confirm('Reset learned preferences? This clears all feedback-based tuning.')) return;
     this.resetting.set(true);
-    this.preferenceService.reset().subscribe({
-      next: () => {
-        this.resetting.set(false);
-        this.load();
-      },
-      error: () => this.resetting.set(false),
-    });
+    this.preferenceService
+      .reset()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.resetting.set(false);
+          this.load();
+        },
+        error: () => this.resetting.set(false),
+      });
   }
 }

@@ -28,6 +28,7 @@ from hiresense.ingestion.domain import (
     PortalScanner,
     load_portals_config,
 )
+from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
 from hiresense.ingestion.domain.normalizers import (
     AshbyNormalizer,
     CSVNormalizer,
@@ -223,6 +224,16 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
         job_char_limit=s.match_deep_job_char_limit,
     )
 
+    # Backfill service: re-embeds all pre-existing jobs into pgvector on demand.
+    # Uses the same embedding + vector_store as the per-bucket indexers.
+    # None when no vector store is configured (graceful no-op at runtime).
+    backfill_service = EmbeddingBackfillService(
+        boards_repo=boards_jobs_repo,
+        portals_repo=portals_jobs_repo,
+        embedding=infra.embedding,
+        vector_store=infra.vector_store,
+    )
+
     provider = IngestionProvider(
         orchestrator=ingestion_orchestrator,
         portal_scanner=portal_scanner,
@@ -232,5 +243,6 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
         deep_analysis=deep_analysis,
         pre_ranker=pre_ranker,
         revalidation_service=revalidation_service,
+        backfill_service=backfill_service,
     )
     return IngestionBuild(provider=provider, orchestrator=ingestion_orchestrator)

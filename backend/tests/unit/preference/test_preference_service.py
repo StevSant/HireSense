@@ -6,6 +6,7 @@ import pytest
 from hiresense.preference.domain import (
     FeedbackKind,
     FeedbackSignal,
+    FeedbackSource,
     PreferenceModel,
     PreferenceService,
     TasteVectorCalculator,
@@ -106,6 +107,26 @@ async def test_disabled_service_returns_baseline() -> None:
     svc = _service(repo, {str(jid): [0.0, 1.0]}, enabled=False)
     await svc.record_signal(jid, FeedbackKind.THUMBS_UP)
     assert svc.query_vector([1.0, 0.0]) == [1.0, 0.0]
+
+
+@pytest.mark.asyncio
+async def test_record_implicit_signal_sets_source_implicit() -> None:
+    repo = FakeRepo()
+    jid = uuid.uuid4()
+    svc = _service(repo, {str(jid): [0.0, 1.0]})
+    signal = await svc.record_implicit_signal(jid, FeedbackKind.OFFERED)
+    assert signal.source == FeedbackSource.IMPLICIT
+    assert signal.kind == FeedbackKind.OFFERED
+    assert any(s.source == FeedbackSource.IMPLICIT for s in repo.list_signals())
+
+
+@pytest.mark.asyncio
+async def test_record_signal_still_explicit() -> None:
+    repo = FakeRepo()
+    jid = uuid.uuid4()
+    svc = _service(repo, {str(jid): [0.0, 1.0]})
+    signal = await svc.record_signal(jid, FeedbackKind.THUMBS_UP)
+    assert signal.source == FeedbackSource.EXPLICIT
 
 
 @pytest.mark.asyncio

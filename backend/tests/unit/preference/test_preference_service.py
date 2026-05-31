@@ -200,9 +200,7 @@ async def test_explain_layers_llm_summary() -> None:
     svc = _service_with_explainer(
         repo, {str(jid): [0.0, 1.0]}, llm=llm, explanation_enabled=True
     )
-    svc.attach_explainer(
-        llm=llm, job_lookup=_FakeJobLookup({str(jid): "Backend Engineer"})
-    )
+    svc.attach_job_lookup(_FakeJobLookup({str(jid): "Backend Engineer"}))
     await svc.record_signal(jid, FeedbackKind.THUMBS_UP)
     exp = await svc.explain()
     assert exp.summary == "You prefer backend roles."
@@ -217,9 +215,7 @@ async def test_explain_summary_none_when_llm_raises() -> None:
     svc = _service_with_explainer(
         repo, {str(jid): [0.0, 1.0]}, llm=_RaisingLLM(), explanation_enabled=True
     )
-    svc.attach_explainer(
-        llm=_RaisingLLM(), job_lookup=_FakeJobLookup({str(jid): "Backend Engineer"})
-    )
+    svc.attach_job_lookup(_FakeJobLookup({str(jid): "Backend Engineer"}))
     await svc.record_signal(jid, FeedbackKind.THUMBS_UP)
     exp = await svc.explain()
     assert exp.summary is None

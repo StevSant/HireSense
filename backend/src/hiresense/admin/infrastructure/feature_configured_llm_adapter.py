@@ -6,10 +6,9 @@ from hiresense.adapters.llm import LangChainLLMAdapter
 from hiresense.ports.llm import LLMInvocationError, LLMResult
 
 if TYPE_CHECKING:
-    # Type-only imports: importing the admin.domain package at runtime here would
-    # close the admin.domain -> admin.ports -> admin.infrastructure import cycle.
-    from hiresense.admin.domain import LLMConfigService, LLMFactory
+    from hiresense.admin.domain import LLMConfigService
     from hiresense.admin.domain.resolved_config import ResolvedConfig
+    from hiresense.admin.ports import LLMFactoryPort
 
 
 class FeatureConfiguredLLMAdapter:
@@ -25,7 +24,7 @@ class FeatureConfiguredLLMAdapter:
         self,
         *,
         config_service: LLMConfigService,
-        factory: LLMFactory,
+        factory: LLMFactoryPort,
         feature_key: str,
     ) -> None:
         self._config_service = config_service

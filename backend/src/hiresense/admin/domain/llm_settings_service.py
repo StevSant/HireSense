@@ -6,14 +6,15 @@ from hiresense.admin.domain.effective_config import EffectiveFeatureConfig
 from hiresense.admin.domain.encryption import APIKeyCipher, EncryptionUnavailableError
 from hiresense.admin.domain.feature_registry import FEATURE_REGISTRY
 from hiresense.admin.domain.llm_config_service import LLMConfigService
-from hiresense.admin.domain.llm_factory import LLMFactory
-from hiresense.admin.domain.llm_test_runner import LLMTestRunner, TestResult
 from hiresense.admin.domain.masking import mask_api_key
 from hiresense.admin.domain.resolved_config import ResolvedConfig
+from hiresense.admin.domain.test_result import TestResult
 from hiresense.admin.ports import (
     LLMAuditLogRepositoryPort,
+    LLMFactoryPort,
     LLMFeatureOverrideRepositoryPort,
     LLMSettingsRepositoryPort,
+    LLMTestRunnerPort,
 )
 
 
@@ -49,8 +50,8 @@ class LLMSettingsService:
         audit_repo: LLMAuditLogRepositoryPort,
         cipher: APIKeyCipher,
         config_service: LLMConfigService,
-        factory: LLMFactory,
-        test_runner: LLMTestRunner,
+        factory: LLMFactoryPort,
+        test_runner: LLMTestRunnerPort,
         env_provider: str,
         env_model: str,
         env_api_key: str,

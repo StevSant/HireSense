@@ -1,0 +1,21 @@
+<div class="feedback-controls" [class.compact]="compact()">
+  @for (c of controls; track c.kind) {
+    <button
+      type="button"
+      class="fb-btn"
+      [class.active]="lastSent() === c.kind"
+      [disabled]="pending() !== null"
+      [attr.aria-label]="c.label"
+      [title]="c.label"
+      (click)="submit(c.kind); $event.stopPropagation()"
+    >
+      <span class="fb-icon">{{ c.icon }}</span>
+      @if (!compact()) {
+        <span class="fb-label">{{ c.label }}</span>
+      }
+    </button>
+  }
+  @if (failed()) {
+    <span class="fb-error" role="alert">Couldn't save — tap again</span>
+  }
+</div>

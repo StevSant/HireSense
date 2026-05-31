@@ -1,12 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { PreferenceService } from '../../../../core/services/preference.service';
+import { FeedbackControl } from '../../models/feedback-control.model';
 import { FeedbackKind } from '../../models/feedback-kind.model';
-
-interface FeedbackControl {
-  kind: FeedbackKind;
-  icon: string;
-  label: string;
-}
 
 @Component({
   selector: 'app-feedback-controls',

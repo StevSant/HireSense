@@ -38,6 +38,9 @@ class LinkedInAdapter:
         self._detail_concurrency = detail_concurrency
         self._detail_delay = detail_delay
 
+    def supports_snapshot_closure(self) -> bool:
+        return False
+
     def source_name(self) -> str:
         return "linkedin"
 

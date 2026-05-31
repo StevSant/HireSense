@@ -44,6 +44,7 @@ class FakeEventBus:
 class FakeRepository:
     def __init__(self) -> None:
         self._store: dict[uuid_mod.UUID, TrackedApplication] = {}
+        self.history: list = []
 
     def create(self, app: TrackedApplication) -> TrackedApplication:
         if app.id is None:
@@ -54,6 +55,7 @@ class FakeRepository:
         if app.updated_at is None:
             app.updated_at = now
         self._store[app.id] = app
+        self.history.append((None, app.status))
         return app
 
     def get_by_id(self, id: uuid_mod.UUID) -> TrackedApplication | None:
@@ -76,6 +78,10 @@ class FakeRepository:
         self._store[app.id] = app
         return app
 
+    def save_with_history(self, application, *, from_status, to_status):
+        self.history.append((from_status, to_status))
+        return self.save(application)
+
     def delete(self, id: uuid_mod.UUID) -> bool:
         if id in self._store:
             del self._store[id]
@@ -97,6 +103,18 @@ def make_service(
         repository=repo or FakeRepository(),
         ingestion_orchestrator=orchestrator or FakeIngestionOrchestrator(),
         event_bus=event_bus or FakeEventBus(),
+    )
+
+
+def _make_app(
+    job_id: uuid_mod.UUID | None = None,
+    status: str = ApplicationStatus.SAVED.value,
+) -> TrackedApplication:
+    return TrackedApplication(
+        job_id=job_id,
+        title="Engineer",
+        company="Acme",
+        status=status,
     )
 
 
@@ -279,6 +297,27 @@ async def test_update_status_no_event_when_job_id_none() -> None:
     await svc.update_status(app.id, ApplicationStatus.OFFERED)
 
     assert bus.published == []
+
+
+@pytest.mark.asyncio
+async def test_update_status_records_transition_on_change():
+    bus = FakeEventBus()
+    repo = FakeRepository()
+    created = repo.create(_make_app(job_id=uuid_mod.uuid4(), status=ApplicationStatus.SAVED.value))
+    service = TrackingService(repository=repo, ingestion_orchestrator=FakeIngestionOrchestrator(), event_bus=bus)
+    await service.update_status(created.id, ApplicationStatus.APPLIED)
+    assert repo.history[-1] == ("saved", "applied")
+
+
+@pytest.mark.asyncio
+async def test_update_status_no_transition_when_unchanged():
+    bus = FakeEventBus()
+    repo = FakeRepository()
+    created = repo.create(_make_app(status=ApplicationStatus.APPLIED.value))
+    before = len(repo.history)
+    service = TrackingService(repository=repo, ingestion_orchestrator=FakeIngestionOrchestrator(), event_bus=bus)
+    await service.update_status(created.id, ApplicationStatus.APPLIED)
+    assert len(repo.history) == before
 
 
 def test_update_notes() -> None:

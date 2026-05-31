@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import uuid as uuid_mod
 from datetime import datetime, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from hiresense.kernel.events import TrackingStatusChangedEvent
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
-from hiresense.tracking.ports import TrackingRepositoryPort
+
+if TYPE_CHECKING:
+    from hiresense.tracking.ports import TrackingRepositoryPort
 
 
 class TrackingService:
@@ -70,7 +72,12 @@ class TrackingService:
             app.applied_at = datetime.now(timezone.utc)
         if notes is not None:
             app.notes = notes
-        saved = self._repo.save(app)
+        if previous != status.value:
+            saved = self._repo.save_with_history(
+                app, from_status=previous, to_status=status.value
+            )
+        else:
+            saved = self._repo.save(app)
         if previous != saved.status and saved.job_id is not None:
             await self._event_bus.publish(
                 TrackingStatusChangedEvent(job_id=str(saved.job_id), status=saved.status)

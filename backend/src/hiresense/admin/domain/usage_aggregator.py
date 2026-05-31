@@ -4,9 +4,12 @@ import csv
 import io
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING
 
-from hiresense.admin.infrastructure import UsageBucket, UsageTotals
 from hiresense.admin.ports import LLMUsageLogRepositoryPort
+
+if TYPE_CHECKING:
+    from hiresense.admin.infrastructure import UsageBucket, UsageTotals
 
 
 @dataclass(frozen=True)

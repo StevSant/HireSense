@@ -5,7 +5,7 @@ from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.ingestion.infrastructure import InMemoryJobsRepository
 
 
-def _make_job(title: str = "SWE", company: str = "Acme") -> NormalizedJob:
+def _make_job(title: str = "SWE", company: str = "Acme", url: str = "https://example.com") -> NormalizedJob:
     return NormalizedJob(
         id=str(uuid.uuid4()),
         title=title,
@@ -13,7 +13,7 @@ def _make_job(title: str = "SWE", company: str = "Acme") -> NormalizedJob:
         description="desc",
         source="test",
         source_type="api",
-        url="https://example.com",
+        url=url,
     )
 
 
@@ -44,8 +44,8 @@ def test_store_multiple_and_retrieve() -> None:
     orchestrator = IngestionOrchestrator(
         sources=[], normalizers={}, event_bus=FakeEventBus(), repository=InMemoryJobsRepository()
     )
-    job1 = _make_job("A", "X")
-    job2 = _make_job("B", "Y")
+    job1 = _make_job("A", "X", url="https://example.com/a")
+    job2 = _make_job("B", "Y", url="https://example.com/b")
     orchestrator.store_job(job1)
     orchestrator.store_job(job2)
     assert orchestrator.get_job_by_id(job1.id).title == "A"

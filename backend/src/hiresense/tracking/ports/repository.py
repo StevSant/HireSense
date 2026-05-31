@@ -15,6 +15,14 @@ class TrackingRepositoryPort(Protocol):
 
     def save(self, application: TrackedApplication) -> TrackedApplication: ...
 
+    def save_with_history(
+        self,
+        application: TrackedApplication,
+        *,
+        from_status: str | None,
+        to_status: str,
+    ) -> TrackedApplication: ...
+
     def create(self, application: TrackedApplication) -> TrackedApplication: ...
 
     def delete(self, id: uuid.UUID) -> bool: ...

@@ -75,6 +75,7 @@ class MatchingOrchestrator:
         cv_skills: list[str],
         cv_embedding: list[float] | None = None,
         job_embedding: list[float] | None = None,
+        cv_text: str | None = None,
     ) -> MatchResult:
         # 1. Semantic score
         if cv_embedding and job_embedding:
@@ -85,12 +86,22 @@ class MatchingOrchestrator:
         else:
             semantic_score = 0.0
 
-        # 2. Skill match
-        skill_result = self._skill_matcher.match(cv_skills, job_skills)
-
-        # 3. LLM analysis for experience, language, pros/cons
+        # 2. LLM analysis for experience, language, pros/cons, and a verdict on
+        # which required skills the candidate demonstrably has (present_skills).
         llm_analysis = await self._get_llm_analysis(
-            job_description, job_skills, cv_summary, cv_skills
+            job_description, job_skills, cv_summary, cv_skills, cv_text
+        )
+
+        # 3. Skill match. A required skill counts as matched when it is in the
+        # explicit list, appears (word-boundary) in the CV text/summary, or the
+        # LLM judged it present from the experience — covering prose-described
+        # skills that aren't tagged in the skills list.
+        evidence = "\n".join(filter(None, [cv_summary, cv_text]))
+        skill_result = self._skill_matcher.match(
+            cv_skills,
+            job_skills,
+            evidence_text=evidence,
+            inferred_present=llm_analysis.get("present_skills") or [],
         )
 
         # 4. Build breakdown
@@ -131,6 +142,7 @@ class MatchingOrchestrator:
         job_skills: list[str],
         cv_summary: str,
         cv_skills: list[str],
+        cv_text: str | None = None,
     ) -> dict[str, Any]:
         prompt = (
             "Analyze this job-candidate match.\n\n"
@@ -138,9 +150,14 @@ class MatchingOrchestrator:
             f"Required Skills: {', '.join(job_skills)}\n\n"
             f"Candidate Summary: {cv_summary}\n"
             f"Candidate Skills: {', '.join(cv_skills)}\n\n"
+            f"Candidate CV (full text):\n{cv_text or ''}\n\n"
             "Return a JSON object with:\n"
             '- "experience_score": float 0-1\n'
             '- "language_score": float 0-1\n'
+            '- "present_skills": from the Required Skills list, the exact items the\n'
+            "  candidate demonstrably has based on their skills, summary, or CV text\n"
+            "  (include skills evidenced by experience even if not explicitly listed;\n"
+            "  use the exact required-skill wording; omit any not clearly supported)\n"
             '- "pros": list of strings\n'
             '- "cons": list of strings\n'
             '- "recommendations": list of strings\n'
@@ -162,6 +179,7 @@ class MatchingOrchestrator:
         return {
             "experience_score": 0.5,
             "language_score": 0.5,
+            "present_skills": [],
             "pros": [],
             "cons": [],
             "recommendations": [],

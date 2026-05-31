@@ -7,7 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api.dependencies import (
+    get_backfill_service,
     get_deep_analysis,
     get_ingestion_orchestrator,
     get_portal_scanner,
@@ -17,22 +19,23 @@ from hiresense.ingestion.api.dependencies import (
     get_revalidation_service,
     get_semantic_scoring,
 )
-from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
-from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
-from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
+from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
 from hiresense.ingestion.domain.job_filter import JobQueryParams, PaginatedResult, filter_and_paginate
+from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.job_scorer import (
     combine_fit_score,
     score_job_against_skills,
 )
 from hiresense.ingestion.domain.models import NormalizedJob
-from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
-from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
-from hiresense.ingestion.domain.seniority import SeniorityLevel
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner, ScanFilters, ScanResult
+from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
+from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
+from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
 from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
+from hiresense.ingestion.domain.seniority import SeniorityLevel
 from hiresense.ingestion.domain.services import IngestionCooldownError, IngestionOrchestrator
+from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
 from hiresense.matching.domain.deep_analysis_result import DeepAnalysisResult
 from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
 from hiresense.profile.api.dependencies import get_profile_service
@@ -324,3 +327,28 @@ async def list_portals(
     config: Annotated[PortalsConfig, Depends(get_portals_config)],
 ) -> list[PortalEntry]:
     return config.portals
+
+
+class BackfillResponse(BaseModel):
+    boards: int
+    portals: int
+    total: int
+
+
+@router.post("/backfill-embeddings", response_model=BackfillResponse)
+async def backfill_embeddings(
+    # The authenticated user IS the operator — this is a single-user app with
+    # no role system. require_auth verifies the JWT and returns the subject claim.
+    _operator: Annotated[str, Depends(require_auth)],
+    service: Annotated[EmbeddingBackfillService | None, Depends(get_backfill_service)],
+) -> BackfillResponse:
+    """Re-embed all ingested jobs into pgvector so SemanticPreRanker can rank them.
+
+    Idempotent: re-running replaces existing vectors in place. Safe to trigger
+    multiple times without duplicating entries. Returns per-bucket counts of
+    jobs successfully indexed.
+    """
+    if service is None:
+        raise HTTPException(status_code=503, detail="Embedding backfill is not configured")
+    result = await service.run()
+    return BackfillResponse(boards=result.boards, portals=result.portals, total=result.total)

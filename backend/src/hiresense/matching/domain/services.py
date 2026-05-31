@@ -75,6 +75,7 @@ class MatchingOrchestrator:
         cv_skills: list[str],
         cv_embedding: list[float] | None = None,
         job_embedding: list[float] | None = None,
+        cv_text: str | None = None,
     ) -> MatchResult:
         # 1. Semantic score
         if cv_embedding and job_embedding:
@@ -85,8 +86,10 @@ class MatchingOrchestrator:
         else:
             semantic_score = 0.0
 
-        # 2. Skill match
-        skill_result = self._skill_matcher.match(cv_skills, job_skills)
+        # 2. Skill match — fall back to evidence in the CV text/summary for
+        # skills demonstrated in prose but not tagged in the explicit list.
+        evidence = "\n".join(filter(None, [cv_summary, cv_text]))
+        skill_result = self._skill_matcher.match(cv_skills, job_skills, evidence_text=evidence)
 
         # 3. LLM analysis for experience, language, pros/cons
         llm_analysis = await self._get_llm_analysis(

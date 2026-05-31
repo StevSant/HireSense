@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   { path: 'login', loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent) },
@@ -18,8 +19,8 @@ export const routes: Routes = [
       { path: 'optimization', loadComponent: () => import('./pages/optimization/optimization.component').then(m => m.OptimizationComponent) },
       { path: 'tracking', loadComponent: () => import('./pages/tracking/tracking.component').then(m => m.TrackingComponent) },
       { path: 'interview', loadComponent: () => import('./pages/interview/interview.component').then(m => m.InterviewComponent) },
-      { path: 'admin/llm-settings', loadComponent: () => import('./pages/admin/admin-llm-settings.component').then(m => m.AdminLLMSettingsComponent) },
-      { path: 'admin/usage', loadComponent: () => import('./pages/admin/admin-usage.component').then(m => m.AdminUsageComponent) },
+      { path: 'admin/llm-settings', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/admin-llm-settings.component').then(m => m.AdminLLMSettingsComponent) },
+      { path: 'admin/usage', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/admin-usage.component').then(m => m.AdminUsageComponent) },
     ],
   },
   { path: '**', redirectTo: 'login' },

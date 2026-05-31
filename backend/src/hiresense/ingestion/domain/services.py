@@ -57,7 +57,7 @@ class IngestionOrchestrator:
             raise IngestionCooldownError(retry_after=remaining)
         self._last_run_at = time.monotonic()
 
-        self._prune_expired()
+        await self._prune_expired()
 
         new_jobs: list[NormalizedJob] = []
 
@@ -149,14 +149,19 @@ class IngestionOrchestrator:
         """
         self._repository.bulk_update_scores(updates)
 
-    def _prune_expired(self) -> None:
+    async def _prune_expired(self) -> None:
         if not self._retention_days or self._retention_days <= 0:
             return
         cutoff = datetime.now(timezone.utc) - timedelta(days=self._retention_days)
         try:
-            removed = self._repository.prune_older_than(cutoff)
+            removed_ids = self._repository.prune_older_than(cutoff)
         except Exception:
             logger.exception("Job pruning failed")
             return
-        if removed:
-            logger.info("Pruned %d jobs older than %s", removed, cutoff.isoformat())
+        if removed_ids:
+            logger.info("Pruned %d jobs older than %s", len(removed_ids), cutoff.isoformat())
+            if self._indexer is not None:
+                try:
+                    await self._indexer.remove(removed_ids)  # evict orphan vectors
+                except Exception:
+                    logger.exception("Failed to evict pruned job vectors")

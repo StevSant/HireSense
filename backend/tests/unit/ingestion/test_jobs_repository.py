@@ -66,7 +66,7 @@ def test_prune_older_than_removes_only_stale_rows() -> None:
     # Cutoff in the future — everything is "older" than that.
     future_cutoff = datetime.now(timezone.utc) + timedelta(days=1)
     removed = repo.prune_older_than(future_cutoff)
-    assert removed == 2
+    assert len(removed) == 2  # returns deleted ids (for vector eviction)
     assert repo.list_all() == []
 
 
@@ -76,7 +76,7 @@ def test_prune_older_than_keeps_recent_rows() -> None:
 
     past_cutoff = datetime.now(timezone.utc) - timedelta(days=1)
     removed = repo.prune_older_than(past_cutoff)
-    assert removed == 0
+    assert removed == []
     assert len(repo.list_all()) == 1
 
 
@@ -239,3 +239,34 @@ def test_find_open_stale_in_memory_parity():
     assert len(mem.find_open_stale(["remotive"], 5)) == 2
     mem.mark_closed([mem.list_all()[0].id])
     assert len(mem.find_open_stale(["remotive"], 5)) == 1
+
+
+@pytest.mark.asyncio
+async def test_prune_evicts_pruned_vectors_from_index() -> None:
+    """#19 item 2: age-pruned jobs are removed from the vector store too."""
+    from datetime import datetime, timezone
+
+    repo = InMemoryJobsRepository()
+    job = _job("a", source_id="n1", url="https://e.com/1")
+    repo.upsert(job)
+    repo._fetched_at[job.id] = datetime(2000, 1, 1, tzinfo=timezone.utc)  # backdate
+
+    class _FakeIndexer:
+        def __init__(self) -> None:
+            self.removed: list[list[str]] = []
+
+        async def index(self, jobs):
+            return 0
+
+        async def remove(self, ids):
+            self.removed.append(list(ids))
+
+    idx = _FakeIndexer()
+    orch = IngestionOrchestrator(
+        sources=[], normalizers={}, event_bus=_NoopBus(),
+        repository=repo, retention_days=1, indexer=idx, cooldown_seconds=0,
+    )
+    await orch._prune_expired()
+
+    assert repo.list_all() == []
+    assert idx.removed == [[job.id]]

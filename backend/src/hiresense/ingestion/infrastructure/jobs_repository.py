@@ -266,13 +266,19 @@ class JobsRepository:
             )
             session.commit()
 
-    def prune_older_than(self, cutoff: datetime) -> int:
+    def prune_older_than(self, cutoff: datetime) -> list[str]:
+        """Delete rows older than `cutoff`; return their ids so the caller can
+        evict the matching vectors (no FK cascade to vector_embeddings)."""
         with self._session_factory() as session:
-            result = session.execute(
-                delete(IngestedJob).where(
-                    IngestedJob.bucket == self._bucket,
-                    IngestedJob.fetched_at < cutoff,
-                )
+            ids = list(
+                session.scalars(
+                    select(IngestedJob.id).where(
+                        IngestedJob.bucket == self._bucket,
+                        IngestedJob.fetched_at < cutoff,
+                    )
+                ).all()
             )
-            session.commit()
-            return int(result.rowcount or 0)
+            if ids:
+                session.execute(delete(IngestedJob).where(IngestedJob.id.in_(ids)))
+                session.commit()
+            return ids

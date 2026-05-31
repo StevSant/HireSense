@@ -13,8 +13,10 @@ from hiresense.ingestion.api.dependencies import (
     get_portal_scanner,
     get_portals_config,
     get_quick_scoring,
+    get_revalidation_service,
     get_semantic_scoring,
 )
+from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.job_filter import JobQueryParams, PaginatedResult, filter_and_paginate
 from hiresense.ingestion.domain.job_scorer import (
     combine_fit_score,
@@ -98,6 +100,25 @@ async def scan_portals(
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
 ) -> ScanResult:
     return await scanner.scan(filters)
+
+
+class RevalidationResponse(BaseModel):
+    closed: int
+
+
+@router.post("/revalidate", response_model=RevalidationResponse)
+async def revalidate_jobs(
+    service: Annotated[JobRevalidationService | None, Depends(get_revalidation_service)],
+) -> RevalidationResponse:
+    """Trigger one URL-probe revalidation sweep (intended for an external cron).
+
+    Closes feed/search jobs whose listing is gone or marked closed. Snapshot
+    sources (portals) rely on disappearance detection during ingestion instead.
+    """
+    if service is None:
+        raise HTTPException(status_code=503, detail="Revalidation is not configured")
+    closed = await service.sweep()
+    return RevalidationResponse(closed=len(closed))
 
 
 @router.get("/jobs", response_model=PaginatedResult)

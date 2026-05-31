@@ -156,7 +156,7 @@ class InMemoryJobsRepository:
                 }
             )
 
-    def prune_older_than(self, cutoff: datetime) -> int:
+    def prune_older_than(self, cutoff: datetime) -> list[str]:
         stale = [jid for jid, ts in self._fetched_at.items() if ts < cutoff]
         for jid in stale:
             job = self._jobs.pop(jid, None)
@@ -166,4 +166,4 @@ class InMemoryJobsRepository:
             self._last_checked.pop(jid, None)
             if job is not None:
                 self._identity_to_id.pop((job.source, identity_key(job)), None)
-        return len(stale)
+        return stale

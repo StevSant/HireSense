@@ -1,20 +1,12 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
 
 from langchain_core.messages import HumanMessage
 
-from hiresense.admin.domain.llm_factory import LLMFactory, UnsupportedProviderError
 from hiresense.admin.domain.resolved_config import ResolvedConfig
-
-
-@dataclass(frozen=True)
-class TestResult:
-    success: bool
-    latency_ms: float
-    response_preview: str
-    error: str | None
+from hiresense.admin.domain.test_result import TestResult
+from hiresense.admin.infrastructure.llm_factory import LLMFactory, UnsupportedProviderError
 
 
 class LLMTestRunner:

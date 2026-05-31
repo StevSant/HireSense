@@ -75,6 +75,7 @@ class JobsRepositoryPort(Protocol):
         """
         ...
 
-    def prune_older_than(self, cutoff: datetime) -> int:
-        """Delete rows with fetched_at < cutoff. Returns the count deleted."""
+    def prune_older_than(self, cutoff: datetime) -> list[str]:
+        """Delete rows with fetched_at < cutoff. Returns the deleted ids so the
+        caller can evict their vector-store entries (no FK cascade)."""
         ...

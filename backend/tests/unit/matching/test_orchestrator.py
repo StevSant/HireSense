@@ -57,6 +57,25 @@ async def test_orchestrator_produces_match_result() -> None:
 
 
 @pytest.mark.asyncio
+async def test_orchestrator_matches_skill_from_cv_text_evidence() -> None:
+    # "kubernetes" is absent from the explicit skills list but demonstrated in
+    # the full CV text, so it should be matched rather than reported missing.
+    bus = InMemoryEventBus()
+    orchestrator = MatchingOrchestrator(llm=FakeLLM(), event_bus=bus)
+    result = await orchestrator.analyze(
+        job_id="job-3",
+        cv_id="cv-3",
+        job_description="Backend engineer",
+        job_skills=["python", "kubernetes"],
+        cv_summary="Backend developer",
+        cv_skills=["python"],
+        cv_text="Deployed services to a Kubernetes cluster with Helm.",
+    )
+    assert "kubernetes" in result.matched_skills
+    assert "kubernetes" not in result.missing_skills
+
+
+@pytest.mark.asyncio
 async def test_orchestrator_without_embedding_port() -> None:
     bus = InMemoryEventBus()
     orchestrator = MatchingOrchestrator(llm=FakeLLM(), event_bus=bus)

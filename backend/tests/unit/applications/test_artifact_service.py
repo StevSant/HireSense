@@ -70,6 +70,7 @@ class FakeMatchingOrchestrator:
             "job_skills": job_skills,
             "cv_summary": cv_summary,
             "cv_skills": cv_skills,
+            "cv_text": kwargs.get("cv_text"),
         }
         return FakeMatchResult()
 
@@ -156,6 +157,38 @@ async def test_generate_match_uses_snapshot_and_profile() -> None:
     assert matching.last_args["job_description"] == "job desc"
     assert matching.last_args["job_skills"] == ["python", "k8s"]
     assert matching.last_args["cv_skills"] == ["python"]
+
+
+@pytest.mark.asyncio
+async def test_generate_match_passes_cv_text_as_evidence() -> None:
+    app_id = uuid.uuid4()
+    snap = ApplicationJobSnapshot(
+        application_id=app_id,
+        description="job desc",
+        required_skills=["python"],
+        source=JobSnapshotSource.MANUAL.value,
+    )
+    repo = FakeRepo(snapshot=snap)
+    matching = FakeMatchingOrchestrator()
+    profiles = FakeProfileService(
+        FakeProfile(
+            "en",
+            "Senior engineer.",
+            ["python"],
+            raw_tex=r"\section{Experience} Built distributed systems with Kafka.",
+        )
+    )
+
+    service = ArtifactService(
+        repository=repo,
+        matching_orchestrator=matching,
+        cv_optimizer=None,
+        interview_prep_service=None,
+        profile_service=profiles,
+    )
+
+    await service.generate_match(app_id, cv_language="en")
+    assert "distributed systems" in matching.last_args["cv_text"]
 
 
 @pytest.mark.asyncio

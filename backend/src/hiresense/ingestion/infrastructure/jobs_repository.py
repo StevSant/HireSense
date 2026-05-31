@@ -81,10 +81,6 @@ class JobsRepository:
         self._session_factory = session_factory
         self._bucket = bucket
 
-    def add_if_absent(self, job: NormalizedJob) -> bool:
-        # Transitional shim until orchestrator/scanner migrate to upsert (T11/T12). Removed in T12.
-        return self.upsert(job) == UpsertResult.INSERTED
-
     def upsert(self, job: NormalizedJob) -> UpsertResult:
         ident = identity_key(job)
         new_hash = content_hash(job)

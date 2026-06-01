@@ -6,6 +6,7 @@ from typing import Any
 
 from hiresense.autohunt.domain.digest import Digest
 from hiresense.autohunt.domain.digest_entry import DigestEntry
+from hiresense.ingestion.domain.job_scorer import score_job_against_skills
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +54,18 @@ class AutoHuntService:
         new_jobs = self._jobs_repo.list_since(cutoff, status="open")
         candidate_skills = list(view.skills or [])
         candidate_summary = view.summary or ""
+        # Precompute skill overlap exactly as the jobs-list endpoint does, so the
+        # digest's match_score is the SAME combined skill+semantic score the UI
+        # shows (and the floor is applied to the same scale). See spec Goal 3.
+        skill_set = {s.lower() for s in candidate_skills if s}
+        skill_by_id = (
+            {j.id: score_job_against_skills(j, skill_set) for j in new_jobs}
+            if candidate_skills
+            else {}
+        )
         try:
             ranked = await self._pre_ranker.rerank(
-                new_jobs, {}, candidate_skills, candidate_summary, "boards"
+                new_jobs, skill_by_id, candidate_skills, candidate_summary, "boards"
             )
         except Exception:
             logger.exception("autohunt: rerank failed — persisting empty digest")

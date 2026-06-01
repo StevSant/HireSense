@@ -14,6 +14,10 @@ class _Job:
         self.company = "Acme"
         self.url = f"http://x/{id}"
         self.match_score = score
+        # score_job_against_skills reads these; the fake pre-ranker ignores the
+        # resulting skill_by_id and sorts by the preset match_score above.
+        self.skills = []
+        self.description = ""
 
 
 class _FakeJobsRepo:

@@ -9,6 +9,7 @@ from hiresense.analytics.domain.market_service import (
 from hiresense.analytics.domain.salary import ParsedSalary, SalaryParser
 from hiresense.analytics.domain.skill_gap_service import SkillGap, SkillGapItem, SkillGapService
 from hiresense.analytics.domain.skill_normalizer import SkillNormalizer
+from hiresense.analytics.domain.target_salary_service import TargetSalary, TargetSalaryService
 from hiresense.analytics.domain.ttl_cache import TtlCache
 
 __all__ = [
@@ -25,6 +26,8 @@ __all__ = [
     "SkillGapItem",
     "SkillGapService",
     "SkillNormalizer",
+    "TargetSalary",
+    "TargetSalaryService",
     "TrendPoint",
     "TtlCache",
 ]

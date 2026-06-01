@@ -257,6 +257,16 @@ class Settings(BaseSettings):
     # Intended cron cadence — INFORMATIONAL ONLY; the app never self-schedules.
     autohunt_schedule: str = "0 9 * * *"
 
+    # --- Outreach & Networking (on-brand message generation + follow-up nudges) ---
+    # Path to the style-guide doc injected into the generation prompt (editable).
+    outreach_style_guide_path: str = "docs/reference/message_To_apprach_recruiters.md"
+    # Follow-up is "due" this many days after a 'sent' outreach with no progress.
+    outreach_followup_cadence_days: int = 7
+    # Soft length guard passed to the generator (chars).
+    outreach_max_chars: int = 500
+    # Intended cron cadence for the follow-up nudge sweep — INFORMATIONAL ONLY.
+    outreach_followup_schedule: str = "0 10 * * *"
+
     # Match scoring (LLM model routing). The job list shows an LLM-gated quick
     # score (cheap model, batched per visible page); the detail panel can run a
     # deeper single-job analysis (advanced model). These are the out-of-the-box

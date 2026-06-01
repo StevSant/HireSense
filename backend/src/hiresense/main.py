@@ -21,6 +21,7 @@ from hiresense.bootstrap import (
     build_interview,
     build_matching,
     build_optimization,
+    build_outreach,
     build_preference,
     build_profile,
     build_research,
@@ -35,6 +36,7 @@ from hiresense.ingestion.api import router as ingestion_router
 from hiresense.interview.api import router as interview_router
 from hiresense.matching.api import router as matching_router
 from hiresense.optimization.api import router as optimization_router
+from hiresense.outreach.api import router as outreach_router
 from hiresense.preference.api import router as preference_router
 from hiresense.profile.api import router as profile_router
 from hiresense.research.api import router as research_router
@@ -155,8 +157,16 @@ def create_app() -> FastAPI:
     app.include_router(cover_letter_templates_router)
 
     # --- Research ---
-    app.state.research = build_research(infra, tracked)
+    research = build_research(infra, tracked)
+    app.state.research = research
     app.include_router(research_router)
+
+    # --- Outreach (generation + outreach-event tracking + follow-up nudges) ---
+    outreach = build_outreach(
+        infra, tracked, tracking.service, profile.service, research.get_research_service()
+    )
+    app.state.outreach = outreach.provider
+    app.include_router(outreach_router)
 
     # --- Health check ---
     @app.get("/health")

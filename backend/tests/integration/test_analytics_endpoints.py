@@ -95,6 +95,7 @@ async def test_funnel_endpoint():
         reached = {s["stage"]: s["reached"] for s in data["stages"]}
         assert reached["applied"] == 1 and reached["saved"] == 1
         assert data["total_applications"] == 1
+        assert data["current_rejected"] == 0
 
 
 @pytest.mark.asyncio

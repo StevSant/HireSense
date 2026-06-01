@@ -1,0 +1,9 @@
+.analytics-page { padding: 1.25rem; }
+.analytics-title { font-size: 1.4rem; margin: 0 0 1rem; }
+.analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 1rem; }
+.analytics-card { border: 1px solid var(--border, #e2e8f0); border-radius: 10px; padding: 1rem; background: var(--surface, #fff); }
+.card-title { font-size: 1rem; margin: 0 0 0.75rem; }
+.sub { font-size: 0.8rem; color: var(--muted, #64748b); margin: 0.9rem 0 0.4rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.salary-line { font-size: 0.9rem; }
+.section-loading, .section-empty { color: var(--muted, #64748b); font-size: 0.85rem; }
+.section-error { color: var(--danger, #dc2626); font-size: 0.85rem; }

@@ -214,6 +214,14 @@ class Settings(BaseSettings):
     # deterministic explanation. Falls back to summary=None on any LLM failure.
     preference_explanation_enabled: bool = True
 
+    # --- Analytics dashboard (read-only corpus/funnel aggregation) ---
+    # TTL (seconds) for the heavy on-read results (salary distribution, target band).
+    analytics_cache_ttl_seconds: int = 300
+    # Target-salary band: how many profile-similar jobs to consider, and the
+    # minimum parseable-salaried matches required before reporting a band.
+    analytics_target_salary_top_k: int = 50
+    analytics_target_salary_min_sample: int = 5
+
     # Match scoring (LLM model routing). The job list shows an LLM-gated quick
     # score (cheap model, batched per visible page); the detail panel can run a
     # deeper single-job analysis (advanced model). These are the out-of-the-box

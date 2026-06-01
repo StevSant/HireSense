@@ -47,6 +47,16 @@ def create_app() -> FastAPI:
     async def lifespan(app: FastAPI):
         yield
         await http_client.aclose()
+        # Flush and shut down any OTel providers set up by setup_telemetry. No-op
+        # when telemetry is disabled (no providers were stored). Guarded so a
+        # shutdown failure never breaks app teardown.
+        for provider in getattr(app.state, "otel_providers", []):
+            shutdown = getattr(provider, "shutdown", None)
+            if shutdown is not None:
+                try:
+                    shutdown()
+                except Exception:  # noqa: BLE001 - teardown must not raise
+                    pass
 
     app = FastAPI(title=settings.app_name, debug=settings.debug, lifespan=lifespan)
 

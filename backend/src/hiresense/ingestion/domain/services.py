@@ -56,8 +56,8 @@ class IngestionOrchestrator:
         filters: dict[str, Any] | None = None,
     ) -> list[NormalizedJob]:
         _metrics = get_domain_metrics()
-        started = time.perf_counter()
         with _tracer.start_as_current_span("ingestion.run") as span:
+            started = time.perf_counter()
             try:
                 elapsed = time.monotonic() - self._last_run_at
                 if self._last_run_at and elapsed < self._cooldown_seconds:
@@ -112,8 +112,8 @@ class IngestionOrchestrator:
                             if result == UpsertResult.INSERTED:
                                 new_jobs.append(job)
 
-                    scored_count = len(touched)
-                    _metrics.jobs_scored_total.add(scored_count, {"source": source_name})
+                    indexed_count = len(touched)
+                    _metrics.jobs_indexed_total.add(indexed_count, {"source": source_name})
 
                     if touched and self._indexer is not None:
                         await self._indexer.index(touched)
@@ -141,6 +141,9 @@ class IngestionOrchestrator:
                     (time.perf_counter() - started) * 1000.0
                 )
                 return new_jobs
+            except IngestionCooldownError:
+                # Normal throttling, not an error — leave span status unset.
+                raise
             except Exception:
                 span.set_status(trace.Status(trace.StatusCode.ERROR))
                 raise

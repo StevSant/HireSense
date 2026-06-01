@@ -14,9 +14,10 @@ class DomainMetrics:
             "hiresense.jobs_fetched_total", unit="1",
             description="Jobs fetched per ingestion source",
         )
-        self.jobs_scored_total = meter.create_counter(
-            "hiresense.jobs_scored_total", unit="1",
-            description="Jobs scored per ingestion source",
+        self.jobs_indexed_total = meter.create_counter(
+            "hiresense.jobs_indexed_total", unit="1",
+            description="Jobs queued for indexing (inserted/updated/reopened) "
+            "per ingestion source",
         )
         self.ingestion_run_duration_ms = meter.create_histogram(
             "hiresense.ingestion_run_duration_ms", unit="ms",
@@ -35,7 +36,7 @@ class DomainMetrics:
             description="LLM tokens consumed (type=input|output)",
         )
         self.llm_cost_usd_total = meter.create_counter(
-            "hiresense.llm_cost_usd_total", unit="USD",
+            "hiresense.llm_cost_usd_total", unit="{USD}",
             description="Estimated LLM spend",
         )
         self.llm_call_duration_ms = meter.create_histogram(

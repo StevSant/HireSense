@@ -4,7 +4,6 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
@@ -13,17 +12,18 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
 
 from hiresense.observability import (
     TraceContextFilter,
-    get_tracer,
     request_id_var,
 )
 from hiresense.observability.middleware import RequestContextMiddleware
 
 
 def _build_app_with_inmemory_tracing():
+    # Use a LOCAL provider (not the global trace.set_tracer_provider, which is
+    # set-once and order-fragile across the suite). TraceContextFilter reads the
+    # active span from context, so a locally-started span is still captured.
     exporter = InMemorySpanExporter()
     provider = TracerProvider()
     provider.add_span_processor(SimpleSpanProcessor(exporter))
-    trace.set_tracer_provider(provider)
 
     app = FastAPI()
     app.add_middleware(RequestContextMiddleware)
@@ -32,7 +32,7 @@ def _build_app_with_inmemory_tracing():
 
     @app.get("/work")
     async def work() -> dict[str, str]:
-        tracer = get_tracer("hiresense.test")
+        tracer = provider.get_tracer("hiresense.test")
         with tracer.start_as_current_span("test.work"):
             record = logging.LogRecord(
                 "hiresense.test", logging.INFO, __file__, 1, "doing work", (), None

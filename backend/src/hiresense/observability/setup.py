@@ -38,7 +38,12 @@ def setup_telemetry(app: FastAPI, settings: Any) -> None:
         return
 
     endpoint = settings.otel_exporter_otlp_endpoint
+    insecure = settings.otel_exporter_insecure
     resource = build_resource(settings)
+
+    # Successfully-created providers, stored on app.state so the lifespan can
+    # flush/shut them down cleanly on app teardown.
+    providers: list[Any] = []
 
     # Traces
     try:
@@ -46,17 +51,22 @@ def setup_telemetry(app: FastAPI, settings: Any) -> None:
             resource=resource,
             sampler=ParentBasedTraceIdRatio(settings.otel_traces_sampler_ratio),
         )
-        provider.add_span_processor(BatchSpanProcessor(build_span_exporter(endpoint)))
+        provider.add_span_processor(
+            BatchSpanProcessor(build_span_exporter(endpoint, insecure))
+        )
         trace.set_tracer_provider(provider)
+        providers.append(provider)
     except Exception:  # pragma: no cover - defensive
         logger.exception("Tracer provider setup failed")
 
     # Metrics
     try:
         meter_provider = MeterProvider(
-            resource=resource, metric_readers=[build_metric_reader(endpoint)]
+            resource=resource,
+            metric_readers=[build_metric_reader(endpoint, insecure)],
         )
         metrics.set_meter_provider(meter_provider)
+        providers.append(meter_provider)
     except Exception:  # pragma: no cover - defensive
         logger.exception("Meter provider setup failed")
 
@@ -65,14 +75,17 @@ def setup_telemetry(app: FastAPI, settings: Any) -> None:
     try:
         logger_provider = LoggerProvider(resource=resource)
         logger_provider.add_log_record_processor(
-            BatchLogRecordProcessor(build_log_exporter(endpoint))
+            BatchLogRecordProcessor(build_log_exporter(endpoint, insecure))
         )
         otel_handler = LoggingHandler(
             level=settings.log_level, logger_provider=logger_provider
         )
+        providers.append(logger_provider)
     except Exception:  # pragma: no cover - defensive
         logger.exception("Logger provider setup failed")
     configure_logging(settings, otel_handler)
+
+    app.state.otel_providers = providers
 
     # Middleware + auto-instrumentation
     app.add_middleware(RequestContextMiddleware)

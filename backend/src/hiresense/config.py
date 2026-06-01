@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     log_format: str = "json"
     # Parent-based trace sampling ratio in [0.0, 1.0]. 1.0 = sample everything.
     otel_traces_sampler_ratio: float = 1.0
+    # Use an insecure (plaintext, no-TLS) OTLP gRPC connection. True is correct
+    # for the local LGTM stack / docker-compose; set False to use TLS.
+    otel_exporter_insecure: bool = True
 
     # Auth
     auth_username: str

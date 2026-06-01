@@ -84,6 +84,12 @@ class AutoHuntService:
         ]
         return self._persist(entries, cutoff, now)
 
+    def latest(self) -> Digest | None:
+        return self._digest_repo.latest()
+
+    def list_recent(self, limit: int) -> list[Digest]:
+        return self._digest_repo.list_recent(limit)
+
     def _persist(self, entries: list[DigestEntry], cutoff: datetime, now: datetime) -> Digest:
         digest = self._digest_repo.add(
             Digest(cutoff_at=cutoff, entries=entries, job_count=len(entries))

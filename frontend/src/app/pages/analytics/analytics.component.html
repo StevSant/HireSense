@@ -30,7 +30,7 @@
           @if (m.salary_distribution.currency) { ({{ m.salary_distribution.currency }}, {{ m.salary_distribution.disclosed_pct }}% disclosed) }
         </h3>
         @if (m.salary_distribution.median_annual !== null) {
-          <p class="salary-line">{{ m.salary_distribution.min_annual }} – <strong>{{ m.salary_distribution.median_annual }}</strong> – {{ m.salary_distribution.max_annual }}</p>
+          <p class="salary-line">{{ fmt(m.salary_distribution.min_annual) }} – <strong>{{ fmt(m.salary_distribution.median_annual) }}</strong> – {{ fmt(m.salary_distribution.max_annual) }}</p>
         } @else { <p class="section-loading">No parseable salaries.</p> }
       }
       @else { <p class="section-loading">Loading…</p> }

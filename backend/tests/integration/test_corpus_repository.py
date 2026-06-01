@@ -35,7 +35,8 @@ def _seed(factory):
 
 
 def test_open_skill_lists_excludes_closed():
-    factory = _factory(); _seed(factory)
+    factory = _factory()
+    _seed(factory)
     repo = CorpusAnalyticsRepository(session_factory=factory)
     lists = repo.open_skill_lists()
     # 2 open jobs → 2 skill lists; the closed "rust" job is excluded.
@@ -45,14 +46,16 @@ def test_open_skill_lists_excludes_closed():
 
 
 def test_remote_modality_counts_open_only():
-    factory = _factory(); _seed(factory)
+    factory = _factory()
+    _seed(factory)
     repo = CorpusAnalyticsRepository(session_factory=factory)
     counts = repo.remote_modality_counts()
     assert counts.get("remote") == 1 and counts.get("on_site") == 1
 
 
 def test_open_salary_strings_and_total():
-    factory = _factory(); _seed(factory)
+    factory = _factory()
+    _seed(factory)
     repo = CorpusAnalyticsRepository(session_factory=factory)
     salaries, total_open = repo.open_salary_strings()
     assert total_open == 2
@@ -60,6 +63,7 @@ def test_open_salary_strings_and_total():
 
 
 def test_salary_strings_for_ids():
-    factory = _factory(); _seed(factory)
+    factory = _factory()
+    _seed(factory)
     repo = CorpusAnalyticsRepository(session_factory=factory)
     assert repo.salary_strings_for_ids(["1", "3"]) == {"1": "$100k-$120k", "3": None}

@@ -220,6 +220,19 @@ class JobsRepository:
             stmt = select(IngestedJob).where(IngestedJob.bucket == self._bucket)
             return [_to_domain(r) for r in session.scalars(stmt).all()]
 
+    def list_since(self, cutoff: datetime, *, status: str = "open") -> list[NormalizedJob]:
+        with self._session_factory() as session:
+            stmt = (
+                select(IngestedJob)
+                .where(
+                    IngestedJob.bucket == self._bucket,
+                    IngestedJob.status == status,
+                    IngestedJob.fetched_at >= cutoff,
+                )
+                .order_by(IngestedJob.fetched_at.desc())
+            )
+            return [_to_domain(r) for r in session.scalars(stmt).all()]
+
     def get_by_id(self, job_id: str) -> NormalizedJob | None:
         with self._session_factory() as session:
             row = session.get(IngestedJob, job_id)

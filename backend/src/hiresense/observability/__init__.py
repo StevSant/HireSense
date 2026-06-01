@@ -5,6 +5,7 @@ from hiresense.observability.exporters import (
     build_metric_reader,
     build_span_exporter,
 )
+from hiresense.observability.json_formatter import JsonLogFormatter
 from hiresense.observability.request_id_ctx import request_id_var
 from hiresense.observability.resource import build_resource
 
@@ -14,4 +15,5 @@ __all__ = [
     "build_span_exporter",
     "build_log_exporter",
     "build_metric_reader",
+    "JsonLogFormatter",
 ]

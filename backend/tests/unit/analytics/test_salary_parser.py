@@ -10,6 +10,14 @@ def test_parses_annual_range_usd():
     assert r.max_annual == 120000
 
 
+def test_parses_millions_suffix():
+    r = SalaryParser().parse("$1.2m")
+    assert r is not None
+    assert r.currency == "USD"
+    assert r.min_annual == 1_200_000
+    assert r.max_annual == 1_200_000
+
+
 def test_parses_k_suffix_eur():
     r = SalaryParser().parse("€80k–€100k")
     assert r is not None

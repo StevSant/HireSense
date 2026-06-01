@@ -6,8 +6,8 @@ from dataclasses import dataclass
 _CURRENCY = {"$": "USD", "€": "EUR", "£": "GBP", "usd": "USD", "eur": "EUR", "gbp": "GBP"}
 _HOURS_PER_YEAR = 2080
 _MONTHS_PER_YEAR = 12
-# A number with optional thousands separators and an optional k suffix.
-_NUM = r"(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*([kK])?"
+# A number with optional thousands separators and an optional k/m suffix.
+_NUM = r"(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*([kKmM])?"
 
 
 @dataclass(frozen=True)
@@ -24,10 +24,12 @@ def _detect_currency(text: str) -> str | None:
     return None
 
 
-def _to_number(value: str, k: str | None) -> float:
+def _to_number(value: str, suffix: str | None) -> float:
     n = float(value.replace(",", ""))
-    if k:
+    if suffix in ("k", "K"):
         n *= 1000
+    elif suffix in ("m", "M"):
+        n *= 1_000_000
     return n
 
 

@@ -38,19 +38,15 @@ class FunnelService:
         reached = {s: 0 for s in _STAGES}
         current = {s: 0 for s in _STAGES}
         rejected = 0
-        # first time each app entered each stage (by changed_at)
-        first_entry: dict[str, list[float]] = defaultdict(list)  # stage -> [epoch days]
 
         for app_rows in by_app.values():
             app_rows = sorted(app_rows, key=lambda r: (r.changed_at, _RANK.get(r.to_status, 99)))
             to_statuses = [r.to_status for r in app_rows]
             # high-water mark across non-terminal stages
             max_rank = -1
-            entered_at: dict[str, float] = {}
             for r in app_rows:
                 if r.to_status in _RANK:
                     max_rank = max(max_rank, _RANK[r.to_status])
-                    entered_at.setdefault(r.to_status, r.changed_at.timestamp() / 86400.0)
             for s in _STAGES:
                 if max_rank >= _RANK[s]:
                     reached[s] += 1
@@ -60,8 +56,6 @@ class FunnelService:
             last = to_statuses[-1]
             if last in current:
                 current[last] += 1
-            for s, day in entered_at.items():
-                first_entry[s].append(day)
 
         # time-in-stage: for apps that entered both stage N and N+1, the gap.
         stages_out: list[FunnelStage] = []

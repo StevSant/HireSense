@@ -1,5 +1,5 @@
 import uuid as uuid_mod
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from hiresense.analytics.domain import FunnelService
 from hiresense.tracking.domain.status_transition import StatusTransition

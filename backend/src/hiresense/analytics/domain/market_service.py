@@ -19,6 +19,14 @@ class TrendPoint(BaseModel):
 
 
 class SalaryDistribution(BaseModel):
+    """Salary stats for the dominant currency among open postings.
+
+    `min_annual`/`max_annual` are the true low/high bounds across postings
+    (lowest advertised minimum, highest advertised maximum). `median_annual`
+    is the median of per-posting midpoints — a representative "typical" figure.
+    `disclosed_pct` is the share of open postings that advertised any salary.
+    """
+
     currency: str | None
     min_annual: int | None
     median_annual: int | None
@@ -26,6 +34,7 @@ class SalaryDistribution(BaseModel):
     parsed_count: int
     unparsed_count: int
     other_currency_count: int
+    disclosed_pct: float
 
 
 class MarketIntel(BaseModel):
@@ -71,26 +80,35 @@ class MarketIntelService:
         return [TrendPoint(week=w, count=c) for w, c in sorted(weeks.items())]
 
     def _salary_distribution(self) -> SalaryDistribution:
-        strings, _total = self._corpus.open_salary_strings()
-        by_currency: dict[str, list[int]] = {}
+        strings, total_open = self._corpus.open_salary_strings()
+        # Per currency: midpoints (for the median) + true low/high bounds.
+        midpoints: dict[str, list[int]] = {}
+        bounds: dict[str, list[int]] = {}  # [min_of_mins, max_of_maxes]
         unparsed = 0
         for s in strings:
             parsed = self._salary.parse(s)
             if parsed is None:
                 unparsed += 1
                 continue
-            mid = (parsed.min_annual + parsed.max_annual) // 2
-            by_currency.setdefault(parsed.currency, []).append(mid)
-        if not by_currency:
+            midpoints.setdefault(parsed.currency, []).append(
+                (parsed.min_annual + parsed.max_annual) // 2
+            )
+            b = bounds.setdefault(parsed.currency, [parsed.min_annual, parsed.max_annual])
+            b[0] = min(b[0], parsed.min_annual)
+            b[1] = max(b[1], parsed.max_annual)
+        disclosed_pct = round(100.0 * len(strings) / total_open, 1) if total_open else 0.0
+        if not midpoints:
             return SalaryDistribution(
                 currency=None, min_annual=None, median_annual=None, max_annual=None,
                 parsed_count=0, unparsed_count=unparsed, other_currency_count=0,
+                disclosed_pct=disclosed_pct,
             )
-        dominant = max(by_currency, key=lambda c: len(by_currency[c]))
-        vals = sorted(by_currency[dominant])
-        other = sum(len(v) for c, v in by_currency.items() if c != dominant)
+        dominant = max(midpoints, key=lambda c: len(midpoints[c]))
+        mids = midpoints[dominant]
+        other = sum(len(v) for c, v in midpoints.items() if c != dominant)
         return SalaryDistribution(
-            currency=dominant, min_annual=vals[0],
-            median_annual=int(statistics.median(vals)), max_annual=vals[-1],
-            parsed_count=len(vals), unparsed_count=unparsed, other_currency_count=other,
+            currency=dominant, min_annual=bounds[dominant][0],
+            median_annual=int(statistics.median(mids)), max_annual=bounds[dominant][1],
+            parsed_count=len(mids), unparsed_count=unparsed, other_currency_count=other,
+            disclosed_pct=disclosed_pct,
         )

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Query, Response
 
 from hiresense.autohunt.api.dependencies import get_autohunt_service
 from hiresense.autohunt.domain import AutoHuntService, Digest
@@ -16,7 +16,8 @@ async def run(service: AutoHuntService = Depends(get_autohunt_service)) -> Diges
 
 @router.get("/digests", response_model=list[Digest])
 def list_digests(
-    limit: int = 20, service: AutoHuntService = Depends(get_autohunt_service)
+    limit: int = Query(default=20, ge=1, le=100),
+    service: AutoHuntService = Depends(get_autohunt_service),
 ) -> list[Digest]:
     return service.list_recent(limit)
 

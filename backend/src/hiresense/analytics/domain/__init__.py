@@ -1,3 +1,4 @@
+from hiresense.analytics.domain.analytics_service import AnalyticsService
 from hiresense.analytics.domain.funnel_service import FunnelMetrics, FunnelService, FunnelStage
 from hiresense.analytics.domain.market_service import (
     MarketIntel,
@@ -13,6 +14,7 @@ from hiresense.analytics.domain.target_salary_service import TargetSalary, Targe
 from hiresense.analytics.domain.ttl_cache import TtlCache
 
 __all__ = [
+    "AnalyticsService",
     "FunnelMetrics",
     "FunnelService",
     "FunnelStage",

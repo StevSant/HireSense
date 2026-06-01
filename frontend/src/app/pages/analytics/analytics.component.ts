@@ -63,4 +63,8 @@ export class AnalyticsComponent implements OnInit {
       label: k, value: v, pct: Math.round((v / total) * 100), note: `${Math.round((v / total) * 100)}%`,
     }));
   }
+
+  fmt(v: number | null): string {
+    return v === null ? '—' : v.toLocaleString('en-US');
+  }
 }

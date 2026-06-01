@@ -53,6 +53,8 @@ from hiresense.bootstrap.shared_infra import SharedInfra
 class IngestionBuild:
     provider: IngestionProvider
     orchestrator: IngestionOrchestrator
+    boards_jobs_repo: Any
+    pre_ranker: Any
 
 
 def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, preference_query: Any = None) -> IngestionBuild:
@@ -245,4 +247,9 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
         revalidation_service=revalidation_service,
         backfill_service=backfill_service,
     )
-    return IngestionBuild(provider=provider, orchestrator=ingestion_orchestrator)
+    return IngestionBuild(
+        provider=provider,
+        orchestrator=ingestion_orchestrator,
+        boards_jobs_repo=boards_jobs_repo,
+        pre_ranker=pre_ranker,
+    )

@@ -7,26 +7,25 @@ import re
 import uuid
 from typing import Any
 
+from opentelemetry import trace
+from pydantic import BaseModel
+
+from hiresense.kernel.events import MatchCompletedEvent
+from hiresense.matching.domain.models import MatchResult, ScoreBreakdown
+from hiresense.matching.domain.scorers.base import DimensionResult
+from hiresense.matching.domain.semantic_scorer import SemanticScorer
+from hiresense.matching.domain.skill_matcher import SkillMatcher
+from hiresense.observability import get_domain_metrics, get_tracer
+
+logger = logging.getLogger(__name__)
+_tracer = get_tracer("hiresense.matching")
+
 _MARKDOWN_FENCE_RE = re.compile(r"```(?:json)?\s*\n?(.*?)\n?```", re.DOTALL)
 
 
 def _strip_markdown_fence(text: str) -> str:
     match = _MARKDOWN_FENCE_RE.search(text)
     return match.group(1).strip() if match else text.strip()
-
-from opentelemetry import trace
-from pydantic import BaseModel
-
-from hiresense.kernel.events import MatchCompletedEvent
-from hiresense.observability import get_domain_metrics, get_tracer
-
-_tracer = get_tracer("hiresense.matching")
-from hiresense.matching.domain.models import MatchResult, ScoreBreakdown
-from hiresense.matching.domain.scorers.base import DimensionResult
-from hiresense.matching.domain.semantic_scorer import SemanticScorer
-from hiresense.matching.domain.skill_matcher import SkillMatcher
-
-logger = logging.getLogger(__name__)
 
 
 class EvaluationResult(BaseModel):

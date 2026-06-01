@@ -8,18 +8,17 @@ from typing import Any
 
 from opentelemetry import trace
 
-from hiresense.observability import get_domain_metrics, get_tracer
 from hiresense.ingestion.domain.identity import identity_key
-
-_tracer = get_tracer("hiresense.ingestion")
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.normalizer import JobNormalizer
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.ports import JobsRepositoryPort
 from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
 from hiresense.kernel.events import JobsIngestedEvent
+from hiresense.observability import get_domain_metrics, get_tracer
 
 logger = logging.getLogger(__name__)
+_tracer = get_tracer("hiresense.ingestion")
 
 
 class IngestionCooldownError(Exception):

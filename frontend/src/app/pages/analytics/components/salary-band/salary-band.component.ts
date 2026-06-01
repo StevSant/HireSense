@@ -18,9 +18,12 @@ export class SalaryBandComponent {
     const lo = t.p25_annual * 0.8;
     const hi = t.p75_annual * 1.2;
     const span = Math.max(1, hi - lo);
-    const left = ((t.p25_annual - lo) / span) * 100;
-    const width = ((t.p75_annual - t.p25_annual) / span) * 100;
-    const median = t.median_annual === null ? null : ((t.median_annual - lo) / span) * 100;
+    // Clamp to [0,100] so a marker never renders off-track if the backend ever
+    // returns percentiles where median falls outside [p25, p75].
+    const clamp = (v: number) => Math.max(0, Math.min(100, v));
+    const left = clamp(((t.p25_annual - lo) / span) * 100);
+    const width = clamp(((t.p75_annual - t.p25_annual) / span) * 100);
+    const median = t.median_annual === null ? null : clamp(((t.median_annual - lo) / span) * 100);
     return { left, width, median };
   });
 

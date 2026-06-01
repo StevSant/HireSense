@@ -26,6 +26,7 @@ from hiresense.bootstrap import (
     build_tracking,
 )
 from hiresense.config import Settings
+from hiresense.observability import setup_telemetry
 from hiresense.cover_letter_templates.api import router as cover_letter_templates_router
 from hiresense.identity.api import router as auth_router
 from hiresense.ingestion.api import router as ingestion_router
@@ -58,6 +59,10 @@ def create_app() -> FastAPI:
     )
 
     app.state.settings = settings
+
+    # Initialize observability (traces/metrics/logs) before any engine/client
+    # is built so auto-instrumentation can hook them. No-op when disabled.
+    setup_telemetry(app, settings)
 
     infra = build_shared_infra(settings, http_client)
 

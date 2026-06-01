@@ -45,8 +45,8 @@ def _period_multiplier(text: str) -> int:
 class SalaryParser:
     """Best-effort free-text salary parser. Returns None on unparseable input.
 
-    Handles $/€/£ (+ usd/eur/gbp), comma thousands, `k` suffixes, single value
-    or range, and hourly/monthly→annual normalization. Lossy by design.
+    Handles $/€/£ (+ usd/eur/gbp), comma thousands, `k`/`m` suffixes, single
+    value or range, and hourly/monthly→annual normalization. Lossy by design.
     """
 
     def parse(self, raw: str | None) -> ParsedSalary | None:

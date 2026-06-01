@@ -6,7 +6,12 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from opentelemetry import trace
+
+from hiresense.observability import get_domain_metrics, get_tracer
 from hiresense.ingestion.domain.identity import identity_key
+
+_tracer = get_tracer("hiresense.ingestion")
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.normalizer import JobNormalizer
 from hiresense.ingestion.domain.upsert_result import UpsertResult
@@ -51,78 +56,95 @@ class IngestionOrchestrator:
         self,
         filters: dict[str, Any] | None = None,
     ) -> list[NormalizedJob]:
-        elapsed = time.monotonic() - self._last_run_at
-        if self._last_run_at and elapsed < self._cooldown_seconds:
-            remaining = int(self._cooldown_seconds - elapsed)
-            raise IngestionCooldownError(retry_after=remaining)
-        self._last_run_at = time.monotonic()
-
-        await self._prune_expired()
-
-        new_jobs: list[NormalizedJob] = []
-
-        for source in self._sources:
-            source_name = source.source_name()
-            normalizer = self._normalizers.get(source_name)
-            if normalizer is None:
-                logger.warning("No normalizer for source: %s", source_name)
-                continue
-
+        _metrics = get_domain_metrics()
+        started = time.perf_counter()
+        with _tracer.start_as_current_span("ingestion.run") as span:
             try:
-                raw_jobs = await source.fetch_jobs(filters)
+                elapsed = time.monotonic() - self._last_run_at
+                if self._last_run_at and elapsed < self._cooldown_seconds:
+                    remaining = int(self._cooldown_seconds - elapsed)
+                    raise IngestionCooldownError(retry_after=remaining)
+                self._last_run_at = time.monotonic()
+
+                await self._prune_expired()
+
+                new_jobs: list[NormalizedJob] = []
+
+                for source in self._sources:
+                    source_name = source.source_name()
+                    normalizer = self._normalizers.get(source_name)
+                    if normalizer is None:
+                        logger.warning("No normalizer for source: %s", source_name)
+                        continue
+
+                    try:
+                        raw_jobs = await source.fetch_jobs(filters)
+                    except Exception:
+                        logger.exception("Failed to fetch from %s", source_name)
+                        continue  # bad fetch: skip disappearance for this source this run
+
+                    fetched_count = len(raw_jobs)
+                    _metrics.jobs_fetched_total.add(fetched_count, {"source": source_name})
+
+                    seen_keys: set[str] = set()
+                    touched: list[NormalizedJob] = []
+                    for raw in raw_jobs:
+                        normalized_data = normalizer.normalize(raw)
+                        job = NormalizedJob(
+                            id=str(uuid.uuid4()),
+                            source=source_name,
+                            source_type=source.source_type().value,
+                            source_id=raw.source_id,
+                            **normalized_data,
+                        )
+                        existing_id = self._repository.get_id_by_identity(source_name, job)
+                        if existing_id:
+                            job = job.model_copy(update={"id": existing_id})
+                        seen_keys.add(identity_key(job))
+                        result = self._repository.upsert(job)
+                        # INSERTED/UPDATED/REOPENED all need (re-)indexing; REOPENED matters
+                        # because closure removed the job from the vector store.
+                        if result in (
+                            UpsertResult.INSERTED,
+                            UpsertResult.UPDATED,
+                            UpsertResult.REOPENED,
+                        ):
+                            touched.append(job)
+                            if result == UpsertResult.INSERTED:
+                                new_jobs.append(job)
+
+                    scored_count = len(touched)
+                    _metrics.jobs_scored_total.add(scored_count, {"source": source_name})
+
+                    if touched and self._indexer is not None:
+                        await self._indexer.index(touched)
+
+                    # Disappearance-based closure: only for snapshot sources, only after a
+                    # successful fetch (errored fetches `continue` above and never reach here).
+                    if source.supports_snapshot_closure():
+                        closed_ids = self._repository.bump_missed_and_close(
+                            source_name, seen_keys, self._closure_miss_threshold
+                        )
+                        if closed_ids and self._indexer is not None:
+                            await self._indexer.remove(closed_ids)
+
+                # Indexing already happened per-source via `touched` (inserted/updated/
+                # reopened). Here we only announce the newly inserted jobs.
+                if new_jobs:
+                    event = JobsIngestedEvent(
+                        job_ids=[j.id for j in new_jobs],
+                        source="batch",
+                    )
+                    await self._event_bus.publish(event)
+
+                span.set_attribute("ingestion.jobs_new", len(new_jobs))
+                _metrics.ingestion_run_duration_ms.record(
+                    (time.perf_counter() - started) * 1000.0
+                )
+                return new_jobs
             except Exception:
-                logger.exception("Failed to fetch from %s", source_name)
-                continue  # bad fetch: skip disappearance for this source this run
-
-            seen_keys: set[str] = set()
-            touched: list[NormalizedJob] = []
-            for raw in raw_jobs:
-                normalized_data = normalizer.normalize(raw)
-                job = NormalizedJob(
-                    id=str(uuid.uuid4()),
-                    source=source_name,
-                    source_type=source.source_type().value,
-                    source_id=raw.source_id,
-                    **normalized_data,
-                )
-                existing_id = self._repository.get_id_by_identity(source_name, job)
-                if existing_id:
-                    job = job.model_copy(update={"id": existing_id})
-                seen_keys.add(identity_key(job))
-                result = self._repository.upsert(job)
-                # INSERTED/UPDATED/REOPENED all need (re-)indexing; REOPENED matters
-                # because closure removed the job from the vector store.
-                if result in (
-                    UpsertResult.INSERTED,
-                    UpsertResult.UPDATED,
-                    UpsertResult.REOPENED,
-                ):
-                    touched.append(job)
-                    if result == UpsertResult.INSERTED:
-                        new_jobs.append(job)
-
-            if touched and self._indexer is not None:
-                await self._indexer.index(touched)
-
-            # Disappearance-based closure: only for snapshot sources, only after a
-            # successful fetch (errored fetches `continue` above and never reach here).
-            if source.supports_snapshot_closure():
-                closed_ids = self._repository.bump_missed_and_close(
-                    source_name, seen_keys, self._closure_miss_threshold
-                )
-                if closed_ids and self._indexer is not None:
-                    await self._indexer.remove(closed_ids)
-
-        # Indexing already happened per-source via `touched` (inserted/updated/
-        # reopened). Here we only announce the newly inserted jobs.
-        if new_jobs:
-            event = JobsIngestedEvent(
-                job_ids=[j.id for j in new_jobs],
-                source="batch",
-            )
-            await self._event_bus.publish(event)
-
-        return new_jobs
+                span.set_status(trace.Status(trace.StatusCode.ERROR))
+                raise
 
     def store_job(self, job: NormalizedJob) -> None:
         self._repository.upsert(job)

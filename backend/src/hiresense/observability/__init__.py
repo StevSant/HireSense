@@ -11,6 +11,7 @@ from hiresense.observability.logging_config import configure_logging
 from hiresense.observability.meter import get_meter
 from hiresense.observability.request_id_ctx import request_id_var
 from hiresense.observability.resource import build_resource
+from hiresense.observability.setup import setup_telemetry
 from hiresense.observability.trace_context_filter import TraceContextFilter
 from hiresense.observability.tracer import get_tracer
 
@@ -26,4 +27,5 @@ __all__ = [
     "get_tracer",
     "get_meter",
     "instrument_app",
+    "setup_telemetry",
 ]

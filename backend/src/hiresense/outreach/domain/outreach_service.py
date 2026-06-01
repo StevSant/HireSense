@@ -86,6 +86,8 @@ class OutreachService:
             sent_at = latest.created_at
             if sent_at.tzinfo is None:
                 sent_at = sent_at.replace(tzinfo=timezone.utc)
+            # .days floors the delta to whole days elapsed, so a follow-up is due
+            # only after a full `cadence` × 24h has passed (intentional).
             days_since = (now - sent_at).days
             if days_since < self._cadence:
                 continue

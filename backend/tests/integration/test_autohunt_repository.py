@@ -1,4 +1,3 @@
-import uuid as uuid_mod
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import create_engine

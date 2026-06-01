@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid as uuid_mod
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, Integer, JSON, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -17,7 +17,10 @@ class DigestOrm(Base):
 
     id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
+        nullable=False,
     )
     cutoff_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     entries: Mapped[list] = mapped_column(JSON, default=list)

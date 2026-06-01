@@ -13,6 +13,7 @@ from hiresense.tracking.infrastructure import TrackingRepository
 class TrackingBuild:
     provider: TrackingProvider
     service: TrackingService
+    status_history_read: Any
 
 
 def build_tracking(infra: SharedInfra, ingestion_orchestrator: Any) -> TrackingBuild:
@@ -23,4 +24,6 @@ def build_tracking(infra: SharedInfra, ingestion_orchestrator: Any) -> TrackingB
         event_bus=infra.event_bus,
     )
     provider = TrackingProvider(tracking_service=tracking_service)
-    return TrackingBuild(provider=provider, service=tracking_service)
+    return TrackingBuild(
+        provider=provider, service=tracking_service, status_history_read=tracking_repo
+    )

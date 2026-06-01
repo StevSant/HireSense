@@ -7,9 +7,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from hiresense.admin.api import router as admin_router
+from hiresense.analytics.api import router as analytics_router
 from hiresense.applications.api.routes import router as applications_router
 from hiresense.bootstrap import (
     build_admin,
+    build_analytics,
     build_applications,
     build_cover_letter_templates,
     build_identity,
@@ -102,6 +104,11 @@ def create_app() -> FastAPI:
     tracking = build_tracking(infra, ingestion.orchestrator)
     app.state.tracking = tracking.provider
     app.include_router(tracking_router)
+
+    # --- Analytics (read-only funnel + market + skill-gap) ---
+    analytics = build_analytics(infra, profile.service, tracking.status_history_read)
+    app.state.analytics = analytics.provider
+    app.include_router(analytics_router)
 
     # --- Interview ---
     interview = build_interview(infra, tracked)

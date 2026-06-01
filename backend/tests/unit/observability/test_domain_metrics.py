@@ -9,7 +9,7 @@ def test_domain_metrics_singleton_exposes_instruments():
     assert m1 is m2  # singleton
     # Instruments exist and recording does not raise (no-op meter is fine).
     m1.jobs_fetched_total.add(3, {"source": "remotive"})
-    m1.jobs_scored_total.add(2, {"source": "remotive"})
+    m1.jobs_indexed_total.add(2, {"source": "remotive"})
     m1.ingestion_run_duration_ms.record(120.5, {"source": "remotive"})
     m1.matches_completed_total.add(1)
     m1.match_score.record(0.82)

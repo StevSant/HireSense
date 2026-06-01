@@ -42,8 +42,12 @@ def test_salary_distribution_dominant_currency():
     d = intel.salary_distribution
     assert d.currency == "USD"
     assert d.parsed_count == 2 and d.unparsed_count == 1
-    # Distribution is over per-job midpoints: $100k-$120k -> 110000, $90k -> 90000.
-    assert d.min_annual == 90000 and d.max_annual == 110000
+    # True bounds across postings: min-of-mins=90000, max-of-maxes=120000.
+    assert d.min_annual == 90000 and d.max_annual == 120000
+    # Median over per-job midpoints: $100k-$120k -> 110000, $90k -> 90000 -> 100000.
+    assert d.median_annual == 100000
+    # 3 of 4 open postings disclosed a salary string.
+    assert d.disclosed_pct == 75.0
 
 
 def test_weekly_trend_buckets():

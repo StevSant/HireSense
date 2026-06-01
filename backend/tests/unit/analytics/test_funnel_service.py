@@ -47,3 +47,15 @@ def test_time_in_stage_applied_median_days():
     times = {s.stage: s.median_days_in_stage for s in m.stages}
     # time in applied = day8 - day3 = 5 days
     assert times["applied"] == 5.0
+
+
+def test_current_rejected_counted():
+    a, b = uuid_mod.uuid4(), uuid_mod.uuid4()
+    rows = [
+        _t(a, None, "saved", 1), _t(a, "saved", "applied", 3), _t(a, "applied", "rejected", 5),
+        _t(b, None, "saved", 1),
+    ]
+    m = FunnelService(_FakeHistory(rows)).compute()
+    assert m.current_rejected == 1
+    current_saved = next(s.current for s in m.stages if s.stage == "saved")
+    assert current_saved == 1

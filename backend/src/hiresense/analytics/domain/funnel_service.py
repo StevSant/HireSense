@@ -22,6 +22,7 @@ class FunnelStage(BaseModel):
 class FunnelMetrics(BaseModel):
     stages: list[FunnelStage]
     rejected: int
+    current_rejected: int
     total_applications: int
 
 
@@ -38,6 +39,7 @@ class FunnelService:
         reached = {s: 0 for s in _STAGES}
         current = {s: 0 for s in _STAGES}
         rejected = 0
+        current_rejected = 0
 
         for app_rows in by_app.values():
             app_rows = sorted(app_rows, key=lambda r: (r.changed_at, _RANK.get(r.to_status, 99)))
@@ -56,6 +58,8 @@ class FunnelService:
             last = to_statuses[-1]
             if last in current:
                 current[last] += 1
+            elif last == "rejected":
+                current_rejected += 1
 
         # time-in-stage: for apps that entered both stage N and N+1, the gap.
         stages_out: list[FunnelStage] = []
@@ -84,4 +88,7 @@ class FunnelService:
                     median_days_in_stage=median_days, current=current[s],
                 )
             )
-        return FunnelMetrics(stages=stages_out, rejected=rejected, total_applications=len(by_app))
+        return FunnelMetrics(
+            stages=stages_out, rejected=rejected,
+            current_rejected=current_rejected, total_applications=len(by_app),
+        )

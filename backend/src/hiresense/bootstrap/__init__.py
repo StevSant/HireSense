@@ -8,6 +8,7 @@ call in ``hiresense.main.create_app`` — no edits to unrelated wiring.
 from hiresense.bootstrap.admin import AdminBuild, build_admin
 from hiresense.bootstrap.analytics import AnalyticsBuild, build_analytics
 from hiresense.bootstrap.applications import build_applications
+from hiresense.bootstrap.autohunt import AutoHuntBuild, build_autohunt
 from hiresense.bootstrap.cover_letter_templates import build_cover_letter_templates
 from hiresense.bootstrap.identity import build_identity
 from hiresense.bootstrap.ingestion import IngestionBuild, build_ingestion
@@ -24,6 +25,7 @@ from hiresense.bootstrap.tracking import TrackingBuild, build_tracking
 __all__ = [
     "AdminBuild",
     "AnalyticsBuild",
+    "AutoHuntBuild",
     "IngestionBuild",
     "InterviewBuild",
     "MatchingBuild",
@@ -35,6 +37,7 @@ __all__ = [
     "build_admin",
     "build_analytics",
     "build_applications",
+    "build_autohunt",
     "build_cover_letter_templates",
     "build_identity",
     "build_ingestion",

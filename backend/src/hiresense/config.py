@@ -222,6 +222,17 @@ class Settings(BaseSettings):
     analytics_target_salary_top_k: int = 50
     analytics_target_salary_min_sample: int = 5
 
+    # --- Proactive Auto-Hunt (scheduled digest of new taste-ranked matches) ---
+    # Top-N new matches per digest, and the minimum match score (0-1) to qualify.
+    autohunt_top_n: int = 5
+    autohunt_min_score: float = 0.6
+    # First-run lookback window (no prior digest to anchor the watermark).
+    autohunt_initial_lookback_days: int = 7
+    # Digests older than this are pruned at the end of each run.
+    autohunt_digest_retention_days: int = 90
+    # Intended cron cadence — INFORMATIONAL ONLY; the app never self-schedules.
+    autohunt_schedule: str = "0 9 * * *"
+
     # Match scoring (LLM model routing). The job list shows an LLM-gated quick
     # score (cheap model, batched per visible page); the detail panel can run a
     # deeper single-job analysis (advanced model). These are the out-of-the-box

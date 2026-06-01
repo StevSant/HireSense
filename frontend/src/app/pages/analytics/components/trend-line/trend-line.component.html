@@ -1,0 +1,7 @@
+@if (points().length < 2) {
+  <p class="trend-empty">Not enough data for a trend yet.</p>
+} @else {
+  <svg class="trend-svg" [attr.viewBox]="viewBox" preserveAspectRatio="none" role="img" aria-label="Postings per week">
+    <polyline [attr.points]="polyline()" fill="none" stroke="var(--accent, #4f46e5)" stroke-width="2" />
+  </svg>
+}

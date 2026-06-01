@@ -1,0 +1,50 @@
+<div class="analytics-page">
+  <h1 class="analytics-title">Analytics</h1>
+  <div class="analytics-grid">
+
+    <section class="analytics-card">
+      <h2 class="card-title">Your funnel</h2>
+      @if (funnelError()) { <p class="section-error">Couldn't load the funnel.</p> }
+      @else if (funnel(); as f) { <app-funnel-chart [metrics]="f" /> }
+      @else { <p class="section-loading">Loading…</p> }
+    </section>
+
+    <section class="analytics-card">
+      <h2 class="card-title">Target salary</h2>
+      @if (targetSalaryError()) { <p class="section-error">Couldn't load target salary.</p> }
+      @else if (targetSalary(); as t) { <app-salary-band [target]="t" /> }
+      @else { <p class="section-loading">Loading…</p> }
+    </section>
+
+    <section class="analytics-card">
+      <h2 class="card-title">Market</h2>
+      @if (marketError()) { <p class="section-error">Couldn't load market intel.</p> }
+      @else if (market(); as m) {
+        <h3 class="sub">Top skills in demand</h3>
+        <app-bar-chart [rows]="skillRows(m)" emptyText="No skills in the corpus yet." />
+        <h3 class="sub">Remote vs on-site</h3>
+        <app-bar-chart [rows]="remoteRows(m)" emptyText="No modality data." />
+        <h3 class="sub">Postings per week</h3>
+        <app-trend-line [points]="m.posting_trend" />
+        <h3 class="sub">Salary range
+          @if (m.salary_distribution.currency) { ({{ m.salary_distribution.currency }}, {{ m.salary_distribution.disclosed_pct }}% disclosed) }
+        </h3>
+        @if (m.salary_distribution.median_annual !== null) {
+          <p class="salary-line">{{ fmt(m.salary_distribution.min_annual) }} – <strong>{{ fmt(m.salary_distribution.median_annual) }}</strong> – {{ fmt(m.salary_distribution.max_annual) }}</p>
+        } @else { <p class="section-loading">No parseable salaries.</p> }
+      }
+      @else { <p class="section-loading">Loading…</p> }
+    </section>
+
+    <section class="analytics-card">
+      <h2 class="card-title">Skill gap</h2>
+      @if (skillGapError()) { <p class="section-error">Couldn't load skill gap.</p> }
+      @else if (skillGap(); as g) {
+        @if (g.has_profile) { <app-bar-chart [rows]="gapRows(g)" emptyText="No gaps — you cover the market." /> }
+        @else { <p class="section-empty">Upload a CV to see your skill gap.</p> }
+      }
+      @else { <p class="section-loading">Loading…</p> }
+    </section>
+
+  </div>
+</div>

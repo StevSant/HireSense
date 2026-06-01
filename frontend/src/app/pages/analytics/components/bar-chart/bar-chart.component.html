@@ -1,0 +1,15 @@
+@if (rows().length === 0) {
+  <p class="bar-empty">{{ emptyText() }}</p>
+} @else {
+  <ul class="bar-list">
+    @for (row of rows(); track row.label) {
+      <li class="bar-row">
+        <span class="bar-label" [title]="row.label">{{ row.label }}</span>
+        <span class="bar-track">
+          <span class="bar-fill" [style.width.%]="row.pct"></span>
+        </span>
+        <span class="bar-value">{{ row.value }}@if (row.note) { <span class="bar-note">{{ row.note }}</span> }</span>
+      </li>
+    }
+  </ul>
+}

@@ -1,0 +1,16 @@
+@if (target().insufficient_data) {
+  <p class="band-insufficient">
+    Not enough salary data for your profile yet ({{ target().sample_size }} matches).
+  </p>
+} @else if (band(); as b) {
+  <div class="band-numbers">
+    <span>{{ target().currency }} {{ fmt(target().p25_annual) }}</span>
+    <strong>{{ fmt(target().median_annual) }}</strong>
+    <span>{{ fmt(target().p75_annual) }}</span>
+  </div>
+  <div class="band-track">
+    <span class="band-fill" [style.left.%]="b.left" [style.width.%]="b.width"></span>
+    @if (b.median !== null) { <span class="band-median" [style.left.%]="b.median"></span> }
+  </div>
+  <p class="band-sample">Based on {{ target().sample_size }} profile-similar roles.</p>
+}

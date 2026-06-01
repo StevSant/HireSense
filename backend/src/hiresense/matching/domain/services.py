@@ -7,13 +7,7 @@ import re
 import uuid
 from typing import Any
 
-_MARKDOWN_FENCE_RE = re.compile(r"```(?:json)?\s*\n?(.*?)\n?```", re.DOTALL)
-
-
-def _strip_markdown_fence(text: str) -> str:
-    match = _MARKDOWN_FENCE_RE.search(text)
-    return match.group(1).strip() if match else text.strip()
-
+from opentelemetry import trace
 from pydantic import BaseModel
 
 from hiresense.kernel.events import MatchCompletedEvent
@@ -21,8 +15,17 @@ from hiresense.matching.domain.models import MatchResult, ScoreBreakdown
 from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain.semantic_scorer import SemanticScorer
 from hiresense.matching.domain.skill_matcher import SkillMatcher
+from hiresense.observability import get_domain_metrics, get_tracer
 
 logger = logging.getLogger(__name__)
+_tracer = get_tracer("hiresense.matching")
+
+_MARKDOWN_FENCE_RE = re.compile(r"```(?:json)?\s*\n?(.*?)\n?```", re.DOTALL)
+
+
+def _strip_markdown_fence(text: str) -> str:
+    match = _MARKDOWN_FENCE_RE.search(text)
+    return match.group(1).strip() if match else text.strip()
 
 
 class EvaluationResult(BaseModel):
@@ -48,22 +51,33 @@ class MatchingOrchestrator:
         self._skill_matcher = SkillMatcher()
 
     async def evaluate(self, job: Any, profile: Any | None = None, dimension_scorers: list[Any] | None = None) -> EvaluationResult:
-        scorers = dimension_scorers if dimension_scorers is not None else self._dimension_scorers
-        title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
-        company = job.get("company", "") if isinstance(job, dict) else getattr(job, "company", "")
-
-        async def safe_score(scorer: Any) -> DimensionResult:
+        _metrics = get_domain_metrics()
+        with _tracer.start_as_current_span("matching.score") as span:
             try:
-                return await scorer.score(job, profile)
-            except Exception as exc:
-                return DimensionResult(dimension=scorer.dimension_name, score=0.5, rationale=f"Evaluation failed: {exc}", weight=scorer.weight)
+                scorers = dimension_scorers if dimension_scorers is not None else self._dimension_scorers
+                title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
+                company = job.get("company", "") if isinstance(job, dict) else getattr(job, "company", "")
 
-        results = await asyncio.gather(*[safe_score(s) for s in scorers])
-        dimensions = list(results)
-        total_weight = sum(d.weight for d in dimensions)
-        composite = sum(d.score * d.weight for d in dimensions) / total_weight if total_weight > 0 else 0.5
+                async def safe_score(scorer: Any) -> DimensionResult:
+                    try:
+                        return await scorer.score(job, profile)
+                    except Exception as exc:
+                        return DimensionResult(dimension=scorer.dimension_name, score=0.5, rationale=f"Evaluation failed: {exc}", weight=scorer.weight)
 
-        return EvaluationResult(composite_score=round(composite, 4), job_title=title, company=company, dimensions=dimensions)
+                results = await asyncio.gather(*[safe_score(s) for s in scorers])
+                dimensions = list(results)
+                total_weight = sum(d.weight for d in dimensions)
+                composite = sum(d.score * d.weight for d in dimensions) / total_weight if total_weight > 0 else 0.5
+
+                result = EvaluationResult(composite_score=round(composite, 4), job_title=title, company=company, dimensions=dimensions)
+                _metrics.matches_completed_total.add(1)
+                # composite_score is already 0..1
+                span.set_attribute("matching.score", float(result.composite_score))
+                _metrics.match_score.record(float(result.composite_score))
+                return result
+            except Exception:
+                span.set_status(trace.Status(trace.StatusCode.ERROR))
+                raise
 
     async def analyze(
         self,

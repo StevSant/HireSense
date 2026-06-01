@@ -4,6 +4,7 @@ import asyncio
 import logging
 
 from hiresense.admin.ports import LLMUsageLogRepositoryPort
+from hiresense.observability import get_domain_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,17 @@ class UsageRecorder:
         error: str | None,
         user_id: str | None,
     ) -> None:
+        try:
+            m = get_domain_metrics()
+            m.llm_tokens_total.add(input_tokens, {"type": "input", "model": model})
+            m.llm_tokens_total.add(output_tokens, {"type": "output", "model": model})
+            m.llm_cost_usd_total.add(cost_usd, {"model": model, "feature": feature_key})
+            m.llm_call_duration_ms.record(latency_ms, {"model": model})
+            if not success:
+                m.llm_errors_total.add(1, {"model": model, "feature": feature_key})
+        except Exception:  # pragma: no cover - telemetry must never break recording
+            logger.debug("LLM metric recording failed", exc_info=True)
+
         async def _persist() -> None:
             try:
                 await asyncio.to_thread(

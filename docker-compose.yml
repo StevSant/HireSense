@@ -15,6 +15,15 @@ services:
       timeout: 3s
       retries: 5
 
+  otel-lgtm:
+    image: grafana/otel-lgtm
+    ports:
+      - "3000:3000"   # Grafana UI
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    volumes:
+      - lgtm:/data
+
   app:
     build: ./backend
     ports:
@@ -23,6 +32,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      otel-lgtm:
+        condition: service_started
     volumes:
       - ./cvs:/app/cvs
 
@@ -35,3 +46,4 @@ services:
 
 volumes:
   pgdata:
+  lgtm:

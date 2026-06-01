@@ -63,6 +63,10 @@ class AutoHuntService:
             if candidate_skills
             else {}
         )
+        # rerank recomputes match_score from skill_by_id + ANN semantic for jobs
+        # in the vector store; on the passthrough path (no store / not indexed)
+        # it keeps each job's persisted match_score — already the jobs-list
+        # combined value, so the floor still applies to the same 0-1 scale.
         try:
             ranked = await self._pre_ranker.rerank(
                 new_jobs, skill_by_id, candidate_skills, candidate_summary, "boards"

@@ -26,7 +26,10 @@ class AnalyticsBuild:
 
 def build_analytics(infra: SharedInfra, profile_service: Any, status_history_read: Any) -> AnalyticsBuild:
     s = infra.settings
-    corpus = CorpusAnalyticsRepository(session_factory=infra.sync_session_factory)
+    corpus = CorpusAnalyticsRepository(
+        session_factory=infra.sync_session_factory,
+        sample_cap=s.analytics_corpus_sample_cap,
+    )
     normalizer = SkillNormalizer()
     salary_parser = SalaryParser()
     service = AnalyticsService(

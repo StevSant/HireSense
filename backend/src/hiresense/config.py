@@ -261,6 +261,23 @@ class Settings(BaseSettings):
     # minimum parseable-salaried matches required before reporting a band.
     analytics_target_salary_top_k: int = 50
     analytics_target_salary_min_sample: int = 5
+    # Sampling cap for the full-corpus aggregation scans (top-skills, skill-gap,
+    # posting trend, salary distribution). These read every open posting into
+    # memory; this caps the number of rows fetched per scan so memory/CPU stay
+    # bounded as the corpus grows. It is a SAMPLE, not the whole corpus — the
+    # resulting aggregates (skill %s, salary distribution, trend) are computed
+    # over up to this many open postings. Raise if you want more exact figures
+    # at the cost of memory; the corpus would need to exceed this before the
+    # numbers are affected at all.
+    analytics_corpus_sample_cap: int = 5000
+
+    # --- Admin LLM usage dashboard ---
+    # Default cap on rows returned by the "recent calls" listing (newest-first)
+    # when the API/aggregator caller does not specify one. Bounds the unbounded
+    # SELECT over the usage log. The /usage/calls endpoint clamps the per-request
+    # ?limit= separately (1..500); this is the server-side default applied when
+    # no explicit limit is passed.
+    admin_usage_recent_limit: int = 100
 
     # --- Proactive Auto-Hunt (scheduled digest of new taste-ranked matches) ---
     # Top-N new matches per digest, and the minimum match score (0-1) to qualify.

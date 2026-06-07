@@ -3,33 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { AdminLLMSettingsService } from '../../core/services/admin-llm-settings.service';
+import {
+  LLM_PROVIDERS,
+  MODEL_SUGGESTIONS,
+} from './constants/llm-provider-suggestions';
+import { ExtraParam } from './models/extra-param.model';
 import { FeatureView } from './models/feature-view.model';
+import { LLMProvider } from './models/llm-provider.model';
 import { LLMSettings } from './models/llm-settings.model';
 import { LLMTestResult } from './models/llm-test-result.model';
-
-interface ExtraParam {
-  key: string;
-  value: string;
-}
-
-interface OverrideDraft {
-  feature_key: string;
-  provider: string;
-  model: string;
-  extra: ExtraParam[];
-  inherit_provider: boolean;
-  inherit_model: boolean;
-}
-
-const PROVIDERS = ['anthropic', 'openai', 'groq', 'ollama'] as const;
-type Provider = (typeof PROVIDERS)[number];
-
-const MODEL_SUGGESTIONS: Record<Provider, string[]> = {
-  anthropic: ['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
-  openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
-  groq: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'],
-  ollama: ['llama3.1', 'mistral', 'qwen2.5'],
-};
+import { OverrideDraft } from './models/override-draft.model';
 
 @Component({
   selector: 'app-admin-llm-settings',
@@ -39,7 +22,7 @@ const MODEL_SUGGESTIONS: Record<Provider, string[]> = {
   styleUrl: './admin-llm-settings.component.scss',
 })
 export class AdminLLMSettingsComponent implements OnInit {
-  readonly providers = PROVIDERS;
+  readonly providers = LLM_PROVIDERS;
 
   loading = signal(false);
   saving = signal(false);
@@ -52,7 +35,7 @@ export class AdminLLMSettingsComponent implements OnInit {
   hasTestedSinceEdit = signal(false);
 
   // Global form state
-  formProvider = signal<Provider>('anthropic');
+  formProvider = signal<LLMProvider>('anthropic');
   formModel = signal('');
   formApiKey = signal('');
   formExtras = signal<ExtraParam[]>([]);
@@ -78,8 +61,8 @@ export class AdminLLMSettingsComponent implements OnInit {
     this.api.getSettings().subscribe({
       next: (settings) => {
         this.current.set(settings);
-        this.formProvider.set((PROVIDERS as readonly string[]).includes(settings.provider)
-          ? (settings.provider as Provider)
+        this.formProvider.set((LLM_PROVIDERS as readonly string[]).includes(settings.provider)
+          ? (settings.provider as LLMProvider)
           : 'anthropic');
         this.formModel.set(settings.model);
         this.formApiKey.set('');
@@ -110,7 +93,7 @@ export class AdminLLMSettingsComponent implements OnInit {
 
   // ---- Global form ------------------------------------------------
 
-  onProviderChange(provider: Provider): void {
+  onProviderChange(provider: LLMProvider): void {
     this.formProvider.set(provider);
     this.hasTestedSinceEdit.set(false);
   }

@@ -2,12 +2,8 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { LoginResponse } from '../models/login-response.model';
 import { isTokenExpired } from '../utils/is-token-expired';
-
-interface LoginResponse {
-  access_token: string;
-  token_type: string;
-}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

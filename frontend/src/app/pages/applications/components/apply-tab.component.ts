@@ -1,10 +1,8 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { ApplicationsService } from '../../../core/services/applications.service';
-import {
-  CoverLetterRunnerService,
-  CoverLetterTone,
-} from '../../../core/services/cover-letter-runner.service';
+import { CoverLetterRunnerService } from '../../../core/services/cover-letter-runner.service';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
+import { CoverLetterTone } from '../models/cover-letter-tone.model';
 
 @Component({
   selector: 'app-apply-tab',

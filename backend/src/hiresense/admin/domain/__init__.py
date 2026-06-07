@@ -6,7 +6,10 @@ from hiresense.admin.domain.feature_registry import (
     all_feature_keys,
     get_feature,
 )
+from hiresense.admin.domain.llm_audit_entry import LLMAuditEntry
 from hiresense.admin.domain.llm_config_service import LLMConfigService
+from hiresense.admin.domain.llm_feature_override import LLMFeatureOverrideRecord
+from hiresense.admin.domain.llm_settings import LLMSettingsRecord
 from hiresense.admin.domain.llm_settings_service import (
     GlobalSettingsView,
     LLMSettingsService,
@@ -17,7 +20,10 @@ from hiresense.admin.domain.pricing import DEFAULT_PRICING, ModelPricing, estima
 from hiresense.admin.domain.resolved_config import ResolvedConfig
 from hiresense.admin.domain.test_result import TestResult
 from hiresense.admin.domain.usage_aggregator import DashboardSummary, UsageAggregator
+from hiresense.admin.domain.usage_bucket import UsageBucket
+from hiresense.admin.domain.usage_record import UsageRecord
 from hiresense.admin.domain.usage_recorder import UsageRecorder
+from hiresense.admin.domain.usage_totals import UsageTotals
 
 __all__ = [
     "APIKeyCipher",
@@ -28,14 +34,20 @@ __all__ = [
     "FEATURE_REGISTRY",
     "FeatureDescriptor",
     "GlobalSettingsView",
+    "LLMAuditEntry",
     "LLMConfigService",
+    "LLMFeatureOverrideRecord",
+    "LLMSettingsRecord",
     "LLMSettingsService",
     "LLMSettingsServiceError",
     "ModelPricing",
     "ResolvedConfig",
     "TestResult",
     "UsageAggregator",
+    "UsageBucket",
+    "UsageRecord",
     "UsageRecorder",
+    "UsageTotals",
     "all_feature_keys",
     "estimate_cost_usd",
     "get_feature",

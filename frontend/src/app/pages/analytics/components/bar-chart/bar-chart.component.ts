@@ -1,11 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-
-export interface BarRow {
-  label: string;
-  value: number;
-  pct: number;
-  note?: string;
-}
+import { BarRow } from '../../models/bar-row.model';
 
 @Component({
   selector: 'app-bar-chart',

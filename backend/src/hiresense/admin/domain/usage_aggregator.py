@@ -4,12 +4,11 @@ import csv
 import io
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING
 
+from hiresense.admin.domain.usage_bucket import UsageBucket
+from hiresense.admin.domain.usage_record import UsageRecord
+from hiresense.admin.domain.usage_totals import UsageTotals
 from hiresense.admin.ports import LLMUsageLogRepositoryPort
-
-if TYPE_CHECKING:
-    from hiresense.admin.infrastructure import UsageBucket, UsageTotals
 
 
 @dataclass(frozen=True)
@@ -22,8 +21,9 @@ class DashboardSummary:
 class UsageAggregator:
     """Read-side service for the admin usage dashboard."""
 
-    def __init__(self, repo: LLMUsageLogRepositoryPort) -> None:
+    def __init__(self, repo: LLMUsageLogRepositoryPort, recent_limit: int) -> None:
         self._repo = repo
+        self._recent_limit = recent_limit
 
     def summary(self) -> DashboardSummary:
         now = datetime.now(timezone.utc)
@@ -46,16 +46,17 @@ class UsageAggregator:
     def recent_calls(
         self,
         *,
-        limit: int = 50,
+        limit: int | None = None,
         offset: int = 0,
         provider: str | None = None,
         model: str | None = None,
         feature_key: str | None = None,
         days: int | None = None,
-    ):
+    ) -> list[UsageRecord]:
         since = None if days is None else datetime.now(timezone.utc) - timedelta(days=days)
+        effective_limit = self._recent_limit if limit is None else limit
         return self._repo.list_recent(
-            limit=limit,
+            limit=effective_limit,
             offset=offset,
             provider=provider,
             model=model,

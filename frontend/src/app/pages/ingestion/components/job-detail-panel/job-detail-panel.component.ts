@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { NormalizedJob } from '../../models/normalized-job.model';
@@ -22,6 +23,7 @@ import { FeedbackKind } from '../../models/feedback-kind.model';
 export class JobDetailPanelComponent {
   private router = inject(Router);
   private ingestionService = inject(IngestionService);
+  private readonly destroyRef = inject(DestroyRef);
 
   job = input.required<NormalizedJob>();
   tracked = input<boolean>(false);
@@ -87,7 +89,7 @@ export class JobDetailPanelComponent {
   loadAnalysis(force = false): void {
     this.analysisLoading.set(true);
     this.analysisError.set('');
-    this.ingestionService.getJobAnalysis(this.job().id, force).subscribe({
+    this.ingestionService.getJobAnalysis(this.job().id, force).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.analysisLoading.set(false),
       error: (err) => {
         this.analysisError.set(err.error?.detail || 'Deep analysis failed');

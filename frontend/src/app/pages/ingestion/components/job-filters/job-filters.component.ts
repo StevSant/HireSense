@@ -1,5 +1,6 @@
 import { Component, OnInit, input, output } from '@angular/core';
-import { JobFilters, SeniorityLevel } from '../../../../core/services/ingestion.service';
+import { JobFilters } from '../../models/job-filters.model';
+import { SeniorityLevel } from '../../models/seniority-level.model';
 import { detectUserLocation } from '../../../../core/utils/detect-user-location';
 
 const LS_USER_LOCATION = 'hiresense.user_location';

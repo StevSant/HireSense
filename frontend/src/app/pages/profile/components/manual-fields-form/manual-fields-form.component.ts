@@ -1,29 +1,20 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   effect,
   inject,
   input,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { CandidateProfile } from '../../models/candidate-profile.model';
-import {
-  ProfileManualFieldsUpdate,
-  ProfileService,
-} from '../../../../core/services/profile.service';
+import { ManualFieldsFormState } from '../../models/manual-fields-form-state.model';
+import { ProfileManualFieldsUpdate } from '../../models/profile-manual-fields-update.model';
+import { ProfileService } from '../../../../core/services/profile.service';
 
-type FormState = {
-  name: string;
-  email: string;
-  phone: string;
-  location: string;
-  linkedin_url: string;
-  github_url: string;
-  portfolio_url: string;
-};
-
-const FIELDS: ReadonlyArray<keyof FormState> = [
+const FIELDS: ReadonlyArray<keyof ManualFieldsFormState> = [
   'name',
   'email',
   'phone',
@@ -33,7 +24,7 @@ const FIELDS: ReadonlyArray<keyof FormState> = [
   'portfolio_url',
 ];
 
-function snapshot(profile: CandidateProfile): FormState {
+function snapshot(profile: CandidateProfile): ManualFieldsFormState {
   return {
     name: profile.name ?? '',
     email: profile.email ?? '',
@@ -55,10 +46,11 @@ function snapshot(profile: CandidateProfile): FormState {
 })
 export class ManualFieldsFormComponent {
   private profileService = inject(ProfileService);
+  private readonly destroyRef = inject(DestroyRef);
 
   profile = input.required<CandidateProfile>();
 
-  form = signal<FormState>({
+  form = signal<ManualFieldsFormState>({
     name: '',
     email: '',
     phone: '',
@@ -67,7 +59,7 @@ export class ManualFieldsFormComponent {
     github_url: '',
     portfolio_url: '',
   });
-  baseline = signal<FormState>(this.form());
+  baseline = signal<ManualFieldsFormState>(this.form());
   saving = signal(false);
   error = signal('');
   savedFlash = signal(false);
@@ -80,7 +72,7 @@ export class ManualFieldsFormComponent {
     });
   }
 
-  set<K extends keyof FormState>(key: K, value: string): void {
+  set<K extends keyof ManualFieldsFormState>(key: K, value: string): void {
     this.form.update((current) => ({ ...current, [key]: value }));
   }
 
@@ -107,7 +99,7 @@ export class ManualFieldsFormComponent {
     }
     this.saving.set(true);
     this.error.set('');
-    this.profileService.updateManualFields(this.profile().id, update).subscribe({
+    this.profileService.updateManualFields(this.profile().id, update).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (saved) => {
         this.saving.set(false);
         const snap = snapshot(saved);

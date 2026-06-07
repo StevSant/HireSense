@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from collections import Counter
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from hiresense.preference.domain.feedback_signal import FeedbackSignal
 
@@ -15,11 +15,16 @@ class PreferenceExplanation(BaseModel):
     negative_count: int
     counts_by_kind: dict[str, int]
     drift_magnitude: float
+    # Phase 2: learned per-dimension weight deltas applied to matching scoring.
+    weight_overrides: dict[str, int] = Field(default_factory=dict)
     summary: str | None = None
 
 
 def build_explanation(
-    signals: list[FeedbackSignal], *, delta_vector: list[float] | None
+    signals: list[FeedbackSignal],
+    *,
+    delta_vector: list[float] | None,
+    weight_overrides: dict[str, int] | None = None,
 ) -> PreferenceExplanation:
     counts = Counter(s.kind.value for s in signals)
     positive = sum(1 for s in signals if s.kind.polarity > 0)
@@ -34,4 +39,5 @@ def build_explanation(
         negative_count=negative,
         counts_by_kind=dict(counts),
         drift_magnitude=magnitude,
+        weight_overrides=dict(weight_overrides or {}),
     )

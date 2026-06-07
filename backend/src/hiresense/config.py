@@ -73,6 +73,9 @@ class Settings(BaseSettings):
     auth_username: str
     auth_password: str
     jwt_secret_key: str
+    # Role embedded in issued tokens. A single-user instance is admin by default;
+    # set to a non-admin value to genuinely exercise the admin gate.
+    auth_role: str = "admin"
 
     # Database
     database_url: str

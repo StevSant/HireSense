@@ -1,10 +1,9 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApplicationsService } from '../../../core/services/applications.service';
-import {
-  CoverLetterRunnerService,
-  CoverLetterTone,
-} from '../../../core/services/cover-letter-runner.service';
+import { CoverLetterRunnerService } from '../../../core/services/cover-letter-runner.service';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
+import { CoverLetterTone } from '../models/cover-letter-tone.model';
 
 @Component({
   selector: 'app-apply-tab',
@@ -15,6 +14,7 @@ import { ApplicationAggregate } from '../models/application-aggregate.model';
 export class ApplyTabComponent {
   private service = inject(ApplicationsService);
   private runner = inject(CoverLetterRunnerService);
+  private readonly destroyRef = inject(DestroyRef);
 
   aggregate = input.required<ApplicationAggregate>();
   changed = output<void>();
@@ -62,7 +62,7 @@ export class ApplyTabComponent {
     const obs = this.hasCv()
       ? this.service.downloadCvPdf(this.aggregate().id)
       : this.service.downloadOriginalCvPdf(this.aggregate().id, this.cvLanguage());
-    obs.subscribe({
+    obs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (blob) => {
         const suffix = this.hasCv() ? '' : '_original';
         this.triggerDownload(blob, `cv${suffix}_${this.safeCompany()}.pdf`);
@@ -78,7 +78,7 @@ export class ApplyTabComponent {
   downloadLetter(): void {
     this.downloadingLetter.set(true);
     this.error.set('');
-    this.service.downloadCoverLetterPdf(this.aggregate().id).subscribe({
+    this.service.downloadCoverLetterPdf(this.aggregate().id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (blob) => {
         this.triggerDownload(blob, `cover_letter_${this.safeCompany()}.pdf`);
         this.downloadingLetter.set(false);
@@ -93,7 +93,7 @@ export class ApplyTabComponent {
   downloadBundle(): void {
     this.downloadingBundle.set(true);
     this.error.set('');
-    this.service.downloadBundle(this.aggregate().id).subscribe({
+    this.service.downloadBundle(this.aggregate().id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (blob) => {
         this.triggerDownload(blob, `application_${this.safeCompany()}.zip`);
         this.downloadingBundle.set(false);
@@ -129,7 +129,7 @@ export class ApplyTabComponent {
   markApplied(): void {
     this.marking.set(true);
     this.error.set('');
-    this.service.markApplied(this.aggregate().id).subscribe({
+    this.service.markApplied(this.aggregate().id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.marking.set(false);
         this.changed.emit();

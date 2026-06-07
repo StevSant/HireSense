@@ -1,6 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -16,20 +18,27 @@ export class LoginComponent {
   error = signal('');
   loading = signal(false);
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(private auth: AuthService, private router: Router) {}
 
   onSubmit(): void {
     this.loading.set(true);
     this.error.set('');
-    this.auth.login(this.username(), this.password()).subscribe({
-      next: (res) => {
-        this.auth.setToken(res.access_token);
-        this.router.navigate(['/dashboard']);
-      },
-      error: () => {
-        this.error.set('Invalid credentials');
-        this.loading.set(false);
-      },
-    });
+    this.auth
+      .login(this.username(), this.password())
+      .pipe(
+        finalize(() => this.loading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (res) => {
+          this.auth.setToken(res.access_token);
+          this.router.navigate(['/dashboard']);
+        },
+        error: () => {
+          this.error.set('Invalid credentials');
+        },
+      });
   }
 }

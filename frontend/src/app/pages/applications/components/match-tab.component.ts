@@ -1,4 +1,5 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
 import { SkillChipsComponent } from './skill-chips.component';
@@ -14,6 +15,7 @@ import { formatScorePercent } from '../../../core/utils/format-score-percent';
 })
 export class MatchTabComponent {
   private service = inject(ApplicationsService);
+  private readonly destroyRef = inject(DestroyRef);
 
   aggregate = input.required<ApplicationAggregate>();
   changed = output<void>();
@@ -35,7 +37,7 @@ export class MatchTabComponent {
   run(): void {
     this.running.set(true);
     this.error.set('');
-    this.service.generateMatch(this.aggregate().id, this.cvLanguage()).subscribe({
+    this.service.generateMatch(this.aggregate().id, this.cvLanguage()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.running.set(false);
         this.changed.emit();

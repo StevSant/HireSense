@@ -3,13 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { InterviewPrep } from '../../pages/interview/models/interview-prep.model';
+import { PrepareRequest } from '../../pages/interview/models/prepare-request.model';
 import { Story } from '../../pages/interview/models/story.model';
-
-export interface PrepareRequest {
-  job_title: string;
-  company: string;
-  description: string;
-}
 
 @Injectable({ providedIn: 'root' })
 export class InterviewService {

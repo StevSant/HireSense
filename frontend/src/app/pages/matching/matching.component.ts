@@ -1,4 +1,5 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatchingService } from '../../core/services/matching.service';
@@ -23,6 +24,7 @@ export class MatchingComponent implements OnInit {
   private profileService = inject(ProfileService);
   private ingestionService = inject(IngestionService);
   private route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
   jobDescription = signal('');
   jobSkills = signal('');
@@ -55,10 +57,10 @@ export class MatchingComponent implements OnInit {
   ngOnInit(): void {
     // Load profiles if not cached
     if (this.availableLanguages().length === 0) {
-      this.profileService.listProfiles().subscribe({
+      this.profileService.listProfiles().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: () => this.applyProfile(),
         error: () => {
-          this.profileService.getCurrentProfile().subscribe({
+          this.profileService.getCurrentProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
             next: () => this.applyProfile(),
             error: () => {},
           });
@@ -70,7 +72,7 @@ export class MatchingComponent implements OnInit {
 
     // If no jobs in cache, try fetching from server
     if (this.jobs().length === 0) {
-      this.ingestionService.queryJobs('boards', 1, 100).subscribe({
+      this.ingestionService.queryJobs('boards', 1, 100).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (res) => {
           this.jobs.set(res.jobs);
           this.applyJobIdFromQuery();
@@ -93,7 +95,7 @@ export class MatchingComponent implements OnInit {
       return;
     }
     // Job not in the first 100 — fetch directly
-    this.ingestionService.getJob(jobId).subscribe({
+    this.ingestionService.getJob(jobId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (j) => {
         this.jobs.update((list) => [j, ...list]);
         this.selectedJobId.set(jobId);
@@ -175,7 +177,7 @@ export class MatchingComponent implements OnInit {
       cv_summary: this.cvSummary(),
       cv_skills: this.cvSkills().split(',').map(s => s.trim()).filter(Boolean),
     };
-    this.matchingService.analyze(payload).subscribe({
+    this.matchingService.analyze(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.result.set(res);
         this.loading.set(false);
@@ -195,7 +197,7 @@ export class MatchingComponent implements OnInit {
       description: this.jobDescription(),
       skills: this.jobSkills().split(',').map(s => s.trim()).filter(Boolean),
     };
-    this.matchingService.evaluate(req).subscribe({
+    this.matchingService.evaluate(req).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.evaluationResult.set(res);
         this.evaluating.set(false);

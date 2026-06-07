@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from hiresense.adapters.event_bus import InMemoryEventBus
+from hiresense.adapters.http import RetryingAsyncClient
 from hiresense.config import Settings
 
 
@@ -16,7 +17,10 @@ class SharedInfra:
     """Cross-cutting infrastructure shared by every module builder."""
 
     settings: Settings
-    http_client: httpx.AsyncClient
+    # A RetryingAsyncClient wrapping the raw httpx.AsyncClient — a drop-in for
+    # the verbs the adapters use (get/post/request) plus pass-through for the
+    # rest. Typed loosely because the wrapper is not an AsyncClient subclass.
+    http_client: Any
     event_bus: InMemoryEventBus
     sync_session_factory: Any
     embedding: Any
@@ -25,6 +29,16 @@ class SharedInfra:
 
 def build_shared_infra(settings: Settings, http_client: httpx.AsyncClient) -> SharedInfra:
     event_bus = InMemoryEventBus()
+
+    # Wrap the raw client with retry/backoff so transient transport errors and
+    # retryable status codes no longer abort an entire source fetch. The raw
+    # client is still what main.py owns and aclose()s on shutdown.
+    retrying_http_client = RetryingAsyncClient(
+        http_client,
+        max_retries=settings.http_max_retries,
+        base_delay=settings.http_retry_base_delay,
+        retry_status_codes=settings.http_retry_status_codes,
+    )
 
     sync_db_url = settings.database_url.replace("+asyncpg", "")
     sync_engine = create_engine(sync_db_url, echo=settings.debug)
@@ -49,7 +63,7 @@ def build_shared_infra(settings: Settings, http_client: httpx.AsyncClient) -> Sh
 
     return SharedInfra(
         settings=settings,
-        http_client=http_client,
+        http_client=retrying_http_client,
         event_bus=event_bus,
         sync_session_factory=sync_session_factory,
         embedding=embedding,

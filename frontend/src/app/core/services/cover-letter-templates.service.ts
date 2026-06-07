@@ -3,15 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CoverLetterTemplate } from '../../pages/profile/models/cover-letter-template.model';
-
-export interface CoverLetterTemplateUpsert {
-  name?: string;
-  tone?: string;
-  language?: string;
-  opening?: string;
-  body?: string;
-  signature?: string;
-}
+import { CoverLetterTemplateUpsert } from '../../pages/profile/models/cover-letter-template-upsert.model';
 
 @Injectable({ providedIn: 'root' })
 export class CoverLetterTemplatesService {

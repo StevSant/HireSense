@@ -1,4 +1,5 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -49,6 +50,8 @@ export class AdminLLMSettingsComponent implements OnInit {
 
   modelSuggestions = computed(() => MODEL_SUGGESTIONS[this.formProvider()] ?? []);
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(private api: AdminLLMSettingsService) {}
 
   ngOnInit(): void {
@@ -58,7 +61,7 @@ export class AdminLLMSettingsComponent implements OnInit {
   refresh(): void {
     this.loading.set(true);
     this.error.set('');
-    this.api.getSettings().subscribe({
+    this.api.getSettings().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (settings) => {
         this.current.set(settings);
         this.formProvider.set((LLM_PROVIDERS as readonly string[]).includes(settings.provider)
@@ -79,7 +82,7 @@ export class AdminLLMSettingsComponent implements OnInit {
   }
 
   private loadFeatures(): void {
-    this.api.listFeatures().subscribe({
+    this.api.listFeatures().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (features) => {
         this.features.set(features);
         this.loading.set(false);
@@ -139,6 +142,7 @@ export class AdminLLMSettingsComponent implements OnInit {
         api_key: apiKey ? apiKey : null,
         extra_params: extrasToObject(this.formExtras()),
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
           this.testResult.set(result);
@@ -174,6 +178,7 @@ export class AdminLLMSettingsComponent implements OnInit {
         extra_params: extrasToObject(this.formExtras()),
         skip_test: skipTest,
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (settings) => {
           this.current.set(settings);
@@ -269,6 +274,7 @@ export class AdminLLMSettingsComponent implements OnInit {
         model: draft.inherit_model ? null : draft.model,
         extra_params: extrasToObject(draft.extra),
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
           this.overrideTestResult.set(result);
@@ -291,6 +297,7 @@ export class AdminLLMSettingsComponent implements OnInit {
         extra_params: extrasToObject(draft.extra),
         skip_test: this.overrideTestResult()?.success === true,
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.editingOverride.set(null);
@@ -309,7 +316,7 @@ export class AdminLLMSettingsComponent implements OnInit {
       `Reset ${feature.feature_name} to global config? The next call will use the global provider/model.`,
     );
     if (!ok) return;
-    this.api.clearOverride(feature.feature_key).subscribe({
+    this.api.clearOverride(feature.feature_key).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.loadFeatures(),
       error: (err) => this.overrideError.set(err?.error?.detail ?? 'Reset failed'),
     });

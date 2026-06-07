@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { ApplicationsService } from '../../core/services/applications.service';
@@ -17,6 +18,7 @@ import { formatScorePercent } from '../../core/utils/format-score-percent';
 export class ApplicationsComponent implements OnInit {
   private service = inject(ApplicationsService);
   private router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   applications = signal<ApplicationListItem[]>([]);
   loading = signal(false);
@@ -31,7 +33,7 @@ export class ApplicationsComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set('');
-    this.service.list().subscribe({
+    this.service.list().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (rows) => {
         this.applications.set(rows);
         this.loading.set(false);
@@ -71,7 +73,7 @@ export class ApplicationsComponent implements OnInit {
       return;
     }
     this.deletingId.set(app.id);
-    this.service.remove(app.id).subscribe({
+    this.service.remove(app.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.applications.update((rows) => rows.filter((r) => r.id !== app.id));
         this.deletingId.set(null);

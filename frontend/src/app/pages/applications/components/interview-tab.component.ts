@@ -1,4 +1,5 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
 
@@ -10,6 +11,7 @@ import { ApplicationAggregate } from '../models/application-aggregate.model';
 })
 export class InterviewTabComponent {
   private service = inject(ApplicationsService);
+  private readonly destroyRef = inject(DestroyRef);
 
   aggregate = input.required<ApplicationAggregate>();
   changed = output<void>();
@@ -22,7 +24,7 @@ export class InterviewTabComponent {
   run(): void {
     this.running.set(true);
     this.error.set('');
-    this.service.generateInterviewPrep(this.aggregate().id).subscribe({
+    this.service.generateInterviewPrep(this.aggregate().id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.running.set(false);
         this.changed.emit();

@@ -1,0 +1,228 @@
+.page {
+  max-width: 800px;
+}
+
+.hint {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.1em;
+  }
+}
+
+.field {
+  margin-bottom: 1rem;
+
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+
+  input,
+  textarea,
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.95em;
+
+    &:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+  }
+}
+
+.field-row {
+  display: flex;
+  gap: 1rem;
+
+  .field {
+    flex: 1;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.btn-primary {
+  padding: 8px 16px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.muted {
+  color: #6b7280;
+}
+
+.empty {
+  font-style: italic;
+}
+
+.alert {
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin: 0.75rem 0;
+}
+
+.alert-error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.alert-warning {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.nudge-list,
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nudge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.nudge-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.nudge-company {
+  font-weight: 600;
+  color: #111827;
+}
+
+.nudge-contact {
+  color: #6b7280;
+}
+
+.nudge-age {
+  color: #92400e;
+  font-size: 0.85em;
+}
+
+.timeline-row {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.timeline-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75em;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.badge-sent {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-followed_up {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-replied {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.timeline-contact {
+  font-weight: 600;
+  color: #111827;
+}
+
+.timeline-channel {
+  color: #6b7280;
+}
+
+.timeline-time {
+  margin-left: auto;
+  color: #9ca3af;
+  font-size: 0.85em;
+}
+
+.timeline-message {
+  margin: 0.4rem 0 0;
+  white-space: pre-wrap;
+  color: #374151;
+}

@@ -1,4 +1,5 @@
-import { Component, OnChanges, SimpleChanges, computed, inject, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, OnChanges, SimpleChanges, computed, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
@@ -13,6 +14,7 @@ import { SkillChipsComponent } from './skill-chips.component';
 })
 export class JobTabComponent implements OnChanges {
   private service = inject(ApplicationsService);
+  private readonly destroyRef = inject(DestroyRef);
 
   aggregate = input.required<ApplicationAggregate>();
   changed = output<void>();
@@ -39,6 +41,7 @@ export class JobTabComponent implements OnChanges {
         description: this.description(),
         required_skills: this.skills(),
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.saving.set(false);
@@ -54,7 +57,7 @@ export class JobTabComponent implements OnChanges {
   regenerate(): void {
     this.regenerating.set(true);
     this.error.set('');
-    this.service.regenerateSkills(this.aggregate().id).subscribe({
+    this.service.regenerateSkills(this.aggregate().id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (agg) => {
         this.skills.set(agg.job_snapshot?.required_skills ?? []);
         this.regenerating.set(false);

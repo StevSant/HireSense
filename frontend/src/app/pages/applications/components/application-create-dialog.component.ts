@@ -1,4 +1,5 @@
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, DestroyRef, inject, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ApplicationsService } from '../../../core/services/applications.service';
 
@@ -11,6 +12,7 @@ import { ApplicationsService } from '../../../core/services/applications.service
 })
 export class ApplicationCreateDialogComponent {
   private service = inject(ApplicationsService);
+  private readonly destroyRef = inject(DestroyRef);
 
   closed = output<void>();
   created = output<string>();
@@ -39,6 +41,7 @@ export class ApplicationCreateDialogComponent {
         description: d,
         url: this.url().trim() || undefined,
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (agg) => {
           this.saving.set(false);

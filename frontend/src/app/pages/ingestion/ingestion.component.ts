@@ -116,7 +116,7 @@ export class IngestionComponent implements OnInit {
   private openDetailFromQueryParam(): void {
     const jobId = this.route.snapshot.queryParamMap.get('job_id');
     if (!jobId) return;
-    this.ingestionService.getJob(jobId).subscribe({
+    this.ingestionService.getJob(jobId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (job) => this.selectedJob.set(job),
       error: () => {},
     });
@@ -135,6 +135,7 @@ export class IngestionComponent implements OnInit {
     const filtersWithSort = { ...this.filters(), sort: this.sortMode() || undefined };
     this.ingestionService
       .queryJobs(this.activeTab(), this.page(), this.pageSize(), filtersWithSort, this.includeClosed())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
           this.dimmedJobIds.set(new Set<string>());
@@ -154,7 +155,7 @@ export class IngestionComponent implements OnInit {
     this.loading.set(true);
     this.fetching.set(true);
     this.error.set('');
-    this.ingestionService.fetchJobs().subscribe({
+    this.ingestionService.fetchJobs().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.fetching.set(false);
         this.loadJobs();
@@ -168,7 +169,7 @@ export class IngestionComponent implements OnInit {
   }
 
   loadPortals(): void {
-    this.ingestionService.loadPortals().subscribe({
+    this.ingestionService.loadPortals().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (portals) => {
         this.portals.set(portals);
         const allCategories = portals.flatMap((p) => p.categories);
@@ -190,7 +191,7 @@ export class IngestionComponent implements OnInit {
     const kw = this.scanKeyword().trim();
     if (kw) body.keyword = kw;
 
-    this.ingestionService.scanPortals(body).subscribe({
+    this.ingestionService.scanPortals(body).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.scanSummary.set(
           `Scan complete: ${res.total_fetched} fetched, ${res.new} new, ${res.duplicates} duplicates.`,
@@ -254,7 +255,7 @@ export class IngestionComponent implements OnInit {
     if (this.trackingJobId() !== null) return;
     this.trackingJobId.set(jobId);
     this.error.set('');
-    this.applicationsService.createFromJob(jobId).subscribe({
+    this.applicationsService.createFromJob(jobId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (agg) => {
         this.ingestionService.markTracked(jobId);
         this.trackingJobId.set(null);

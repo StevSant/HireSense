@@ -10,6 +10,7 @@ from hiresense.preference.domain import (
     PreferenceModel,
     PreferenceService,
     TasteVectorCalculator,
+    WeightNudgeCalculator,
 )
 
 
@@ -206,6 +207,112 @@ async def test_explain_layers_llm_summary() -> None:
     assert exp.summary == "You prefer backend roles."
     assert len(llm.calls) == 1
     assert exp.total_signals == 1
+
+
+class _FakeDimLookup:
+    """Returns fixed dimension scores for any job id."""
+
+    def __init__(self, scores: dict[str, float]) -> None:
+        self._scores = scores
+
+    def get_dimension_scores(self, job_id: str):  # noqa: ARG002
+        return dict(self._scores)
+
+
+def _service_with_nudge(
+    repo, vectors, *, min_outcomes=3, clamp=3, scale=10.0, base_weights=None
+) -> PreferenceService:
+    calc = TasteVectorCalculator(alpha=1.0, beta=1.0, gamma=1.0, tau_days=90.0)
+    nudge = WeightNudgeCalculator(min_outcomes=min_outcomes, clamp=clamp, scale=scale)
+    return PreferenceService(
+        repository=repo,
+        vector_store=FakeVectorStore(vectors),
+        calculator=calc,
+        weights={k: 1.0 for k in FeedbackKind},
+        enabled=True,
+        nudge_calculator=nudge,
+        base_weights=base_weights or {},
+    )
+
+
+@pytest.mark.asyncio
+async def test_weight_overrides_empty_without_dimension_lookup() -> None:
+    repo = FakeRepo()
+    jid = uuid.uuid4()
+    svc = _service_with_nudge(repo, {str(jid): [0.0, 1.0]}, min_outcomes=1)
+    # No dimension lookup attached -> no observations -> no overrides.
+    await svc.record_implicit_signal(jid, FeedbackKind.OFFERED)
+    assert svc.weight_overrides() == {}
+
+
+@pytest.mark.asyncio
+async def test_weight_overrides_gated_below_min_outcomes() -> None:
+    repo = FakeRepo()
+    svc = _service_with_nudge(repo, {}, min_outcomes=5)
+    svc.attach_dimension_lookup(_FakeDimLookup({"comp": 1.0}))
+    for _ in range(3):
+        await svc.record_implicit_signal(uuid.uuid4(), FeedbackKind.OFFERED)
+    assert svc.weight_overrides() == {}
+
+
+@pytest.mark.asyncio
+async def test_weight_overrides_computed_once_gate_met() -> None:
+    repo = FakeRepo()
+    svc = _service_with_nudge(repo, {}, min_outcomes=3, clamp=3, scale=10.0)
+    svc.attach_dimension_lookup(_FakeDimLookup({"comp": 1.0}))
+    for _ in range(3):
+        await svc.record_implicit_signal(uuid.uuid4(), FeedbackKind.OFFERED)
+    overrides = svc.weight_overrides()
+    assert overrides.get("comp", 0) > 0
+
+
+@pytest.mark.asyncio
+async def test_weight_overrides_empty_when_disabled() -> None:
+    repo = FakeRepo()
+    svc = _service_with_nudge(repo, {}, min_outcomes=1)
+    svc.attach_dimension_lookup(_FakeDimLookup({"comp": 1.0}))
+    svc._enabled = False  # disabled service exposes no overrides
+    await svc.record_implicit_signal(uuid.uuid4(), FeedbackKind.OFFERED)
+    assert svc.weight_overrides() == {}
+
+
+@pytest.mark.asyncio
+async def test_explain_includes_weight_overrides() -> None:
+    repo = FakeRepo()
+    svc = _service_with_nudge(repo, {}, min_outcomes=3, clamp=3, scale=10.0)
+    svc.attach_dimension_lookup(_FakeDimLookup({"comp": 1.0}))
+    for _ in range(3):
+        await svc.record_implicit_signal(uuid.uuid4(), FeedbackKind.OFFERED)
+    exp = await svc.explain()
+    assert exp.weight_overrides.get("comp", 0) > 0
+
+
+@pytest.mark.asyncio
+async def test_reset_clears_weight_overrides() -> None:
+    repo = FakeRepo()
+    svc = _service_with_nudge(repo, {}, min_outcomes=3, clamp=3, scale=10.0)
+    svc.attach_dimension_lookup(_FakeDimLookup({"comp": 1.0}))
+    for _ in range(3):
+        await svc.record_implicit_signal(uuid.uuid4(), FeedbackKind.OFFERED)
+    assert svc.weight_overrides() != {}
+    svc.reset()
+    assert svc.weight_overrides() == {}
+
+
+def test_weights_view_reports_base_override_effective() -> None:
+    repo = FakeRepo()
+    svc = _service_with_nudge(
+        repo, {}, base_weights={"comp": 10, "culture": 5}
+    )
+    # Inject a model with an override directly via the repo.
+    repo.save_model(PreferenceModel(delta_vector=[], weight_overrides={"comp": 2}))
+    view = {row["dimension"]: row for row in svc.weights_view()}
+    assert view["comp"]["base_weight"] == 10
+    assert view["comp"]["override"] == 2
+    assert view["comp"]["effective_weight"] == 12
+    assert view["culture"]["base_weight"] == 5
+    assert view["culture"]["override"] == 0
+    assert view["culture"]["effective_weight"] == 5
 
 
 @pytest.mark.asyncio

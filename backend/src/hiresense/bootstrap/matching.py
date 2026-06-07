@@ -23,7 +23,9 @@ class MatchingBuild:
     orchestrator: MatchingOrchestrator
 
 
-def build_matching(infra: SharedInfra, tracked: Callable[[str], Any]) -> MatchingBuild:
+def build_matching(
+    infra: SharedInfra, tracked: Callable[[str], Any], preference: Any | None = None
+) -> MatchingBuild:
     s = infra.settings
     dimension_scorers = [
         SeniorityScorer(llm=tracked("seniority_scorer"), weight=s.weight_seniority),
@@ -43,6 +45,7 @@ def build_matching(infra: SharedInfra, tracked: Callable[[str], Any]) -> Matchin
         event_bus=infra.event_bus,
         dimension_scorers=dimension_scorers,
         embedding=infra.embedding,
+        preference=preference,
     )
     batch_evaluation_service = BatchEvaluationService(
         orchestrator=matching_orchestrator,

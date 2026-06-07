@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.seniority import (
@@ -29,7 +29,10 @@ class JobQueryParams(BaseModel):
     sort: str | None = None
     # Hide jobs whose match_score is below this threshold (0.0–1.0). When
     # None, no filter is applied. Jobs with match_score == None (not yet
-    # scored, e.g. no profile) are passed through regardless.
+    # scored, e.g. no profile) are passed through regardless. Jobs whose
+    # semantic_score is still None are also exempt: their match_score is a
+    # skill-only blend that semantic scoring hasn't had a chance to rescue
+    # yet (see filter_and_paginate for the rationale).
     min_score: float | None = None
     # Seniority filter. When set, only jobs whose detected seniority is in
     # this set are returned. UNKNOWN passes through unless explicitly excluded.
@@ -94,9 +97,18 @@ def filter_and_paginate(
 
     if params.min_score is not None:
         threshold = params.min_score
+        # Only gate jobs that have a *fully computed* score. When semantic_score
+        # is None the match_score is a skill-only blend (combine_fit_score falls
+        # back to the skill side); culling on that would unfairly drop a
+        # low-keyword / high-semantic job — e.g. verbose-tag sources like
+        # getonboard suffer tag dilution on the skill side — before the
+        # page-level semantic scoring pass can rescue it. Such jobs pass through
+        # here and are gated, if at all, only once a real semantic score exists.
         filtered = [
             j for j in filtered
-            if j.match_score is None or j.match_score >= threshold
+            if j.match_score is None
+            or j.semantic_score is None
+            or j.match_score >= threshold
         ]
 
     if params.seniority_levels:

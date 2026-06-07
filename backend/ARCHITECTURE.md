@@ -132,6 +132,15 @@ DB session factory, embedding, vector store) that every builder receives.
   all tables.
 - Semantic search uses **pgvector**: job embeddings are stored in an `embedding vector(N)` column and
   queried via `VectorStorePort`. Vector dimension is configured by `embedding_dim` in `config.py`.
+- **ANN validation (opt-in):** the default suite runs against in-memory SQLite, which has no pgvector,
+  so the `<=>` cosine ranking and eviction behaviour of `PgVectorStore` can only be validated against a
+  real DB. `tests/integration/test_pgvector_ann.py` covers this and is marked `@pytest.mark.pgvector`.
+  It is **skipped by default** (a conftest hook in `tests/integration/conftest.py` skips any
+  `pgvector`-marked test unless the run is launched with `-m pgvector`; even then it skips gracefully if
+  the DB is unreachable). To run it: `docker compose up db`, point `DATABASE_URL` at the compose DB
+  (`postgresql+asyncpg://hiresense:hiresense@localhost:5432/hiresense`), then
+  `uv run python -m pytest -m pgvector`. The fixture creates/cleans/drops the `vector_embeddings` table
+  itself, so it is self-contained.
 
 ## Adding a new module — recipe
 

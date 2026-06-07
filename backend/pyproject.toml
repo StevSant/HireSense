@@ -53,6 +53,9 @@ packages = ["src/hiresense"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = [
+    "pgvector: requires a live Postgres+pgvector DB (docker compose up db); skipped unless explicitly selected",
+]
 
 [tool.ruff]
 target-version = "py312"

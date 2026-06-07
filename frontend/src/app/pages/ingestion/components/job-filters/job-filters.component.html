@@ -1,7 +1,7 @@
 <div class="filters-bar">
   <div class="filter-item">
-    <label class="filter-label">Source</label>
-    <select (change)="onSourceChange($event)" class="filter-control">
+    <label class="filter-label" for="filter-source">Source</label>
+    <select id="filter-source" (change)="onSourceChange($event)" class="filter-control">
       <option value="">All sources</option>
       @for (source of sources(); track source) {
         <option [value]="source" [selected]="filters().source === source">{{ source }}</option>
@@ -10,8 +10,9 @@
   </div>
 
   <div class="filter-item">
-    <label class="filter-label">Keyword</label>
+    <label class="filter-label" for="filter-keyword">Keyword</label>
     <input
+      id="filter-keyword"
       type="text"
       [value]="filters().keyword ?? ''"
       (input)="onKeywordInput($event)"
@@ -21,8 +22,9 @@
   </div>
 
   <div class="filter-item">
-    <label class="filter-label">Job location</label>
+    <label class="filter-label" for="filter-location">Job location</label>
     <input
+      id="filter-location"
       type="text"
       [value]="filters().location ?? ''"
       (input)="onLocationInput($event)"
@@ -32,8 +34,9 @@
   </div>
 
   <div class="filter-item">
-    <label class="filter-label">Skills</label>
+    <label class="filter-label" for="filter-skills">Skills</label>
     <input
+      id="filter-skills"
       type="text"
       [value]="filters().skills ?? ''"
       (input)="onSkillsInput($event)"
@@ -43,8 +46,9 @@
   </div>
 
   <div class="filter-item">
-    <label class="filter-label">Date From</label>
+    <label class="filter-label" for="filter-date-from">Date From</label>
     <input
+      id="filter-date-from"
       type="date"
       [value]="filters().date_from ?? ''"
       (change)="onDateFromChange($event)"
@@ -53,8 +57,9 @@
   </div>
 
   <div class="filter-item">
-    <label class="filter-label">Date To</label>
+    <label class="filter-label" for="filter-date-to">Date To</label>
     <input
+      id="filter-date-to"
       type="date"
       [value]="filters().date_to ?? ''"
       (change)="onDateToChange($event)"
@@ -69,9 +74,10 @@
 
 <div class="location-pref-bar">
   <div class="filter-item">
-    <label class="filter-label">My country</label>
+    <label class="filter-label" for="filter-user-location">My country</label>
     <div class="user-location-row">
       <input
+        id="filter-user-location"
         type="text"
         [value]="filters().user_location ?? ''"
         (input)="onUserLocationInput($event)"
@@ -116,8 +122,9 @@
   </div>
 
   <div class="filter-item filter-item-narrow">
-    <label class="filter-label">Max years experience</label>
+    <label class="filter-label" for="filter-max-years">Max years experience</label>
     <input
+      id="filter-max-years"
       type="number"
       min="0"
       max="30"

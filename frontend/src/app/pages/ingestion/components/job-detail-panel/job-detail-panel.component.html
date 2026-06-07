@@ -1,9 +1,14 @@
-<div class="panel-overlay" (click)="onOverlayClick($event)">
-  <div class="panel">
+<div
+  class="panel-overlay"
+  tabindex="-1"
+  (click)="onOverlayClick($event)"
+  (keydown.escape)="onEscape()"
+>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="job-panel-title">
     <!-- Header -->
     <div class="panel-header">
       <div class="header-text">
-        <h2 class="panel-title">{{ job().title || 'Untitled role' }}</h2>
+        <h2 class="panel-title" id="job-panel-title">{{ job().title || 'Untitled role' }}</h2>
         <p class="panel-company">{{ job().company }}</p>
         <div class="header-chips">
           <span class="chip chip-source">{{ job().source }}</span>
@@ -21,7 +26,7 @@
           }
         </div>
       </div>
-      <button (click)="close.emit()" class="btn-close" aria-label="Close">✕</button>
+      <button (click)="closed.emit()" class="btn-close" aria-label="Close">✕</button>
     </div>
 
     <!-- Scrollable body -->

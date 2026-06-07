@@ -1,7 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ApplicationsService } from '../../core/services/applications.service';
+import { IngestionService } from '../../core/services/ingestion.service';
 
 @Component({
   selector: 'app-optimization',
@@ -10,8 +11,10 @@ import { ApplicationsService } from '../../core/services/applications.service';
   templateUrl: './optimization.component.html',
   styleUrl: './optimization.component.scss',
 })
-export class OptimizationComponent {
+export class OptimizationComponent implements OnInit {
   private service = inject(ApplicationsService);
+  private ingestionService = inject(IngestionService);
+  private route = inject(ActivatedRoute);
   private router = inject(Router);
 
   title = signal('');
@@ -19,6 +22,35 @@ export class OptimizationComponent {
   description = signal('');
   saving = signal(false);
   error = signal('');
+
+  // Set once a job_id query param has been resolved into a pre-filled job, so
+  // the template can render the job-context header and adjusted intro copy.
+  prefilledFromJob = signal(false);
+  // Surfaced when a job_id was supplied but the fetch failed — the form still
+  // works as a manual-entry fallback, we just warn the user it didn't load.
+  prefillNotice = signal('');
+
+  ngOnInit(): void {
+    this.applyJobIdFromQuery();
+  }
+
+  private applyJobIdFromQuery(): void {
+    const jobId = this.route.snapshot.queryParamMap.get('job_id');
+    if (!jobId) return;
+    this.ingestionService.getJob(jobId).subscribe({
+      next: (job) => {
+        this.title.set(job.title);
+        this.company.set(job.company);
+        this.description.set(job.description);
+        this.prefilledFromJob.set(true);
+      },
+      error: () => {
+        this.prefillNotice.set(
+          "We couldn't load that job automatically. Fill in the details below to continue.",
+        );
+      },
+    });
+  }
 
   submit(): void {
     const t = this.title().trim();

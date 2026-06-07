@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -21,15 +22,17 @@ export class LoginComponent {
   onSubmit(): void {
     this.loading.set(true);
     this.error.set('');
-    this.auth.login(this.username(), this.password()).subscribe({
-      next: (res) => {
-        this.auth.setToken(res.access_token);
-        this.router.navigate(['/dashboard']);
-      },
-      error: () => {
-        this.error.set('Invalid credentials');
-        this.loading.set(false);
-      },
-    });
+    this.auth
+      .login(this.username(), this.password())
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: (res) => {
+          this.auth.setToken(res.access_token);
+          this.router.navigate(['/dashboard']);
+        },
+        error: () => {
+          this.error.set('Invalid credentials');
+        },
+      });
   }
 }

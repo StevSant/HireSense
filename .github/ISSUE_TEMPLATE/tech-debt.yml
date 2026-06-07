@@ -1,0 +1,26 @@
+name: Tech debt
+description: Refactor, robustness, or convention cleanup
+title: "tech-debt(scope): "
+labels: ["tech-debt"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What's wrong or fragile today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: How to fix it.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: file:line links, related issues.
+    validations:
+      required: false

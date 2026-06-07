@@ -1,0 +1,33 @@
+name: Feature
+description: New feature or enhancement
+title: "feat(scope): "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What exists today and why this is needed.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What to build and how it fits the architecture/conventions.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Bullet list of verifiable outcomes.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Design docs, file:line links, related issues.
+    validations:
+      required: false

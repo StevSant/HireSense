@@ -29,6 +29,12 @@ services:
     ports:
       - "${APP_PORT:-8000}:8000"
     env_file: ./backend/.env
+    environment:
+      # In-network overrides: .env is host-oriented (localhost); inside the
+      # compose network the app must address services by name.
+      DATABASE_URL: postgresql+asyncpg://hiresense:hiresense@db:5432/hiresense
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4317
+      LOG_FORMAT: json
     depends_on:
       db:
         condition: service_healthy

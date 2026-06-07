@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-import pytest
-
-from hiresense.ingestion.domain.job_filter import JobQueryParams, PaginatedResult, filter_and_paginate
+from hiresense.ingestion.domain.job_filter import JobQueryParams, filter_and_paginate
 from hiresense.ingestion.domain.models import NormalizedJob
 
 
@@ -22,6 +20,8 @@ def _job(
     remote_modality: str | None = None,
     countries: list[str] | None = None,
     status: str = "open",
+    match_score: float | None = None,
+    semantic_score: float | None = None,
 ) -> NormalizedJob:
     return NormalizedJob(
         id=id,
@@ -37,6 +37,8 @@ def _job(
         remote_modality=remote_modality,
         countries=countries or [],
         status=status,
+        match_score=match_score,
+        semantic_score=semantic_score,
     )
 
 
@@ -286,3 +288,36 @@ def test_include_closed_shows_all() -> None:
     jobs = [_job(id="1", status="open"), _job(id="2", status="closed")]
     out = filter_and_paginate(jobs, JobQueryParams(include_closed=True))
     assert out.total == 2
+
+
+def test_min_score_gates_fully_scored_jobs() -> None:
+    """A job with a real (semantic-backed) score below the threshold is culled."""
+    jobs = [
+        _job(id="low", match_score=0.2, semantic_score=0.15),
+        _job(id="high", match_score=0.8, semantic_score=0.9),
+    ]
+    out = filter_and_paginate(jobs, JobQueryParams(min_score=0.5))
+    assert {j.id for j in out.jobs} == {"high"}
+
+
+def test_min_score_exempts_unscored_jobs() -> None:
+    """match_score == None means never-scored: always passes the gate."""
+    jobs = [_job(id="1", match_score=None, semantic_score=None)]
+    out = filter_and_paginate(jobs, JobQueryParams(min_score=0.5))
+    assert out.total == 1
+
+
+def test_min_score_exempts_jobs_without_semantic_score() -> None:
+    """Regression for #39: a low skill-only blend (no semantic score yet) must
+    survive the gate so the page-level semantic pass can rescue it.
+
+    Mirrors a verbose-tag source (e.g. getonboard) whose skill-overlap score is
+    diluted to a low value but whose semantic fit hasn't been computed on the
+    first request after restart / passthrough pre-ranking.
+    """
+    jobs = [
+        _job(id="getonboard", match_score=0.1, semantic_score=None),
+        _job(id="culled", match_score=0.1, semantic_score=0.1),
+    ]
+    out = filter_and_paginate(jobs, JobQueryParams(min_score=0.5))
+    assert {j.id for j in out.jobs} == {"getonboard"}

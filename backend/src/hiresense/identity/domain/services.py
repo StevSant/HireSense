@@ -7,10 +7,11 @@ from jose import JWTError, jwt
 
 
 class AuthService:
-    def __init__(self, username: str, password: str, jwt_secret: str) -> None:
+    def __init__(self, username: str, password: str, jwt_secret: str, role: str = "admin") -> None:
         self._username = username
         self._password = password
         self._jwt_secret = jwt_secret
+        self._role = role
 
     def login(self, username: str, password: str) -> str | None:
         if username == self._username and password == self._password:
@@ -25,4 +26,8 @@ class AuthService:
 
     def _create_token(self, subject: str) -> str:
         expire = datetime.now(timezone.utc) + timedelta(hours=24)
-        return jwt.encode({"sub": subject, "exp": expire}, self._jwt_secret, algorithm="HS256")
+        return jwt.encode(
+            {"sub": subject, "role": self._role, "exp": expire},
+            self._jwt_secret,
+            algorithm="HS256",
+        )

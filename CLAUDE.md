@@ -28,6 +28,16 @@ uv run python -m alembic revision --autogenerate -m "msg"            # new migra
 
 The full test suite runs **without Postgres** — integration tests build the app against in-memory SQLite. Anything that genuinely needs pgvector (ANN search) can only be validated against a live DB (`docker compose up db`).
 
+**pgvector ANN validation (opt-in).** `tests/integration/test_pgvector_ann.py` exercises the real `PgVectorStore` (upsert → ANN `<=>` ranking → `delete` eviction → dimension handling) against the compose Postgres+pgvector DB. These tests are marked `@pytest.mark.pgvector` and are **skipped by default** — the default `uv run python -m pytest` run stays green and DB-free. To run them:
+
+```bash
+docker compose up db                      # start Postgres+pgvector on :5432
+export DATABASE_URL=postgresql+asyncpg://hiresense:hiresense@localhost:5432/hiresense   # PowerShell: $env:DATABASE_URL="..."
+uv run python -m pytest -m pgvector       # collects only the pgvector tests
+```
+
+The opt-in is enforced in `tests/integration/conftest.py`: a collection hook skips any `pgvector`-marked test unless `-m pgvector` is passed, and the fixture skips gracefully (no error) if the DB is unreachable. The fixture creates, truncates, and drops the `vector_embeddings` table itself, sized to `EMBEDDING_DIM`, so the run is self-contained.
+
 ### Frontend (run from `frontend/`)
 
 ```bash

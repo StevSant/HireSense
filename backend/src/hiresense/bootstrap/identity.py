@@ -9,4 +9,5 @@ def build_identity(settings: Settings) -> IdentityProvider:
         username=settings.auth_username,
         password=settings.auth_password,
         jwt_secret=settings.jwt_secret_key,
+        role=settings.auth_role,
     )

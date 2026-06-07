@@ -10,8 +10,10 @@ from hiresense.preference.domain.feedback_kind import FeedbackKind
 from hiresense.preference.domain.feedback_signal import FeedbackSignal
 from hiresense.preference.domain.feedback_source import FeedbackSource
 from hiresense.preference.domain.preference_model import PreferenceModel
+from hiresense.preference.domain.outcome_observation import OutcomeObservation
 from hiresense.preference.domain.signal_contribution import SignalContribution
 from hiresense.preference.domain.taste_calculator import TasteVectorCalculator
+from hiresense.preference.domain.weight_nudge_calculator import WeightNudgeCalculator
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,8 @@ class PreferenceService:
         calculator: TasteVectorCalculator,
         weights: dict[FeedbackKind, float],
         enabled: bool,
+        nudge_calculator: WeightNudgeCalculator | None = None,
+        base_weights: dict[str, int] | None = None,
         llm: Any | None = None,
         explanation_enabled: bool = False,
     ) -> None:
@@ -33,15 +37,28 @@ class PreferenceService:
         self._calc = calculator
         self._weights = weights
         self._enabled = enabled
+        self._nudge_calc = nudge_calculator
+        self._base_weights = dict(base_weights or {})
         self._llm = llm
         self._explanation_enabled = explanation_enabled
         self._job_lookup: Any | None = None
+        self._dimension_lookup: Any | None = None
 
     def attach_job_lookup(self, job_lookup: Any) -> None:
         """Late-bind the job-title lookup used by the LLM explanation summary.
         Two-phase wiring: the ingestion orchestrator is built after the
         preference service, so it is attached once available."""
         self._job_lookup = job_lookup
+
+    def attach_dimension_lookup(self, dimension_lookup: Any) -> None:
+        """Late-bind the per-job dimension-score lookup used to nudge weights.
+
+        Two-phase wiring (mirrors ``attach_job_lookup``): the matching layer is
+        built after the preference service, so the lookup — ``get_dimension_scores(job_id)
+        -> dict[str, float] | None`` over cached match scoring — is attached
+        once available. When absent (or it returns nothing), no observations are
+        produced and ``weight_overrides`` stays empty, so matching is unchanged."""
+        self._dimension_lookup = dimension_lookup
 
     async def _record(
         self, job_id: uuid_mod.UUID, kind: FeedbackKind, source: FeedbackSource
@@ -89,14 +106,54 @@ class PreferenceService:
             return baseline
         return self._calc.blend(baseline, model.delta_vector)
 
+    def weight_overrides(self) -> dict[str, int]:
+        """Per-dimension integer weight deltas for the matching composite.
+
+        Empty when disabled, when no model exists, or when the nudge gate is
+        unmet — making matching byte-identical to today in all those cases."""
+        if not self._enabled:
+            return {}
+        model = self._repo.get_model()
+        if model is None:
+            return {}
+        return dict(model.weight_overrides)
+
+    def weights_view(self) -> list[dict[str, Any]]:
+        """Base + override + effective integer weight per known dimension.
+
+        ``effective = max(0, base + override)`` mirrors the matching composite.
+        Dimensions appearing only in overrides (no configured base) are reported
+        with a base of 0 so the view never silently drops a learned nudge."""
+        overrides = self.weight_overrides()
+        names = list(self._base_weights.keys())
+        for name in overrides:
+            if name not in self._base_weights:
+                names.append(name)
+        view: list[dict[str, Any]] = []
+        for name in names:
+            base = int(self._base_weights.get(name, 0))
+            delta = int(overrides.get(name, 0))
+            view.append(
+                {
+                    "dimension": name,
+                    "base_weight": base,
+                    "override": delta,
+                    "effective_weight": max(0, base + delta),
+                }
+            )
+        return view
+
     def list_signals(self) -> list[FeedbackSignal]:
         return self._repo.list_signals()
 
     async def explain(self) -> PreferenceExplanation:
         model = self._repo.get_model()
         delta = model.delta_vector if model is not None else None
+        overrides = dict(model.weight_overrides) if model is not None else {}
         signals = self._repo.list_signals()
-        explanation = build_explanation(signals, delta_vector=delta)
+        explanation = build_explanation(
+            signals, delta_vector=delta, weight_overrides=overrides
+        )
         if self._explanation_enabled and self._llm is not None:
             summary = await self._build_summary(signals, explanation)
             if summary:
@@ -150,8 +207,17 @@ class PreferenceService:
         self._repo.clear()
 
     def _recompute(self) -> None:
-        signals = [s for s in self._repo.list_signals() if s.job_embedding]
+        all_signals = self._repo.list_signals()
+        signals = [s for s in all_signals if s.job_embedding]
+        overrides = self._compute_overrides(all_signals)
         if not signals:
+            # No embedding-bearing signals -> no taste delta. Still persist the
+            # overrides if any exist (an outcome signal whose job is unindexed
+            # contributes to nudging via its dimension scores, not its vector).
+            if overrides:
+                self._repo.save_model(
+                    PreferenceModel(delta_vector=[], weight_overrides=overrides)
+                )
             return
         # Dimension is taken from the first signal's embedding. If the embedding
         # model's width ever changes mid-corpus, compute_delta skips off-width
@@ -161,7 +227,37 @@ class PreferenceService:
         now = datetime.now(timezone.utc)
         contributions = [self._to_contribution(s, now) for s in signals]
         delta = self._calc.compute_delta(contributions, dim=dim)
-        self._repo.save_model(PreferenceModel(delta_vector=delta))
+        self._repo.save_model(
+            PreferenceModel(delta_vector=delta, weight_overrides=overrides)
+        )
+
+    def _compute_overrides(self, signals: list[FeedbackSignal]) -> dict[str, int]:
+        # Nudging needs both a calculator and a way to recover per-job dimension
+        # scores. Absent either, return no overrides -> matching unchanged.
+        if self._nudge_calc is None or self._dimension_lookup is None:
+            return {}
+        observations: list[OutcomeObservation] = []
+        for signal in signals:
+            scores = self._dimension_scores_for(signal.job_id)
+            if not scores:
+                continue
+            polarity = signal.kind.polarity
+            for dimension, score in scores.items():
+                observations.append(
+                    OutcomeObservation(
+                        dimension=dimension,
+                        dimension_score=float(score),
+                        polarity=polarity,
+                    )
+                )
+        return self._nudge_calc.compute_overrides(observations)
+
+    def _dimension_scores_for(self, job_id: uuid_mod.UUID) -> dict[str, float] | None:
+        try:
+            return self._dimension_lookup.get_dimension_scores(str(job_id))
+        except Exception:
+            logger.exception("preference: dimension-score lookup failed for %s", job_id)
+            return None
 
     def _to_contribution(self, signal: FeedbackSignal, now: datetime) -> SignalContribution:
         created = signal.created_at or now

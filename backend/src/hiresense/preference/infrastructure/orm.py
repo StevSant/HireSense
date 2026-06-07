@@ -34,6 +34,9 @@ class PreferenceModelOrm(Base):
     # Singleton: one row, fixed id. (Multi-profile is a future extension.)
     id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
     delta_vector: Mapped[list] = mapped_column(JSON)
+    # Phase 2: dimension name -> integer weight delta for the matching composite.
+    # Defaults to {} so pre-Phase-2 rows (NULL) read back as "no overrides".
+    weight_overrides: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=dict)
     version: Mapped[int] = mapped_column(Integer, default=1)
     updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

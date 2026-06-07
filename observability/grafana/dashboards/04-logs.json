@@ -1,0 +1,85 @@
+{
+  "uid": "hiresense-logs",
+  "title": "HireSense — Logs",
+  "tags": ["hiresense", "logs", "loki"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "editable": true,
+  "templating": {
+    "list": [
+      {
+        "type": "custom", "name": "level", "label": "Level",
+        "query": ".+,error,warn,info,debug",
+        "includeAll": false, "multi": false,
+        "current": { "text": ".+", "value": ".+" },
+        "options": [
+          { "text": "All", "value": ".+", "selected": true },
+          { "text": "error", "value": "error" },
+          { "text": "warn", "value": "warn" },
+          { "text": "info", "value": "info" },
+          { "text": "debug", "value": "debug" }
+        ]
+      },
+      {
+        "type": "textbox", "name": "search", "label": "Search",
+        "query": "", "current": { "text": "", "value": "" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Errors (range)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } },
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "colorMode": "background", "graphMode": "area" },
+      "targets": [{ "refId": "A", "expr": "sum(count_over_time({service_name=\"hiresense-backend\"} | detected_level=\"error\" [$__auto]))" }]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Warnings (range)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }] } } },
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "colorMode": "background", "graphMode": "area" },
+      "targets": [{ "refId": "A", "expr": "sum(count_over_time({service_name=\"hiresense-backend\"} | detected_level=\"warn\" [$__auto]))" }]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Total log lines (range)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 4, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } } },
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "colorMode": "value", "graphMode": "area" },
+      "targets": [{ "refId": "A", "expr": "sum(count_over_time({service_name=\"hiresense-backend\"} [$__auto]))" }]
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Log volume by level",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 70, "stacking": { "mode": "normal" } } }, "overrides": [
+        { "matcher": { "id": "byName", "options": "error" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+        { "matcher": { "id": "byName", "options": "warn" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
+        { "matcher": { "id": "byName", "options": "info" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+        { "matcher": { "id": "byName", "options": "debug" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }] }
+      ] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "refId": "A", "expr": "sum by (detected_level) (count_over_time({service_name=\"hiresense-backend\"} [$__auto]))", "legendFormat": "{{detected_level}}" }]
+    },
+    {
+      "id": 5, "type": "logs", "title": "Errors & warnings",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 12 },
+      "options": { "showTime": true, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" },
+      "targets": [{ "refId": "A", "expr": "{service_name=\"hiresense-backend\"} | detected_level=~\"error|warn\" |~ \"$search\"" }]
+    },
+    {
+      "id": 6, "type": "logs", "title": "All logs (filterable)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 22 },
+      "options": { "showTime": true, "wrapLogMessage": true, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending" },
+      "targets": [{ "refId": "A", "expr": "{service_name=\"hiresense-backend\"} | detected_level=~\"$level\" |~ \"$search\"" }]
+    }
+  ]
+}

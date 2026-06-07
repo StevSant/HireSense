@@ -59,4 +59,9 @@ export class ApplicationCreateDialogComponent {
       this.closed.emit();
     }
   }
+
+  /** Dismiss the dialog with the Escape key for keyboard accessibility. */
+  onEscape(): void {
+    this.closed.emit();
+  }
 }

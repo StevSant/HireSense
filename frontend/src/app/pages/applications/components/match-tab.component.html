@@ -1,7 +1,7 @@
 <div class="match-tab">
   <div class="controls">
-    <label>CV language:</label>
-    <select [value]="cvLanguage()" (change)="onLangChange($event)">
+    <label for="match-tab-language">CV language:</label>
+    <select id="match-tab-language" [value]="cvLanguage()" (change)="onLangChange($event)">
       <option value="en">English</option>
       <option value="es">Spanish</option>
     </select>

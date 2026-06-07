@@ -23,6 +23,9 @@ services:
       - "4318:4318"   # OTLP HTTP
     volumes:
       - lgtm:/data
+      # HireSense Grafana dashboards (provisioned, read-only mounts).
+      - ./observability/grafana/provisioning/dashboards/hiresense.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/hiresense.yaml:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards/hiresense:ro
 
   app:
     build: ./backend

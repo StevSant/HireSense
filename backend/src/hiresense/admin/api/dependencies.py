@@ -5,7 +5,7 @@ from fastapi import Depends, Request
 from hiresense.admin.api.provider import AdminProvider
 from hiresense.admin.domain.llm_settings_service import LLMSettingsService
 from hiresense.admin.domain.usage_aggregator import UsageAggregator
-from hiresense.identity.api.dependencies import require_auth
+from hiresense.identity.api.dependencies import require_admin
 
 
 def _get_provider(request: Request) -> AdminProvider:
@@ -27,7 +27,11 @@ def get_usage_aggregator(
     return provider.get_usage_aggregator()
 
 
-# Single-user system: the only authenticated principal IS the admin.
-# When proper RBAC lands, swap this for a role check; the rest of the
-# admin routes already depend on this name.
-require_admin = require_auth
+# Admin gate (#38): re-exported from identity so the admin routers keep
+# depending on this stable name, now enforcing the token's "role" claim
+# (403 for non-admin, 401 for an invalid token).
+__all__ = [
+    "get_llm_settings_service",
+    "get_usage_aggregator",
+    "require_admin",
+]

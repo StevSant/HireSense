@@ -3,21 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CandidateProfile } from '../../pages/profile/models/candidate-profile.model';
-
-export interface UploadCVRequest {
-  tex_content: string;
-  language: string;
-}
-
-export interface ProfileManualFieldsUpdate {
-  name?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  location?: string | null;
-  linkedin_url?: string | null;
-  github_url?: string | null;
-  portfolio_url?: string | null;
-}
+import { ProfileManualFieldsUpdate } from '../../pages/profile/models/profile-manual-fields-update.model';
+import { UploadCVRequest } from '../../pages/profile/models/upload-cv-request.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProfileService {

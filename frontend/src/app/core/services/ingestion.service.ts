@@ -4,27 +4,12 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { FetchResponse } from '../../pages/ingestion/models/fetch-response.model';
 import { JobAnalysis } from '../../pages/ingestion/models/job-analysis.model';
+import { JobFilters } from '../../pages/ingestion/models/job-filters.model';
 import { NormalizedJob } from '../../pages/ingestion/models/normalized-job.model';
 import { PaginatedJobsResponse } from '../../pages/ingestion/models/paginated-jobs-response.model';
 import { PortalEntry } from '../../pages/ingestion/models/portal-entry.model';
 import { ScanPortalsRequest } from '../../pages/ingestion/models/scan-portals-request.model';
 import { ScanResult } from '../../pages/ingestion/models/scan-result.model';
-
-export type SeniorityLevel = 'intern' | 'junior' | 'mid' | 'senior' | 'lead' | 'unknown';
-
-export interface JobFilters {
-  source?: string;
-  keyword?: string;
-  location?: string;
-  skills?: string;
-  date_from?: string;
-  date_to?: string;
-  user_location?: string;
-  strict_location?: boolean;
-  sort?: 'match_desc' | 'date_desc';
-  seniority?: SeniorityLevel[];
-  max_years_experience?: number;
-}
 
 @Injectable({ providedIn: 'root' })
 export class IngestionService {

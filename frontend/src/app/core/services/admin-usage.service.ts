@@ -5,17 +5,9 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { BreakdownResponse } from '../../pages/admin/models/breakdown-response.model';
 import { DashboardSummary } from '../../pages/admin/models/dashboard-summary.model';
+import { RecentCallsFilters } from '../../pages/admin/models/recent-calls-filters.model';
 import { RecentCallsResponse } from '../../pages/admin/models/recent-calls-response.model';
 import { TimeseriesResponse } from '../../pages/admin/models/timeseries-response.model';
-
-export interface RecentCallsFilters {
-  limit?: number;
-  offset?: number;
-  provider?: string;
-  model?: string;
-  feature_key?: string;
-  days?: number;
-}
 
 @Injectable({ providedIn: 'root' })
 export class AdminUsageService {

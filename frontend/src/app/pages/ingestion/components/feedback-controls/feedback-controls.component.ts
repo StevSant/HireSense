@@ -26,10 +26,10 @@ export class FeedbackControlsComponent {
   failed = signal(false);
 
   readonly controls: FeedbackControl[] = [
-    { kind: 'thumbs_up', icon: '👍', label: 'More relevant' },
-    { kind: 'thumbs_down', icon: '👎', label: 'Less relevant' },
-    { kind: 'not_interested', icon: '🚫', label: 'Not interested' },
-    { kind: 'more_like_this', icon: '✨', label: 'More like this' },
+    { kind: 'thumbs_up', icon: 'thumb-up', label: 'More relevant' },
+    { kind: 'thumbs_down', icon: 'thumb-down', label: 'Less relevant' },
+    { kind: 'not_interested', icon: 'ban', label: 'Not interested' },
+    { kind: 'more_like_this', icon: 'sparkle', label: 'More like this' },
   ];
 
   submit(kind: FeedbackKind): void {

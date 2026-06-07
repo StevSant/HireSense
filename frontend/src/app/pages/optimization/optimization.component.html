@@ -1,9 +1,28 @@
 <div class="page">
   <h1>CV Optimization</h1>
-  <p class="hint">
-    Paste a job description below. We'll create an application, extract required skills,
-    and take you to the CV tab where you can run the optimization and download a tailored PDF.
-  </p>
+
+  @if (prefilledFromJob()) {
+    <div class="job-context">
+      <span class="job-context-label">Optimizing for</span>
+      <span class="job-context-title">{{ title() }}</span>
+      @if (company()) {
+        <span class="job-context-company">@ {{ company() }}</span>
+      }
+    </div>
+    <p class="hint">
+      We pre-filled this job's details below. Review them, then continue to the CV tab to
+      run the optimization and download a tailored PDF.
+    </p>
+  } @else {
+    <p class="hint">
+      Paste a job description below. We'll create an application, extract required skills,
+      and take you to the CV tab where you can run the optimization and download a tailored PDF.
+    </p>
+  }
+
+  @if (prefillNotice()) {
+    <div class="alert alert-warning">{{ prefillNotice() }}</div>
+  }
 
   <div class="form">
     <div class="field">

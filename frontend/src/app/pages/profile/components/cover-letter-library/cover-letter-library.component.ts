@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApplicationsService } from '../../../../core/services/applications.service';
@@ -15,6 +16,7 @@ import { CoverLetterLibraryItem } from '../../../applications/models/cover-lette
 })
 export class CoverLetterLibraryComponent implements OnInit {
   private service = inject(ApplicationsService);
+  private readonly destroyRef = inject(DestroyRef);
 
   letters = signal<CoverLetterLibraryItem[]>([]);
   loading = signal(true);
@@ -36,7 +38,7 @@ export class CoverLetterLibraryComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.service.listAllCoverLetters().subscribe({
+    this.service.listAllCoverLetters().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (list) => {
         this.letters.set(list);
         this.loading.set(false);

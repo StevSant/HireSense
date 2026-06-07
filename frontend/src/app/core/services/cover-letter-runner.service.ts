@@ -1,8 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Subject } from 'rxjs';
+import { CoverLetterTone } from '../../pages/applications/models/cover-letter-tone.model';
 import { ApplicationsService } from './applications.service';
-
-export type CoverLetterTone = 'professional' | 'enthusiastic' | 'concise';
 
 /**
  * Long-lived coordinator for cover-letter generation runs.

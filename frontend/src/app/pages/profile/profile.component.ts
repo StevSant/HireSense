@@ -1,4 +1,5 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ProfileService } from '../../core/services/profile.service';
@@ -26,6 +27,7 @@ type ProfilePageTab = 'cv' | 'personal' | 'cover-letters';
 })
 export class ProfileComponent implements OnInit {
   private profileService = inject(ProfileService);
+  private readonly destroyRef = inject(DestroyRef);
 
   pageTab = signal<ProfilePageTab>('cv');
   uploadMode = signal<'upload' | 'paste'>('upload');
@@ -46,11 +48,11 @@ export class ProfileComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
-    this.profileService.listProfiles().subscribe({
+    this.profileService.listProfiles().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.initialLoading.set(false),
       error: () => {
         // Fallback to single profile fetch
-        this.profileService.getCurrentProfile().subscribe({
+        this.profileService.getCurrentProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
           next: () => this.initialLoading.set(false),
           error: () => this.initialLoading.set(false),
         });
@@ -118,7 +120,7 @@ export class ProfileComponent implements OnInit {
     if (!file) return;
     this.loading.set(true);
     this.error.set('');
-    this.profileService.uploadFile(file, this.language()).subscribe({
+    this.profileService.uploadFile(file, this.language()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.loading.set(false);
         this.showUploadForm.set(false);
@@ -140,6 +142,7 @@ export class ProfileComponent implements OnInit {
         tex_content: this.texContent(),
         language: this.language(),
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.loading.set(false);

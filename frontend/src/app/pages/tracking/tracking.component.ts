@@ -1,4 +1,5 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TitleCasePipe, DatePipe } from '@angular/common';
@@ -49,6 +50,8 @@ export class TrackingComponent implements OnInit {
     'rejected',
   ];
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(
     private trackingService: TrackingService,
     private researchService: ResearchService,
@@ -62,7 +65,7 @@ export class TrackingComponent implements OnInit {
     this.loading.set(true);
     this.error.set('');
     const filter = this.statusFilter();
-    this.trackingService.list(filter || undefined).subscribe({
+    this.trackingService.list(filter || undefined).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (apps) => {
         this.applications.set(apps);
         this.loading.set(false);
@@ -102,7 +105,7 @@ export class TrackingComponent implements OnInit {
     const notes = this.newNotes().trim();
     if (notes) body.notes = notes;
 
-    this.trackingService.create(body).subscribe({
+    this.trackingService.create(body).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (app) => {
         this.applications.update((list) => [app, ...list]);
         this.adding.set(false);
@@ -120,7 +123,7 @@ export class TrackingComponent implements OnInit {
     const select = event.target as HTMLSelectElement;
     const newStatus = select.value as ApplicationStatus;
     const body: UpdateApplicationRequest = { status: newStatus };
-    this.trackingService.update(app.id, body).subscribe({
+    this.trackingService.update(app.id, body).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (updated) => {
         this.applications.update((list) =>
           list.map((a) => (a.id === updated.id ? updated : a)),
@@ -134,7 +137,7 @@ export class TrackingComponent implements OnInit {
   }
 
   deleteApplication(id: string): void {
-    this.trackingService.delete(id).subscribe({
+    this.trackingService.delete(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.applications.update((list) => list.filter((a) => a.id !== id));
       },
@@ -150,7 +153,7 @@ export class TrackingComponent implements OnInit {
     this.evaluating.set(true);
     this.leaderboard.set([]);
     const ids = apps.map((a) => a.id);
-    this.trackingService.batchEvaluate(ids).subscribe({
+    this.trackingService.batchEvaluate(ids).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (res) => {
         this.leaderboard.set(res.results);
         this.evaluating.set(false);
@@ -189,6 +192,7 @@ export class TrackingComponent implements OnInit {
         company_name: app.company,
         job_description: app.notes || '',
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
           this.researchCache.update((cache) => ({ ...cache, [app.id]: res }));
@@ -209,6 +213,7 @@ export class TrackingComponent implements OnInit {
         company_name: app.company,
         job_description: app.notes || '',
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
           this.researchCache.update((cache) => ({ ...cache, [app.id]: res }));

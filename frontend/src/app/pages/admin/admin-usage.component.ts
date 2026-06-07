@@ -1,4 +1,5 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -46,6 +47,8 @@ export class AdminUsageComponent implements OnInit {
     return Math.max(0.0001, ...buckets.map((b) => b.cost_usd));
   });
 
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(private api: AdminUsageService) {}
 
   ngOnInit(): void {
@@ -55,7 +58,7 @@ export class AdminUsageComponent implements OnInit {
   refresh(): void {
     this.loading.set(true);
     this.error.set('');
-    this.api.summary().subscribe({
+    this.api.summary().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (s) => this.summary.set(s),
       error: (err) => this.error.set(err?.error?.detail ?? 'Failed to load summary'),
     });
@@ -76,7 +79,7 @@ export class AdminUsageComponent implements OnInit {
   }
 
   private loadTimeseries(): void {
-    this.api.timeseries(this.rangeDays()).subscribe({
+    this.api.timeseries(this.rangeDays()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (ts) => {
         this.timeseries.set(ts);
         this.loading.set(false);
@@ -89,7 +92,7 @@ export class AdminUsageComponent implements OnInit {
   }
 
   private loadBreakdown(): void {
-    this.api.breakdown(this.dimension(), this.rangeDays()).subscribe({
+    this.api.breakdown(this.dimension(), this.rangeDays()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (b) => this.breakdown.set(b),
       error: (err) => this.error.set(err?.error?.detail ?? 'Failed to load breakdown'),
     });
@@ -104,6 +107,7 @@ export class AdminUsageComponent implements OnInit {
         model: this.filterModel() || undefined,
         feature_key: this.filterFeature() || undefined,
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (r) => this.recent.set(r),
         error: (err) => this.error.set(err?.error?.detail ?? 'Failed to load calls'),

@@ -2,10 +2,12 @@ import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { CoverLetterTemplatesService } from '../../../../core/services/cover-letter-templates.service';
 import { CoverLetterTemplate } from '../../models/cover-letter-template.model';
@@ -31,6 +33,7 @@ const BLANK_FORM = {
 })
 export class CoverLetterTemplatesComponent implements OnInit {
   private service = inject(CoverLetterTemplatesService);
+  private readonly destroyRef = inject(DestroyRef);
 
   templates = signal<CoverLetterTemplate[]>([]);
   loading = signal(true);
@@ -46,7 +49,7 @@ export class CoverLetterTemplatesComponent implements OnInit {
 
   refresh(): void {
     this.loading.set(true);
-    this.service.list().subscribe({
+    this.service.list().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (list) => {
         this.templates.set(list);
         this.loading.set(false);
@@ -108,7 +111,7 @@ export class CoverLetterTemplatesComponent implements OnInit {
       state.mode === 'new'
         ? this.service.create(payload)
         : this.service.update(state.id, payload);
-    obs.subscribe({
+    obs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.saving.set(false);
         this.editing.set({ mode: 'closed' });
@@ -125,7 +128,7 @@ export class CoverLetterTemplatesComponent implements OnInit {
     const ok = window.confirm(`Delete template "${template.name}"?`);
     if (!ok) return;
     this.deletingId.set(template.id);
-    this.service.remove(template.id).subscribe({
+    this.service.remove(template.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.deletingId.set(null);
         this.refresh();

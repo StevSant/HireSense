@@ -1,4 +1,5 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { CvOptimizationRunnerService } from '../../../core/services/cv-optimization-runner.service';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
@@ -14,6 +15,7 @@ type ViewMode = 'changes' | 'full';
 export class CvTabComponent {
   private service = inject(ApplicationsService);
   private runner = inject(CvOptimizationRunnerService);
+  private readonly destroyRef = inject(DestroyRef);
 
   aggregate = input.required<ApplicationAggregate>();
   changed = output<void>();
@@ -66,7 +68,7 @@ export class CvTabComponent {
   downloadPdf(): void {
     this.downloadingPdf.set(true);
     this.downloadError.set('');
-    this.service.downloadCvPdf(this.aggregate().id).subscribe({
+    this.service.downloadCvPdf(this.aggregate().id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -87,7 +89,7 @@ export class CvTabComponent {
   downloadOriginalPdf(): void {
     this.downloadingOriginal.set(true);
     this.downloadError.set('');
-    this.service.downloadOriginalCvPdf(this.aggregate().id, this.cvLanguage()).subscribe({
+    this.service.downloadOriginalCvPdf(this.aggregate().id, this.cvLanguage()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

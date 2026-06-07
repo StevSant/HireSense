@@ -1,11 +1,13 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   effect,
   inject,
   input,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { CandidateProfile } from '../../models/candidate-profile.model';
 import { ManualFieldsFormState } from '../../models/manual-fields-form-state.model';
@@ -44,6 +46,7 @@ function snapshot(profile: CandidateProfile): ManualFieldsFormState {
 })
 export class ManualFieldsFormComponent {
   private profileService = inject(ProfileService);
+  private readonly destroyRef = inject(DestroyRef);
 
   profile = input.required<CandidateProfile>();
 
@@ -96,7 +99,7 @@ export class ManualFieldsFormComponent {
     }
     this.saving.set(true);
     this.error.set('');
-    this.profileService.updateManualFields(this.profile().id, update).subscribe({
+    this.profileService.updateManualFields(this.profile().id, update).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (saved) => {
         this.saving.set(false);
         const snap = snapshot(saved);

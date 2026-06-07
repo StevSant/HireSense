@@ -73,7 +73,7 @@ export class ApplicationDetailComponent implements OnInit {
   load(id: string): void {
     this.loading.set(true);
     this.error.set('');
-    this.service.get(id).subscribe({
+    this.service.get(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (agg) => {
         this.aggregate.set(agg);
         this.loading.set(false);
@@ -114,7 +114,7 @@ export class ApplicationDetailComponent implements OnInit {
     }
     this.deleting.set(true);
     this.error.set('');
-    this.service.remove(agg.id).subscribe({
+    this.service.remove(agg.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.deleting.set(false);
         this.router.navigate(['/dashboard/applications']);

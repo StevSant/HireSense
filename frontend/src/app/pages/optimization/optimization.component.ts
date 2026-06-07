@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApplicationsService } from '../../core/services/applications.service';
@@ -16,6 +17,7 @@ export class OptimizationComponent implements OnInit {
   private ingestionService = inject(IngestionService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   title = signal('');
   company = signal('');
@@ -37,19 +39,22 @@ export class OptimizationComponent implements OnInit {
   private applyJobIdFromQuery(): void {
     const jobId = this.route.snapshot.queryParamMap.get('job_id');
     if (!jobId) return;
-    this.ingestionService.getJob(jobId).subscribe({
-      next: (job) => {
-        this.title.set(job.title);
-        this.company.set(job.company);
-        this.description.set(job.description);
-        this.prefilledFromJob.set(true);
-      },
-      error: () => {
-        this.prefillNotice.set(
-          "We couldn't load that job automatically. Fill in the details below to continue.",
-        );
-      },
-    });
+    this.ingestionService
+      .getJob(jobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (job) => {
+          this.title.set(job.title);
+          this.company.set(job.company);
+          this.description.set(job.description);
+          this.prefilledFromJob.set(true);
+        },
+        error: () => {
+          this.prefillNotice.set(
+            "We couldn't load that job automatically. Fill in the details below to continue.",
+          );
+        },
+      });
   }
 
   submit(): void {
@@ -64,6 +69,7 @@ export class OptimizationComponent implements OnInit {
     this.error.set('');
     this.service
       .createManual({ title: t, company: c, description: d })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (agg) => {
           this.router.navigate(['/dashboard/applications', agg.id], {

@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TitleCasePipe } from '@angular/common';
@@ -55,6 +56,7 @@ export class InterviewComponent implements OnInit {
 
   private ingestionService = inject(IngestionService);
   private route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(private interviewService: InterviewService) {}
 
@@ -66,7 +68,7 @@ export class InterviewComponent implements OnInit {
   private applyJobIdFromQuery(): void {
     const jobId = this.route.snapshot.queryParamMap.get('job_id');
     if (!jobId) return;
-    this.ingestionService.getJob(jobId).subscribe({
+    this.ingestionService.getJob(jobId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (job) => {
         this.prepJobTitle.set(job.title);
         this.prepCompany.set(job.company);
@@ -79,7 +81,7 @@ export class InterviewComponent implements OnInit {
   loadStories(): void {
     this.storiesLoading.set(true);
     this.storiesError.set('');
-    this.interviewService.listStories().subscribe({
+    this.interviewService.listStories().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (stories) => {
         this.stories.set(stories);
         this.storiesLoading.set(false);
@@ -121,7 +123,7 @@ export class InterviewComponent implements OnInit {
     const tags = this.newTags().trim();
     if (tags) body['tags'] = tags;
 
-    this.interviewService.createStory(body).subscribe({
+    this.interviewService.createStory(body).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (story) => {
         this.stories.update((list) => [story, ...list]);
         this.addingStory.set(false);
@@ -136,7 +138,7 @@ export class InterviewComponent implements OnInit {
   }
 
   deleteStory(id: string): void {
-    this.interviewService.deleteStory(id).subscribe({
+    this.interviewService.deleteStory(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.stories.update((list) => list.filter((s) => s.id !== id));
       },
@@ -159,6 +161,7 @@ export class InterviewComponent implements OnInit {
 
     this.interviewService
       .prepare({ job_title, company, description })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (prep) => {
           this.prepResult.set(prep);

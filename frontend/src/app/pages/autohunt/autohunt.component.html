@@ -1,0 +1,125 @@
+<div class="page">
+  <h1>Auto-Hunt</h1>
+  <p class="hint">
+    Periodic digests of the strongest new taste-ranked matches. Runs are scheduled via cron — trigger
+    one manually below to see what's new right now.
+  </p>
+
+  <!-- Latest digest hero -->
+  <section class="card hero">
+    <div class="hero-head">
+      <h2>Latest digest</h2>
+      <button class="btn-primary" (click)="run()" [disabled]="running()">
+        @if (running()) { Running… } @else { Run now }
+      </button>
+    </div>
+
+    @if (runError()) {
+      <div class="alert alert-error">{{ runError() }}</div>
+    }
+
+    @if (latestError()) {
+      <div class="alert alert-error">{{ latestError() }}</div>
+    } @else if (latestLoading()) {
+      <p class="muted">Loading…</p>
+    } @else if (latestDigest(); as digest) {
+      <p class="summary">
+        <strong>{{ digest.job_count }}</strong>
+        {{ digest.job_count === 1 ? 'new match' : 'new matches' }}
+        since {{ digest.cutoff_at }}
+        @if (digest.created_at) {
+          <span class="run-time">· run {{ digest.created_at }}</span>
+        }
+      </p>
+
+      @if (digest.entries.length === 0) {
+        <p class="muted empty">This digest has no entries.</p>
+      } @else {
+        <ul class="entries">
+          @for (entry of digest.entries; track entry.job_id) {
+            <li class="entry-row">
+              <div class="entry-main">
+                <span class="entry-title">{{ entry.title }}</span>
+                <span class="entry-company">@ {{ entry.company }}</span>
+              </div>
+              <div class="entry-actions">
+                <span class="score-badge">{{ scorePercent(entry.score) }}%</span>
+                @if (entry.url) {
+                  <a class="link" [href]="entry.url" target="_blank" rel="noopener">View posting</a>
+                }
+                <a
+                  class="link"
+                  routerLink="/dashboard/optimization"
+                  [queryParams]="{ job_id: entry.job_id }"
+                >
+                  Optimize CV
+                </a>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    } @else {
+      <p class="muted empty">
+        No digests yet — runs are scheduled via cron, or trigger one now.
+      </p>
+    }
+  </section>
+
+  <!-- History -->
+  <section class="card">
+    <h2>History</h2>
+    @if (historyError()) {
+      <div class="alert alert-error">{{ historyError() }}</div>
+    } @else if (historyLoading()) {
+      <p class="muted">Loading…</p>
+    } @else if (history().length === 0) {
+      <p class="muted empty">No past digests yet.</p>
+    } @else {
+      <ul class="history">
+        @for (digest of history(); track digest.id) {
+          <li class="history-row">
+            <button class="history-head" (click)="toggleExpanded(digest.id)">
+              <span class="history-date">{{ digest.created_at ?? digest.cutoff_at }}</span>
+              <span class="history-count">
+                {{ digest.job_count }} {{ digest.job_count === 1 ? 'match' : 'matches' }}
+              </span>
+              <span class="chevron">{{ expandedId() === digest.id ? '▾' : '▸' }}</span>
+            </button>
+            @if (expandedId() === digest.id) {
+              @if (digest.entries.length === 0) {
+                <p class="muted empty">No entries in this digest.</p>
+              } @else {
+                <ul class="entries">
+                  @for (entry of digest.entries; track entry.job_id) {
+                    <li class="entry-row">
+                      <div class="entry-main">
+                        <span class="entry-title">{{ entry.title }}</span>
+                        <span class="entry-company">@ {{ entry.company }}</span>
+                      </div>
+                      <div class="entry-actions">
+                        <span class="score-badge">{{ scorePercent(entry.score) }}%</span>
+                        @if (entry.url) {
+                          <a class="link" [href]="entry.url" target="_blank" rel="noopener">
+                            View posting
+                          </a>
+                        }
+                        <a
+                          class="link"
+                          routerLink="/dashboard/optimization"
+                          [queryParams]="{ job_id: entry.job_id }"
+                        >
+                          Optimize CV
+                        </a>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              }
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>

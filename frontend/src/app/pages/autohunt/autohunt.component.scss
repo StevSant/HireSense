@@ -1,0 +1,180 @@
+.page {
+  max-width: 800px;
+}
+
+.hint {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.1em;
+  }
+}
+
+.hero-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.summary {
+  margin: 0.5rem 0 1rem;
+  color: #374151;
+
+  strong {
+    color: #111827;
+  }
+
+  .run-time {
+    color: #9ca3af;
+    font-size: 0.9em;
+  }
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 16px;
+  font-size: 0.95em;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.muted {
+  color: #6b7280;
+}
+
+.empty {
+  font-style: italic;
+}
+
+.alert {
+  padding: 0.6rem 0.85rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9em;
+
+  &.alert-error {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+  }
+}
+
+.entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.entry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid #f3f4f6;
+
+  &:first-child {
+    border-top: none;
+  }
+}
+
+.entry-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.entry-title {
+  font-weight: 600;
+  color: #111827;
+}
+
+.entry-company {
+  color: #6b7280;
+  font-size: 0.9em;
+}
+
+.entry-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.score-badge {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.link {
+  color: #2563eb;
+  text-decoration: none;
+  font-size: 0.9em;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.history-row {
+  border-top: 1px solid #f3f4f6;
+
+  &:first-child {
+    border-top: none;
+  }
+}
+
+.history-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.75rem 0;
+  cursor: pointer;
+  font-size: 0.95em;
+  text-align: left;
+
+  .history-date {
+    flex: 1;
+    color: #374151;
+  }
+
+  .history-count {
+    color: #6b7280;
+  }
+
+  .chevron {
+    color: #9ca3af;
+  }
+}

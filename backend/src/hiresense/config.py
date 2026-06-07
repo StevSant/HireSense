@@ -253,6 +253,15 @@ class Settings(BaseSettings):
     # Phase 2: layer an LLM-phrased natural-language drift summary over the
     # deterministic explanation. Falls back to summary=None on any LLM failure.
     preference_explanation_enabled: bool = True
+    # Phase 2 dimension-weight nudging (preference -> matching composite).
+    # Gate: minimum number of outcome-bearing signals before any nudge applies.
+    # Below this, all overrides are zero and scoring is identical to today.
+    preference_nudge_min_outcomes: int = 5
+    # Hard clamp on the per-dimension integer weight delta (absolute bound).
+    preference_nudge_clamp: int = 3
+    # Scale factor mapping a dimension's [-1, 1] outcome correlation to an
+    # integer delta before clamping (delta = round(correlation * scale)).
+    preference_nudge_scale: float = 5.0
 
     # --- Analytics dashboard (read-only corpus/funnel aggregation) ---
     # TTL (seconds) for the heavy on-read results (salary distribution, target band).

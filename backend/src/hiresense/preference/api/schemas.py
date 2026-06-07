@@ -22,3 +22,10 @@ class FeedbackSignalResponse(BaseModel):
     created_at: datetime | None = None
 
     model_config = {"from_attributes": True}
+
+
+class DimensionWeightResponse(BaseModel):
+    dimension: str
+    base_weight: int
+    override: int
+    effective_weight: int

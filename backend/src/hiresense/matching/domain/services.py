@@ -42,11 +42,16 @@ class MatchingOrchestrator:
         event_bus: Any,
         dimension_scorers: list[Any] | None = None,
         embedding: Any | None = None,
+        preference: Any | None = None,
     ) -> None:
         self._llm = llm
         self._event_bus = event_bus
         self._dimension_scorers = dimension_scorers or []
         self._embedding = embedding
+        # Optional, duck-typed preference port: exposes weight_overrides() ->
+        # {dimension: int delta}. None (or no overrides) => composite is computed
+        # exactly as before, so scoring/ranking are byte-identical to today.
+        self._preference = preference
         self._semantic_scorer = SemanticScorer()
         self._skill_matcher = SkillMatcher()
 
@@ -66,8 +71,14 @@ class MatchingOrchestrator:
 
                 results = await asyncio.gather(*[safe_score(s) for s in scorers])
                 dimensions = list(results)
-                total_weight = sum(d.weight for d in dimensions)
-                composite = sum(d.score * d.weight for d in dimensions) / total_weight if total_weight > 0 else 0.5
+                overrides = self._weight_overrides()
+                effective = {d.dimension: self._effective_weight(d, overrides) for d in dimensions}
+                total_weight = sum(effective.values())
+                composite = (
+                    sum(d.score * effective[d.dimension] for d in dimensions) / total_weight
+                    if total_weight > 0
+                    else 0.5
+                )
 
                 result = EvaluationResult(composite_score=round(composite, 4), job_title=title, company=company, dimensions=dimensions)
                 _metrics.matches_completed_total.add(1)
@@ -78,6 +89,28 @@ class MatchingOrchestrator:
             except Exception:
                 span.set_status(trace.Status(trace.StatusCode.ERROR))
                 raise
+
+    def _weight_overrides(self) -> dict[str, int]:
+        # Read learned per-dimension weight deltas from the optional preference
+        # port. Any failure (or no port) yields no overrides, so the composite
+        # falls back to base weights and stays identical to today's behavior.
+        if self._preference is None:
+            return {}
+        try:
+            return self._preference.weight_overrides() or {}
+        except Exception:
+            logger.exception("matching: weight_overrides lookup failed — using base weights")
+            return {}
+
+    @staticmethod
+    def _effective_weight(dimension: DimensionResult, overrides: dict[str, int]) -> int:
+        # clamp(base + delta) with a floor of 0: a learned nudge can lower a
+        # dimension to zero influence but never make it negative. With no delta
+        # for this dimension the base weight is returned unchanged.
+        delta = overrides.get(dimension.dimension, 0)
+        if delta == 0:
+            return dimension.weight
+        return max(0, dimension.weight + delta)
 
     async def analyze(
         self,

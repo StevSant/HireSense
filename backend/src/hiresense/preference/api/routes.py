@@ -4,7 +4,11 @@ from fastapi import APIRouter, Depends, Response
 
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.preference.api.dependencies import get_preference_service
-from hiresense.preference.api.schemas import FeedbackRequest, FeedbackSignalResponse
+from hiresense.preference.api.schemas import (
+    DimensionWeightResponse,
+    FeedbackRequest,
+    FeedbackSignalResponse,
+)
 from hiresense.preference.domain import PreferenceService
 from hiresense.preference.domain.explanation import PreferenceExplanation
 
@@ -32,6 +36,13 @@ async def explain(
     service: PreferenceService = Depends(get_preference_service),
 ) -> PreferenceExplanation:
     return await service.explain()
+
+
+@router.get("/weights", response_model=list[DimensionWeightResponse])
+def weights(
+    service: PreferenceService = Depends(get_preference_service),
+) -> list[DimensionWeightResponse]:
+    return [DimensionWeightResponse.model_validate(w) for w in service.weights_view()]
 
 
 @router.post("/reset", status_code=204)

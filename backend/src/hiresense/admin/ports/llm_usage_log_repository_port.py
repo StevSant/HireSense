@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from hiresense.admin.infrastructure import LLMUsageLog, UsageBucket, UsageTotals
+    from hiresense.admin.domain import UsageBucket, UsageRecord, UsageTotals
 
 
 class LLMUsageLogRepositoryPort(Protocol):
@@ -42,4 +42,4 @@ class LLMUsageLogRepositoryPort(Protocol):
         feature_key: str | None = None,
         since: datetime | None = None,
         until: datetime | None = None,
-    ) -> list[LLMUsageLog]: ...
+    ) -> list[UsageRecord]: ...

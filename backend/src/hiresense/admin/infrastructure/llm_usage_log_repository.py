@@ -1,33 +1,30 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Float, Integer, String, and_, cast, func, select
+from sqlalchemy import String, and_, cast, func, select
 
+from hiresense.admin.domain import UsageBucket, UsageRecord, UsageTotals
 from hiresense.admin.infrastructure.llm_usage_log_model import LLMUsageLog
 
 
-@dataclass(frozen=True)
-class UsageTotals:
-    total_calls: int
-    total_input_tokens: int
-    total_output_tokens: int
-    total_tokens: int
-    total_cost_usd: float
-
-
-@dataclass(frozen=True)
-class UsageBucket:
-    """One row of a grouped/aggregated usage query (timeseries or breakdown)."""
-
-    key: str
-    calls: int
-    input_tokens: int
-    output_tokens: int
-    total_tokens: int
-    cost_usd: float
+def _to_domain(row: LLMUsageLog) -> UsageRecord:
+    return UsageRecord(
+        feature_key=row.feature_key,
+        provider=row.provider,
+        model=row.model,
+        input_tokens=row.input_tokens,
+        output_tokens=row.output_tokens,
+        total_tokens=row.total_tokens,
+        cost_usd=row.cost_usd,
+        latency_ms=row.latency_ms,
+        success=row.success,
+        error=row.error,
+        user_id=row.user_id,
+        created_at=row.created_at,
+        id=row.id,
+    )
 
 
 class LLMUsageLogRepository:
@@ -162,7 +159,7 @@ class LLMUsageLogRepository:
         feature_key: str | None = None,
         since: datetime | None = None,
         until: datetime | None = None,
-    ) -> list[LLMUsageLog]:
+    ) -> list[UsageRecord]:
         with self._session_factory() as session:
             conditions = []
             if provider:
@@ -179,4 +176,4 @@ class LLMUsageLogRepository:
             if conditions:
                 stmt = stmt.where(and_(*conditions))
             stmt = stmt.order_by(LLMUsageLog.created_at.desc()).limit(limit).offset(offset)
-            return list(session.scalars(stmt).all())
+            return [_to_domain(r) for r in session.scalars(stmt).all()]

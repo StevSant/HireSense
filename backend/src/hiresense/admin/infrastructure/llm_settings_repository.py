@@ -4,7 +4,19 @@ from typing import Any
 
 from sqlalchemy import select
 
+from hiresense.admin.domain import LLMSettingsRecord
 from hiresense.admin.infrastructure.llm_settings_model import LLMSettings
+
+
+def _to_domain(row: LLMSettings) -> LLMSettingsRecord:
+    return LLMSettingsRecord(
+        provider=row.provider,
+        model=row.model,
+        api_key_encrypted=row.api_key_encrypted,
+        extra_params=dict(row.extra_params or {}),
+        updated_by=row.updated_by,
+        updated_at=row.updated_at,
+    )
 
 
 class LLMSettingsRepository:
@@ -13,9 +25,10 @@ class LLMSettingsRepository:
     def __init__(self, session_factory: Any) -> None:
         self._session_factory = session_factory
 
-    def get(self) -> LLMSettings | None:
+    def get(self) -> LLMSettingsRecord | None:
         with self._session_factory() as session:
-            return session.scalars(select(LLMSettings).where(LLMSettings.id == 1)).first()
+            row = session.scalars(select(LLMSettings).where(LLMSettings.id == 1)).first()
+            return _to_domain(row) if row is not None else None
 
     def upsert(
         self,
@@ -25,7 +38,7 @@ class LLMSettingsRepository:
         api_key_encrypted: str | None,
         extra_params: dict,
         updated_by: str | None,
-    ) -> LLMSettings:
+    ) -> LLMSettingsRecord:
         with self._session_factory() as session:
             row = session.scalars(select(LLMSettings).where(LLMSettings.id == 1)).first()
             if row is None:
@@ -48,4 +61,4 @@ class LLMSettingsRepository:
                 row.updated_by = updated_by
             session.commit()
             session.refresh(row)
-            return row
+            return _to_domain(row)

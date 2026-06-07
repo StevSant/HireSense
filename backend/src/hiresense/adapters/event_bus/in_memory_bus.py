@@ -45,9 +45,15 @@ class InMemoryEventBus:
         ) as span:
             try:
                 await handler(event)
-            except Exception:
+            except Exception as exc:
+                handler_name = getattr(handler, "__qualname__", repr(handler))
+                logger.exception(
+                    "Event handler %r failed for event %s",
+                    handler_name,
+                    event.event_type,
+                )
+                span.record_exception(exc)
                 span.set_status(trace.Status(trace.StatusCode.ERROR))
                 get_domain_metrics().event_handler_errors_total.add(
                     1, {"type": event.event_type}
                 )
-                logger.exception("Event handler failed for %s", event.event_type)

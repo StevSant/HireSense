@@ -4,12 +4,11 @@ import csv
 import io
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING
 
+from hiresense.admin.domain.usage_bucket import UsageBucket
+from hiresense.admin.domain.usage_record import UsageRecord
+from hiresense.admin.domain.usage_totals import UsageTotals
 from hiresense.admin.ports import LLMUsageLogRepositoryPort
-
-if TYPE_CHECKING:
-    from hiresense.admin.infrastructure import UsageBucket, UsageTotals
 
 
 @dataclass(frozen=True)
@@ -52,7 +51,7 @@ class UsageAggregator:
         model: str | None = None,
         feature_key: str | None = None,
         days: int | None = None,
-    ):
+    ) -> list[UsageRecord]:
         since = None if days is None else datetime.now(timezone.utc) - timedelta(days=days)
         return self._repo.list_recent(
             limit=limit,

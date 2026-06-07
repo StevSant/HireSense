@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from hiresense.admin.infrastructure import LLMAuditLog
+    from hiresense.admin.domain import LLMAuditEntry
 
 
 class LLMAuditLogRepositoryPort(Protocol):
@@ -16,6 +16,6 @@ class LLMAuditLogRepositoryPort(Protocol):
         action: str,
         target: str | None,
         changes: dict,
-    ) -> LLMAuditLog: ...
+    ) -> LLMAuditEntry: ...
 
-    def list_recent(self, limit: int = 100) -> list[LLMAuditLog]: ...
+    def list_recent(self, limit: int = 100) -> list[LLMAuditEntry]: ...

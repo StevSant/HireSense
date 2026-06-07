@@ -5,12 +5,11 @@ from typing import Any
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.kernel.value_objects import SourceType
 
-REMOTIVE_API_URL = "https://remotive.com/api/remote-jobs"
-
 
 class RemotiveAdapter:
-    def __init__(self, http_client: Any) -> None:
+    def __init__(self, http_client: Any, base_url: str) -> None:
         self._http = http_client
+        self._base_url = base_url
 
     def supports_snapshot_closure(self) -> bool:
         return False
@@ -29,7 +28,7 @@ class RemotiveAdapter:
             params["category"] = filters["category"]
         if filters and "search" in filters:
             params["search"] = filters["search"]
-        response = await self._http.get(REMOTIVE_API_URL, params=params)
+        response = await self._http.get(self._base_url, params=params)
         response.raise_for_status()
         data = response.json()
         return [

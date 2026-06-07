@@ -110,7 +110,7 @@ def create_app() -> FastAPI:
     app.include_router(profile_router)
 
     # --- Matching ---
-    matching = build_matching(infra, tracked)
+    matching = build_matching(infra, tracked, preference=preference.service)
     app.state.matching = matching.provider
     app.include_router(matching_router)
 

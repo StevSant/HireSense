@@ -13,6 +13,7 @@ from hiresense.preference.domain import (
     FeedbackKind,
     PreferenceService,
     TasteVectorCalculator,
+    WeightNudgeCalculator,
     status_to_feedback_kind,
 )
 from hiresense.preference.infrastructure import PreferenceRepository
@@ -35,12 +36,29 @@ def build_preference(infra: SharedInfra, tracked: Callable[[str], Any]) -> Prefe
         tau_days=s.preference_decay_tau_days,
     )
     weights = {kind: float(getattr(s, kind.weight_key)) for kind in FeedbackKind}
+    nudge_calculator = WeightNudgeCalculator(
+        min_outcomes=s.preference_nudge_min_outcomes,
+        clamp=s.preference_nudge_clamp,
+        scale=s.preference_nudge_scale,
+    )
+    # Base composite weights keyed by the scorers' dimension_name, so /weights
+    # can report base + override + effective consistently with matching.
+    base_weights = {
+        "seniority_fit": s.weight_seniority,
+        "compensation": s.weight_compensation,
+        "growth_potential": s.weight_growth,
+        "culture_fit": s.weight_culture,
+        "application_strength": s.weight_application,
+        "interview_readiness": s.weight_interview,
+    }
     service = PreferenceService(
         repository=PreferenceRepository(session_factory=infra.sync_session_factory),
         vector_store=infra.vector_store,
         calculator=calculator,
         weights=weights,
         enabled=s.preference_enabled,
+        nudge_calculator=nudge_calculator,
+        base_weights=base_weights,
         llm=tracked("preference_explanation") if s.preference_explanation_enabled else None,
         explanation_enabled=s.preference_explanation_enabled,
     )

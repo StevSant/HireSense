@@ -1,10 +1,11 @@
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { IngestionService, JobFilters } from '../../core/services/ingestion.service';
+import { IngestionService } from '../../core/services/ingestion.service';
 import { TrackingService } from '../../core/services/tracking.service';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { Router } from '@angular/router';
 import { CreateApplicationRequest } from '../../core/models/create-application-request.model';
+import { JobFilters } from './models/job-filters.model';
 import { NormalizedJob } from './models/normalized-job.model';
 import { PortalEntry } from './models/portal-entry.model';
 import { ScanPortalsRequest } from './models/scan-portals-request.model';

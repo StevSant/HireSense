@@ -7,16 +7,10 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import {
-  CoverLetterTemplateUpsert,
-  CoverLetterTemplatesService,
-} from '../../../../core/services/cover-letter-templates.service';
+import { CoverLetterTemplatesService } from '../../../../core/services/cover-letter-templates.service';
 import { CoverLetterTemplate } from '../../models/cover-letter-template.model';
-
-type EditingState =
-  | { mode: 'closed' }
-  | { mode: 'new' }
-  | { mode: 'edit'; id: string };
+import { CoverLetterTemplateEditingState } from '../../models/cover-letter-template-editing-state.model';
+import { CoverLetterTemplateUpsert } from '../../models/cover-letter-template-upsert.model';
 
 const BLANK_FORM = {
   name: '',
@@ -41,7 +35,7 @@ export class CoverLetterTemplatesComponent implements OnInit {
   templates = signal<CoverLetterTemplate[]>([]);
   loading = signal(true);
   error = signal('');
-  editing = signal<EditingState>({ mode: 'closed' });
+  editing = signal<CoverLetterTemplateEditingState>({ mode: 'closed' });
   form = signal({ ...BLANK_FORM });
   saving = signal(false);
   deletingId = signal<string | null>(null);

@@ -32,9 +32,46 @@
   }
 }
 
+.job-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+
+  .job-context-label {
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #2563eb;
+  }
+
+  .job-context-title {
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .job-context-company {
+    color: #6b7280;
+  }
+}
+
 .alert-error {
   background: #fef2f2;
   color: #991b1b;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.alert-warning {
+  background: #fffbeb;
+  color: #92400e;
   padding: 0.75rem;
   border-radius: 6px;
   margin-bottom: 1rem;

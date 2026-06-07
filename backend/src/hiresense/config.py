@@ -159,6 +159,8 @@ class Settings(BaseSettings):
     ]
 
     # Job source URLs
+    remotive_api_url: str = "https://remotive.com/api/remote-jobs"
+    remoteok_api_url: str = "https://remoteok.com/api"
     jobicy_api_url: str = "https://jobicy.com/api/v2/remote-jobs"
     himalayas_api_url: str = "https://himalayas.app/jobs/api"
     hn_algolia_api_url: str = "https://hn.algolia.com/api/v1"

@@ -13,10 +13,15 @@ class FakeResponse:
         pass
 
 
+TEST_URL = "https://test.example/api"
+
+
 class FakeHttpClient:
     def __init__(self, response_data: list) -> None:
         self._response_data = response_data
+        self.last_url: str | None = None
     async def get(self, url: str, **kwargs) -> FakeResponse:
+        self.last_url = url
         return FakeResponse(self._response_data)
 
 
@@ -38,7 +43,7 @@ async def test_remoteok_fetches_and_normalizes() -> None:
         },
     ]
     client = FakeHttpClient(sample_response)
-    adapter = RemoteOKAdapter(http_client=client)
+    adapter = RemoteOKAdapter(http_client=client, base_url=TEST_URL)
     jobs = await adapter.fetch_jobs()
     assert len(jobs) == 1
     assert jobs[0].source == "remoteok"
@@ -46,7 +51,15 @@ async def test_remoteok_fetches_and_normalizes() -> None:
     assert jobs[0].raw_data["position"] == "Python Developer"
 
 
+@pytest.mark.asyncio
+async def test_remoteok_uses_configured_base_url() -> None:
+    client = FakeHttpClient([])
+    adapter = RemoteOKAdapter(http_client=client, base_url=TEST_URL)
+    await adapter.fetch_jobs()
+    assert client.last_url == TEST_URL
+
+
 def test_remoteok_source_name() -> None:
-    adapter = RemoteOKAdapter(http_client=None)
+    adapter = RemoteOKAdapter(http_client=None, base_url=TEST_URL)
     assert adapter.source_name() == "remoteok"
     assert adapter.source_type() == SourceType.API

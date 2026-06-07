@@ -65,10 +65,10 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
     normalizers = {}
     for source_name in s.enabled_job_sources:
         if source_name == "remotive":
-            sources.append(RemotiveAdapter(http_client=http_client))
+            sources.append(RemotiveAdapter(http_client=http_client, base_url=s.remotive_api_url))
             normalizers["remotive"] = RemotiveNormalizer()
         elif source_name == "remoteok":
-            sources.append(RemoteOKAdapter(http_client=http_client))
+            sources.append(RemoteOKAdapter(http_client=http_client, base_url=s.remoteok_api_url))
             normalizers["remoteok"] = RemoteOKNormalizer()
         elif source_name == "csv":
             sources.append(CSVImportAdapter())

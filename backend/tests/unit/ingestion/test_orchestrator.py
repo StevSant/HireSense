@@ -1,9 +1,12 @@
 import asyncio
+import uuid
+from datetime import datetime, timezone
 
 import pytest
 
 from hiresense.adapters.event_bus.in_memory_bus import InMemoryEventBus
-from hiresense.ingestion.domain.models import RawJobListing
+from hiresense.ingestion.domain.job_embedding_indexer import JobEmbeddingIndexer
+from hiresense.ingestion.domain.models import NormalizedJob, RawJobListing
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.ingestion.infrastructure import InMemoryJobsRepository
 from hiresense.kernel.events import DomainEvent
@@ -200,3 +203,92 @@ async def test_changed_job_is_reindexed_with_same_id() -> None:
     stored = repo.list_all()
     assert len(stored) == 1 and stored[0].id == job_id
     assert stored[0].salary_range == "$200k"
+
+
+# --- Issue #44: orphan-vector cleanup on prune (end-to-end through the port) ---
+
+class _SpyVectorStore:
+    """Records VectorStorePort.delete calls so the prune path can be verified
+    end-to-end through the *real* JobEmbeddingIndexer (not a fake indexer)."""
+
+    def __init__(self) -> None:
+        self.upserts: list[str] = []
+        self.deletes: list[list[str]] = []
+
+    async def upsert(self, id: str, embedding, metadata) -> None:  # noqa: A002
+        self.upserts.append(id)
+
+    async def delete(self, ids: list[str]) -> None:
+        self.deletes.append(list(ids))
+
+
+class _ConstEmbedding:
+    async def embed(self, texts: list[str]) -> list[list[float]]:
+        return [[0.1, 0.2, 0.3] for _ in texts]
+
+
+def _persisted_job() -> NormalizedJob:
+    return NormalizedJob(
+        id=str(uuid.uuid4()),
+        title="Engineer",
+        company="Co",
+        description="Do stuff",
+        skills=["python"],
+        source="snap",
+        source_type="api",
+        url="https://example.com/prune-me",
+    )
+
+
+@pytest.mark.asyncio
+async def test_prune_deletes_embedding_from_vector_store() -> None:
+    """Pruning an aged job must evict its embedding from the vector store,
+    so orphaned vectors don't accumulate (issue #44). Verified end-to-end:
+    orchestrator prune -> JobEmbeddingIndexer.remove -> VectorStorePort.delete."""
+    repo = InMemoryJobsRepository()
+    store = _SpyVectorStore()
+    indexer = JobEmbeddingIndexer(_ConstEmbedding(), store, bucket="boards")
+
+    job = _persisted_job()
+    repo.upsert(job)
+    repo._fetched_at[job.id] = datetime(2000, 1, 1, tzinfo=timezone.utc)  # backdate
+
+    orch = IngestionOrchestrator(
+        sources=[],
+        normalizers={},
+        event_bus=InMemoryEventBus(),
+        repository=repo,
+        retention_days=1,
+        indexer=indexer,
+        cooldown_seconds=0,
+    )
+
+    await orch._prune_expired()
+
+    assert repo.list_all() == []          # relational row gone
+    assert store.deletes == [[job.id]]    # and its vector evicted, no orphan left
+
+
+@pytest.mark.asyncio
+async def test_prune_without_orphans_does_not_call_delete() -> None:
+    """No aged jobs => nothing pruned => no vector-store delete (no churn)."""
+    repo = InMemoryJobsRepository()
+    store = _SpyVectorStore()
+    indexer = JobEmbeddingIndexer(_ConstEmbedding(), store, bucket="boards")
+
+    repo.upsert(_persisted_job())  # fresh fetched_at (now) -> not stale
+
+    orch = IngestionOrchestrator(
+        sources=[],
+        normalizers={},
+        event_bus=InMemoryEventBus(),
+        repository=repo,
+        retention_days=1,
+        indexer=indexer,
+        cooldown_seconds=0,
+    )
+
+    await orch._prune_expired()
+
+    assert len(repo.list_all()) == 1
+    assert store.deletes == []

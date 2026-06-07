@@ -1,0 +1,162 @@
+import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
+import { of, throwError } from 'rxjs';
+import { OutreachComponent } from './outreach.component';
+import { OutreachService } from '../../core/services/outreach.service';
+import { ApplicationsService } from '../../core/services/applications.service';
+
+function makeApp(over: Partial<Record<string, unknown>> = {}) {
+  return {
+    id: 'app-1',
+    title: 'Senior Backend Engineer',
+    company: 'Acme Corp',
+    status: 'tracked',
+    url: null,
+    created_at: null,
+    has_match: false,
+    has_optimization: false,
+    has_prep: false,
+    latest_match_score: null,
+    ...over,
+  };
+}
+
+function makeEvent(over: Partial<Record<string, unknown>> = {}) {
+  return {
+    id: 'evt-1',
+    application_id: 'app-1',
+    kind: 'sent',
+    contact_name: null,
+    channel: null,
+    message: 'Hello there',
+    created_at: '2026-06-07T00:00:00Z',
+    ...over,
+  };
+}
+
+function makeNudge(over: Partial<Record<string, unknown>> = {}) {
+  return {
+    application_id: 'app-1',
+    company: 'Acme Corp',
+    contact_name: 'Jordan',
+    sent_at: '2026-06-01T00:00:00Z',
+    days_since: 6,
+    ...over,
+  };
+}
+
+describe('OutreachComponent', () => {
+  function mount(opts: {
+    appId?: string | null;
+    outreach?: Partial<Record<string, unknown>>;
+    applications?: Partial<Record<string, unknown>>;
+  } = {}) {
+    const route = {
+      snapshot: {
+        queryParamMap: {
+          get: (key: string) => (key === 'application_id' ? opts.appId ?? null : null),
+        },
+      },
+    };
+    const outreach = {
+      generate: vi.fn(() => of({ message: 'Generated message' })),
+      record: vi.fn(() => of(makeEvent())),
+      listEvents: vi.fn(() => of([makeEvent()])),
+      dueFollowups: vi.fn(() => of([])),
+      ...opts.outreach,
+    };
+    const applications = {
+      list: vi.fn(() => of([makeApp()])),
+      ...opts.applications,
+    };
+
+    TestBed.configureTestingModule({
+      imports: [OutreachComponent],
+      providers: [
+        { provide: ActivatedRoute, useValue: route },
+        { provide: OutreachService, useValue: outreach },
+        { provide: ApplicationsService, useValue: applications },
+      ],
+    });
+    const fixture = TestBed.createComponent(OutreachComponent);
+    fixture.detectChanges();
+    return { fixture, cmp: fixture.componentInstance, outreach, applications };
+  }
+
+  it('loads applications and preselects from the application_id query param', () => {
+    const { cmp, outreach } = mount({ appId: 'app-1' });
+
+    expect(cmp.applications().length).toBe(1);
+    expect(cmp.selectedApplicationId()).toBe('app-1');
+    expect(outreach.listEvents).toHaveBeenCalledWith('app-1');
+  });
+
+  it('generate happy path fills the message signal', () => {
+    const { cmp, outreach } = mount({ appId: 'app-1' });
+
+    cmp.generate();
+
+    expect(outreach.generate).toHaveBeenCalled();
+    expect(cmp.message()).toBe('Generated message');
+    expect(cmp.composeNotice()).toBe('');
+  });
+
+  it('generate 503 sets the unavailable notice', () => {
+    const generate = vi.fn(() => throwError(() => ({ status: 503 })));
+    const { cmp } = mount({ appId: 'app-1', outreach: { generate } });
+
+    cmp.generate();
+
+    expect(cmp.message()).toBe('');
+    expect(cmp.composeNotice()).toBe(
+      'Message generation is unavailable — check the LLM settings.',
+    );
+  });
+
+  it("record 'sent' triggers a timeline refresh", () => {
+    const record = vi.fn(() => of(makeEvent()));
+    const listEvents = vi.fn(() => of([makeEvent()]));
+    const { cmp, outreach } = mount({ appId: 'app-1', outreach: { record, listEvents } });
+
+    // one listEvents call already happened from preselect on init
+    const callsBefore = outreach.listEvents.mock.calls.length;
+    cmp.message.set('Hi there');
+    cmp.record('sent');
+
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ application_id: 'app-1', kind: 'sent', message: 'Hi there' }),
+    );
+    expect(outreach.listEvents.mock.calls.length).toBe(callsBefore + 1);
+  });
+
+  it('renders the timeline newest-first', () => {
+    const listEvents = vi.fn(() =>
+      of([makeEvent({ id: 'old' }), makeEvent({ id: 'new' })]),
+    );
+    const { cmp } = mount({ appId: 'app-1', outreach: { listEvents } });
+
+    expect(cmp.events().map((e) => e.id)).toEqual(['new', 'old']);
+  });
+
+  it('loads nudges and "mark followed up" removes the row', () => {
+    const dueFollowups = vi.fn(() => of([makeNudge({ application_id: 'app-2' })]));
+    const record = vi.fn(() => of(makeEvent({ application_id: 'app-2' })));
+    const { cmp, outreach } = mount({ outreach: { dueFollowups, record } });
+
+    expect(cmp.nudges().length).toBe(1);
+
+    cmp.markFollowedUp(cmp.nudges()[0]);
+
+    expect(outreach.record).toHaveBeenCalledWith(
+      expect.objectContaining({ application_id: 'app-2', kind: 'followed_up' }),
+    );
+    expect(cmp.nudges().length).toBe(0);
+  });
+
+  it('surfaces a nudges error state', () => {
+    const dueFollowups = vi.fn(() => throwError(() => ({ error: { detail: 'boom' } })));
+    const { cmp } = mount({ outreach: { dueFollowups } });
+
+    expect(cmp.nudgesError()).toBe('boom');
+  });
+});

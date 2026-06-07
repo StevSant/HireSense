@@ -1,0 +1,147 @@
+<div class="page">
+  <h1>Outreach</h1>
+  <p class="hint">
+    Draft an on-brand message for a tracked application, record what you sent, and stay on top of
+    follow-ups.
+  </p>
+
+  <!-- #32 — follow-up nudges -->
+  <section class="card nudges">
+    <h2>Needs a follow-up</h2>
+    @if (nudgesError()) {
+      <div class="alert alert-error">{{ nudgesError() }}</div>
+    } @else if (nudgesLoading()) {
+      <p class="muted">Loading…</p>
+    } @else if (nudges().length === 0) {
+      <p class="muted empty">You're all caught up.</p>
+    } @else {
+      <ul class="nudge-list">
+        @for (nudge of nudges(); track nudge.application_id) {
+          <li class="nudge-row">
+            <button class="nudge-main" (click)="selectNudge(nudge)">
+              <span class="nudge-company">{{ nudge.company }}</span>
+              @if (nudge.contact_name) {
+                <span class="nudge-contact">· {{ nudge.contact_name }}</span>
+              }
+              <span class="nudge-age">sent {{ nudge.days_since }} days ago</span>
+            </button>
+            <button class="btn-secondary" (click)="markFollowedUp(nudge)">Mark followed up</button>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <!-- Target picker -->
+  <section class="card">
+    <h2>Compose</h2>
+    <div class="field">
+      <label for="application">Application</label>
+      <select
+        id="application"
+        [ngModel]="selectedApplicationId()"
+        (ngModelChange)="onSelectChange($event)"
+      >
+        <option value="">Select an application…</option>
+        @for (app of applications(); track app.id) {
+          <option [value]="app.id">{{ app.title }} @ {{ app.company }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="contact">Contact name (optional)</label>
+        <input
+          id="contact"
+          [ngModel]="contactName()"
+          (ngModelChange)="contactName.set($event)"
+          placeholder="e.g. Jordan Lee"
+        />
+      </div>
+      <div class="field">
+        <label for="channel">Channel (optional)</label>
+        <input
+          id="channel"
+          [ngModel]="channel()"
+          (ngModelChange)="channel.set($event)"
+          placeholder="e.g. LinkedIn"
+        />
+      </div>
+    </div>
+
+    <button class="btn-primary" (click)="generate()" [disabled]="generating() || !hasSelection()">
+      @if (generating()) { Generating… } @else { Generate message }
+    </button>
+
+    @if (composeNotice()) {
+      <div class="alert alert-warning">{{ composeNotice() }}</div>
+    }
+
+    <div class="field">
+      <label for="message">Message</label>
+      <textarea
+        id="message"
+        rows="8"
+        [ngModel]="message()"
+        (ngModelChange)="message.set($event)"
+        placeholder="Generate a draft above, or write your own…"
+      ></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn-secondary" (click)="copyMessage()" [disabled]="!message()">
+        @if (copied()) { Copied! } @else { Copy }
+      </button>
+      <button class="btn-primary" (click)="record('sent')" [disabled]="recording() || !hasSelection()">
+        Mark as sent
+      </button>
+      <button class="btn-secondary" (click)="record('followed_up')" [disabled]="recording() || !hasSelection()">
+        Followed up
+      </button>
+      <button class="btn-secondary" (click)="record('replied')" [disabled]="recording() || !hasSelection()">
+        Replied
+      </button>
+    </div>
+
+    @if (recordError()) {
+      <div class="alert alert-error">{{ recordError() }}</div>
+    }
+  </section>
+
+  <!-- Timeline -->
+  <section class="card">
+    <h2>Timeline</h2>
+    @if (!hasSelection()) {
+      <p class="muted">Select an application to see its outreach history.</p>
+    } @else if (timelineError()) {
+      <div class="alert alert-error">{{ timelineError() }}</div>
+    } @else if (timelineLoading()) {
+      <p class="muted">Loading…</p>
+    } @else if (events().length === 0) {
+      <p class="muted empty">No outreach recorded yet.</p>
+    } @else {
+      <ul class="timeline">
+        @for (event of events(); track event.id) {
+          <li class="timeline-row">
+            <div class="timeline-head">
+              <span class="badge" [class]="'badge-' + event.kind">{{ event.kind }}</span>
+              @if (event.contact_name) {
+                <span class="timeline-contact">{{ event.contact_name }}</span>
+              }
+              @if (event.channel) {
+                <span class="timeline-channel">· {{ event.channel }}</span>
+              }
+              @if (event.created_at) {
+                <span class="timeline-time">{{ event.created_at }}</span>
+              }
+            </div>
+            @if (event.message) {
+              <p class="timeline-message">{{ event.message }}</p>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>

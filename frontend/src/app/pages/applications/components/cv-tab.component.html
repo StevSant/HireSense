@@ -1,7 +1,7 @@
 <div class="cv-tab">
   <div class="controls">
-    <label>CV language:</label>
-    <select [value]="cvLanguage()" (change)="onLangChange($event)" [disabled]="running()">
+    <label for="cv-tab-language">CV language:</label>
+    <select id="cv-tab-language" [value]="cvLanguage()" (change)="onLangChange($event)" [disabled]="running()">
       <option value="en">English</option>
       <option value="es">Spanish</option>
     </select>

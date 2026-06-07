@@ -216,6 +216,13 @@ export class AdminLLMSettingsComponent implements OnInit {
     this.overrideError.set('');
   }
 
+  /** Close the edit modal only when the backdrop itself (not the dialog) is clicked. */
+  onBackdropClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).classList.contains('modal-backdrop')) {
+      this.cancelEdit();
+    }
+  }
+
   setOverrideInheritProvider(inherit: boolean): void {
     this.editingOverride.update((d) =>
       d ? { ...d, inherit_provider: inherit, provider: inherit ? '' : d.provider } : d,

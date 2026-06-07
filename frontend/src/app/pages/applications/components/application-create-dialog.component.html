@@ -1,38 +1,52 @@
-<div class="overlay" (click)="onOverlay($event)">
-  <div class="dialog">
+<div
+  class="overlay"
+  tabindex="-1"
+  (click)="onOverlay($event)"
+  (keydown.escape)="onEscape()"
+>
+  <div
+    class="dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="create-dialog-title"
+  >
     <div class="dialog-header">
-      <h2>New application</h2>
-      <button class="btn-close" (click)="closed.emit()">✕</button>
+      <h2 id="create-dialog-title">New application</h2>
+      <button class="btn-close" (click)="closed.emit()" aria-label="Close dialog">✕</button>
     </div>
     <p class="hint">Paste a job description below. Required skills will be extracted automatically.</p>
 
     <div class="field">
-      <label>Title</label>
+      <label for="create-title">Title</label>
       <input
+        id="create-title"
         [ngModel]="title()"
         (ngModelChange)="title.set($event)"
         placeholder="e.g. Senior Backend Engineer"
       />
     </div>
     <div class="field">
-      <label>Company</label>
+      <label for="create-company">Company</label>
       <input
+        id="create-company"
         [ngModel]="company()"
         (ngModelChange)="company.set($event)"
         placeholder="e.g. Acme Corp"
       />
     </div>
     <div class="field">
-      <label>URL (optional)</label>
+      <label for="create-url">URL (optional)</label>
       <input
+        id="create-url"
         [ngModel]="url()"
         (ngModelChange)="url.set($event)"
         placeholder="https://..."
       />
     </div>
     <div class="field">
-      <label>Job description</label>
+      <label for="create-description">Job description</label>
       <textarea
+        id="create-description"
         rows="10"
         [ngModel]="description()"
         (ngModelChange)="description.set($event)"

@@ -243,7 +243,7 @@
     [job]="selectedJob()!"
     [tracked]="isTracked(selectedJob()!.id)"
     [tracking]="isTracking(selectedJob()!.id)"
-    (close)="closeDetail()"
+    (closed)="closeDetail()"
     (track)="trackJob($event)"
     (feedbackSubmitted)="onFeedback(selectedJob()!.id, $event)"
   />

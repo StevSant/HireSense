@@ -1,0 +1,32 @@
+name: Bug report
+description: Something isn't working
+title: "bug(scope): "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Where the bug lives and how it manifests.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Steps to reproduce.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: file:line links, related issues.
+    validations:
+      required: false

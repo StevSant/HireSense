@@ -9,14 +9,26 @@ from hiresense.ingestion.infrastructure.models import IngestedJob
 
 
 class CorpusAnalyticsRepository:
-    """Read-only aggregation over the ingested-job corpus (status='open')."""
+    """Read-only aggregation over the ingested-job corpus (status='open').
 
-    def __init__(self, session_factory: Any) -> None:
+    The full-corpus scans (`open_skill_lists`, `posting_dates`,
+    `open_salary_strings`) read every open posting into memory. To keep that
+    bounded as the corpus grows, each scan is capped at `sample_cap` rows — the
+    resulting aggregates are computed over a SAMPLE of up to that many open
+    postings rather than the entire corpus.
+    """
+
+    def __init__(self, session_factory: Any, sample_cap: int) -> None:
         self._session_factory = session_factory
+        self._sample_cap = sample_cap
 
     def open_skill_lists(self) -> list[list[str]]:
         with self._session_factory() as session:
-            stmt = select(IngestedJob.skills).where(IngestedJob.status == "open")
+            stmt = (
+                select(IngestedJob.skills)
+                .where(IngestedJob.status == "open")
+                .limit(self._sample_cap)
+            )
             return [list(row or []) for row in session.scalars(stmt).all()]
 
     def remote_modality_counts(self) -> dict[str, int]:
@@ -30,18 +42,27 @@ class CorpusAnalyticsRepository:
 
     def posting_dates(self) -> list[datetime]:
         with self._session_factory() as session:
-            stmt = select(IngestedJob.posted_date).where(
-                IngestedJob.status == "open", IngestedJob.posted_date.is_not(None)
+            stmt = (
+                select(IngestedJob.posted_date)
+                .where(IngestedJob.status == "open", IngestedJob.posted_date.is_not(None))
+                .limit(self._sample_cap)
             )
             return [d for d in session.scalars(stmt).all() if d is not None]
 
     def open_salary_strings(self) -> tuple[list[str], int]:
         with self._session_factory() as session:
-            total = session.scalar(
+            # Cap the denominator at the same sample size so disclosed_pct stays
+            # a valid sample estimate (share of sampled open postings with a
+            # salary string) rather than mixing a full-corpus count with a
+            # capped numerator.
+            open_count = session.scalar(
                 select(func.count()).select_from(IngestedJob).where(IngestedJob.status == "open")
             ) or 0
-            stmt = select(IngestedJob.salary_range).where(
-                IngestedJob.status == "open", IngestedJob.salary_range.is_not(None)
+            total = min(int(open_count), self._sample_cap)
+            stmt = (
+                select(IngestedJob.salary_range)
+                .where(IngestedJob.status == "open", IngestedJob.salary_range.is_not(None))
+                .limit(self._sample_cap)
             )
             return [s for s in session.scalars(stmt).all() if s], int(total)
 

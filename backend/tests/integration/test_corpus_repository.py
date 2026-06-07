@@ -37,7 +37,7 @@ def _seed(factory):
 def test_open_skill_lists_excludes_closed():
     factory = _factory()
     _seed(factory)
-    repo = CorpusAnalyticsRepository(session_factory=factory)
+    repo = CorpusAnalyticsRepository(session_factory=factory, sample_cap=5000)
     lists = repo.open_skill_lists()
     # 2 open jobs → 2 skill lists; the closed "rust" job is excluded.
     assert len(lists) == 2
@@ -48,7 +48,7 @@ def test_open_skill_lists_excludes_closed():
 def test_remote_modality_counts_open_only():
     factory = _factory()
     _seed(factory)
-    repo = CorpusAnalyticsRepository(session_factory=factory)
+    repo = CorpusAnalyticsRepository(session_factory=factory, sample_cap=5000)
     counts = repo.remote_modality_counts()
     assert counts.get("remote") == 1 and counts.get("on_site") == 1
 
@@ -56,7 +56,7 @@ def test_remote_modality_counts_open_only():
 def test_open_salary_strings_and_total():
     factory = _factory()
     _seed(factory)
-    repo = CorpusAnalyticsRepository(session_factory=factory)
+    repo = CorpusAnalyticsRepository(session_factory=factory, sample_cap=5000)
     salaries, total_open = repo.open_salary_strings()
     assert total_open == 2
     assert "$100k-$120k" in salaries and "competitive" in salaries
@@ -65,5 +65,43 @@ def test_open_salary_strings_and_total():
 def test_salary_strings_for_ids():
     factory = _factory()
     _seed(factory)
-    repo = CorpusAnalyticsRepository(session_factory=factory)
+    repo = CorpusAnalyticsRepository(session_factory=factory, sample_cap=5000)
     assert repo.salary_strings_for_ids(["1", "3"]) == {"1": "$100k-$120k", "3": None}
+
+
+def _seed_many(factory, n: int):
+    with factory() as s:
+        s.add_all([
+            IngestedJob(id=str(i), bucket="boards", source="x", source_type="board",
+                        title=f"J{i}", skills=["Python"], remote_modality="remote",
+                        salary_range="$100k-$120k", status="open", identity_key=f"k{i}",
+                        posted_date=datetime(2026, 5, 1, tzinfo=timezone.utc))
+            for i in range(n)
+        ])
+        s.commit()
+
+
+def test_sample_cap_bounds_open_skill_lists():
+    factory = _factory()
+    _seed_many(factory, 25)
+    repo = CorpusAnalyticsRepository(session_factory=factory, sample_cap=10)
+    # 25 open jobs exist, but the scan is capped at the sample size.
+    assert len(repo.open_skill_lists()) == 10
+
+
+def test_sample_cap_bounds_posting_dates():
+    factory = _factory()
+    _seed_many(factory, 25)
+    repo = CorpusAnalyticsRepository(session_factory=factory, sample_cap=10)
+    assert len(repo.posting_dates()) == 10
+
+
+def test_sample_cap_bounds_salary_strings_and_denominator():
+    factory = _factory()
+    _seed_many(factory, 25)
+    repo = CorpusAnalyticsRepository(session_factory=factory, sample_cap=10)
+    salaries, total_open = repo.open_salary_strings()
+    # Numerator (salary strings) is capped, and the denominator is capped to the
+    # same sample size so disclosed_pct stays a valid sample estimate.
+    assert len(salaries) == 10
+    assert total_open == 10

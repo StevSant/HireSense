@@ -51,29 +51,29 @@
 
       <div class="form-row">
         <div class="form-group">
-          <label>Job Description</label>
-          <textarea [ngModel]="jobDescription()" (ngModelChange)="jobDescription.set($event)" name="jobDesc" rows="4" placeholder="Paste job description..."></textarea>
+          <label for="match-job-desc">Job Description</label>
+          <textarea id="match-job-desc" [ngModel]="jobDescription()" (ngModelChange)="jobDescription.set($event)" name="jobDesc" rows="4" placeholder="Paste job description..."></textarea>
         </div>
         <div class="form-group">
-          <label>CV Summary</label>
-          <textarea [ngModel]="cvSummary()" (ngModelChange)="cvSummary.set($event)" name="cvSummary" rows="4" placeholder="Your professional summary..."></textarea>
+          <label for="match-cv-summary">CV Summary</label>
+          <textarea id="match-cv-summary" [ngModel]="cvSummary()" (ngModelChange)="cvSummary.set($event)" name="cvSummary" rows="4" placeholder="Your professional summary..."></textarea>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Required Skills (comma-separated)</label>
-          <input [ngModel]="jobSkills()" (ngModelChange)="jobSkills.set($event)" name="jobSkills" placeholder="python, fastapi, kubernetes" />
+          <label for="match-job-skills">Required Skills (comma-separated)</label>
+          <input id="match-job-skills" [ngModel]="jobSkills()" (ngModelChange)="jobSkills.set($event)" name="jobSkills" placeholder="python, fastapi, kubernetes" />
         </div>
         <div class="form-group">
-          <label>Your Skills</label>
-          <input [ngModel]="cvSkills()" (ngModelChange)="cvSkills.set($event)" name="cvSkills" placeholder="python, fastapi, django" />
+          <label for="match-cv-skills">Your Skills</label>
+          <input id="match-cv-skills" [ngModel]="cvSkills()" (ngModelChange)="cvSkills.set($event)" name="cvSkills" placeholder="python, fastapi, django" />
         </div>
       </div>
 
       <!-- Clickable skill chips from profile -->
       @if (profileSkills().length > 0) {
         <div class="skill-picker">
-          <label>Select from your profile skills:</label>
+          <span class="skill-picker-label">Select from your profile skills:</span>
           <div class="skill-chips">
             @for (skill of profileSkills(); track skill) {
               <button

@@ -64,7 +64,7 @@ def build_admin(infra: SharedInfra) -> AdminBuild:
         env_api_key=s.llm_api_key,
     )
     usage_recorder = UsageRecorder(repo=usage_repo)
-    usage_aggregator = UsageAggregator(repo=usage_repo)
+    usage_aggregator = UsageAggregator(repo=usage_repo, recent_limit=s.admin_usage_recent_limit)
     provider = AdminProvider(
         settings_service=settings_service,
         usage_aggregator=usage_aggregator,

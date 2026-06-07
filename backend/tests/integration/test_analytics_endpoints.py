@@ -65,7 +65,7 @@ def _seed(factory):
 
 
 def _build_app(factory, history):
-    corpus = CorpusAnalyticsRepository(session_factory=factory)
+    corpus = CorpusAnalyticsRepository(session_factory=factory, sample_cap=5000)
     norm, sal = SkillNormalizer(), SalaryParser()
     service = AnalyticsService(
         funnel=FunnelService(history),

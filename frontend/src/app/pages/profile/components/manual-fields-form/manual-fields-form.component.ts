@@ -14,7 +14,7 @@ import { ManualFieldsFormState } from '../../models/manual-fields-form-state.mod
 import { ProfileManualFieldsUpdate } from '../../models/profile-manual-fields-update.model';
 import { ProfileService } from '../../../../core/services/profile.service';
 
-const FIELDS: ReadonlyArray<keyof ManualFieldsFormState> = [
+const FIELDS: readonly (keyof ManualFieldsFormState)[] = [
   'name',
   'email',
   'phone',

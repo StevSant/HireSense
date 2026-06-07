@@ -8,15 +8,15 @@
 
     <div class="controls">
       <div class="field-inline">
-        <label>CV language:</label>
-        <select [value]="cvLanguage()" (change)="onLangChange($event)">
+        <label for="apply-cv-language">CV language:</label>
+        <select id="apply-cv-language" [value]="cvLanguage()" (change)="onLangChange($event)">
           <option value="en">English</option>
           <option value="es">Spanish</option>
         </select>
       </div>
       <div class="field-inline">
-        <label>Tone:</label>
-        <select [value]="tone()" (change)="onToneChange($event)">
+        <label for="apply-tone">Tone:</label>
+        <select id="apply-tone" [value]="tone()" (change)="onToneChange($event)">
           <option value="professional">Professional</option>
           <option value="enthusiastic">Enthusiastic</option>
           <option value="concise">Concise</option>

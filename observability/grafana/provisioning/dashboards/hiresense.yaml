@@ -1,0 +1,15 @@
+apiVersion: 1
+
+# Provisions the HireSense dashboards into Grafana (otel-lgtm).
+# Mounted into the container at /otel-lgtm/grafana/conf/provisioning/dashboards/
+# alongside otel-lgtm's own providers. The dashboard JSON lives in a sibling
+# mount (see docker-compose.yml -> otel-lgtm.volumes).
+providers:
+  - name: "HireSense"
+    type: file
+    folder: "HireSense"
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards/hiresense
+      foldersFromFilesStructure: false

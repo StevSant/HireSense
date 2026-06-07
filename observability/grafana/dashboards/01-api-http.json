@@ -1,0 +1,116 @@
+{
+  "uid": "hiresense-api",
+  "title": "HireSense — API & HTTP",
+  "tags": ["hiresense", "metrics", "http"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "editable": true,
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "route",
+        "label": "Route",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(http_server_duration_milliseconds_count, http_target)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*",
+        "sort": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Request rate",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "targets": [{ "refId": "A", "expr": "sum(rate(http_server_duration_milliseconds_count{http_target=~\"$route\"}[$__rate_interval]))" }]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Error rate (5xx)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percent", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
+      "targets": [{ "refId": "A", "expr": "100 * sum(rate(http_server_duration_milliseconds_count{http_status_code=~\"5..\",http_target=~\"$route\"}[$__rate_interval])) / clamp_min(sum(rate(http_server_duration_milliseconds_count{http_target=~\"$route\"}[$__rate_interval])), 1)" }]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Latency p95",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "ms", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 300 }, { "color": "red", "value": 1000 }] } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "targets": [{ "refId": "A", "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_duration_milliseconds_bucket{http_target=~\"$route\"}[$__rate_interval])))" }]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Active requests",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "targets": [{ "refId": "A", "expr": "sum(http_server_active_requests)" }]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Request rate by route",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 10, "stacking": { "mode": "normal" } } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "refId": "A", "expr": "sum by (http_target) (rate(http_server_duration_milliseconds_count{http_target=~\"$route\"}[$__rate_interval]))", "legendFormat": "{{http_target}}" }]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Responses by status code",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" } } } },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "refId": "A", "expr": "sum by (http_status_code) (rate(http_server_duration_milliseconds_count{http_target=~\"$route\"}[$__rate_interval]))", "legendFormat": "{{http_status_code}}" }]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Latency percentiles (overall)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "fillOpacity": 5 } } },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_duration_milliseconds_bucket{http_target=~\"$route\"}[$__rate_interval])))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_duration_milliseconds_bucket{http_target=~\"$route\"}[$__rate_interval])))", "legendFormat": "p95" },
+        { "refId": "C", "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_duration_milliseconds_bucket{http_target=~\"$route\"}[$__rate_interval])))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "p95 latency by route",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "fillOpacity": 5 } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "refId": "A", "expr": "histogram_quantile(0.95, sum by (le, http_target) (rate(http_server_duration_milliseconds_bucket{http_target=~\"$route\"}[$__rate_interval])))", "legendFormat": "{{http_target}}" }]
+    },
+    {
+      "id": 9, "type": "table", "title": "Top routes (rate · p95 · error %)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 20 },
+      "options": { "showHeader": true },
+      "targets": [
+        { "refId": "A", "format": "table", "instant": true, "expr": "sum by (http_target) (rate(http_server_duration_milliseconds_count{http_target=~\"$route\"}[$__rate_interval]))", "legendFormat": "" },
+        { "refId": "B", "format": "table", "instant": true, "expr": "histogram_quantile(0.95, sum by (le, http_target) (rate(http_server_duration_milliseconds_bucket{http_target=~\"$route\"}[$__rate_interval])))" },
+        { "refId": "C", "format": "table", "instant": true, "expr": "100 * sum by (http_target) (rate(http_server_duration_milliseconds_count{http_status_code=~\"[45]..\",http_target=~\"$route\"}[$__rate_interval])) / clamp_min(sum by (http_target) (rate(http_server_duration_milliseconds_count{http_target=~\"$route\"}[$__rate_interval])), 0.0001)" }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        { "id": "organize", "options": { "excludeByName": { "Time": true }, "renameByName": { "http_target": "Route", "Value #A": "Req/s", "Value #B": "p95 (ms)", "Value #C": "Error %" } } }
+      ],
+      "fieldConfig": { "overrides": [
+        { "matcher": { "id": "byName", "options": "p95 (ms)" }, "properties": [{ "id": "unit", "value": "ms" }] },
+        { "matcher": { "id": "byName", "options": "Error %" }, "properties": [{ "id": "unit", "value": "percent" }, { "id": "custom.cellOptions", "value": { "type": "color-background" } }, { "id": "thresholds", "value": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] } }] }
+      ] }
+    }
+  ]
+}

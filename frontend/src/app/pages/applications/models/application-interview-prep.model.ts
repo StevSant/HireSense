@@ -3,6 +3,6 @@ export interface ApplicationInterviewPrep {
   competencies_to_probe: string[];
   technical_topics: string[];
   negotiation_points: string[];
-  matched_stories: Array<{ story_id: string; story_title: string; relevance: string }>;
+  matched_stories: { story_id: string; story_title: string; relevance: string }[];
   created_at: string | null;
 }

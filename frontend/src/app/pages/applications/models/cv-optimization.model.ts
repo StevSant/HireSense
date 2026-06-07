@@ -5,7 +5,7 @@ export interface CvOptimization {
   original_tex: string;
   optimized_tex: string;
   improvement_summary: string;
-  changes: Array<{
+  changes: {
     section_name?: string;
     section?: string;
     original?: string;
@@ -13,6 +13,6 @@ export interface CvOptimization {
     reason?: string;
     before?: string;
     after?: string;
-  }>;
+  }[];
   created_at: string | null;
 }

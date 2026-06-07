@@ -26,16 +26,17 @@
 
   <div class="form">
     <div class="field">
-      <label>Title</label>
-      <input [ngModel]="title()" (ngModelChange)="title.set($event)" placeholder="e.g. Senior Backend Engineer" />
+      <label for="opt-title">Title</label>
+      <input id="opt-title" [ngModel]="title()" (ngModelChange)="title.set($event)" placeholder="e.g. Senior Backend Engineer" />
     </div>
     <div class="field">
-      <label>Company</label>
-      <input [ngModel]="company()" (ngModelChange)="company.set($event)" placeholder="e.g. Acme Corp" />
+      <label for="opt-company">Company</label>
+      <input id="opt-company" [ngModel]="company()" (ngModelChange)="company.set($event)" placeholder="e.g. Acme Corp" />
     </div>
     <div class="field">
-      <label>Job description</label>
+      <label for="opt-description">Job description</label>
       <textarea
+        id="opt-description"
         rows="10"
         [ngModel]="description()"
         (ngModelChange)="description.set($event)"

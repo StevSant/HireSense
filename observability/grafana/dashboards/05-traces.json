@@ -1,0 +1,40 @@
+{
+  "uid": "hiresense-traces",
+  "title": "HireSense — Traces",
+  "tags": ["hiresense", "traces", "tempo"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "",
+  "time": { "from": "now-1h", "to": "now" },
+  "editable": true,
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "id": 1, "type": "text", "title": "About",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 0 },
+      "options": { "mode": "markdown", "content": "Traces for **hiresense-backend** from Tempo. Click any **Trace ID** to open the waterfall. Trace IDs in the [Logs dashboard](/d/hiresense-logs) link back here, and span attributes (`http.target`, `event.type`) show which route or domain event produced the trace. Service-level RED metrics derived from spans are in the bundled **RED Metrics** dashboards." }
+    },
+    {
+      "id": 2, "type": "table", "title": "Slowest traces (> 500ms)",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 4 },
+      "options": {},
+      "targets": [{ "refId": "A", "datasource": { "type": "tempo", "uid": "tempo" }, "queryType": "traceql", "tableType": "traces", "limit": 30, "query": "{ resource.service.name = \"hiresense-backend\" && duration > 500ms }" }]
+    },
+    {
+      "id": 3, "type": "table", "title": "Errored traces",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 14 },
+      "options": {},
+      "targets": [{ "refId": "A", "datasource": { "type": "tempo", "uid": "tempo" }, "queryType": "traceql", "tableType": "traces", "limit": 30, "query": "{ resource.service.name = \"hiresense-backend\" && status = error }" }]
+    },
+    {
+      "id": 4, "type": "table", "title": "Recent traces",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 24 },
+      "options": {},
+      "targets": [{ "refId": "A", "datasource": { "type": "tempo", "uid": "tempo" }, "queryType": "traceql", "tableType": "traces", "limit": 50, "query": "{ resource.service.name = \"hiresense-backend\" }" }]
+    }
+  ]
+}

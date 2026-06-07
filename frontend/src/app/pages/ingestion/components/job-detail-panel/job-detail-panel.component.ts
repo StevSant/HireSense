@@ -29,7 +29,7 @@ export class JobDetailPanelComponent {
   tracked = input<boolean>(false);
   tracking = input<boolean>(false);
 
-  close = output<void>();
+  closed = output<void>();
   track = output<string>();
   feedbackSubmitted = output<FeedbackKind>();
 
@@ -70,8 +70,13 @@ export class JobDetailPanelComponent {
 
   onOverlayClick(event: MouseEvent): void {
     if ((event.target as HTMLElement).classList.contains('panel-overlay')) {
-      this.close.emit();
+      this.closed.emit();
     }
+  }
+
+  /** Dismiss the panel with the Escape key for keyboard accessibility. */
+  onEscape(): void {
+    this.closed.emit();
   }
 
   onTrack(): void {
@@ -104,16 +109,16 @@ export class JobDetailPanelComponent {
 
   goToMatching(): void {
     this.router.navigate(['/dashboard/matching'], { queryParams: { job_id: this.job().id } });
-    this.close.emit();
+    this.closed.emit();
   }
 
   goToOptimization(): void {
     this.router.navigate(['/dashboard/optimization'], { queryParams: { job_id: this.job().id } });
-    this.close.emit();
+    this.closed.emit();
   }
 
   goToInterview(): void {
     this.router.navigate(['/dashboard/interview'], { queryParams: { job_id: this.job().id } });
-    this.close.emit();
+    this.closed.emit();
   }
 }

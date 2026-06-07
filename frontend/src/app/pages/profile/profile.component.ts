@@ -3,7 +3,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ProfileService } from '../../core/services/profile.service';
-import { CandidateProfile } from './models/candidate-profile.model';
 import { CvSectionContentComponent } from './components/cv-section-content/cv-section-content.component';
 import { ManualFieldsFormComponent } from './components/manual-fields-form/manual-fields-form.component';
 import { CoverLetterLibraryComponent } from './components/cover-letter-library/cover-letter-library.component';

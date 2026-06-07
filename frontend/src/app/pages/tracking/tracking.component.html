@@ -240,7 +240,15 @@
           <h2>Leaderboard</h2>
           <div class="leaderboard-list">
             @for (result of leaderboard(); track result.source_id; let i = $index) {
-              <div class="leaderboard-card" (click)="toggleExpand(result.source_id)">
+              <div
+                class="leaderboard-card"
+                role="button"
+                tabindex="0"
+                [attr.aria-expanded]="expandedResultId() === result.source_id"
+                (click)="toggleExpand(result.source_id)"
+                (keydown.enter)="toggleExpand(result.source_id)"
+                (keydown.space)="$event.preventDefault(); toggleExpand(result.source_id)"
+              >
                 <div class="leaderboard-header">
                   <span class="rank">#{{ i + 1 }}</span>
                   <div class="leaderboard-info">

@@ -89,7 +89,7 @@ describe('JobDetailPanelComponent', () => {
   it('navigates to the optimization page with the job id and closes', () => {
     const fixture = mount();
     let closed = false;
-    fixture.componentInstance.close.subscribe(() => (closed = true));
+    fixture.componentInstance.closed.subscribe(() => (closed = true));
 
     const optimizeBtn = Array.from(
       fixture.nativeElement.querySelectorAll('button.btn-shortcut') as NodeListOf<HTMLButtonElement>,
@@ -138,7 +138,7 @@ describe('JobDetailPanelComponent', () => {
   it('emits close on the close button', () => {
     const fixture = mount();
     let closed = false;
-    fixture.componentInstance.close.subscribe(() => (closed = true));
+    fixture.componentInstance.closed.subscribe(() => (closed = true));
     (fixture.nativeElement.querySelector('button.btn-close') as HTMLButtonElement).click();
     expect(closed).toBe(true);
   });
@@ -190,7 +190,7 @@ describe('JobDetailPanelComponent', () => {
   it('emits close when the overlay backdrop is clicked', () => {
     const fixture = mount();
     let closed = false;
-    fixture.componentInstance.close.subscribe(() => (closed = true));
+    fixture.componentInstance.closed.subscribe(() => (closed = true));
 
     const overlay = fixture.nativeElement.querySelector('.panel-overlay') as HTMLElement;
     overlay.dispatchEvent(new MouseEvent('click'));

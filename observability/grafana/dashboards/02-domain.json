@@ -1,0 +1,138 @@
+{
+  "uid": "hiresense-domain",
+  "title": "HireSense — Domain & Ingestion",
+  "tags": ["hiresense", "metrics", "domain"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "editable": true,
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "source",
+        "label": "Source",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(hiresense_jobs_fetched_total, source)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*",
+        "sort": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Jobs fetched (range)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 5, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "targets": [{ "refId": "A", "expr": "sum(increase(hiresense_jobs_fetched_total{source=~\"$source\"}[$__range]))" }]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Jobs indexed (range)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 5, "x": 5, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "targets": [{ "refId": "A", "expr": "sum(increase(hiresense_jobs_indexed_total{source=~\"$source\"}[$__range]))" }]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Index ratio",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 5, "x": 10, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percent", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 10 }, { "color": "green", "value": 30 }] } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" },
+      "targets": [{ "refId": "A", "expr": "100 * sum(increase(hiresense_jobs_indexed_total{source=~\"$source\"}[$__range])) / clamp_min(sum(increase(hiresense_jobs_fetched_total{source=~\"$source\"}[$__range])), 1)" }]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Matches completed (range)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 4, "x": 15, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "purple", "value": null }] } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "targets": [{ "refId": "A", "expr": "sum(increase(hiresense_matches_completed_total[$__range]))" }]
+    },
+    {
+      "id": 5, "type": "stat", "title": "Avg match score",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 5, "x": 19, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 1, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 40 }, { "color": "green", "value": 70 }] } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" },
+      "targets": [{ "refId": "A", "expr": "sum(increase(hiresense_match_score_sum[$__range])) / clamp_min(sum(increase(hiresense_match_score_count[$__range])), 1)" }]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Jobs fetched rate by source",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10, "stacking": { "mode": "normal" } } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "refId": "A", "expr": "sum by (source) (rate(hiresense_jobs_fetched_total{source=~\"$source\"}[$__rate_interval]))", "legendFormat": "{{source}}" }]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Jobs indexed rate by source",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10, "stacking": { "mode": "normal" } } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "refId": "A", "expr": "sum by (source) (rate(hiresense_jobs_indexed_total{source=~\"$source\"}[$__rate_interval]))", "legendFormat": "{{source}}" }]
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "Ingestion run duration (p50 / p95)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "fillOpacity": 5 } } },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(hiresense_ingestion_run_duration_ms_milliseconds_bucket[$__rate_interval])))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(hiresense_ingestion_run_duration_ms_milliseconds_bucket[$__rate_interval])))", "legendFormat": "p95" }
+      ]
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Match score percentiles",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 5 } } },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(hiresense_match_score_bucket[$__rate_interval])))", "legendFormat": "p50" },
+        { "refId": "B", "expr": "histogram_quantile(0.90, sum by (le) (rate(hiresense_match_score_bucket[$__rate_interval])))", "legendFormat": "p90" },
+        { "refId": "C", "expr": "sum(rate(hiresense_match_score_sum[$__rate_interval])) / clamp_min(sum(rate(hiresense_match_score_count[$__rate_interval])), 0.0001)", "legendFormat": "avg" }
+      ]
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Domain events published by type",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10, "stacking": { "mode": "normal" } } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "refId": "A", "expr": "sum by (type) (rate(hiresense_events_published_total[$__rate_interval]))", "legendFormat": "{{type}}" }]
+    },
+    {
+      "id": 11, "type": "timeseries", "title": "Event handler errors by type",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" } }, "color": { "mode": "palette-classic" } } },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "refId": "A", "expr": "sum by (type) (increase(hiresense_event_handler_errors_total[$__rate_interval]))", "legendFormat": "{{type}}" }]
+    },
+    {
+      "id": 12, "type": "table", "title": "Fetched vs indexed by source (range)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 28 },
+      "options": { "showHeader": true },
+      "targets": [
+        { "refId": "A", "format": "table", "instant": true, "expr": "sum by (source) (increase(hiresense_jobs_fetched_total{source=~\"$source\"}[$__range]))" },
+        { "refId": "B", "format": "table", "instant": true, "expr": "sum by (source) (increase(hiresense_jobs_indexed_total{source=~\"$source\"}[$__range]))" }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        { "id": "organize", "options": { "excludeByName": { "Time": true }, "renameByName": { "source": "Source", "Value #A": "Fetched", "Value #B": "Indexed" } } }
+      ]
+    }
+  ]
+}

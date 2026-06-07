@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnChanges, SimpleChanges, computed, inject, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, OnChanges, computed, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ApplicationsService } from '../../../core/services/applications.service';
@@ -25,7 +25,7 @@ export class JobTabComponent implements OnChanges {
   regenerating = signal(false);
   error = signal('');
 
-  ngOnChanges(_changes: SimpleChanges): void {
+  ngOnChanges(): void {
     const snap = this.aggregate().job_snapshot;
     this.description.set(snap?.description ?? '');
     this.skills.set(snap?.required_skills ?? []);

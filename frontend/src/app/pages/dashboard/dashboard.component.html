@@ -10,7 +10,13 @@
     </div>
   </header>
 
-  <div class="sidebar-backdrop" (click)="closeSidebar()"></div>
+  <div
+    class="sidebar-backdrop"
+    tabindex="-1"
+    aria-hidden="true"
+    (click)="closeSidebar()"
+    (keydown.escape)="closeSidebar()"
+  ></div>
 
   <aside class="sidebar">
     <div class="logo">

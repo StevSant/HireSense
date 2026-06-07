@@ -137,7 +137,8 @@ $transition: 0.2s ease;
 .skill-picker {
   margin-bottom: 1.25rem;
 
-  label {
+  label,
+  .skill-picker-label {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 500;

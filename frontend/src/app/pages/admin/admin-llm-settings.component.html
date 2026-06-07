@@ -191,10 +191,15 @@
 
     <!-- Override edit modal -->
     @if (editingOverride(); as draft) {
-      <div class="modal-backdrop" (click)="cancelEdit()">
-        <div class="modal" (click)="$event.stopPropagation()">
+      <div
+        class="modal-backdrop"
+        tabindex="-1"
+        (click)="onBackdropClick($event)"
+        (keydown.escape)="cancelEdit()"
+      >
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="override-modal-title">
           <header class="modal-header">
-            <h3>Edit override: {{ draft.feature_key }}</h3>
+            <h3 id="override-modal-title">Edit override: {{ draft.feature_key }}</h3>
             <button class="btn-icon" (click)="cancelEdit()" aria-label="Close">×</button>
           </header>
           <div class="modal-body">

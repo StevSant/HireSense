@@ -9,7 +9,7 @@ import { JobDescriptionSection, ParsedJobDescription } from './job-description-b
 const HEADING_PATTERN = /^\*+\s*([^*\n:]{1,80})\s*\*+\s*:?\s*(.*)$/;
 
 // Lower-cased heading text → emphasis bucket used by the UI for styling.
-const EMPHASIS_MAP: ReadonlyArray<[RegExp, JobDescriptionSection['emphasis']]> = [
+const EMPHASIS_MAP: readonly [RegExp, JobDescriptionSection['emphasis']][] = [
   [/\b(compensation|salary|pay|comp)\b/i, 'compensation'],
   [/\b(apply|how\s*to\s*apply|contact|email)\b/i, 'apply'],
   [/\b(stack|tech\s*stack|technology|tools)\b/i, 'stack'],

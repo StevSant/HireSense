@@ -19,6 +19,7 @@ export const routes: Routes = [
       { path: 'optimization', loadComponent: () => import('./pages/optimization/optimization.component').then(m => m.OptimizationComponent) },
       { path: 'tracking', loadComponent: () => import('./pages/tracking/tracking.component').then(m => m.TrackingComponent) },
       { path: 'outreach', loadComponent: () => import('./pages/outreach/outreach.component').then(m => m.OutreachComponent) },
+      { path: 'autohunt', loadComponent: () => import('./pages/autohunt/autohunt.component').then(m => m.AutohuntComponent) },
       { path: 'analytics', loadComponent: () => import('./pages/analytics/analytics.component').then(m => m.AnalyticsComponent) },
       { path: 'interview', loadComponent: () => import('./pages/interview/interview.component').then(m => m.InterviewComponent) },
       { path: 'admin/llm-settings', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/admin-llm-settings.component').then(m => m.AdminLLMSettingsComponent) },

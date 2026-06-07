@@ -1,8 +1,8 @@
 .feedback-controls {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
 }
 
 .fb-btn {
@@ -10,41 +10,57 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.35rem 0.6rem;
-  border: 1px solid var(--border, #d0d0d0);
-  border-radius: 6px;
-  background: var(--surface, #fff);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-secondary);
   cursor: pointer;
   font-size: 0.85rem;
   line-height: 1;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 
   &:hover:not(:disabled) {
-    background: var(--surface-hover, #f3f4f6);
+    background: var(--bg-inset);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   &:disabled {
     opacity: 0.6;
     cursor: default;
   }
   &.active {
-    border-color: var(--accent, #4f46e5);
-    background: var(--accent-soft, #eef2ff);
+    border-color: var(--accent);
+    background: var(--accent-subtle);
+    color: var(--accent-text);
   }
 }
 
 .fb-icon {
-  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  display: block;
+}
+
+.fb-label {
+  white-space: nowrap;
 }
 
 .compact {
   gap: 0.25rem;
 
   .fb-btn {
-    padding: 0.2rem 0.35rem;
-    font-size: 0.95rem;
+    padding: 0.25rem 0.35rem;
+  }
+
+  .fb-icon {
+    width: 0.95rem;
+    height: 0.95rem;
   }
 }
 
 .fb-error {
   font-size: 0.75rem;
-  color: var(--danger, #dc2626);
+  color: var(--danger);
+  white-space: nowrap;
 }

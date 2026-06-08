@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import math
-from datetime import datetime, timezone
+from datetime import datetime
 
 from pydantic import BaseModel
 
+from hiresense.ingestion.domain.job_sort import sort_jobs
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.seniority import (
     SeniorityLevel,
     detect_seniority,
     extract_min_years,
 )
-
-_DATETIME_MIN_UTC = datetime.min.replace(tzinfo=timezone.utc)
 
 
 class JobQueryParams(BaseModel):
@@ -151,18 +150,7 @@ def filter_and_paginate(
 
         filtered = [j for j in filtered if _matches_country(j)]
 
-    if params.sort == "match_desc":
-        filtered = sorted(
-            filtered,
-            key=lambda j: (j.match_score if j.match_score is not None else -1.0),
-            reverse=True,
-        )
-    elif params.sort == "date_desc":
-        filtered = sorted(
-            filtered,
-            key=lambda j: j.posted_date or _DATETIME_MIN_UTC,
-            reverse=True,
-        )
+    filtered = sort_jobs(filtered, params.sort)
 
     total = len(filtered)
     total_pages = math.ceil(total / params.page_size) if total > 0 else 0

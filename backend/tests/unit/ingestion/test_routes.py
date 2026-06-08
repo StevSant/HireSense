@@ -132,6 +132,23 @@ async def test_list_jobs_filter_by_source() -> None:
 
 
 @pytest.mark.asyncio
+async def test_list_jobs_accepts_title_asc_sort() -> None:
+    app, _, _ = _make_app()
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/ingestion/jobs", params={"tab": "boards", "sort": "title_asc"})
+    assert resp.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_list_jobs_invalid_sort_falls_back_to_default() -> None:
+    # An unknown token must not 422; it falls back to match_desc and returns 200.
+    app, _, _ = _make_app()
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/ingestion/jobs", params={"tab": "boards", "sort": "bogus_xyz"})
+    assert resp.status_code == 200
+
+
+@pytest.mark.asyncio
 async def test_fetch_jobs_endpoint() -> None:
     app, fake_orch, _ = _make_app()
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

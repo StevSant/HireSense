@@ -35,10 +35,10 @@ class ApplicationJobSnapshotOrm(Base):
     required_skills: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     source: Mapped[str] = mapped_column(String(20), nullable=False)
     created_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     updated_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
 
@@ -66,7 +66,7 @@ class ApplicationMatchOrm(Base):
     recommendations: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     cv_language: Mapped[str] = mapped_column(String(10), nullable=False)
     created_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
 
@@ -91,7 +91,7 @@ class ApplicationCvOptimizationOrm(Base):
     improvement_summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
     changes: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
     created_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
 
@@ -113,7 +113,7 @@ class ApplicationCoverLetterOrm(Base):
     body: Mapped[str] = mapped_column(Text, nullable=False)
     tone: Mapped[str] = mapped_column(String(20), nullable=False, default="professional")
     created_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
 
@@ -134,5 +134,5 @@ class ApplicationInterviewPrepOrm(Base):
     negotiation_points: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     matched_stories: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
     created_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )

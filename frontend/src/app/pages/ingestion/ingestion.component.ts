@@ -135,12 +135,22 @@ export class IngestionComponent implements OnInit {
     this.loadJobs();
   }
 
-  loadJobs(): void {
+  // `rescore` defaults to true (full scoring pipeline). Pure reorder/pagination
+  // callers pass false so the server short-circuits the global re-rank + persist
+  // and just sorts the already-persisted scores (#76).
+  loadJobs(rescore = true): void {
     this.loading.set(true);
     this.error.set('');
     const filtersWithSort = { ...this.filters(), sort: this.sort.token() as JobFilters['sort'] };
     this.ingestionService
-      .queryJobs(this.activeTab(), this.page(), this.pageSize(), filtersWithSort, this.includeClosed())
+      .queryJobs(
+        this.activeTab(),
+        this.page(),
+        this.pageSize(),
+        filtersWithSort,
+        this.includeClosed(),
+        rescore,
+      )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
@@ -221,13 +231,13 @@ export class IngestionComponent implements OnInit {
 
   onPageChange(newPage: number): void {
     this.page.set(newPage);
-    this.loadJobs();
+    this.loadJobs(false); // pagination — scores unchanged, no rescore
   }
 
   onPageSizeChange(newSize: number): void {
     this.pageSize.set(newSize);
     this.page.set(1);
-    this.loadJobs();
+    this.loadJobs(false); // pagination — scores unchanged, no rescore
   }
 
   openDetail(job: NormalizedJob): void {
@@ -297,7 +307,7 @@ export class IngestionComponent implements OnInit {
 
   onSorted(): void {
     this.page.set(1);
-    this.loadJobs();
+    this.loadJobs(false); // reorder only — scores unchanged, no rescore
   }
 
   onFeedback(jobId: string, kind: FeedbackKind): void {

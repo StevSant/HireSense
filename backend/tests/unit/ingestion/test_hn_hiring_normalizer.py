@@ -24,6 +24,27 @@ def test_role_location_mode_header() -> None:
     assert "REMOTE" in out["location"]
 
 
+def test_long_description_part_not_appended_to_location() -> None:
+    """Regression: a long header segment that merely *mentions* a location
+    keyword (e.g. 'fully-remote', 'global') must NOT be concatenated into the
+    location field. This is what broke the tracking table — the location cell
+    contained the whole description blob. Only short place/mode tags belong.
+    """
+    n = HNHiringNormalizer()
+    long_blurb = (
+        "Full-Time MixRank processes petabytes of data every month and we are "
+        "a fully-remote company with a global footprint in over 20 countries"
+    )
+    out = n.normalize(
+        _raw(f"MixRank | Software Engineers | 100% Remote (Global) | {long_blurb}")
+    )
+    assert out["company"] == "MixRank"
+    assert out["title"] == "Software Engineers"
+    assert "100% Remote (Global)" in out["location"]
+    assert long_blurb not in out["location"]  # the blurb must not leak in
+    assert len(out["location"]) < 60
+
+
 def test_location_first_role_second_does_not_steal_title() -> None:
     """Real bug from prod: 'NetBird | Berlin, Germany | ONSITE & Remote ...'
 

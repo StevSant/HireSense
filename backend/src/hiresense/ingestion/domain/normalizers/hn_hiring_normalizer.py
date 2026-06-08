@@ -35,6 +35,13 @@ class HNHiringNormalizer:
         }
 
 
+# A real location / work-mode tag is short ("Berlin, Germany", "100% Remote
+# (Global)", "ONSITE & Remote"). Header segments longer than this are almost
+# always description prose that merely *mentions* a keyword like "remote" — they
+# must never be classified as a location, or the whole blurb leaks into the
+# location field (which broke the tracking table).
+_MAX_LOCATION_LEN = 60
+
 # Markers that strongly suggest a part is describing a *location* or
 # *work-mode*, not a role title. Used to disambiguate ambiguous HN headers
 # like "Company | Berlin, Germany | ONSITE & Remote".
@@ -115,7 +122,7 @@ def _looks_like_location(text: str) -> bool:
       * comma-separated multi-region list and no role keyword present
     """
     lower = text.lower().strip()
-    if not lower:
+    if not lower or len(lower) > _MAX_LOCATION_LEN:
         return False
     if any(kw in lower for kw in _LOCATION_KEYWORDS):
         return True
@@ -163,7 +170,7 @@ def _is_pure_employment_marker(text: str) -> bool:
 def _classify_extra(part: str, current: dict[str, str | None]) -> None:
     """Slot a free-form extra field into location / salary based on shape."""
     lower = part.lower()
-    if any(kw in lower for kw in _LOCATION_KEYWORDS):
+    if len(part) <= _MAX_LOCATION_LEN and any(kw in lower for kw in _LOCATION_KEYWORDS):
         loc = current["location"] or ""
         current["location"] = f"{loc} ({part})" if loc else part
         return

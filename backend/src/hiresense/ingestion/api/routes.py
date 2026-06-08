@@ -22,6 +22,7 @@ from hiresense.ingestion.api.dependencies import (
 from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
 from hiresense.ingestion.domain.job_filter import JobQueryParams, PaginatedResult, filter_and_paginate
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
+from hiresense.ingestion.domain.job_sort import sort_jobs
 from hiresense.ingestion.domain.job_scorer import (
     combine_fit_score,
     score_job_against_skills,
@@ -42,6 +43,14 @@ from hiresense.profile.api.dependencies import get_profile_service
 from hiresense.profile.domain import ProfileService
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
+
+# Accepted sort tokens (`<field>_<dir>`) plus the legacy `date_*` aliases. Any
+# value outside this set falls back to the default `match_desc`.
+_ALLOWED_SORTS = frozenset(
+    f"{field}_{direction}"
+    for field in ("match", "posted", "title", "company", "location", "source")
+    for direction in ("asc", "desc")
+) | {"date_desc", "date_asc"}
 
 
 async def _gather_profile(profile_service: ProfileService) -> tuple[list[str], str]:
@@ -171,6 +180,8 @@ async def list_jobs(
     # Default to match-descending so the ranking is actually applied when the
     # client omits sort (otherwise the page reflects insertion order — #18).
     effective_sort = sort or "match_desc"
+    if effective_sort not in _ALLOWED_SORTS:
+        effective_sort = "match_desc"
 
     # Pre-compute skill-overlap per job (cheap) and fold in any *persisted*
     # semantic score so the sort key matches the displayed value. Keep the
@@ -261,12 +272,10 @@ async def list_jobs(
         # Page-level re-sort so the order reflects the post-semantic match_score
         # that the user actually sees. Phase-1 sort happens pre-pagination on
         # skill-only scores; without this the displayed % column looks unsorted.
-        if effective_sort == "match_desc":
-            result.jobs = sorted(
-                result.jobs,
-                key=lambda j: (j.match_score if j.match_score is not None else -1.0),
-                reverse=True,
-            )
+        # Only match-field sorts depend on post-pagination scores; every other
+        # field's order from filter_and_paginate is already final.
+        if effective_sort.startswith("match_"):
+            result.jobs = sort_jobs(result.jobs, effective_sort)
 
     # Tier-1 LLM quick scoring of the visible page (cheap model, one batched
     # call, cached per (job_id, profile_hash)). Runs *after* pagination so the
@@ -279,12 +288,8 @@ async def list_jobs(
         )
         if quick_results:
             result.jobs = [_apply_quick(j, quick_results.get(j.id)) for j in result.jobs]
-            if effective_sort == "match_desc":
-                result.jobs = sorted(
-                    result.jobs,
-                    key=lambda j: (j.match_score if j.match_score is not None else -1.0),
-                    reverse=True,
-                )
+            if effective_sort.startswith("match_"):
+                result.jobs = sort_jobs(result.jobs, effective_sort)
 
     return result
 

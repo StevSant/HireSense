@@ -35,6 +35,8 @@ export class IngestionService {
     // skill+ANN+min_score pipeline (set/order unchanged) but defers the blocking
     // LLM call, reusing cached scores (#76). Defaults to true (full scoring).
     rescore = true,
+    // Reveal jobs flagged low-quality / spam (hidden by default).
+    includeLowQuality = false,
   ): Observable<PaginatedJobsResponse> {
     let params = new HttpParams()
       .set('tab', tab)
@@ -43,6 +45,7 @@ export class IngestionService {
 
     if (includeClosed) params = params.set('include_closed', 'true');
     if (!rescore) params = params.set('rescore', 'false');
+    if (includeLowQuality) params = params.set('include_low_quality', 'true');
 
     if (filters.source) params = params.set('source', filters.source);
     if (filters.keyword) params = params.set('keyword', filters.keyword);

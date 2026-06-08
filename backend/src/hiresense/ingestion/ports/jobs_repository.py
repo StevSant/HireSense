@@ -23,6 +23,15 @@ class ScoreUpdate:
     semantic_score: float | None
 
 
+@dataclasses.dataclass(frozen=True)
+class QualityUpdate:
+    """Immutable value object carrying a single job's quality classification."""
+
+    job_id: str
+    quality: str
+    quality_reason: str | None
+
+
 class JobsRepositoryPort(Protocol):
     def upsert(self, job: NormalizedJob) -> "UpsertResult":
         """Insert, update-in-place (preserving id), reopen, or no-op a job,
@@ -72,6 +81,14 @@ class JobsRepositoryPort(Protocol):
         SQL implementations MUST use a single executemany bulk UPDATE keyed by
         primary key (one session, one commit) — never N individual UPDATE
         statements. In-memory implementations iterate the dict in a single pass.
+        """
+        ...
+
+    def bulk_update_quality(self, updates: list["QualityUpdate"]) -> None:
+        """Persist quality classifications for multiple jobs in one batched write.
+
+        Single executemany bulk UPDATE keyed by primary key (one session, one
+        commit). Unknown IDs are ignored; an empty list is a no-op.
         """
         ...
 

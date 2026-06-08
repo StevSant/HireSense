@@ -13,7 +13,7 @@ from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.normalizer import JobNormalizer
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.ports import JobsRepositoryPort
-from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
+from hiresense.ingestion.ports.jobs_repository import QualityUpdate, ScoreUpdate
 from hiresense.kernel.events import JobsIngestedEvent
 from hiresense.observability import get_domain_metrics, get_tracer
 
@@ -40,6 +40,7 @@ class IngestionOrchestrator:
         retention_days: int | None = None,
         indexer: Any | None = None,
         closure_miss_threshold: int = 2,
+        quality_classifier: Any | None = None,
     ) -> None:
         self._sources = sources
         self._normalizers = normalizers
@@ -49,6 +50,7 @@ class IngestionOrchestrator:
         self._retention_days = retention_days
         self._indexer = indexer
         self._closure_miss_threshold = closure_miss_threshold
+        self._quality_classifier = quality_classifier
         self._last_run_at: float = 0.0
 
     async def run(
@@ -68,6 +70,7 @@ class IngestionOrchestrator:
                 await self._prune_expired()
 
                 new_jobs: list[NormalizedJob] = []
+                all_touched: list[NormalizedJob] = []
 
                 for source in self._sources:
                     source_name = source.source_name()
@@ -118,6 +121,8 @@ class IngestionOrchestrator:
                     if touched and self._indexer is not None:
                         await self._indexer.index(touched)
 
+                    all_touched.extend(touched)
+
                     # Disappearance-based closure: only for snapshot sources, only after a
                     # successful fetch (errored fetches `continue` above and never reach here).
                     if source.supports_snapshot_closure():
@@ -126,6 +131,22 @@ class IngestionOrchestrator:
                         )
                         if closed_ids and self._indexer is not None:
                             await self._indexer.remove(closed_ids)
+
+                # Quality classification (intrinsic, profile-independent) for
+                # every inserted/updated/reopened job, in one batched pass.
+                # Failures degrade to leaving the job at its default "ok".
+                if all_touched and self._quality_classifier is not None:
+                    try:
+                        verdicts = await self._quality_classifier.classify(all_touched)
+                        if verdicts:
+                            self._repository.bulk_update_quality(
+                                [
+                                    QualityUpdate(v.job_id, v.quality.value, v.reason)
+                                    for v in verdicts.values()
+                                ]
+                            )
+                    except Exception:
+                        logger.exception("Job-quality classification failed; left as 'ok'")
 
                 # Indexing already happened per-source via `touched` (inserted/updated/
                 # reopened). Here we only announce the newly inserted jobs.

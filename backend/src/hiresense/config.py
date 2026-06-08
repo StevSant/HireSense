@@ -137,6 +137,13 @@ class Settings(BaseSettings):
     # sources like getonboard; only raise if scoring is also fixed.
     ingestion_min_match_score: float = 0.0
 
+    # Hide job listings whose posted_date is older than this many days (stale /
+    # re-surfaced postings — e.g. WeWorkRemotely keeps the original RSS pubDate
+    # while the site shows a bumped date). Jobs with no posted_date are never
+    # hidden (unknown age). Override per request with ?max_age_days=. Default 0
+    # disables the filter; the shipped .env sets 365 (hide > 1 year old).
+    ingestion_max_job_age_days: int = 0
+
     # Language
     supported_languages: list[str] = ["en", "es"]
     default_language: str = "en"

@@ -161,15 +161,18 @@ async def list_jobs(
     max_years_experience: int | None = None,
     include_closed: bool = False,
     rescore: bool = True,
+    max_age_days: int | None = None,
+    include_low_quality: bool = False,
 ) -> PaginatedResult:
-    # Default min_score from settings when the client doesn't specify one
-    # (pass min_score=0 explicitly to disable the filter). Tests mount the
+    # Default min_score / max_age_days from settings when the client doesn't
+    # specify them (pass 0 explicitly to disable either filter). Tests mount the
     # router on a bare FastAPI without app.state.settings — fall back to
     # no-filter in that case.
-    if min_score is None:
-        settings = getattr(request.app.state, "settings", None)
-        if settings is not None:
-            min_score = settings.ingestion_min_match_score
+    settings = getattr(request.app.state, "settings", None)
+    if min_score is None and settings is not None:
+        min_score = settings.ingestion_min_match_score
+    if max_age_days is None and settings is not None:
+        max_age_days = settings.ingestion_max_job_age_days
     all_jobs = orchestrator.list_jobs() if tab == "boards" else scanner.list_jobs()
 
     candidate_skills, candidate_summary = await _gather_profile(profile_service)
@@ -255,6 +258,8 @@ async def list_jobs(
         seniority_levels=seniority,
         max_years_experience=max_years_experience,
         include_closed=include_closed,
+        max_age_days=max_age_days,
+        include_low_quality=include_low_quality,
     )
     result = filter_and_paginate(all_jobs, params)
 

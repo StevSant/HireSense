@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from hiresense.ingestion.domain.job_filter import JobQueryParams, filter_and_paginate
 from hiresense.ingestion.domain.models import NormalizedJob
@@ -22,6 +22,7 @@ def _job(
     status: str = "open",
     match_score: float | None = None,
     semantic_score: float | None = None,
+    quality: str = "ok",
 ) -> NormalizedJob:
     return NormalizedJob(
         id=id,
@@ -39,6 +40,7 @@ def _job(
         status=status,
         match_score=match_score,
         semantic_score=semantic_score,
+        quality=quality,
     )
 
 
@@ -235,16 +237,64 @@ def test_strict_location_excludes_non_matching() -> None:
     assert result.total == 0
 
 
-def test_strict_location_passes_remote_jobs() -> None:
-    """Fully-remote postings should be applyable regardless of country."""
+def test_low_quality_hidden_by_default_and_revealed_by_toggle() -> None:
     jobs = [
-        _job(id="1", location="USA only"),
-        _job(id="2", location="Remote"),
-        _job(id="3", remote_modality="remote", countries=["Argentina"]),
+        _job(id="ok", quality="ok"),
+        _job(id="spam", quality="spam"),
+        _job(id="low", quality="low_quality"),
+    ]
+    # Default: only the OK job shows.
+    assert {j.id for j in filter_and_paginate(jobs, JobQueryParams()).jobs} == {"ok"}
+    # Toggle on: everything shows.
+    revealed = filter_and_paginate(jobs, JobQueryParams(include_low_quality=True)).jobs
+    assert {j.id for j in revealed} == {"ok", "spam", "low"}
+
+
+def test_max_age_days_hides_stale_jobs() -> None:
+    """Jobs older than max_age_days are hidden; recent jobs and jobs with an
+    unknown (None) posted_date are kept."""
+    now = datetime.now(timezone.utc)
+    jobs = [
+        _job(id="old", posted_date=now - timedelta(days=400)),  # > 1 year → hidden
+        _job(id="fresh", posted_date=now - timedelta(days=10)),  # recent → shown
+        _job(id="unknown", posted_date=None),  # unknown age → shown
+    ]
+    params = JobQueryParams(max_age_days=365)
+    result = filter_and_paginate(jobs, params)
+    assert {j.id for j in result.jobs} == {"fresh", "unknown"}
+
+
+def test_max_age_days_disabled_when_zero_or_none() -> None:
+    now = datetime.now(timezone.utc)
+    jobs = [_job(id="old", posted_date=now - timedelta(days=400))]
+    assert {j.id for j in filter_and_paginate(jobs, JobQueryParams()).jobs} == {"old"}
+    assert {j.id for j in filter_and_paginate(jobs, JobQueryParams(max_age_days=0)).jobs} == {"old"}
+
+
+def test_max_age_days_handles_naive_posted_date() -> None:
+    # Some sources yield tz-naive datetimes; the filter must not crash on them.
+    old_naive = datetime.now() - timedelta(days=400)
+    jobs = [_job(id="old", posted_date=old_naive)]
+    result = filter_and_paginate(jobs, JobQueryParams(max_age_days=365))
+    assert result.jobs == []
+
+
+def test_strict_location_remote_honors_country_restriction() -> None:
+    """Worldwide remote passes; remote *restricted* to specific countries is
+    honored — e.g. getonbrd 'remote_local' surfaces as "Remote (Chile)" with
+    countries=["Chile"], and must be hidden for a user outside that list."""
+    jobs = [
+        _job(id="1", location="USA only"),  # free-text, not worldwide, no match
+        _job(id="2", location="Remote"),  # free-text worldwide remote → passes
+        _job(id="3", remote_modality="remote", countries=["Argentina"]),  # remote, AR-only
+        _job(id="4", remote_modality="remote", countries=["Chile"]),  # remote, CL-only
+        _job(id="5", remote_modality="remote", countries=[]),  # remote, worldwide
     ]
     params = JobQueryParams(user_location="Chile", strict_location=True)
     result = filter_and_paginate(jobs, params)
-    assert {j.id for j in result.jobs} == {"2", "3"}
+    # AR-only remote (id=3) is now excluded for a Chile user; worldwide remote
+    # (2, 5) and Chile-restricted remote (4) pass.
+    assert {j.id for j in result.jobs} == {"2", "4", "5"}
 
 
 def test_strict_location_hybrid_requires_country_match() -> None:

@@ -132,6 +132,15 @@
         />
         Show closed
       </label>
+      <label class="toggle-label">
+        <input
+          type="checkbox"
+          [checked]="includeLowQuality()"
+          (change)="onIncludeLowQualityChange($event)"
+          class="toggle-checkbox"
+        />
+        Show low-quality
+      </label>
     </div>
   }
 

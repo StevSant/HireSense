@@ -36,6 +36,12 @@ class NormalizedJob(BaseModel):
     # only postings the candidate can actually take.
     remote_modality: str | None = None
     countries: list[str] = Field(default_factory=list)
+    # Intrinsic, profile-independent quality classification computed once at
+    # ingestion: "ok" | "low_quality" | "spam". Flagged jobs are hidden from the
+    # listing by default (toggle to reveal). `quality_reason` is a short, human
+    # explanation surfaced in the detail panel.
+    quality: str = "ok"
+    quality_reason: str | None = None
     match_score: float | None = None
     semantic_score: float | None = None
     # Transient, per-request LLM scoring (populated by the quick scorer in the

@@ -109,6 +109,8 @@ export class IngestionComponent implements OnInit {
 
   // Show closed jobs toggle
   includeClosed = signal(false);
+  // Show low-quality / spam jobs toggle (hidden by default).
+  includeLowQuality = signal(false);
 
   ngOnInit(): void {
     this.feedbackRefetch$
@@ -150,6 +152,7 @@ export class IngestionComponent implements OnInit {
         filtersWithSort,
         this.includeClosed(),
         rescore,
+        this.includeLowQuality(),
       )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -301,6 +304,12 @@ export class IngestionComponent implements OnInit {
 
   onIncludeClosedChange(event: Event): void {
     this.includeClosed.set((event.target as HTMLInputElement).checked);
+    this.page.set(1);
+    this.loadJobs();
+  }
+
+  onIncludeLowQualityChange(event: Event): void {
+    this.includeLowQuality.set((event.target as HTMLInputElement).checked);
     this.page.set(1);
     this.loadJobs();
   }

@@ -17,6 +17,10 @@ class FeedbackSignal(BaseModel):
     kind: FeedbackKind
     source: FeedbackSource
     job_embedding: list[float] | None = None
+    # Per-dimension matching scores snapshotted at outcome time (implicit
+    # signals only). None for explicit signals or when capture failed; such
+    # signals contribute nothing to weight nudging.
+    dimension_scores: dict[str, float] | None = None
     created_at: datetime | None = None
 
     model_config = {"from_attributes": True}

@@ -2,7 +2,8 @@
 
 Builds a real FastAPI app over an in-memory SQLite DB (no Postgres), wires the
 preference service exactly as bootstrap does (nudge calculator + a fake
-dimension-score lookup standing in for cached match scoring), and verifies:
+dimension scorer standing in for the matching dimension scorers, snapshotted
+onto each outcome signal at record time), and verifies:
 
 - below the gate, /preference/weights shows zero overrides and a matching
   composite equals the base-weight composite (backward compatible);
@@ -49,10 +50,10 @@ class _FakeVectorStore:
         return None  # no embedding needed for the weight-nudge path
 
 
-class _FakeDimLookup:
+class _FakeDimScorer:
     """compensation always scored 1.0 on the outcome jobs -> positive nudge."""
 
-    def get_dimension_scores(self, job_id: str):  # noqa: ARG002
+    async def score_dimensions(self, job_id: str):  # noqa: ARG002
         return {"compensation": 1.0, "culture_fit": 0.5}
 
 
@@ -125,7 +126,7 @@ async def test_weight_nudge_flow() -> None:
     session_factory = sessionmaker(bind=engine, expire_on_commit=False)
 
     service = _build_service(session_factory)
-    service.attach_dimension_lookup(_FakeDimLookup())
+    service.attach_dimension_scorer(_FakeDimScorer())
 
     # A matching orchestrator sharing the same preference port (as in the app).
     orchestrator = MatchingOrchestrator(

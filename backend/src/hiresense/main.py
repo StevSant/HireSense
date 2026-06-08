@@ -11,6 +11,7 @@ from hiresense.analytics.api import router as analytics_router
 from hiresense.applications.api.routes import router as applications_router
 from hiresense.autohunt.api import router as autohunt_router
 from hiresense.bootstrap import (
+    MatchingDimensionScorerAdapter,
     build_admin,
     build_analytics,
     build_applications,
@@ -113,6 +114,19 @@ def create_app() -> FastAPI:
     matching = build_matching(infra, tracked, preference=preference.service)
     app.state.matching = matching.provider
     app.include_router(matching_router)
+
+    # Two-phase wiring (mirrors attach_job_lookup): matching is built after the
+    # preference service, so attach the dimension scorer used to snapshot
+    # per-job dimension scores onto outcome signals at record time. Absent this
+    # (or when it returns None) no signal carries scores -> weight_overrides
+    # stays empty -> matching composite is byte-identical to today.
+    preference.service.attach_dimension_scorer(
+        MatchingDimensionScorerAdapter(
+            orchestrator=matching.orchestrator,
+            job_lookup=ingestion.orchestrator,
+            profile_service=profile.service,
+        )
+    )
 
     # --- Optimization ---
     optimization = build_optimization(tracked)

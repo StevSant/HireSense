@@ -122,6 +122,33 @@ Each phase is an independent plan + PR.
   invalid→default, alias mapping) and for each touched endpoint's repository
   ordering. Suite stays Postgres-free per project convention.
 
+## Follow-up: sort-only fast path (#76)
+
+**Date:** 2026-06-08 · **Status:** Implemented
+
+After the column-sorting work landed (PRs #72–#74), every sort/filter change on
+the **ingestion** page (the one server-side-paginated list) re-ran the full
+scoring pipeline on the request path: skill-overlap across the corpus, the global
+pgvector ANN pre-rank, a full-corpus score persist write, and a blocking Tier-1
+LLM quick-scoring call for the visible page. A pure reorder doesn't change any
+score, so this was wasted work — and the LLM round-trip dominated the latency
+(#76).
+
+**Fix.** `GET /ingestion/jobs` gains a `rescore: bool = True` query param. When
+`False` (the sort-only / pagination fast path), the handler skips the three
+global ops — skill recompute, ANN re-rank, and the full-corpus persist write —
+plus the global page-level semantic-fill block, and sorts/paginates directly off
+the **already-persisted** `match_score` / `semantic_score`. Bounded, cached
+Tier-1 quick scoring of the visible page still runs (cache hits are instant; only
+newly-surfaced uncached jobs cost one batched LLM call).
+
+The frontend sends `rescore=false` only for pure reorder/pagination
+(`onSorted`, `onPageChange`, `onPageSizeChange`). Filter, tab-switch, feedback
+re-rank, and fetch keep the default full rescore, because those can change which
+jobs match or their scores. The first load (`ngOnInit`) is a full rescore, so the
+corpus is always fully scored before any fast-path request relies on persisted
+scores.
+
 ## Non-goals
 
 - No multi-column / secondary sort.

@@ -160,6 +160,7 @@ async def list_jobs(
     seniority: Annotated[list[SeniorityLevel] | None, Query()] = None,
     max_years_experience: int | None = None,
     include_closed: bool = False,
+    rescore: bool = True,
 ) -> PaginatedResult:
     # Default min_score from settings when the client doesn't specify one
     # (pass min_score=0 explicitly to disable the filter). Tests mount the
@@ -183,36 +184,46 @@ async def list_jobs(
     if effective_sort not in _ALLOWED_SORTS:
         effective_sort = "match_desc"
 
-    # Pre-compute skill-overlap per job (cheap) and fold in any *persisted*
-    # semantic score so the sort key matches the displayed value. Keep the
-    # raw skill score in a side dict so we can re-combine after page-level
-    # semantic scoring without recomputing the overlap.
+    # Raw skill-overlap per job, kept so the page-level semantic re-combine can
+    # reuse it without recomputing. Populated only on the rescore path.
     skill_by_id: dict[str, float | None] = {}
-    if candidate_skills:
-        skill_set = {s.lower() for s in candidate_skills if s}
-        for job in all_jobs:
-            skill_by_id[job.id] = score_job_against_skills(job, skill_set)
-        all_jobs = [
-            j.model_copy(
-                update={"match_score": combine_fit_score(skill_by_id[j.id], j.semantic_score)}
+
+    # `rescore=False` is the sort-only / pagination fast path (#76): the corpus
+    # scores were already computed and persisted by a prior full request, and a
+    # reorder doesn't change them. Skip the whole global block — the expensive
+    # part — and sort/paginate directly off the persisted match_score below.
+    # Clients send rescore=False only for pure reorder/pagination; any filter,
+    # tab, feedback or fetch change keeps the default (full rescore).
+    if rescore:
+        # Pre-compute skill-overlap per job (cheap) and fold in any *persisted*
+        # semantic score so the sort key matches the displayed value.
+        if candidate_skills:
+            skill_set = {s.lower() for s in candidate_skills if s}
+            for job in all_jobs:
+                skill_by_id[job.id] = score_job_against_skills(job, skill_set)
+            all_jobs = [
+                j.model_copy(
+                    update={
+                        "match_score": combine_fit_score(skill_by_id[j.id], j.semantic_score)
+                    }
+                )
+                for j in all_jobs
+            ]
+
+        # GLOBAL pre-rank BEFORE pagination (#18 fix): use the pgvector ANN to
+        # set semantic_score + combined match_score across the WHOLE corpus, so
+        # a high-semantic / low-keyword job can reach page 1 instead of being
+        # scored only after it's already been paginated off. Passthrough (no
+        # vector store, empty profile, etc.) leaves the skill-only ordering.
+        if pre_ranker is not None:
+            all_jobs = await pre_ranker.rerank(
+                all_jobs, skill_by_id, candidate_skills, candidate_summary, bucket=tab
             )
-            for j in all_jobs
-        ]
 
-    # GLOBAL pre-rank BEFORE pagination (#18 fix): use the pgvector ANN to set
-    # semantic_score + combined match_score across the WHOLE corpus, so a
-    # high-semantic / low-keyword job can reach page 1 instead of being scored
-    # only after it's already been paginated off. Passthrough (no vector store,
-    # empty profile, etc.) leaves the skill-only ordering intact.
-    if pre_ranker is not None:
-        all_jobs = await pre_ranker.rerank(
-            all_jobs, skill_by_id, candidate_skills, candidate_summary, bucket=tab
-        )
-
-    if candidate_skills:
-        persist_scores_batch(
-            [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in all_jobs]
-        )
+        if candidate_skills:
+            persist_scores_batch(
+                [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in all_jobs]
+            )
 
     params = JobQueryParams(
         page=page,
@@ -239,7 +250,8 @@ async def list_jobs(
     # the persisted score feeds back into the sort on subsequent calls.
     needs_semantic = [j for j in result.jobs if j.semantic_score is None]
     if (
-        semantic_scoring is not None
+        rescore
+        and semantic_scoring is not None
         and (candidate_skills or candidate_summary)
         and needs_semantic
     ):

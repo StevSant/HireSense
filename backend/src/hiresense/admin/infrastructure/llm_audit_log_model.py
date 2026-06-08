@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid as uuid_mod
 from datetime import datetime
 
-from sqlalchemy import DateTime, JSON, String, Uuid, func
+from sqlalchemy import DateTime, Index, JSON, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from hiresense.infrastructure.database import Base
@@ -17,6 +17,7 @@ class LLMAuditLog(Base):
     """
 
     __tablename__ = "llm_audit_log"
+    __table_args__ = (Index("ix_llm_audit_log_created_at", "created_at"),)
 
     id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
     created_at: Mapped[datetime] = mapped_column(

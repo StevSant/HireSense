@@ -1,7 +1,6 @@
 import uuid
 from datetime import datetime, timezone
 
-import pytest
 
 from hiresense.tracking.api.schemas import (
     CreateApplicationRequest,

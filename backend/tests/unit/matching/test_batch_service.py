@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from hiresense.matching.domain.batch_service import BatchEvaluationService, BatchResult
+from hiresense.matching.domain.batch_service import BatchEvaluationService
 from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain.services import EvaluationResult
 

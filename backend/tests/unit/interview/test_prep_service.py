@@ -5,8 +5,7 @@ import uuid
 
 import pytest
 
-from hiresense.interview.domain.models import Competency, Story
-from hiresense.interview.domain.services import InterviewPrepService, StoryMatch
+from hiresense.interview.domain.services import InterviewPrepService
 
 
 class FakeLLM:

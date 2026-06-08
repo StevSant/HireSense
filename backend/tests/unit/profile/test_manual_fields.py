@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import uuid
 
-import pytest
 
 from hiresense.profile.domain.models import CandidateProfile
 from hiresense.profile.domain.services import ProfileService

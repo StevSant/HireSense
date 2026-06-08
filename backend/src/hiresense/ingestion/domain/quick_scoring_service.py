@@ -106,18 +106,30 @@ class QuickScoringService:
         jobs: list[NormalizedJob],
         candidate_skills: list[str],
         candidate_summary: str,
+        *,
+        llm_on_miss: bool = True,
     ) -> dict[str, QuickMatchResult]:
         """Return quick results keyed by job_id for the jobs we could score.
 
         Jobs absent from the returned dict have no LLM score (cache miss + no
         LLM, or a failed batch) — the caller falls back to the heuristic score.
+
+        When ``llm_on_miss`` is False, cache misses are NOT sent to the LLM:
+        only already-cached scores are returned. This is the #76 sort-only fast
+        path — a pure reorder reuses cached scores instantly and never pays the
+        blocking LLM round-trip; newly-surfaced jobs keep their heuristic score
+        until a full rescore fills the cache.
         """
         if not jobs:
             return {}
         profile_hash = score_profile_hash(candidate_skills, candidate_summary)
         hits = self._cache_repo.get_quick_bulk([j.id for j in jobs], profile_hash)
 
-        if self._llm is None or (not candidate_skills and not candidate_summary):
+        if (
+            not llm_on_miss
+            or self._llm is None
+            or (not candidate_skills and not candidate_summary)
+        ):
             return hits
 
         misses = [j for j in jobs if j.id not in hits]

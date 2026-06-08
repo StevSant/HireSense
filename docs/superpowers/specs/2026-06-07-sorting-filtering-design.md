@@ -128,26 +128,61 @@ Each phase is an independent plan + PR.
 
 After the column-sorting work landed (PRs #72–#74), every sort/filter change on
 the **ingestion** page (the one server-side-paginated list) re-ran the full
-scoring pipeline on the request path: skill-overlap across the corpus, the global
-pgvector ANN pre-rank, a full-corpus score persist write, and a blocking Tier-1
-LLM quick-scoring call for the visible page. A pure reorder doesn't change any
-score, so this was wasted work — and the LLM round-trip dominated the latency
-(#76).
+scoring pipeline on the request path. The dominant cost is the **blocking Tier-1
+LLM quick-scoring call** for the visible page (~seconds); the skill-overlap
+recompute, pgvector ANN pre-rank, and `min_score` gate are comparatively cheap
+(in-memory + one ANN query).
 
-**Fix.** `GET /ingestion/jobs` gains a `rescore: bool = True` query param. When
-`False` (the sort-only / pagination fast path), the handler skips the three
-global ops — skill recompute, ANN re-rank, and the full-corpus persist write —
-plus the global page-level semantic-fill block, and sorts/paginates directly off
-the **already-persisted** `match_score` / `semantic_score`. Bounded, cached
-Tier-1 quick scoring of the visible page still runs (cache hits are instant; only
-newly-surfaced uncached jobs cost one batched LLM call).
+**Why a naïve "skip the global rescore" approach is wrong.** The displayed match
+% is the LLM quick score, which is *not* persisted to the job row; the persisted
+heuristic `match_score` is only written when the profile has structured skills,
+and only ANN-returned jobs get a `semantic_score`. So persisted scores are an
+incomplete, divergent stand-in for the live computation — sorting/filtering off
+them changes *which* jobs appear and their order (jobs with a null persisted
+score get dumped to the tail by `sort_jobs`), not just the row order.
+
+**Fix.** `GET /ingestion/jobs` gains `rescore: bool = True`. The set/order
+-determining steps (skill recompute, ANN pre-rank, `min_score`) **always run**, so
+results are provably identical to before. When `rescore=False` (the sort-only /
+pagination fast path), only the **blocking LLM round-trip is deferred**: quick
+scoring runs cache-only (`QuickScoringService.score_page(..., llm_on_miss=False)`)
+— already-cached scores apply instantly and newly-surfaced jobs keep their
+heuristic blend until the next full rescore fills the cache.
 
 The frontend sends `rescore=false` only for pure reorder/pagination
 (`onSorted`, `onPageChange`, `onPageSizeChange`). Filter, tab-switch, feedback
-re-rank, and fetch keep the default full rescore, because those can change which
-jobs match or their scores. The first load (`ngOnInit`) is a full rescore, so the
-corpus is always fully scored before any fast-path request relies on persisted
-scores.
+re-rank, fetch, and the initial load keep the default full LLM scoring.
+
+### Cross-source ranking consistency (same follow-up)
+
+A second, deeper bug surfaced: sorting by **match** in the *all-sources* view
+showed only `hn_hiring` at the top, yet filtering to `getonboard` alone revealed
+an 82% job that outranked everything on the all-sources page 1. The match
+ranking was **inconsistent across source filters**.
+
+Cause: the displayed match % is the **Tier-1 LLM quick score**, but the global
+sort + pagination ranked by the **heuristic blend**, and the LLM score was
+applied **only after pagination** (to the visible page). The heuristic is
+source-biased — `hn_hiring` jobs (no structured `skills`) score via
+`_text_mention_score` over verbose prose and saturate near 1.0, while
+`getonboard`'s structured tags get dilution-capped low — so strong jobs from
+"weak-heuristic" sources were buried off page 1 and never LLM-scored in the
+all-sources view, only surfacing once their source was filtered.
+
+Fix: in `GET /ingestion/jobs`, after the heuristic/ANN pre-rank and before
+pagination, **apply already-cached LLM scores across the whole corpus**
+(`QuickScoringService.score_page(all_jobs, …, llm_on_miss=False)` — one bulk
+cache read, no LLM calls) and override `match_score` where a cached score
+exists. The LLM cache is keyed by `(job_id, profile_hash)` (source-agnostic), so
+a job scored under any filter ranks correctly everywhere. The persisted row
+score stays the heuristic blend (the override is request-scoped); visible-page
+cache misses are still filled by the page-level pass and improve later rankings.
+
+**Known residual (cold start):** a job that has *never* been LLM-scored in any
+view still ranks by its (biased) heuristic until it first lands on a visible
+page. Fully closing this needs either a less source-biased heuristic pre-rank or
+proactively LLM-scoring a wider candidate window / background backfill — tracked
+separately to avoid unbounded LLM cost.
 
 ## Non-goals
 

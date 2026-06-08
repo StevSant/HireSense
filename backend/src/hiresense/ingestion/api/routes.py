@@ -184,46 +184,60 @@ async def list_jobs(
     if effective_sort not in _ALLOWED_SORTS:
         effective_sort = "match_desc"
 
-    # Raw skill-overlap per job, kept so the page-level semantic re-combine can
-    # reuse it without recomputing. Populated only on the rescore path.
+    # Pre-compute skill-overlap per job (cheap) and fold in any *persisted*
+    # semantic score so the sort key matches the displayed value. Keep the
+    # raw skill score in a side dict so we can re-combine after page-level
+    # semantic scoring without recomputing the overlap.
     skill_by_id: dict[str, float | None] = {}
-
-    # `rescore=False` is the sort-only / pagination fast path (#76): the corpus
-    # scores were already computed and persisted by a prior full request, and a
-    # reorder doesn't change them. Skip the whole global block — the expensive
-    # part — and sort/paginate directly off the persisted match_score below.
-    # Clients send rescore=False only for pure reorder/pagination; any filter,
-    # tab, feedback or fetch change keeps the default (full rescore).
-    if rescore:
-        # Pre-compute skill-overlap per job (cheap) and fold in any *persisted*
-        # semantic score so the sort key matches the displayed value.
-        if candidate_skills:
-            skill_set = {s.lower() for s in candidate_skills if s}
-            for job in all_jobs:
-                skill_by_id[job.id] = score_job_against_skills(job, skill_set)
-            all_jobs = [
-                j.model_copy(
-                    update={
-                        "match_score": combine_fit_score(skill_by_id[j.id], j.semantic_score)
-                    }
-                )
-                for j in all_jobs
-            ]
-
-        # GLOBAL pre-rank BEFORE pagination (#18 fix): use the pgvector ANN to
-        # set semantic_score + combined match_score across the WHOLE corpus, so
-        # a high-semantic / low-keyword job can reach page 1 instead of being
-        # scored only after it's already been paginated off. Passthrough (no
-        # vector store, empty profile, etc.) leaves the skill-only ordering.
-        if pre_ranker is not None:
-            all_jobs = await pre_ranker.rerank(
-                all_jobs, skill_by_id, candidate_skills, candidate_summary, bucket=tab
+    if candidate_skills:
+        skill_set = {s.lower() for s in candidate_skills if s}
+        for job in all_jobs:
+            skill_by_id[job.id] = score_job_against_skills(job, skill_set)
+        all_jobs = [
+            j.model_copy(
+                update={"match_score": combine_fit_score(skill_by_id[j.id], j.semantic_score)}
             )
+            for j in all_jobs
+        ]
 
-        if candidate_skills:
-            persist_scores_batch(
-                [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in all_jobs]
-            )
+    # GLOBAL pre-rank BEFORE pagination (#18 fix): use the pgvector ANN to set
+    # semantic_score + combined match_score across the WHOLE corpus, so a
+    # high-semantic / low-keyword job can reach page 1 instead of being scored
+    # only after it's already been paginated off. Passthrough (no vector store,
+    # empty profile, etc.) leaves the skill-only ordering intact.
+    if pre_ranker is not None:
+        all_jobs = await pre_ranker.rerank(
+            all_jobs, skill_by_id, candidate_skills, candidate_summary, bucket=tab
+        )
+
+    if candidate_skills:
+        persist_scores_batch(
+            [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in all_jobs]
+        )
+
+    # GLOBAL apply of already-cached Tier-1 LLM scores BEFORE pagination. The
+    # LLM quick score is the accurate, displayed match value, but it was only
+    # ever applied to the visible page — so the global sort ranked by the
+    # heuristic blend, which is source-biased (hn_hiring scores via verbose
+    # text-mention and saturates; getonboard's structured tags get dilution-
+    # capped low). A genuinely strong job from a "weak-heuristic" source was
+    # buried off page 1 and never LLM-scored in the all-sources view, even
+    # though it ranked highly once its source was filtered.
+    #
+    # Reading the LLM cache (keyed by job_id+profile_hash, source-agnostic) for
+    # the WHOLE corpus and overriding match_score where we have a score makes
+    # the global ranking consistent with the displayed value across every
+    # filter. This is cache-only (`llm_on_miss=False`) — no LLM calls, one bulk
+    # read — so it's safe on the sort-only fast path too. Visible-page cache
+    # misses are filled by the page-level pass below and improve later rankings.
+    # Applied AFTER persist so the persisted row score stays the heuristic blend
+    # (the LLM score lives in its own cache); this override is request-scoped.
+    if quick_scoring is not None and (candidate_skills or candidate_summary):
+        cached_quick = await quick_scoring.score_page(
+            all_jobs, candidate_skills, candidate_summary, llm_on_miss=False
+        )
+        if cached_quick:
+            all_jobs = [_apply_quick(j, cached_quick.get(j.id)) for j in all_jobs]
 
     params = JobQueryParams(
         page=page,
@@ -250,8 +264,7 @@ async def list_jobs(
     # the persisted score feeds back into the sort on subsequent calls.
     needs_semantic = [j for j in result.jobs if j.semantic_score is None]
     if (
-        rescore
-        and semantic_scoring is not None
+        semantic_scoring is not None
         and (candidate_skills or candidate_summary)
         and needs_semantic
     ):
@@ -294,9 +307,18 @@ async def list_jobs(
     # min_score gate never culls a job on a not-yet-computed LLM score. The LLM
     # score replaces the displayed match_score when available; jobs without one
     # keep the heuristic blend. Cache hits make repeat views instant.
+    #
+    # `rescore=False` is the sort-only / pagination fast path (#76): the result
+    # set and order are already determined by the (cheap) skill + ANN + min_score
+    # steps above, which still ran. We only DEFER the blocking LLM round-trip —
+    # quick scoring runs cache-only (`llm_on_miss=False`), so a reorder reuses
+    # already-computed scores instantly and newly-surfaced jobs show their
+    # heuristic blend until the next full rescore fills the cache. Clients send
+    # rescore=False only for pure reorder/pagination; any filter, tab, feedback
+    # or fetch change keeps the default (full LLM scoring of the page).
     if quick_scoring is not None and (candidate_skills or candidate_summary):
         quick_results = await quick_scoring.score_page(
-            result.jobs, candidate_skills, candidate_summary
+            result.jobs, candidate_skills, candidate_summary, llm_on_miss=rescore
         )
         if quick_results:
             result.jobs = [_apply_quick(j, quick_results.get(j.id)) for j in result.jobs]

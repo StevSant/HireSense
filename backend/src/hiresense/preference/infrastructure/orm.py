@@ -23,6 +23,9 @@ class FeedbackSignalOrm(Base):
     kind: Mapped[str] = mapped_column(String(32))
     source: Mapped[str] = mapped_column(String(16))
     job_embedding: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # Per-dimension matching scores snapshotted at outcome time. NULL for
+    # explicit signals (or when capture failed); maps back to domain `None`.
+    dimension_scores: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

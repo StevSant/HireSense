@@ -42,6 +42,12 @@ class IngestedJob(Base):
     remote_modality: Mapped[str | None] = mapped_column(String(20), nullable=True)
     match_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     semantic_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # Intrinsic quality classification (see JobQuality): "ok" | "low_quality" |
+    # "spam". Defaults to "ok" so existing rows are never hidden retroactively.
+    quality: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="ok", server_default="ok"
+    )
+    quality_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     fetched_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

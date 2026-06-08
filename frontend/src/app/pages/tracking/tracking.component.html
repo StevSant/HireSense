@@ -134,7 +134,7 @@
                     {{ app.title }}
                   }
                 </td>
-                <td>{{ app.location || '—' }}</td>
+                <td class="location" [title]="app.location || ''">{{ app.location || '—' }}</td>
                 <td>{{ app.salary_range || '—' }}</td>
                 <td>
                   @if (app.source) {

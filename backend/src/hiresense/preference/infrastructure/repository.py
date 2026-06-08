@@ -21,6 +21,7 @@ class PreferenceRepository:
                 kind=signal.kind.value,
                 source=signal.source.value,
                 job_embedding=signal.job_embedding,
+                dimension_scores=signal.dimension_scores,
             )
             session.add(row)
             session.commit()

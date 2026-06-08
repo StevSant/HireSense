@@ -57,3 +57,17 @@ def test_no_sort_preserves_order() -> None:
     jobs = [_job("a", 0.3), _job("b", 0.9), _job("c", 0.6)]
     result = filter_and_paginate(jobs, JobQueryParams())
     assert [j.id for j in result.jobs] == ["a", "b", "c"]
+
+
+def test_sort_title_asc_via_filter() -> None:
+    jobs = [_job("z"), _job("a")]
+    jobs[0].title = "zeta"
+    jobs[1].title = "alpha"
+    result = filter_and_paginate(jobs, JobQueryParams(sort="title_asc"))
+    assert [j.id for j in result.jobs] == ["a", "z"]
+
+
+def test_sort_match_asc_via_filter() -> None:
+    jobs = [_job("a", 0.9), _job("b", 0.1)]
+    result = filter_and_paginate(jobs, JobQueryParams(sort="match_asc"))
+    assert [j.id for j in result.jobs] == ["b", "a"]

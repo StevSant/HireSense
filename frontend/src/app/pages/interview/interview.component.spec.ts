@@ -140,3 +140,54 @@ describe('InterviewComponent', () => {
     expect(cmp.prepError()).toBe('prep failed');
   });
 });
+
+describe('InterviewComponent story sorting/filtering', () => {
+  function mountWith(stories: ReturnType<typeof makeStory>[]): InterviewComponent {
+    const interview = {
+      listStories: () => of(stories),
+      createStory: () => of(makeStory()),
+      deleteStory: () => of(undefined),
+      prepare: () => of(makePrep()),
+    };
+    TestBed.configureTestingModule({
+      imports: [InterviewComponent],
+      providers: [
+        { provide: InterviewService, useValue: interview },
+        { provide: IngestionService, useValue: { getJob: () => of({ title: '', company: '', description: '' }) } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } },
+        { provide: ApplicationsService, useValue: { list: () => of([]) } },
+        { provide: Router, useValue: { navigate: () => {} } },
+      ],
+    });
+    const fixture = TestBed.createComponent(InterviewComponent);
+    fixture.detectChanges();
+    return fixture.componentInstance;
+  }
+
+  it('defaults to created descending', () => {
+    const comp = mountWith([
+      makeStory({ id: 'a', created_at: '2026-01-01' }),
+      makeStory({ id: 'b', created_at: '2026-05-01' }),
+      makeStory({ id: 'c', created_at: '2026-03-01' }),
+    ]);
+    expect(comp.visibleStories().map((s) => s.id)).toEqual(['b', 'c', 'a']);
+  });
+
+  it('filters by competency', () => {
+    const comp = mountWith([
+      makeStory({ id: 'a', competency: 'leadership' }),
+      makeStory({ id: 'b', competency: 'technical' }),
+    ]);
+    comp.competencyFilter.set('technical');
+    expect(comp.visibleStories().map((s) => s.id)).toEqual(['b']);
+  });
+
+  it('sorts by title ascending when toggled', () => {
+    const comp = mountWith([
+      makeStory({ id: 'a', title: 'Zeta' }),
+      makeStory({ id: 'b', title: 'Alpha' }),
+    ]);
+    comp.storySort.toggle('title'); // text default asc
+    expect(comp.visibleStories().map((s) => s.id)).toEqual(['b', 'a']);
+  });
+});

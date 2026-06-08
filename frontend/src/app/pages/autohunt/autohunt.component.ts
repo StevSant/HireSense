@@ -3,6 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { AutohuntService } from '../../core/services/autohunt.service';
 import { Digest } from './models/digest.model';
+import { createSortState } from '../../core/utils/sort-state';
+import { parseSortToken } from '../../core/utils/parse-sort-token';
+
+type DigestSortField = 'created' | 'count';
 
 @Component({
   selector: 'app-autohunt',
@@ -14,6 +18,9 @@ import { Digest } from './models/digest.model';
 export class AutohuntComponent implements OnInit {
   private autohunt = inject(AutohuntService);
   private readonly destroyRef = inject(DestroyRef);
+
+  // Digest history is server-paginated (limit), so sorting re-queries.
+  historySort = createSortState<DigestSortField>('created', 'desc', []);
 
   // Latest digest (hero)
   latestDigest = signal<Digest | null>(null);
@@ -53,11 +60,19 @@ export class AutohuntComponent implements OnInit {
       });
   }
 
+  onHistorySort(event: Event): void {
+    const parsed = parseSortToken<DigestSortField>((event.target as HTMLSelectElement).value);
+    if (parsed) {
+      this.historySort.set(parsed.field, parsed.dir);
+      this.loadHistory();
+    }
+  }
+
   private loadHistory(): void {
     this.historyLoading.set(true);
     this.historyError.set('');
     this.autohunt
-      .listRecent()
+      .listRecent(20, this.historySort.token())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (digests) => {

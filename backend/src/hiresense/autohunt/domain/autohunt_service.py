@@ -91,8 +91,8 @@ class AutoHuntService:
     def latest(self) -> Digest | None:
         return self._digest_repo.latest()
 
-    def list_recent(self, limit: int) -> list[Digest]:
-        return self._digest_repo.list_recent(limit)
+    def list_recent(self, limit: int, sort: str | None = None) -> list[Digest]:
+        return self._digest_repo.list_recent(limit, sort)
 
     def _persist(self, entries: list[DigestEntry], cutoff: datetime, now: datetime) -> Digest:
         digest = self._digest_repo.add(

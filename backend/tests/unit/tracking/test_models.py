@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime, timezone
 
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 

@@ -35,4 +35,12 @@ describe('createSortState', () => {
     expect(s.isActive('match')).toBe(true);
     expect(s.isActive('title')).toBe(false);
   });
+
+  it('sets field and direction directly (for dropdown-driven sorting)', () => {
+    const s = createSortState<F>('match', 'desc', ['title']);
+    s.set('posted', 'asc');
+    expect(s.field()).toBe('posted');
+    expect(s.dir()).toBe('asc');
+    expect(s.token()).toBe('posted_asc');
+  });
 });

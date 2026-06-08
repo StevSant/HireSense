@@ -3,7 +3,6 @@ from __future__ import annotations
 import uuid as uuid_mod
 from datetime import datetime, timezone
 
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -11,7 +10,7 @@ from hiresense.identity.api.dependencies import require_auth
 from hiresense.interview.api.dependencies import get_interview_prep_service, get_story_service
 from hiresense.interview.api.routes import router
 from hiresense.interview.domain.models import Competency, Story
-from hiresense.interview.domain.services import InterviewPrep, StoryMatch
+from hiresense.interview.domain.services import InterviewPrep
 
 
 # ---------------------------------------------------------------------------

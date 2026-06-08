@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend (lint · tests · alembic · pgvector)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: hiresense
+          POSTGRES_PASSWORD: hiresense
+          POSTGRES_DB: hiresense
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hiresense"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # config.py has no defaults for these — supply them so Settings() resolves.
+      AUTH_USERNAME: admin
+      AUTH_PASSWORD: changeme
+      JWT_SECRET_KEY: ci-test-secret-not-for-production
+      LLM_API_KEY: test-key
+      DATABASE_URL: postgresql+asyncpg://hiresense:hiresense@localhost:5432/hiresense
+      # Skip the HuggingFace hub round-trip (the embedding model is mocked in tests).
+      HF_HUB_OFFLINE: "1"
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install Python + dependencies
+        run: |
+          uv python install 3.13
+          uv sync --frozen
+
+      - name: Lint (ruff)
+        run: uv run ruff check .
+
+      - name: Unit + integration tests (SQLite; pgvector tests skipped)
+        run: uv run python -m pytest -q
+
+      - name: Apply migrations to Postgres
+        run: uv run python -m alembic upgrade head
+
+      - name: Schema drift check (alembic)
+        run: uv run python -m alembic check
+
+      - name: pgvector ANN tests (live Postgres)
+        run: uv run python -m pytest -m pgvector -q
+
+  frontend:
+    name: frontend (typecheck · a11y lint · tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (app)
+        run: npx tsc --noEmit -p tsconfig.app.json
+
+      - name: Typecheck (specs)
+        run: npx tsc --noEmit -p tsconfig.spec.json
+
+      - name: Lint (angular-eslint, incl. a11y rules)
+        run: npx ng lint
+
+      - name: Unit tests (Vitest)
+        run: npx ng test --watch=false
+        env:
+          CI: "true"

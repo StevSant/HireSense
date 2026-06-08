@@ -64,10 +64,12 @@ def recent_calls(
     model: str | None = None,
     feature_key: str | None = None,
     days: int | None = Query(None, ge=1, le=365),
+    sort: str | None = None,
 ) -> RecentCallsResponse:
     rows = aggregator.recent_calls(
         limit=limit, offset=offset,
         provider=provider, model=model, feature_key=feature_key, days=days,
+        sort=sort,
     )
     return RecentCallsResponse(
         limit=limit,

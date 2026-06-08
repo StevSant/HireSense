@@ -12,7 +12,7 @@ import { CompanyResearch } from './models/company-research.model';
 import { TrackedApplication } from './models/tracked-application.model';
 import { UpdateApplicationRequest } from './models/update-application-request.model';
 import { scoreColor as toScoreColor } from '../../core/utils/score-color';
-import { SortableHeaderComponent } from '../../core/components/sortable-header';
+import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { createSortState } from '../../core/utils/sort-state';
 import { sortItems } from '../../core/utils/sort-items';
 
@@ -21,7 +21,7 @@ type TrackSortField = 'company' | 'title' | 'status' | 'posted' | 'applied';
 @Component({
   selector: 'app-tracking',
   standalone: true,
-  imports: [FormsModule, TitleCasePipe, DatePipe, RouterLink, SortableHeaderComponent],
+  imports: [FormsModule, TitleCasePipe, DatePipe, RouterLink, SortableHeaderDirective],
   templateUrl: './tracking.component.html',
   styleUrl: './tracking.component.scss',
 })

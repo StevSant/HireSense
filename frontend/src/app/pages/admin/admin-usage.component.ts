@@ -9,7 +9,7 @@ import { DashboardSummary } from './models/dashboard-summary.model';
 import { RecentCallsResponse } from './models/recent-calls-response.model';
 import { TimeseriesResponse } from './models/timeseries-response.model';
 import { UsageBucket } from './models/usage-bucket.model';
-import { SortableHeaderComponent } from '../../core/components/sortable-header';
+import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { createSortState } from '../../core/utils/sort-state';
 import { sortItems } from '../../core/utils/sort-items';
 
@@ -20,7 +20,7 @@ type CallsSortField = 'created' | 'cost' | 'latency' | 'input_tokens' | 'output_
 @Component({
   selector: 'app-admin-usage',
   standalone: true,
-  imports: [CommonModule, FormsModule, SortableHeaderComponent],
+  imports: [CommonModule, FormsModule, SortableHeaderDirective],
   templateUrl: './admin-usage.component.html',
   styleUrl: './admin-usage.component.scss',
 })

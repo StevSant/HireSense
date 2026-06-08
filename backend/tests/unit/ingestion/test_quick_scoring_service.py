@@ -94,6 +94,25 @@ async def test_no_llm_returns_only_cache_hits():
 
 
 @pytest.mark.asyncio
+async def test_llm_on_miss_false_returns_only_cache_hits_without_calling_llm():
+    # #76 sort-only fast path: on a pure reorder we apply already-cached quick
+    # scores instantly and never fire the blocking LLM call for cache misses.
+    cached = QuickMatchResult(job_id="a", score=0.9, verdict=QuickMatchVerdict.STRONG)
+    cache = StubCache({"a": cached})
+    llm = StubLLM(json.dumps([{"ref": 1, "score": 0.3, "verdict": "weak"}]))
+    svc = QuickScoringService(llm=llm, cache_repo=cache)
+
+    results = await svc.score_page(
+        [_job("a"), _job("b")], ["python"], "summary", llm_on_miss=False
+    )
+
+    assert set(results) == {"a"}  # only the cache hit; the miss is left unscored
+    assert results["a"].score == 0.9
+    assert llm.calls == []  # blocking LLM round-trip skipped
+    assert cache.upserts == []  # nothing newly persisted
+
+
+@pytest.mark.asyncio
 async def test_no_profile_skips_llm():
     llm = StubLLM("[]")
     svc = QuickScoringService(llm=llm, cache_repo=StubCache())

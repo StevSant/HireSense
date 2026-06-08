@@ -1,6 +1,5 @@
 import pytest
 
-from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain.scorers.llm_scorer import BaseLLMScorer
 
 

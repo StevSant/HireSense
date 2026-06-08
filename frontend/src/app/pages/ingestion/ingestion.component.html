@@ -123,12 +123,6 @@
   <!-- Sort bar -->
   @if (jobs().length > 0) {
     <div class="sort-bar">
-      <label for="sort-select">Sort by</label>
-      <select id="sort-select" [value]="sortMode()" (change)="onSortChange($event)" class="filter-control">
-        <option value="">Default</option>
-        <option value="match_desc">Best match for me</option>
-        <option value="date_desc">Newest first</option>
-      </select>
       <label class="toggle-label">
         <input
           type="checkbox"
@@ -156,12 +150,12 @@
         </colgroup>
         <thead>
           <tr>
-            <th>Match</th>
-            <th>Title</th>
-            <th>Company</th>
-            <th>Location</th>
-            <th>Source</th>
-            <th>Posted</th>
+            <th appSortHeader [state]="sort" field="match" (sorted)="onSorted()">Match</th>
+            <th appSortHeader [state]="sort" field="title" (sorted)="onSorted()">Title</th>
+            <th appSortHeader [state]="sort" field="company" (sorted)="onSorted()">Company</th>
+            <th appSortHeader [state]="sort" field="location" (sorted)="onSorted()">Location</th>
+            <th appSortHeader [state]="sort" field="source" (sorted)="onSorted()">Source</th>
+            <th appSortHeader [state]="sort" field="posted" (sorted)="onSorted()">Posted</th>
             <th>Actions</th>
           </tr>
         </thead>

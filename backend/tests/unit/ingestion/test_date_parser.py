@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-import pytest
 
 from hiresense.ingestion.domain.date_parser import parse_iso_date
 

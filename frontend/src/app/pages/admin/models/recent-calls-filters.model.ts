@@ -5,4 +5,5 @@ export interface RecentCallsFilters {
   model?: string;
   feature_key?: string;
   days?: number;
+  sort?: string;
 }

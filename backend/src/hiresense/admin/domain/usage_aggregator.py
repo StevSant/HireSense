@@ -52,6 +52,7 @@ class UsageAggregator:
         model: str | None = None,
         feature_key: str | None = None,
         days: int | None = None,
+        sort: str | None = None,
     ) -> list[UsageRecord]:
         since = None if days is None else datetime.now(timezone.utc) - timedelta(days=days)
         effective_limit = self._recent_limit if limit is None else limit
@@ -62,6 +63,7 @@ class UsageAggregator:
             model=model,
             feature_key=feature_key,
             since=since,
+            sort=sort,
         )
 
     def export_csv(

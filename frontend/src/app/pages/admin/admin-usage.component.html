@@ -95,15 +95,15 @@
         <table class="breakdown-table">
           <thead>
             <tr>
-              <th>{{ b.dimension | titlecase }}</th>
-              <th class="right">Calls</th>
-              <th class="right">Tokens</th>
-              <th class="right">Cost</th>
+              <th appSortHeader [state]="breakdownSort" field="key">{{ b.dimension | titlecase }}</th>
+              <th class="right" appSortHeader [state]="breakdownSort" field="calls">Calls</th>
+              <th class="right" appSortHeader [state]="breakdownSort" field="total_tokens">Tokens</th>
+              <th class="right" appSortHeader [state]="breakdownSort" field="cost_usd">Cost</th>
               <th class="bar-col">Share</th>
             </tr>
           </thead>
           <tbody>
-            @for (row of b.buckets; track row.key) {
+            @for (row of visibleBuckets(); track row.key) {
               <tr>
                 <td><code>{{ row.key }}</code></td>
                 <td class="right">{{ row.calls | number }}</td>
@@ -157,14 +157,14 @@
         <table class="calls-table">
           <thead>
             <tr>
-              <th>Time</th>
+              <th appSortHeader [state]="callsSort" field="created" (sorted)="loadRecent()">Time</th>
               <th>Feature</th>
               <th>Provider</th>
               <th>Model</th>
-              <th class="right">In</th>
-              <th class="right">Out</th>
-              <th class="right">Cost</th>
-              <th class="right">Latency</th>
+              <th class="right" appSortHeader [state]="callsSort" field="input_tokens" (sorted)="loadRecent()">In</th>
+              <th class="right" appSortHeader [state]="callsSort" field="output_tokens" (sorted)="loadRecent()">Out</th>
+              <th class="right" appSortHeader [state]="callsSort" field="cost" (sorted)="loadRecent()">Cost</th>
+              <th class="right" appSortHeader [state]="callsSort" field="latency" (sorted)="loadRecent()">Latency</th>
               <th>Status</th>
             </tr>
           </thead>

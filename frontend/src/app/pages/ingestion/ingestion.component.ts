@@ -21,6 +21,8 @@ import { environment } from '../../../environments/environment';
 import { FeedbackControlsComponent } from './components/feedback-controls/feedback-controls.component';
 import { PreferenceTuningComponent } from './components/preference-tuning/preference-tuning.component';
 import { FeedbackKind } from './models/feedback-kind.model';
+import { SortableHeaderComponent } from '../../core/components/sortable-header';
+import { createSortState } from '../../core/utils/sort-state';
 
 @Component({
   selector: 'app-ingestion',
@@ -32,6 +34,7 @@ import { FeedbackKind } from './models/feedback-kind.model';
     DatePipe,
     FeedbackControlsComponent,
     PreferenceTuningComponent,
+    SortableHeaderComponent,
   ],
   templateUrl: './ingestion.component.html',
   styleUrl: './ingestion.component.scss',
@@ -97,8 +100,12 @@ export class IngestionComponent implements OnInit {
   // Coalesces rapid feedback into one re-rank refetch.
   private feedbackRefetch$ = new Subject<void>();
 
-  // Sort
-  sortMode = signal<'' | 'match_desc' | 'date_desc'>('');
+  // Sort — clickable column headers, default Match descending.
+  sort = createSortState<'match' | 'title' | 'company' | 'location' | 'source' | 'posted'>(
+    'match',
+    'desc',
+    ['title', 'company', 'location', 'source'],
+  );
 
   // Show closed jobs toggle
   includeClosed = signal(false);
@@ -131,7 +138,7 @@ export class IngestionComponent implements OnInit {
   loadJobs(): void {
     this.loading.set(true);
     this.error.set('');
-    const filtersWithSort = { ...this.filters(), sort: this.sortMode() || undefined };
+    const filtersWithSort = { ...this.filters(), sort: this.sort.token() as JobFilters['sort'] };
     this.ingestionService
       .queryJobs(this.activeTab(), this.page(), this.pageSize(), filtersWithSort, this.includeClosed())
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -288,9 +295,7 @@ export class IngestionComponent implements OnInit {
     this.loadJobs();
   }
 
-  onSortChange(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value as '' | 'match_desc' | 'date_desc';
-    this.sortMode.set(value);
+  onSorted(): void {
     this.page.set(1);
     this.loadJobs();
   }

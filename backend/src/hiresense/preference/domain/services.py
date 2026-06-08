@@ -42,7 +42,7 @@ class PreferenceService:
         self._llm = llm
         self._explanation_enabled = explanation_enabled
         self._job_lookup: Any | None = None
-        self._dimension_lookup: Any | None = None
+        self._dimension_scorer: Any | None = None
 
     def attach_job_lookup(self, job_lookup: Any) -> None:
         """Late-bind the job-title lookup used by the LLM explanation summary.
@@ -50,18 +50,25 @@ class PreferenceService:
         preference service, so it is attached once available."""
         self._job_lookup = job_lookup
 
-    def attach_dimension_lookup(self, dimension_lookup: Any) -> None:
-        """Late-bind the per-job dimension-score lookup used to nudge weights.
+    def attach_dimension_scorer(self, scorer: Any) -> None:
+        """Late-bind the dimension scorer used to snapshot per-job scores.
 
         Two-phase wiring (mirrors ``attach_job_lookup``): the matching layer is
-        built after the preference service, so the lookup — ``get_dimension_scores(job_id)
-        -> dict[str, float] | None`` over cached match scoring — is attached
-        once available. When absent (or it returns nothing), no observations are
-        produced and ``weight_overrides`` stays empty, so matching is unchanged."""
-        self._dimension_lookup = dimension_lookup
+        built after the preference service, so the scorer — a
+        ``DimensionScorerPort`` whose ``score_dimensions(job_id) ->
+        dict[str, float] | None`` runs the matching dimension scorers for the
+        job times the current profile — is attached once available. When absent
+        (or it returns ``None``), recorded signals carry no dimension scores, so
+        no observations are produced and ``weight_overrides`` stays empty,
+        leaving matching byte-identical to today."""
+        self._dimension_scorer = scorer
 
     async def _record(
-        self, job_id: uuid_mod.UUID, kind: FeedbackKind, source: FeedbackSource
+        self,
+        job_id: uuid_mod.UUID,
+        kind: FeedbackKind,
+        source: FeedbackSource,
+        capture_dimensions: bool = False,
     ) -> FeedbackSignal:
         embedding: list[float] | None = None
         if self._vector_store is not None:
@@ -75,12 +82,27 @@ class PreferenceService:
                 "signal stored, no contribution",
                 job_id,
             )
+        # Outcome (implicit) signals snapshot the matching dimension scores once,
+        # at outcome time, off the request path. Failure degrades gracefully:
+        # the signal is still stored, simply with no nudging contribution.
+        dimension_scores: dict[str, float] | None = None
+        if capture_dimensions and self._dimension_scorer is not None:
+            try:
+                dimension_scores = await self._dimension_scorer.score_dimensions(str(job_id))
+            except Exception:
+                logger.exception(
+                    "preference: dimension-score capture failed for %s — "
+                    "signal stored, no nudging contribution",
+                    job_id,
+                )
+                dimension_scores = None
         signal = self._repo.add_signal(
             FeedbackSignal(
                 job_id=job_id,
                 kind=kind,
                 source=source,
                 job_embedding=embedding,
+                dimension_scores=dimension_scores,
             )
         )
         self._recompute()
@@ -89,12 +111,16 @@ class PreferenceService:
     async def record_signal(
         self, job_id: uuid_mod.UUID, kind: FeedbackKind
     ) -> FeedbackSignal:
-        return await self._record(job_id, kind, FeedbackSource.EXPLICIT)
+        return await self._record(
+            job_id, kind, FeedbackSource.EXPLICIT, capture_dimensions=False
+        )
 
     async def record_implicit_signal(
         self, job_id: uuid_mod.UUID, kind: FeedbackKind
     ) -> FeedbackSignal:
-        return await self._record(job_id, kind, FeedbackSource.IMPLICIT)
+        return await self._record(
+            job_id, kind, FeedbackSource.IMPLICIT, capture_dimensions=True
+        )
 
     def query_vector(self, baseline: list[float]) -> list[float]:
         if not self._enabled:
@@ -232,13 +258,16 @@ class PreferenceService:
         )
 
     def _compute_overrides(self, signals: list[FeedbackSignal]) -> dict[str, int]:
-        # Nudging needs both a calculator and a way to recover per-job dimension
-        # scores. Absent either, return no overrides -> matching unchanged.
-        if self._nudge_calc is None or self._dimension_lookup is None:
+        # Nudging needs a calculator. Each signal contributes only via the
+        # dimension scores snapshotted onto it at record time; signals without
+        # them (explicit, or capture-failed) contribute nothing. Absent the
+        # calculator, or no signal carries scores, return no overrides ->
+        # matching byte-identical to today.
+        if self._nudge_calc is None:
             return {}
         observations: list[OutcomeObservation] = []
         for signal in signals:
-            scores = self._dimension_scores_for(signal.job_id)
+            scores = signal.dimension_scores
             if not scores:
                 continue
             polarity = signal.kind.polarity
@@ -251,13 +280,6 @@ class PreferenceService:
                     )
                 )
         return self._nudge_calc.compute_overrides(observations)
-
-    def _dimension_scores_for(self, job_id: uuid_mod.UUID) -> dict[str, float] | None:
-        try:
-            return self._dimension_lookup.get_dimension_scores(str(job_id))
-        except Exception:
-            logger.exception("preference: dimension-score lookup failed for %s", job_id)
-            return None
 
     def _to_contribution(self, signal: FeedbackSignal, now: datetime) -> SignalContribution:
         created = signal.created_at or now

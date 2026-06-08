@@ -7,7 +7,7 @@ from hiresense.ingestion.domain.content_hash import content_hash
 from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.upsert_result import UpsertResult
-from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
+from hiresense.ingestion.ports.jobs_repository import QualityUpdate, ScoreUpdate
 
 
 class InMemoryJobsRepository:
@@ -154,6 +154,16 @@ class InMemoryJobsRepository:
                     "match_score": score_update.match_score,
                     "semantic_score": score_update.semantic_score,
                 }
+            )
+
+    def bulk_update_quality(self, updates: list[QualityUpdate]) -> None:
+        """Update multiple jobs' quality classifications in one pass."""
+        for qu in updates:
+            job = self._jobs.get(qu.job_id)
+            if job is None:
+                continue
+            self._jobs[qu.job_id] = job.model_copy(
+                update={"quality": qu.quality, "quality_reason": qu.quality_reason}
             )
 
     def prune_older_than(self, cutoff: datetime) -> list[str]:

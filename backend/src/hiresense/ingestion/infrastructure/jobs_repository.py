@@ -11,7 +11,7 @@ from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.infrastructure.models import IngestedJob
-from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
+from hiresense.ingestion.ports.jobs_repository import QualityUpdate, ScoreUpdate
 
 
 def _to_orm(job: NormalizedJob, bucket: str) -> IngestedJob:
@@ -40,6 +40,8 @@ def _to_orm(job: NormalizedJob, bucket: str) -> IngestedJob:
         remote_modality=job.remote_modality,
         match_score=job.match_score,
         semantic_score=job.semantic_score,
+        quality=job.quality,
+        quality_reason=job.quality_reason,
     )
 
 
@@ -66,6 +68,8 @@ def _to_domain(row: IngestedJob) -> NormalizedJob:
         remote_modality=row.remote_modality,
         match_score=row.match_score,
         semantic_score=row.semantic_score,
+        quality=row.quality,
+        quality_reason=row.quality_reason,
     )
 
 
@@ -275,6 +279,24 @@ class JobsRepository:
                         "semantic_score": su.semantic_score,
                     }
                     for su in updates
+                ],
+            )
+            session.commit()
+
+    def bulk_update_quality(self, updates: list[QualityUpdate]) -> None:
+        """Persist quality classifications in a single executemany round-trip."""
+        if not updates:
+            return
+        with self._session_factory() as session:
+            session.execute(
+                update(IngestedJob),
+                [
+                    {
+                        "id": qu.job_id,
+                        "quality": qu.quality,
+                        "quality_reason": qu.quality_reason,
+                    }
+                    for qu in updates
                 ],
             )
             session.commit()

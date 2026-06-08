@@ -1,7 +1,7 @@
 <div class="job-tab">
   <div class="row">
     <label for="job-tab-description">Job description</label>
-    <textarea id="job-tab-description" rows="10" [ngModel]="description()" (ngModelChange)="description.set($event)"></textarea>
+    <textarea id="job-tab-description" rows="10" [ngModel]="description()" (ngModelChange)="setDescription($event)"></textarea>
   </div>
 
   <div class="row">
@@ -27,5 +27,8 @@
     <button class="btn-primary" (click)="save()" [disabled]="saving()">
       @if (saving()) { Saving... } @else { Save snapshot }
     </button>
+    @if (saved()) {
+      <span class="save-confirmation" role="status">✓ Saved</span>
+    }
   </div>
 </div>

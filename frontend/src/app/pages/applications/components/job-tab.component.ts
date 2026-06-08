@@ -22,6 +22,9 @@ export class JobTabComponent implements OnChanges {
   description = signal('');
   skills = signal<string[]>([]);
   saving = signal(false);
+  // True after a successful save; reset the moment the user edits again, so the
+  // "Saved ✓" confirmation can't go stale (the save itself gave no feedback).
+  saved = signal(false);
   regenerating = signal(false);
   error = signal('');
 
@@ -29,12 +32,19 @@ export class JobTabComponent implements OnChanges {
     const snap = this.aggregate().job_snapshot;
     this.description.set(snap?.description ?? '');
     this.skills.set(snap?.required_skills ?? []);
+    this.saved.set(false);
   }
 
   source = computed(() => this.aggregate().job_snapshot?.source ?? 'manual');
 
+  setDescription(value: string): void {
+    this.description.set(value);
+    this.saved.set(false);
+  }
+
   save(): void {
     this.saving.set(true);
+    this.saved.set(false);
     this.error.set('');
     this.service
       .updateSnapshot(this.aggregate().id, {
@@ -45,6 +55,7 @@ export class JobTabComponent implements OnChanges {
       .subscribe({
         next: () => {
           this.saving.set(false);
+          this.saved.set(true);
           this.changed.emit();
         },
         error: (err) => {
@@ -72,9 +83,11 @@ export class JobTabComponent implements OnChanges {
 
   addSkill(skill: string): void {
     this.skills.update((arr) => [...arr, skill]);
+    this.saved.set(false);
   }
 
   removeSkill(skill: string): void {
     this.skills.update((arr) => arr.filter((s) => s !== skill));
+    this.saved.set(false);
   }
 }

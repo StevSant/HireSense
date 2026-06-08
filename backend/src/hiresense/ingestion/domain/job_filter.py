@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from pydantic import BaseModel
 
@@ -39,9 +39,16 @@ class JobQueryParams(BaseModel):
     # When False (default), jobs with status == "closed" are hidden. Set True
     # to surface them (e.g. the frontend "Show closed" toggle).
     include_closed: bool = False
+    # When False (default), jobs flagged quality != "ok" (low_quality / spam)
+    # are hidden. Set True to surface them (the "Show low-quality" toggle).
+    include_low_quality: bool = False
     # Maximum minimum-years-experience the user is willing to consider.
     # Jobs with no extractable years string pass through.
     max_years_experience: int | None = None
+    # Hide jobs whose posted_date is older than this many days (stale / re-
+    # surfaced postings). None or <= 0 disables the filter. Jobs with no
+    # posted_date are never hidden (unknown age).
+    max_age_days: int | None = None
 
 
 class PaginatedResult(BaseModel):
@@ -60,6 +67,9 @@ def filter_and_paginate(
 
     if not params.include_closed:
         filtered = [j for j in filtered if j.status != "closed"]
+
+    if not params.include_low_quality:
+        filtered = [j for j in filtered if (j.quality or "ok") == "ok"]
 
     if params.source:
         filtered = [j for j in filtered if j.source == params.source]
@@ -124,16 +134,33 @@ def filter_and_paginate(
             if (extract_min_years(j.description) or 0) <= cap
         ]
 
+    if params.max_age_days is not None and params.max_age_days > 0:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=params.max_age_days)
+
+        def _fresh_enough(job: NormalizedJob) -> bool:
+            posted = job.posted_date
+            if posted is None:
+                return True  # unknown age — never hide
+            # Normalise naive datetimes (some sources) to UTC before comparing.
+            if posted.tzinfo is None:
+                posted = posted.replace(tzinfo=timezone.utc)
+            return posted >= cutoff
+
+        filtered = [j for j in filtered if _fresh_enough(j)]
+
     if params.strict_location and params.user_location:
         user_loc = params.user_location.strip().lower()
         open_keywords = ("worldwide", "anywhere", "global", "remote")
 
         def _matches_country(job: NormalizedJob) -> bool:
-            # Fully-remote postings: treat as applyable from anywhere. Some
-            # sources do restrict remote roles to specific countries, but
-            # that's the minority — rather than false-reject, surface them
-            # and let the user verify on the listing itself.
+            # Remote roles restricted to specific countries must honor that
+            # restriction — e.g. getonbrd "remote_local" surfaces as
+            # "Remote (Chile)" with countries=["Chile"]; an Ecuador user can't
+            # apply, so don't show it. A remote role with NO country list is
+            # worldwide → applyable from anywhere.
             if job.remote_modality == "remote":
+                if job.countries:
+                    return any(user_loc == c.strip().lower() for c in job.countries)
                 return True
             # Hybrid / on-site with a structured countries list: must be one
             # of those countries. The list is authoritative.

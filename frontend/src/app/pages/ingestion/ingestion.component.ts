@@ -136,8 +136,8 @@ export class IngestionComponent implements OnInit {
   }
 
   // `rescore` defaults to true (full scoring pipeline). Pure reorder/pagination
-  // callers pass false so the server short-circuits the global re-rank + persist
-  // and just sorts the already-persisted scores (#76).
+  // callers pass false so the server defers the blocking LLM call and reuses
+  // cached scores, while the set/order-determining steps still run (#76).
   loadJobs(rescore = true): void {
     this.loading.set(true);
     this.error.set('');
@@ -231,13 +231,13 @@ export class IngestionComponent implements OnInit {
 
   onPageChange(newPage: number): void {
     this.page.set(newPage);
-    this.loadJobs(false); // pagination — scores unchanged, no rescore
+    this.loadJobs(false); // pagination — scores unchanged, defer LLM rescore
   }
 
   onPageSizeChange(newSize: number): void {
     this.pageSize.set(newSize);
     this.page.set(1);
-    this.loadJobs(false); // pagination — scores unchanged, no rescore
+    this.loadJobs(false); // pagination — scores unchanged, defer LLM rescore
   }
 
   openDetail(job: NormalizedJob): void {
@@ -307,7 +307,7 @@ export class IngestionComponent implements OnInit {
 
   onSorted(): void {
     this.page.set(1);
-    this.loadJobs(false); // reorder only — scores unchanged, no rescore
+    this.loadJobs(false); // reorder only — scores unchanged, defer LLM rescore
   }
 
   onFeedback(jobId: string, kind: FeedbackKind): void {

@@ -3,9 +3,10 @@ from __future__ import annotations
 import uuid as uuid_mod
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, Integer, String, Uuid, func
+from sqlalchemy import DateTime, Integer, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
+from hiresense.infrastructure import JSONB_OR_JSON
 from hiresense.infrastructure.database import Base
 
 # Embeddings are stored as JSON float arrays (not a pgvector column): the taste
@@ -22,10 +23,10 @@ class FeedbackSignalOrm(Base):
     job_id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, index=True)
     kind: Mapped[str] = mapped_column(String(32))
     source: Mapped[str] = mapped_column(String(16))
-    job_embedding: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    job_embedding: Mapped[list | None] = mapped_column(JSONB_OR_JSON, nullable=True)
     # Per-dimension matching scores snapshotted at outcome time. NULL for
     # explicit signals (or when capture failed); maps back to domain `None`.
-    dimension_scores: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    dimension_scores: Mapped[dict | None] = mapped_column(JSONB_OR_JSON, nullable=True)
     created_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -36,10 +37,10 @@ class PreferenceModelOrm(Base):
 
     # Singleton: one row, fixed id. (Multi-profile is a future extension.)
     id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
-    delta_vector: Mapped[list] = mapped_column(JSON)
+    delta_vector: Mapped[list] = mapped_column(JSONB_OR_JSON)
     # Phase 2: dimension name -> integer weight delta for the matching composite.
     # Defaults to {} so pre-Phase-2 rows (NULL) read back as "no overrides".
-    weight_overrides: Mapped[dict | None] = mapped_column(JSON, nullable=True, default=dict)
+    weight_overrides: Mapped[dict | None] = mapped_column(JSONB_OR_JSON, nullable=True, default=dict)
     version: Mapped[int] = mapped_column(Integer, default=1)
     updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

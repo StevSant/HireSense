@@ -129,13 +129,33 @@ describe('OutreachComponent', () => {
     expect(outreach.listEvents.mock.calls.length).toBe(callsBefore + 1);
   });
 
-  it('renders the timeline newest-first', () => {
+  it('renders the timeline newest-first by default', () => {
     const listEvents = vi.fn(() =>
-      of([makeEvent({ id: 'old' }), makeEvent({ id: 'new' })]),
+      of([
+        makeEvent({ id: 'old', created_at: '2026-06-01T00:00:00Z' }),
+        makeEvent({ id: 'new', created_at: '2026-06-07T00:00:00Z' }),
+      ]),
     );
     const { cmp } = mount({ appId: 'app-1', outreach: { listEvents } });
 
-    expect(cmp.events().map((e) => e.id)).toEqual(['new', 'old']);
+    // Events are stored in natural order; visibleEvents applies the sort.
+    expect(cmp.visibleEvents().map((e) => e.id)).toEqual(['new', 'old']);
+  });
+
+  it('can sort the timeline oldest-first and filter by kind', () => {
+    const listEvents = vi.fn(() =>
+      of([
+        makeEvent({ id: 'a', kind: 'sent', created_at: '2026-06-01T00:00:00Z' }),
+        makeEvent({ id: 'b', kind: 'replied', created_at: '2026-06-07T00:00:00Z' }),
+      ]),
+    );
+    const { cmp } = mount({ appId: 'app-1', outreach: { listEvents } });
+
+    cmp.eventSort.set('created', 'asc');
+    expect(cmp.visibleEvents().map((e) => e.id)).toEqual(['a', 'b']);
+
+    cmp.kindFilter.set('replied');
+    expect(cmp.visibleEvents().map((e) => e.id)).toEqual(['b']);
   });
 
   it('loads nudges and "mark followed up" removes the row', () => {

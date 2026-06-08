@@ -1,7 +1,25 @@
 <div class="page">
   <div class="page-header">
     <h1>Applications</h1>
-    <button class="btn-primary" (click)="openCreate()">+ New application</button>
+    <div class="header-actions">
+      @if (applications().length > 0) {
+        <input
+          type="search"
+          class="filter-control"
+          placeholder="Search title or company…"
+          [value]="query()"
+          (input)="onQueryInput($event)"
+          aria-label="Search applications"
+        />
+        <select class="filter-control" [value]="statusFilter()" (change)="onStatusFilterChange($event)" aria-label="Filter by status">
+          <option value="">All statuses</option>
+          @for (s of statuses(); track s) {
+            <option [value]="s">{{ s | titlecase }}</option>
+          }
+        </select>
+      }
+      <button class="btn-primary" (click)="openCreate()">+ New application</button>
+    </div>
   </div>
 
   @if (loading()) {
@@ -17,17 +35,17 @@
     <table class="apps-table">
       <thead>
         <tr>
-          <th>Title</th>
-          <th>Company</th>
-          <th>Status</th>
-          <th>Match</th>
+          <th appSortHeader [state]="sort" field="title">Title</th>
+          <th appSortHeader [state]="sort" field="company">Company</th>
+          <th appSortHeader [state]="sort" field="status">Status</th>
+          <th appSortHeader [state]="sort" field="match">Match</th>
           <th>Artifacts</th>
-          <th>Created</th>
+          <th appSortHeader [state]="sort" field="created">Created</th>
           <th class="col-actions" aria-label="Actions"></th>
         </tr>
       </thead>
       <tbody>
-        @for (app of applications(); track app.id) {
+        @for (app of visibleApplications(); track app.id) {
           <tr (click)="open(app.id)" class="row">
             <td>{{ app.title }}</td>
             <td>{{ app.company }}</td>

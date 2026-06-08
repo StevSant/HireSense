@@ -8,6 +8,24 @@ from sqlalchemy import String, and_, cast, func, select
 from hiresense.admin.domain import UsageBucket, UsageRecord, UsageTotals
 from hiresense.admin.infrastructure.llm_usage_log_model import LLMUsageLog
 
+# Sortable columns for the recent-calls listing, keyed by the `<field>_<dir>`
+# token the API accepts. Anything else falls back to newest-first.
+_CALLS_SORT_COLUMNS = {
+    "created": LLMUsageLog.created_at,
+    "cost": LLMUsageLog.cost_usd,
+    "latency": LLMUsageLog.latency_ms,
+    "input_tokens": LLMUsageLog.input_tokens,
+    "output_tokens": LLMUsageLog.output_tokens,
+}
+
+
+def _calls_order_by(sort: str | None):
+    field, _, direction = (sort or "").rpartition("_")
+    column = _CALLS_SORT_COLUMNS.get(field)
+    if column is None or direction not in ("asc", "desc"):
+        return LLMUsageLog.created_at.desc()
+    return column.asc() if direction == "asc" else column.desc()
+
 
 def _to_domain(row: LLMUsageLog) -> UsageRecord:
     return UsageRecord(
@@ -159,6 +177,7 @@ class LLMUsageLogRepository:
         feature_key: str | None = None,
         since: datetime | None = None,
         until: datetime | None = None,
+        sort: str | None = None,
     ) -> list[UsageRecord]:
         with self._session_factory() as session:
             conditions = []
@@ -175,5 +194,5 @@ class LLMUsageLogRepository:
             stmt = select(LLMUsageLog)
             if conditions:
                 stmt = stmt.where(and_(*conditions))
-            stmt = stmt.order_by(LLMUsageLog.created_at.desc()).limit(limit).offset(offset)
+            stmt = stmt.order_by(_calls_order_by(sort)).limit(limit).offset(offset)
             return [_to_domain(r) for r in session.scalars(stmt).all()]

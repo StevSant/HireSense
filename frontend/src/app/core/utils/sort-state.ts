@@ -8,6 +8,8 @@ export interface SortState<F extends string> {
   /** `${field}_${dir}` token shared with the backend sort contract. */
   token: Signal<string>;
   toggle(field: F): void;
+  /** Set field + direction directly — for dropdown-driven (non-header) sorting. */
+  set(field: F, dir: SortDirection): void;
   isActive(field: F): boolean;
 }
 
@@ -33,6 +35,10 @@ export function createSortState<F extends string>(
         field.set(next);
         dir.set(textSet.has(next) ? 'asc' : 'desc');
       }
+    },
+    set(next: F, nextDir: SortDirection): void {
+      field.set(next);
+      dir.set(nextDir);
     },
     isActive(candidate: F): boolean {
       return field() === candidate;

@@ -21,7 +21,7 @@ import { environment } from '../../../environments/environment';
 import { FeedbackControlsComponent } from './components/feedback-controls/feedback-controls.component';
 import { PreferenceTuningComponent } from './components/preference-tuning/preference-tuning.component';
 import { FeedbackKind } from './models/feedback-kind.model';
-import { SortableHeaderComponent } from '../../core/components/sortable-header';
+import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { createSortState } from '../../core/utils/sort-state';
 
 @Component({
@@ -34,7 +34,7 @@ import { createSortState } from '../../core/utils/sort-state';
     DatePipe,
     FeedbackControlsComponent,
     PreferenceTuningComponent,
-    SortableHeaderComponent,
+    SortableHeaderDirective,
   ],
   templateUrl: './ingestion.component.html',
   styleUrl: './ingestion.component.scss',

@@ -209,14 +209,34 @@ async def test_explain_layers_llm_summary() -> None:
     assert exp.total_signals == 1
 
 
-class _FakeDimLookup:
-    """Returns fixed dimension scores for any job id."""
+class _FakeDimScorer:
+    """Async scorer that returns fixed dimension scores for any job id."""
 
     def __init__(self, scores: dict[str, float]) -> None:
         self._scores = scores
+        self.calls: list[str] = []
 
-    def get_dimension_scores(self, job_id: str):  # noqa: ARG002
+    async def score_dimensions(self, job_id: str) -> dict[str, float] | None:
+        self.calls.append(job_id)
         return dict(self._scores)
+
+
+class _NoneDimScorer:
+    """Scorer that always returns None (job/profile/LLM unavailable)."""
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    async def score_dimensions(self, job_id: str) -> dict[str, float] | None:
+        self.calls.append(job_id)
+        return None
+
+
+class _RaisingDimScorer:
+    """Scorer that raises — capture must degrade gracefully."""
+
+    async def score_dimensions(self, job_id: str) -> dict[str, float] | None:  # noqa: ARG002
+        raise RuntimeError("scorer down")
 
 
 def _service_with_nudge(
@@ -236,12 +256,62 @@ def _service_with_nudge(
 
 
 @pytest.mark.asyncio
-async def test_weight_overrides_empty_without_dimension_lookup() -> None:
+async def test_weight_overrides_empty_without_dimension_scorer() -> None:
     repo = FakeRepo()
     jid = uuid.uuid4()
     svc = _service_with_nudge(repo, {str(jid): [0.0, 1.0]}, min_outcomes=1)
-    # No dimension lookup attached -> no observations -> no overrides.
+    # No dimension scorer attached -> signal carries no scores -> no overrides.
     await svc.record_implicit_signal(jid, FeedbackKind.OFFERED)
+    assert svc.weight_overrides() == {}
+
+
+@pytest.mark.asyncio
+async def test_implicit_signal_captures_dimensions_at_record_time() -> None:
+    repo = FakeRepo()
+    jid = uuid.uuid4()
+    scorer = _FakeDimScorer({"comp": 1.0})
+    svc = _service_with_nudge(repo, {}, min_outcomes=1)
+    svc.attach_dimension_scorer(scorer)
+    await svc.record_implicit_signal(jid, FeedbackKind.OFFERED)
+    # The scorer was called for the job id and the scores were snapshotted.
+    assert scorer.calls == [str(jid)]
+    assert repo.signals[0].dimension_scores == {"comp": 1.0}
+
+
+@pytest.mark.asyncio
+async def test_explicit_signal_does_not_capture_dimensions() -> None:
+    repo = FakeRepo()
+    jid = uuid.uuid4()
+    scorer = _FakeDimScorer({"comp": 1.0})
+    svc = _service_with_nudge(repo, {}, min_outcomes=1)
+    svc.attach_dimension_scorer(scorer)
+    await svc.record_signal(jid, FeedbackKind.THUMBS_UP)
+    # Explicit thumbs signals never trigger dimension capture.
+    assert scorer.calls == []
+    assert repo.signals[0].dimension_scores is None
+
+
+@pytest.mark.asyncio
+async def test_capture_returns_none_stores_signal_without_scores() -> None:
+    repo = FakeRepo()
+    jid = uuid.uuid4()
+    svc = _service_with_nudge(repo, {}, min_outcomes=1)
+    svc.attach_dimension_scorer(_NoneDimScorer())
+    await svc.record_implicit_signal(jid, FeedbackKind.OFFERED)
+    assert repo.signals[0].dimension_scores is None
+    assert svc.weight_overrides() == {}
+
+
+@pytest.mark.asyncio
+async def test_capture_raises_degrades_gracefully() -> None:
+    repo = FakeRepo()
+    jid = uuid.uuid4()
+    svc = _service_with_nudge(repo, {}, min_outcomes=1)
+    svc.attach_dimension_scorer(_RaisingDimScorer())
+    # No crash; signal still stored, just without dimension scores.
+    signal = await svc.record_implicit_signal(jid, FeedbackKind.OFFERED)
+    assert signal.dimension_scores is None
+    assert repo.signals[0].dimension_scores is None
     assert svc.weight_overrides() == {}
 
 
@@ -249,7 +319,7 @@ async def test_weight_overrides_empty_without_dimension_lookup() -> None:
 async def test_weight_overrides_gated_below_min_outcomes() -> None:
     repo = FakeRepo()
     svc = _service_with_nudge(repo, {}, min_outcomes=5)
-    svc.attach_dimension_lookup(_FakeDimLookup({"comp": 1.0}))
+    svc.attach_dimension_scorer(_FakeDimScorer({"comp": 1.0}))
     for _ in range(3):
         await svc.record_implicit_signal(uuid.uuid4(), FeedbackKind.OFFERED)
     assert svc.weight_overrides() == {}
@@ -259,7 +329,7 @@ async def test_weight_overrides_gated_below_min_outcomes() -> None:
 async def test_weight_overrides_computed_once_gate_met() -> None:
     repo = FakeRepo()
     svc = _service_with_nudge(repo, {}, min_outcomes=3, clamp=3, scale=10.0)
-    svc.attach_dimension_lookup(_FakeDimLookup({"comp": 1.0}))
+    svc.attach_dimension_scorer(_FakeDimScorer({"comp": 1.0}))
     for _ in range(3):
         await svc.record_implicit_signal(uuid.uuid4(), FeedbackKind.OFFERED)
     overrides = svc.weight_overrides()
@@ -267,10 +337,27 @@ async def test_weight_overrides_computed_once_gate_met() -> None:
 
 
 @pytest.mark.asyncio
+async def test_compute_overrides_ignores_signals_without_scores() -> None:
+    # Signals captured before a scorer was attached carry no scores and must
+    # not contribute; only the score-bearing signals count toward the gate.
+    repo = FakeRepo()
+    svc = _service_with_nudge(repo, {}, min_outcomes=3, clamp=3, scale=10.0)
+    # Two outcomes without a scorer -> no scores.
+    for _ in range(2):
+        await svc.record_implicit_signal(uuid.uuid4(), FeedbackKind.OFFERED)
+    assert svc.weight_overrides() == {}
+    # Attach a scorer and add three more -> only those three meet the gate.
+    svc.attach_dimension_scorer(_FakeDimScorer({"comp": 1.0}))
+    for _ in range(3):
+        await svc.record_implicit_signal(uuid.uuid4(), FeedbackKind.OFFERED)
+    assert svc.weight_overrides().get("comp", 0) > 0
+
+
+@pytest.mark.asyncio
 async def test_weight_overrides_empty_when_disabled() -> None:
     repo = FakeRepo()
     svc = _service_with_nudge(repo, {}, min_outcomes=1)
-    svc.attach_dimension_lookup(_FakeDimLookup({"comp": 1.0}))
+    svc.attach_dimension_scorer(_FakeDimScorer({"comp": 1.0}))
     svc._enabled = False  # disabled service exposes no overrides
     await svc.record_implicit_signal(uuid.uuid4(), FeedbackKind.OFFERED)
     assert svc.weight_overrides() == {}
@@ -280,7 +367,7 @@ async def test_weight_overrides_empty_when_disabled() -> None:
 async def test_explain_includes_weight_overrides() -> None:
     repo = FakeRepo()
     svc = _service_with_nudge(repo, {}, min_outcomes=3, clamp=3, scale=10.0)
-    svc.attach_dimension_lookup(_FakeDimLookup({"comp": 1.0}))
+    svc.attach_dimension_scorer(_FakeDimScorer({"comp": 1.0}))
     for _ in range(3):
         await svc.record_implicit_signal(uuid.uuid4(), FeedbackKind.OFFERED)
     exp = await svc.explain()
@@ -291,7 +378,7 @@ async def test_explain_includes_weight_overrides() -> None:
 async def test_reset_clears_weight_overrides() -> None:
     repo = FakeRepo()
     svc = _service_with_nudge(repo, {}, min_outcomes=3, clamp=3, scale=10.0)
-    svc.attach_dimension_lookup(_FakeDimLookup({"comp": 1.0}))
+    svc.attach_dimension_scorer(_FakeDimScorer({"comp": 1.0}))
     for _ in range(3):
         await svc.record_implicit_signal(uuid.uuid4(), FeedbackKind.OFFERED)
     assert svc.weight_overrides() != {}

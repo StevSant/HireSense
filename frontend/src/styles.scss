@@ -506,3 +506,38 @@ table {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+/* Sortable table headers (appSortHeader directive). The arrow indicator is
+   driven purely from aria-sort, so the ARIA state is the single source of
+   truth and no per-component markup is needed. */
+th.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+th.sortable-header:hover {
+  color: var(--text-default);
+}
+
+th.sortable-header::after {
+  content: '↕';
+  margin-left: 0.35em;
+  font-size: 0.8em;
+  opacity: 0.35;
+}
+
+th.sortable-header[aria-sort='ascending']::after {
+  content: '▲';
+  opacity: 0.85;
+}
+
+th.sortable-header[aria-sort='descending']::after {
+  content: '▼';
+  opacity: 0.85;
+}
+
+th.sortable-header:focus-visible {
+  outline: 2px solid var(--accent, #4f8cff);
+  outline-offset: -2px;
+}

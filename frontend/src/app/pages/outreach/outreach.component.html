@@ -121,8 +121,20 @@
     } @else if (events().length === 0) {
       <p class="muted empty">No outreach recorded yet.</p>
     } @else {
+      <div class="timeline-controls">
+        <select [value]="eventSort.token()" (change)="onEventSort($event)" aria-label="Sort timeline">
+          <option value="created_desc">Newest first</option>
+          <option value="created_asc">Oldest first</option>
+        </select>
+        <select [value]="kindFilter()" (change)="onKindFilterChange($event)" aria-label="Filter by kind">
+          <option value="">All kinds</option>
+          <option value="sent">Sent</option>
+          <option value="followed_up">Followed up</option>
+          <option value="replied">Replied</option>
+        </select>
+      </div>
       <ul class="timeline">
-        @for (event of events(); track event.id) {
+        @for (event of visibleEvents(); track event.id) {
           <li class="timeline-row">
             <div class="timeline-head">
               <span class="badge" [class]="'badge-' + event.kind">{{ event.kind }}</span>

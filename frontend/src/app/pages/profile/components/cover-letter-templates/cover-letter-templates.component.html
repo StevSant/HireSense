@@ -111,8 +111,28 @@
 }
 
 @if (editing().mode === 'closed' && templates().length > 0) {
+  <div class="template-controls">
+    <select [value]="sort.token()" (change)="onSortSelect($event)" aria-label="Sort templates">
+      <option value="updated_desc">Recently updated</option>
+      <option value="name_asc">Name A–Z</option>
+      <option value="tone_asc">Tone</option>
+      <option value="language_asc">Language</option>
+    </select>
+    <select [value]="toneFilter()" (change)="onToneFilterChange($event)" aria-label="Filter by tone">
+      <option value="">All tones</option>
+      @for (t of tones(); track t) {
+        <option [value]="t">{{ t }}</option>
+      }
+    </select>
+    <select [value]="languageFilter()" (change)="onLanguageFilterChange($event)" aria-label="Filter by language">
+      <option value="">All languages</option>
+      @for (l of languages(); track l) {
+        <option [value]="l">{{ l === 'es' ? 'Spanish' : l === 'en' ? 'English' : l }}</option>
+      }
+    </select>
+  </div>
   <ul class="template-list">
-    @for (template of templates(); track template.id) {
+    @for (template of visibleTemplates(); track template.id) {
       <li class="template-row">
         <div class="template-header">
           <div class="template-title-block">

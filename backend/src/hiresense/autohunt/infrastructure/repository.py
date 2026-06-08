@@ -8,6 +8,21 @@ from sqlalchemy import delete, select
 from hiresense.autohunt.domain import Digest, DigestEntry
 from hiresense.autohunt.infrastructure.orm import DigestOrm
 
+# Sortable columns for the digests listing, keyed by `<field>_<dir>` token.
+# Anything else falls back to newest-first.
+_DIGEST_SORT_COLUMNS = {
+    "created": DigestOrm.created_at,
+    "count": DigestOrm.job_count,
+}
+
+
+def _digest_order_by(sort: str | None):
+    field, _, direction = (sort or "").rpartition("_")
+    column = _DIGEST_SORT_COLUMNS.get(field)
+    if column is None or direction not in ("asc", "desc"):
+        return DigestOrm.created_at.desc()
+    return column.asc() if direction == "asc" else column.desc()
+
 
 def _to_domain(row: DigestOrm) -> Digest:
     return Digest(
@@ -41,9 +56,9 @@ class DigestRepository:
             row = session.scalars(stmt).first()
             return _to_domain(row) if row is not None else None
 
-    def list_recent(self, limit: int) -> list[Digest]:
+    def list_recent(self, limit: int, sort: str | None = None) -> list[Digest]:
         with self._session_factory() as session:
-            stmt = select(DigestOrm).order_by(DigestOrm.created_at.desc()).limit(limit)
+            stmt = select(DigestOrm).order_by(_digest_order_by(sort)).limit(limit)
             return [_to_domain(r) for r in session.scalars(stmt).all()]
 
     def prune_older_than(self, cutoff: datetime) -> int:

@@ -129,3 +129,45 @@ describe('ApplicationsComponent', () => {
     expect(fixture.componentInstance.deletingId()).toBeNull();
   });
 });
+
+describe('ApplicationsComponent sorting/filtering', () => {
+  function mountWith(rows: ApplicationListItem[]): ApplicationsComponent {
+    TestBed.configureTestingModule({
+      imports: [ApplicationsComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ApplicationsService, useValue: { list: () => of(rows), remove: () => of(undefined) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ApplicationsComponent);
+    fixture.detectChanges();
+    return fixture.componentInstance;
+  }
+
+  it('defaults to created descending', () => {
+    const comp = mountWith([
+      makeItem({ id: 'a', created_at: '2026-01-01T00:00:00Z' }),
+      makeItem({ id: 'b', created_at: '2026-05-01T00:00:00Z' }),
+      makeItem({ id: 'c', created_at: '2026-03-01T00:00:00Z' }),
+    ]);
+    expect(comp.visibleApplications().map((a) => a.id)).toEqual(['b', 'c', 'a']);
+  });
+
+  it('filters by query across title and company', () => {
+    const comp = mountWith([
+      makeItem({ id: 'a', title: 'Engineer', company: 'Globex' }),
+      makeItem({ id: 'b', title: 'Designer', company: 'Acme' }),
+    ]);
+    comp.query.set('acme');
+    expect(comp.visibleApplications().map((a) => a.id)).toEqual(['b']);
+  });
+
+  it('sorts by status ascending when toggled', () => {
+    const comp = mountWith([
+      makeItem({ id: 'a', status: 'saved' }),
+      makeItem({ id: 'b', status: 'applied' }),
+    ]);
+    comp.sort.toggle('status'); // text field default asc; "applied" < "saved"
+    expect(comp.visibleApplications().map((a) => a.id)).toEqual(['b', 'a']);
+  });
+});

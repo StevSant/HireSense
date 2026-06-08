@@ -121,19 +121,26 @@
       @if (stories().length > 0) {
         <div class="stats">
           <span class="stat">{{ stories().length }} story(s) in bank</span>
+          <select class="filter-control" [value]="competencyFilter()" (change)="onCompetencyFilterChange($event)" aria-label="Filter by competency">
+            <option value="">All competencies</option>
+            @for (c of competencyOptions; track c) {
+              <option [value]="c">{{ c | titlecase }}</option>
+            }
+          </select>
         </div>
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>Title</th>
-                <th>Competency</th>
+                <th appSortHeader [state]="storySort" field="title">Title</th>
+                <th appSortHeader [state]="storySort" field="competency">Competency</th>
                 <th>Situation</th>
+                <th appSortHeader [state]="storySort" field="created">Created</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              @for (story of stories(); track story.id) {
+              @for (story of visibleStories(); track story.id) {
                 <tr>
                   <td class="story-title">{{ story.title }}</td>
                   <td>
@@ -142,6 +149,7 @@
                     </span>
                   </td>
                   <td class="situation-preview">{{ story.situation }}</td>
+                  <td>{{ story.created_at | date:'mediumDate' }}</td>
                   <td>
                     <button (click)="deleteStory(story.id)" class="btn-danger">Delete</button>
                   </td>

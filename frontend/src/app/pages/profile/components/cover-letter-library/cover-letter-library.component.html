@@ -5,14 +5,22 @@
       Every cover letter you've generated, across all applications. Search and copy — no need to dig through each job.
     </p>
   </div>
-  <input
-    type="search"
-    class="search-input"
-    placeholder="Search by company, title, or body..."
-    [ngModel]="query()"
-    (ngModelChange)="query.set($event)"
-    aria-label="Search cover letters"
-  />
+  <div class="library-controls">
+    <input
+      type="search"
+      class="search-input"
+      placeholder="Search by company, title, or body..."
+      [ngModel]="query()"
+      (ngModelChange)="query.set($event)"
+      aria-label="Search cover letters"
+    />
+    <select class="search-input" [value]="sort.token()" (change)="onSortSelect($event)" aria-label="Sort cover letters">
+      <option value="created_desc">Newest first</option>
+      <option value="created_asc">Oldest first</option>
+      <option value="company_asc">Company A–Z</option>
+      <option value="title_asc">Title A–Z</option>
+    </select>
+  </div>
 </div>
 
 @if (loading()) {

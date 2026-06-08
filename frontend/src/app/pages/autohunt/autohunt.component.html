@@ -68,7 +68,17 @@
 
   <!-- History -->
   <section class="card">
-    <h2>History</h2>
+    <div class="card-header">
+      <h2>History</h2>
+      @if (history().length > 0) {
+        <select [value]="historySort.token()" (change)="onHistorySort($event)" aria-label="Sort digests">
+          <option value="created_desc">Newest first</option>
+          <option value="created_asc">Oldest first</option>
+          <option value="count_desc">Most matches</option>
+          <option value="count_asc">Fewest matches</option>
+        </select>
+      }
+    </div>
     @if (historyError()) {
       <div class="alert alert-error">{{ historyError() }}</div>
     } @else if (historyLoading()) {

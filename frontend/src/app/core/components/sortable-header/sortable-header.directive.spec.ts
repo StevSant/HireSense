@@ -2,13 +2,13 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { createSortState } from '../../utils/sort-state';
-import { SortableHeaderComponent } from './sortable-header.component';
+import { SortableHeaderDirective } from './sortable-header.directive';
 
 type F = 'match' | 'title';
 
 @Component({
   standalone: true,
-  imports: [SortableHeaderComponent],
+  imports: [SortableHeaderDirective],
   template: `<table><thead><tr>
     <th appSortHeader [state]="state" field="match" (sorted)="count = count + 1">Match</th>
     <th appSortHeader [state]="state" field="title" (sorted)="count = count + 1">Title</th>
@@ -19,7 +19,7 @@ class HostComponent {
   count = 0;
 }
 
-describe('SortableHeaderComponent', () => {
+describe('SortableHeaderDirective', () => {
   it('marks the active column with aria-sort and toggles on click', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
@@ -29,22 +29,29 @@ describe('SortableHeaderComponent', () => {
     expect(ths[0].getAttribute('aria-sort')).toBe('descending');
     expect(ths[1].getAttribute('aria-sort')).toBe('none');
 
-    ths[0].querySelector('button')!.click();
+    ths[0].click();
     fixture.detectChanges();
     expect(ths[0].getAttribute('aria-sort')).toBe('ascending');
 
-    ths[1].querySelector('button')!.click();
+    ths[1].click();
     fixture.detectChanges();
     expect(ths[1].getAttribute('aria-sort')).toBe('ascending'); // text default asc
     expect(ths[0].getAttribute('aria-sort')).toBe('none');
   });
 
-  it('emits the sorted output on each click', () => {
+  it('is keyboard focusable', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
-    const button = fixture.nativeElement.querySelector('th button') as HTMLButtonElement;
-    button.click();
-    button.click();
+    const th = fixture.nativeElement.querySelector('th') as HTMLTableCellElement;
+    expect(th.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('emits the sorted output on each activation', () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+    const th = fixture.nativeElement.querySelector('th') as HTMLTableCellElement;
+    th.click();
+    th.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.count).toBe(2);
   });

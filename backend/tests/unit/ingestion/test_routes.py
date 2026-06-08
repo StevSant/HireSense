@@ -365,3 +365,127 @@ async def test_pre_ranker_promotes_job_to_page_one_before_pagination() -> None:
     assert resp.status_code == 200
     body = resp.json()
     assert body["jobs"][0]["id"] == "job-2"  # pre-ranked to the top, reached page 1
+
+
+# ---------------------------------------------------------------------------
+# #76 — sort-only fast path: rescore=false skips the global ANN re-rank and the
+# full-corpus persist write (scores are already persisted; a reorder is cheap).
+# ---------------------------------------------------------------------------
+
+
+class _Section:
+    content = "experienced python engineer"
+
+
+class _Profile:
+    skills = ["python"]
+    sections = [_Section()]
+
+
+class FakeProfileWithSkills:
+    async def list_profiles(self):
+        return [_Profile()]
+
+
+def _scored_jobs() -> list[NormalizedJob]:
+    """Three board jobs carrying *persisted* match scores (semantic still None)."""
+    scores = {"job-0": 0.3, "job-1": 0.9, "job-2": 0.6}
+    return [
+        NormalizedJob(
+            id=jid, title=f"T{jid}", company="Co", description="d", skills=["python"],
+            source="remotive", source_type="api", language="en",
+            url=f"https://e.com/{jid}", match_score=score,
+        )
+        for jid, score in scores.items()
+    ]
+
+
+class _RecordingPreRanker:
+    def __init__(self) -> None:
+        self.called = False
+
+    async def rerank(self, corpus, skill_by_id, skills, summary, bucket):
+        self.called = True
+        # If it ran, it would flip the order — used to prove it did NOT run.
+        return list(reversed(corpus))
+
+
+def _make_scored_app(pre_ranker, persisted: list):
+    from hiresense.ingestion.api.dependencies import get_pre_ranker
+
+    jobs = _scored_jobs()
+
+    class _Orch:
+        async def run(self, filters=None):
+            return []
+
+        def list_jobs(self):
+            return list(jobs)
+
+        def persist_scores(self, *a):
+            pass
+
+        def persist_scores_batch(self, updates):
+            persisted.append(updates)
+
+    app = FastAPI()
+    app.dependency_overrides[get_ingestion_orchestrator] = lambda: _Orch()
+    app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
+    app.dependency_overrides[get_profile_service] = lambda: FakeProfileWithSkills()
+    app.dependency_overrides[get_semantic_scoring] = lambda: None
+    app.dependency_overrides[get_pre_ranker] = lambda: pre_ranker
+    app.include_router(router)
+    return app
+
+
+@pytest.mark.asyncio
+async def test_rescore_false_skips_pre_rank_and_persist() -> None:
+    pre = _RecordingPreRanker()
+    persisted: list = []
+    app = _make_scored_app(pre, persisted)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get(
+            "/ingestion/jobs",
+            params={"tab": "boards", "rescore": "false", "min_score": 0},
+        )
+
+    assert resp.status_code == 200
+    # The global ANN re-rank must not run on a sort-only request...
+    assert pre.called is False
+    # ...nor the full-corpus score persist write.
+    assert persisted == []
+
+
+@pytest.mark.asyncio
+async def test_rescore_false_sorts_by_persisted_scores() -> None:
+    pre = _RecordingPreRanker()
+    persisted: list = []
+    app = _make_scored_app(pre, persisted)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # Default sort = match_desc; ordering must come from the persisted scores
+        # (0.9, 0.6, 0.3), NOT from the pre-ranker's reversal.
+        resp = await client.get(
+            "/ingestion/jobs",
+            params={"tab": "boards", "rescore": "false", "min_score": 0},
+        )
+
+    assert resp.status_code == 200
+    ids = [j["id"] for j in resp.json()["jobs"]]
+    assert ids == ["job-1", "job-2", "job-0"]
+
+
+@pytest.mark.asyncio
+async def test_rescore_default_still_runs_pre_rank_and_persist() -> None:
+    # Regression: omitting `rescore` keeps the full pipeline (rescore defaults True).
+    pre = _RecordingPreRanker()
+    persisted: list = []
+    app = _make_scored_app(pre, persisted)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/ingestion/jobs", params={"tab": "boards", "min_score": 0})
+
+    assert resp.status_code == 200
+    assert pre.called is True
+    assert persisted != []

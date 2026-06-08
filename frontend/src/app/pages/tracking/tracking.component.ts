@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -12,11 +12,16 @@ import { CompanyResearch } from './models/company-research.model';
 import { TrackedApplication } from './models/tracked-application.model';
 import { UpdateApplicationRequest } from './models/update-application-request.model';
 import { scoreColor as toScoreColor } from '../../core/utils/score-color';
+import { SortableHeaderComponent } from '../../core/components/sortable-header';
+import { createSortState } from '../../core/utils/sort-state';
+import { sortItems } from '../../core/utils/sort-items';
+
+type TrackSortField = 'company' | 'title' | 'status' | 'posted' | 'applied';
 
 @Component({
   selector: 'app-tracking',
   standalone: true,
-  imports: [FormsModule, TitleCasePipe, DatePipe, RouterLink],
+  imports: [FormsModule, TitleCasePipe, DatePipe, RouterLink, SortableHeaderComponent],
   templateUrl: './tracking.component.html',
   styleUrl: './tracking.component.scss',
 })
@@ -26,6 +31,37 @@ export class TrackingComponent implements OnInit {
   error = signal('');
   statusFilter = signal<ApplicationStatus | ''>('');
   showAddForm = signal(false);
+
+  // Client-side sort + text search over the loaded list. The status filter
+  // above stays server-side (re-queries); these compose on top of its result.
+  sort = createSortState<TrackSortField>('company', 'asc', ['company', 'title', 'status']);
+  query = signal('');
+
+  visibleApplications = computed(() => {
+    let rows = this.applications();
+    const q = this.query().trim().toLowerCase();
+    if (q) {
+      rows = rows.filter(
+        (a) => a.company.toLowerCase().includes(q) || a.title.toLowerCase().includes(q),
+      );
+    }
+    const field = this.sort.field();
+    return sortItems(rows, (a) => this.sortValue(a, field), this.sort.dir());
+  });
+
+  private sortValue(a: TrackedApplication, field: TrackSortField): string | null {
+    switch (field) {
+      case 'company': return a.company;
+      case 'title': return a.title;
+      case 'status': return a.status;
+      case 'posted': return a.posted_date;
+      case 'applied': return a.applied_at;
+    }
+  }
+
+  onQueryInput(event: Event): void {
+    this.query.set((event.target as HTMLInputElement).value);
+  }
 
   newTitle = signal('');
   newCompany = signal('');

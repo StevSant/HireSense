@@ -31,6 +31,10 @@ export class IngestionService {
     pageSize: number,
     filters: JobFilters = {},
     includeClosed = false,
+    // Pure reorder/pagination changes pass rescore=false so the server skips
+    // the global ANN re-rank + full-corpus persist write and just sorts the
+    // already-persisted scores (#76). Defaults to true (full scoring pipeline).
+    rescore = true,
   ): Observable<PaginatedJobsResponse> {
     let params = new HttpParams()
       .set('tab', tab)
@@ -38,6 +42,7 @@ export class IngestionService {
       .set('page_size', pageSize.toString());
 
     if (includeClosed) params = params.set('include_closed', 'true');
+    if (!rescore) params = params.set('rescore', 'false');
 
     if (filters.source) params = params.set('source', filters.source);
     if (filters.keyword) params = params.set('keyword', filters.keyword);

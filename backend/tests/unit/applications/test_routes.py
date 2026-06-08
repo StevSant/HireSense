@@ -14,7 +14,6 @@ from hiresense.applications.api.dependencies import (
 from hiresense.applications.api.routes import router
 from hiresense.applications.domain.aggregate import (
     ApplicationAggregate,
-    CvOptimizationView,
     InterviewPrepView,
     JobSnapshotView,
     MatchView,

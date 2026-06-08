@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 
 from hiresense.ingestion.domain.job_scorer import combine_fit_score
 

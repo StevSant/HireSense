@@ -31,9 +31,9 @@ export class IngestionService {
     pageSize: number,
     filters: JobFilters = {},
     includeClosed = false,
-    // Pure reorder/pagination changes pass rescore=false so the server skips
-    // the global ANN re-rank + full-corpus persist write and just sorts the
-    // already-persisted scores (#76). Defaults to true (full scoring pipeline).
+    // Pure reorder/pagination passes rescore=false so the server keeps the full
+    // skill+ANN+min_score pipeline (set/order unchanged) but defers the blocking
+    // LLM call, reusing cached scores (#76). Defaults to true (full scoring).
     rescore = true,
   ): Observable<PaginatedJobsResponse> {
     let params = new HttpParams()

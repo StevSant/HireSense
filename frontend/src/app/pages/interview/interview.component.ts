@@ -9,7 +9,7 @@ import { Competency } from './models/competency.model';
 import { InterviewPrep } from './models/interview-prep.model';
 import { Story } from './models/story.model';
 import { ApplicationsPrepListComponent } from './components/applications-prep-list.component';
-import { SortableHeaderComponent } from '../../core/components/sortable-header';
+import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { createSortState } from '../../core/utils/sort-state';
 import { sortItems } from '../../core/utils/sort-items';
 
@@ -18,7 +18,7 @@ type StorySortField = 'title' | 'competency' | 'created';
 @Component({
   selector: 'app-interview',
   standalone: true,
-  imports: [FormsModule, TitleCasePipe, DatePipe, ApplicationsPrepListComponent, SortableHeaderComponent],
+  imports: [FormsModule, TitleCasePipe, DatePipe, ApplicationsPrepListComponent, SortableHeaderDirective],
   templateUrl: './interview.component.html',
   styleUrl: './interview.component.scss',
 })

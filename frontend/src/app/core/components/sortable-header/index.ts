@@ -1,1 +1,1 @@
-export { SortableHeaderComponent } from './sortable-header.component';
+export { SortableHeaderDirective } from './sortable-header.directive';

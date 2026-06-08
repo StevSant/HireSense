@@ -368,8 +368,9 @@ async def test_pre_ranker_promotes_job_to_page_one_before_pagination() -> None:
 
 
 # ---------------------------------------------------------------------------
-# #76 — sort-only fast path: rescore=false skips the global ANN re-rank and the
-# full-corpus persist write (scores are already persisted; a reorder is cheap).
+# #76 — sort-only fast path: a pure reorder (rescore=false) must KEEP the full
+# skill+ANN+min_score pipeline (so the result set/order is unchanged) but defer
+# the blocking Tier-1 LLM call — quick scoring runs cache-only (llm_on_miss=False).
 # ---------------------------------------------------------------------------
 
 
@@ -387,33 +388,35 @@ class FakeProfileWithSkills:
         return [_Profile()]
 
 
-def _scored_jobs() -> list[NormalizedJob]:
-    """Three board jobs carrying *persisted* match scores (semantic still None)."""
-    scores = {"job-0": 0.3, "job-1": 0.9, "job-2": 0.6}
-    return [
-        NormalizedJob(
-            id=jid, title=f"T{jid}", company="Co", description="d", skills=["python"],
-            source="remotive", source_type="api", language="en",
-            url=f"https://e.com/{jid}", match_score=score,
-        )
-        for jid, score in scores.items()
-    ]
-
-
 class _RecordingPreRanker:
     def __init__(self) -> None:
         self.called = False
 
     async def rerank(self, corpus, skill_by_id, skills, summary, bucket):
         self.called = True
-        # If it ran, it would flip the order — used to prove it did NOT run.
-        return list(reversed(corpus))
+        return list(corpus)
 
 
-def _make_scored_app(pre_ranker, persisted: list):
-    from hiresense.ingestion.api.dependencies import get_pre_ranker
+class _RecordingQuickScoring:
+    def __init__(self) -> None:
+        self.llm_on_miss_calls: list[bool] = []
 
-    jobs = _scored_jobs()
+    async def score_page(self, jobs, skills, summary, *, llm_on_miss=True):
+        self.llm_on_miss_calls.append(llm_on_miss)
+        return {}
+
+
+def _make_rescore_app(pre_ranker, quick_scoring):
+    from hiresense.ingestion.api.dependencies import get_pre_ranker, get_quick_scoring
+
+    jobs = [
+        NormalizedJob(
+            id=f"job-{i}", title=f"T{i}", company="Co", description="d", skills=["python"],
+            source="remotive", source_type="api", language="en",
+            url=f"https://e.com/{i}", match_score=0.5,
+        )
+        for i in range(3)
+    ]
 
     class _Orch:
         async def run(self, filters=None):
@@ -426,7 +429,7 @@ def _make_scored_app(pre_ranker, persisted: list):
             pass
 
         def persist_scores_batch(self, updates):
-            persisted.append(updates)
+            pass
 
     app = FastAPI()
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: _Orch()
@@ -434,15 +437,16 @@ def _make_scored_app(pre_ranker, persisted: list):
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileWithSkills()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
     app.dependency_overrides[get_pre_ranker] = lambda: pre_ranker
+    app.dependency_overrides[get_quick_scoring] = lambda: quick_scoring
     app.include_router(router)
     return app
 
 
 @pytest.mark.asyncio
-async def test_rescore_false_skips_pre_rank_and_persist() -> None:
+async def test_rescore_false_defers_llm_but_keeps_pipeline() -> None:
     pre = _RecordingPreRanker()
-    persisted: list = []
-    app = _make_scored_app(pre, persisted)
+    quick = _RecordingQuickScoring()
+    app = _make_rescore_app(pre, quick)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get(
@@ -451,41 +455,127 @@ async def test_rescore_false_skips_pre_rank_and_persist() -> None:
         )
 
     assert resp.status_code == 200
-    # The global ANN re-rank must not run on a sort-only request...
-    assert pre.called is False
-    # ...nor the full-corpus score persist write.
-    assert persisted == []
+    # The scoring pipeline that determines the result set/order is preserved...
+    assert pre.called is True
+    # ...both score_page passes are cache-only on a pure reorder: the global
+    # pre-pagination apply (always cache-only) and the page-level pass (deferred
+    # because rescore=False). Neither fires the blocking LLM round-trip.
+    assert quick.llm_on_miss_calls == [False, False]
 
 
 @pytest.mark.asyncio
-async def test_rescore_false_sorts_by_persisted_scores() -> None:
+async def test_rescore_default_runs_llm_on_miss() -> None:
+    # Omitting `rescore` (full load / filter change) keeps the LLM round-trip.
     pre = _RecordingPreRanker()
-    persisted: list = []
-    app = _make_scored_app(pre, persisted)
-
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        # Default sort = match_desc; ordering must come from the persisted scores
-        # (0.9, 0.6, 0.3), NOT from the pre-ranker's reversal.
-        resp = await client.get(
-            "/ingestion/jobs",
-            params={"tab": "boards", "rescore": "false", "min_score": 0},
-        )
-
-    assert resp.status_code == 200
-    ids = [j["id"] for j in resp.json()["jobs"]]
-    assert ids == ["job-1", "job-2", "job-0"]
-
-
-@pytest.mark.asyncio
-async def test_rescore_default_still_runs_pre_rank_and_persist() -> None:
-    # Regression: omitting `rescore` keeps the full pipeline (rescore defaults True).
-    pre = _RecordingPreRanker()
-    persisted: list = []
-    app = _make_scored_app(pre, persisted)
+    quick = _RecordingQuickScoring()
+    app = _make_rescore_app(pre, quick)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/ingestion/jobs", params={"tab": "boards", "min_score": 0})
 
     assert resp.status_code == 200
     assert pre.called is True
-    assert persisted != []
+    # Global pre-pagination apply is always cache-only; the page-level pass does
+    # the LLM round-trip on a full load / filter change (rescore defaults True).
+    assert quick.llm_on_miss_calls == [False, True]
+
+
+# ---------------------------------------------------------------------------
+# #76 follow-up — cross-source ranking consistency: a job with a low heuristic
+# score but a HIGH already-cached LLM score must rank to the top GLOBALLY (before
+# pagination), so it isn't buried off page 1 in the all-sources view while
+# surfacing only when its source is filtered. The cached LLM score is the sort
+# authority wherever available.
+# ---------------------------------------------------------------------------
+
+
+class _SummarySection:
+    content = "backend python engineer"
+
+
+class _SummaryProfile:
+    skills: list[str] = []
+    sections = [_SummarySection()]
+
+
+class FakeProfileSummaryOnly:
+    async def list_profiles(self):
+        return [_SummaryProfile()]
+
+
+class _CachedQuickScoring:
+    """Simulates 'job-gob' already LLM-scored (cached) at 0.82; 'job-hn' uncached.
+
+    Returns the cached hit regardless of ``llm_on_miss`` — a cache hit needs no
+    LLM. 'job-hn' is never returned (no cached score), so it keeps its heuristic.
+    """
+
+    def __init__(self) -> None:
+        self.llm_on_miss_calls: list[bool] = []
+
+    async def score_page(self, jobs, skills, summary, *, llm_on_miss=True):
+        from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
+        from hiresense.ingestion.domain.quick_match_verdict import QuickMatchVerdict
+
+        self.llm_on_miss_calls.append(llm_on_miss)
+        ids = {j.id for j in jobs}
+        out = {}
+        if "job-gob" in ids:
+            out["job-gob"] = QuickMatchResult(
+                job_id="job-gob", score=0.82, verdict=QuickMatchVerdict.STRONG
+            )
+        return out
+
+
+@pytest.mark.asyncio
+async def test_cached_llm_score_ranks_globally_before_pagination() -> None:
+    from hiresense.ingestion.api.dependencies import get_quick_scoring
+
+    # job-hn: high heuristic (0.78), no cached LLM score.
+    # job-gob: low heuristic (0.30), but a cached LLM score of 0.82.
+    # Heuristic order would bury job-gob on page 2; the cached LLM score must
+    # pull it to page 1.
+    job_hn = NormalizedJob(
+        id="job-hn", title="HN Engineer", company="Co", description="d", skills=[],
+        source="hn_hiring", source_type="api", language="en",
+        url="https://e.com/hn", match_score=0.78,
+    )
+    job_gob = NormalizedJob(
+        id="job-gob", title="Programador Back-end Python", company="Co", description="d",
+        skills=[], source="getonboard", source_type="api", language="en",
+        url="https://e.com/gob", match_score=0.30,
+    )
+
+    class _Orch:
+        async def run(self, filters=None):
+            return []
+
+        def list_jobs(self):
+            return [job_hn, job_gob]  # heuristic order: hn first
+
+        def persist_scores(self, *a):
+            pass
+
+        def persist_scores_batch(self, updates):
+            pass
+
+    app = FastAPI()
+    app.dependency_overrides[get_ingestion_orchestrator] = lambda: _Orch()
+    app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
+    app.dependency_overrides[get_profile_service] = lambda: FakeProfileSummaryOnly()
+    app.dependency_overrides[get_semantic_scoring] = lambda: None
+    app.dependency_overrides[get_quick_scoring] = lambda: _CachedQuickScoring()
+    app.include_router(router)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # page_size=1: only the global #1 reaches page 1. Without the cached-LLM
+        # global apply, that would be job-hn (heuristic 0.78). With it, job-gob.
+        resp = await client.get(
+            "/ingestion/jobs", params={"tab": "boards", "page_size": 1, "min_score": 0}
+        )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] == 2
+    assert body["jobs"][0]["id"] == "job-gob"  # cached LLM 0.82 outranks heuristic 0.78
+    assert body["jobs"][0]["match_score"] == 0.82

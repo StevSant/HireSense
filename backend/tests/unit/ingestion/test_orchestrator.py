@@ -82,6 +82,39 @@ async def test_orchestrator_fetches_and_publishes() -> None:
     assert events[0].event_type == "jobs.ingested"
 
 
+@pytest.mark.asyncio
+async def test_orchestrator_classifies_and_persists_quality() -> None:
+    from hiresense.ingestion.domain.job_quality import JobQuality
+    from hiresense.ingestion.domain.job_quality_verdict import JobQualityVerdict
+
+    class FakeClassifier:
+        def __init__(self) -> None:
+            self.seen: list[str] = []
+
+        async def classify(self, jobs):
+            self.seen = [j.id for j in jobs]
+            return {
+                j.id: JobQualityVerdict(job_id=j.id, quality=JobQuality.SPAM, reason="junk")
+                for j in jobs
+            }
+
+    repo = InMemoryJobsRepository()
+    classifier = FakeClassifier()
+    orchestrator = IngestionOrchestrator(
+        sources=[FakeJobSource()],
+        normalizers={"fake": FakeNormalizer()},
+        event_bus=InMemoryEventBus(),
+        repository=repo,
+        quality_classifier=classifier,
+    )
+    await orchestrator.run()
+
+    assert classifier.seen  # the newly ingested job was handed to the classifier
+    stored = repo.list_all()
+    assert stored
+    assert all(j.quality == "spam" and j.quality_reason == "junk" for j in stored)
+
+
 # --- Lifecycle: change detection + disappearance closure (Task 11) ---
 
 def _raw(sid: str, *, title: str = "Engineer", salary: str = "") -> RawJobListing:

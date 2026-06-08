@@ -14,6 +14,16 @@
 .company { font-weight: 500; color: var(--text-primary); }
 .title { color: var(--text-secondary); }
 .date { color: var(--text-muted); font-size: 0.8125rem; white-space: nowrap; }
+// Location can occasionally carry a long, messy free-text value (e.g. HN
+// postings); clamp it so one row can never blow up the whole table layout.
+// Full text remains available via the cell's title tooltip.
+.location {
+  color: var(--text-secondary);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .notes {
   color: var(--text-muted);
   max-width: 200px;

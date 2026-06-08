@@ -24,6 +24,7 @@ from hiresense.ingestion.api.provider import IngestionProvider
 from hiresense.ingestion.domain import (
     IngestionOrchestrator,
     JobEmbeddingIndexer,
+    JobQualityClassifier,
     JobRevalidationService,
     PortalScanner,
     load_portals_config,
@@ -124,6 +125,10 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
         else None
     )
 
+    # Intrinsic quality / spam classifier (cheap model, deterministic spam
+    # fast-path + LLM); fails open to "ok" when no LLM is configured.
+    quality_classifier = JobQualityClassifier(llm=tracked("job_quality_classifier"))
+
     ingestion_orchestrator = IngestionOrchestrator(
         sources=sources,
         normalizers=normalizers,
@@ -133,6 +138,7 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
         retention_days=s.ingestion_job_retention_days,
         indexer=boards_indexer,
         closure_miss_threshold=s.job_closure_miss_threshold,
+        quality_classifier=quality_classifier,
     )
 
     # URL-probe revalidation sweep for the boards bucket. Snapshot sources

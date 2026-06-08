@@ -87,6 +87,24 @@ describe('JobTabComponent', () => {
     expect(fixture.componentInstance.saving()).toBe(false);
   });
 
+  it('shows the saved confirmation on success and clears it on edit', () => {
+    const { fixture } = mount();
+    expect(fixture.componentInstance.saved()).toBe(false);
+    fixture.componentInstance.save();
+    expect(fixture.componentInstance.saved()).toBe(true);
+    // Editing the description must clear the stale confirmation.
+    fixture.componentInstance.setDescription('changed');
+    expect(fixture.componentInstance.saved()).toBe(false);
+  });
+
+  it('does not show the saved confirmation when save fails', () => {
+    const { fixture } = mount(makeAggregate(), {
+      updateSnapshot: () => throwError(() => ({ error: { detail: 'save boom' } })),
+    });
+    fixture.componentInstance.save();
+    expect(fixture.componentInstance.saved()).toBe(false);
+  });
+
   it('surfaces an error when save fails', () => {
     const { fixture } = mount(makeAggregate(), {
       updateSnapshot: () => throwError(() => ({ error: { detail: 'save boom' } })),

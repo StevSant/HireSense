@@ -2,6 +2,14 @@
   <div class="page-header">
     <h1>Pipeline</h1>
     <div class="header-actions">
+      <input
+        type="search"
+        class="filter-select"
+        placeholder="Search company or title…"
+        [value]="query()"
+        (input)="onQueryInput($event)"
+        aria-label="Search applications"
+      />
       <select (change)="onStatusFilterChange($event)" class="filter-select">
         <option value="">All Statuses</option>
         @for (s of statusOptions; track s) {
@@ -101,20 +109,20 @@
         <table>
           <thead>
             <tr>
-              <th>Company</th>
-              <th>Title</th>
+              <th appSortHeader [state]="sort" field="company">Company</th>
+              <th appSortHeader [state]="sort" field="title">Title</th>
               <th>Location</th>
               <th>Salary</th>
               <th>Source</th>
-              <th>Posted</th>
-              <th>Status</th>
-              <th>Applied</th>
+              <th appSortHeader [state]="sort" field="posted">Posted</th>
+              <th appSortHeader [state]="sort" field="status">Status</th>
+              <th appSortHeader [state]="sort" field="applied">Applied</th>
               <th>Notes</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            @for (app of applications(); track app.id) {
+            @for (app of visibleApplications(); track app.id) {
               <tr>
                 <td class="company">{{ app.company }}</td>
                 <td class="title">

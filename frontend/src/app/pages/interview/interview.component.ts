@@ -1,19 +1,24 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { TitleCasePipe } from '@angular/common';
+import { TitleCasePipe, DatePipe } from '@angular/common';
 import { InterviewService } from '../../core/services/interview.service';
 import { IngestionService } from '../../core/services/ingestion.service';
 import { Competency } from './models/competency.model';
 import { InterviewPrep } from './models/interview-prep.model';
 import { Story } from './models/story.model';
 import { ApplicationsPrepListComponent } from './components/applications-prep-list.component';
+import { SortableHeaderDirective } from '../../core/components/sortable-header';
+import { createSortState } from '../../core/utils/sort-state';
+import { sortItems } from '../../core/utils/sort-items';
+
+type StorySortField = 'title' | 'competency' | 'created';
 
 @Component({
   selector: 'app-interview',
   standalone: true,
-  imports: [FormsModule, TitleCasePipe, ApplicationsPrepListComponent],
+  imports: [FormsModule, TitleCasePipe, DatePipe, ApplicationsPrepListComponent, SortableHeaderDirective],
   templateUrl: './interview.component.html',
   styleUrl: './interview.component.scss',
 })
@@ -24,6 +29,30 @@ export class InterviewComponent implements OnInit {
   storiesError = signal('');
   showAddStoryForm = signal(false);
   addingStory = signal(false);
+
+  // Client-side sort + competency filter over the loaded story bank.
+  storySort = createSortState<StorySortField>('created', 'desc', ['title', 'competency']);
+  competencyFilter = signal<Competency | ''>('');
+
+  visibleStories = computed(() => {
+    let rows = this.stories();
+    const competency = this.competencyFilter();
+    if (competency) rows = rows.filter((s) => s.competency === competency);
+    const field = this.storySort.field();
+    return sortItems(rows, (s) => this.storySortValue(s, field), this.storySort.dir());
+  });
+
+  private storySortValue(s: Story, field: StorySortField): string {
+    switch (field) {
+      case 'title': return s.title;
+      case 'competency': return s.competency;
+      case 'created': return s.created_at;
+    }
+  }
+
+  onCompetencyFilterChange(event: Event): void {
+    this.competencyFilter.set((event.target as HTMLSelectElement).value as Competency | '');
+  }
 
   // New story form fields
   newTitle = signal('');

@@ -242,3 +242,44 @@ describe('TrackingComponent', () => {
     expect(fixture.componentInstance.expandedResearchId()).toBeNull();
   });
 });
+
+describe('TrackingComponent sorting/filtering', () => {
+  function mountWith(rows: TrackedApplication[]): TrackingComponent {
+    TestBed.configureTestingModule({
+      imports: [TrackingComponent],
+      providers: [
+        { provide: TrackingService, useValue: { list: () => of(rows), create: () => of(rows[0]), update: () => of(rows[0]), delete: () => of(undefined), batchEvaluate: () => of({ results: [] }) } },
+        { provide: ResearchService, useValue: { research: () => of(makeResearch()), refresh: () => of(makeResearch()) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(TrackingComponent);
+    fixture.detectChanges();
+    return fixture.componentInstance;
+  }
+
+  it('defaults to company ascending', () => {
+    const comp = mountWith([
+      makeApp({ id: 'a', company: 'Zebra' }),
+      makeApp({ id: 'b', company: 'Acme' }),
+    ]);
+    expect(comp.visibleApplications().map((a) => a.id)).toEqual(['b', 'a']);
+  });
+
+  it('sorts by posted date when the posted header is toggled', () => {
+    const comp = mountWith([
+      makeApp({ id: 'old', posted_date: '2026-01-01T00:00:00Z' }),
+      makeApp({ id: 'new', posted_date: '2026-05-01T00:00:00Z' }),
+    ]);
+    comp.sort.toggle('posted'); // non-text default desc
+    expect(comp.visibleApplications().map((a) => a.id)).toEqual(['new', 'old']);
+  });
+
+  it('filters by company/title query', () => {
+    const comp = mountWith([
+      makeApp({ id: 'a', company: 'Globex', title: 'Engineer' }),
+      makeApp({ id: 'b', company: 'Acme', title: 'Designer' }),
+    ]);
+    comp.query.set('designer');
+    expect(comp.visibleApplications().map((a) => a.id)).toEqual(['b']);
+  });
+});

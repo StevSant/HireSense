@@ -17,9 +17,10 @@ async def run(service: AutoHuntService = Depends(get_autohunt_service)) -> Diges
 @router.get("/digests", response_model=list[Digest])
 def list_digests(
     limit: int = Query(default=20, ge=1, le=100),
+    sort: str | None = None,
     service: AutoHuntService = Depends(get_autohunt_service),
 ) -> list[Digest]:
-    return service.list_recent(limit)
+    return service.list_recent(limit, sort)
 
 
 @router.get("/digests/latest", response_model=None)

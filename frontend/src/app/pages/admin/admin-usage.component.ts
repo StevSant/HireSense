@@ -8,13 +8,19 @@ import { BreakdownResponse } from './models/breakdown-response.model';
 import { DashboardSummary } from './models/dashboard-summary.model';
 import { RecentCallsResponse } from './models/recent-calls-response.model';
 import { TimeseriesResponse } from './models/timeseries-response.model';
+import { UsageBucket } from './models/usage-bucket.model';
+import { SortableHeaderDirective } from '../../core/components/sortable-header';
+import { createSortState } from '../../core/utils/sort-state';
+import { sortItems } from '../../core/utils/sort-items';
 
 type Dimension = 'provider' | 'model' | 'feature';
+type BreakdownSortField = 'key' | 'calls' | 'total_tokens' | 'cost_usd';
+type CallsSortField = 'created' | 'cost' | 'latency' | 'input_tokens' | 'output_tokens';
 
 @Component({
   selector: 'app-admin-usage',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SortableHeaderDirective],
   templateUrl: './admin-usage.component.html',
   styleUrl: './admin-usage.component.scss',
 })
@@ -46,6 +52,26 @@ export class AdminUsageComponent implements OnInit {
     const buckets = this.breakdown()?.buckets ?? [];
     return Math.max(0.0001, ...buckets.map((b) => b.cost_usd));
   });
+
+  // Breakdown is sorted client-side over the already-aggregated buckets.
+  breakdownSort = createSortState<BreakdownSortField>('cost_usd', 'desc', ['key']);
+  visibleBuckets = computed(() => {
+    const buckets = this.breakdown()?.buckets ?? [];
+    const field = this.breakdownSort.field();
+    return sortItems(buckets, (b) => this.bucketValue(b, field), this.breakdownSort.dir());
+  });
+
+  private bucketValue(b: UsageBucket, field: BreakdownSortField): string | number {
+    switch (field) {
+      case 'key': return b.key;
+      case 'calls': return b.calls;
+      case 'total_tokens': return b.total_tokens;
+      case 'cost_usd': return b.cost_usd;
+    }
+  }
+
+  // Recent calls are server-paginated (limit/offset), so sorting re-queries.
+  callsSort = createSortState<CallsSortField>('created', 'desc', []);
 
   private readonly destroyRef = inject(DestroyRef);
 
@@ -106,6 +132,7 @@ export class AdminUsageComponent implements OnInit {
         provider: this.filterProvider() || undefined,
         model: this.filterModel() || undefined,
         feature_key: this.filterFeature() || undefined,
+        sort: this.callsSort.token(),
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

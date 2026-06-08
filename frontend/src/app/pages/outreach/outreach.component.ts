@@ -8,6 +8,9 @@ import { ApplicationListItem } from '../applications/models/application-list-ite
 import { OutreachEvent } from './models/outreach-event.model';
 import { OutreachEventKind } from './models/outreach-event-kind.model';
 import { OutreachNudge } from './models/outreach-nudge.model';
+import { createSortState } from '../../core/utils/sort-state';
+import { sortItems } from '../../core/utils/sort-items';
+import { parseSortToken } from '../../core/utils/parse-sort-token';
 
 @Component({
   selector: 'app-outreach',
@@ -43,6 +46,16 @@ export class OutreachComponent implements OnInit {
   events = signal<OutreachEvent[]>([]);
   timelineError = signal('');
   timelineLoading = signal(false);
+  // Client-side sort (newest/oldest) + kind filter over the loaded timeline.
+  eventSort = createSortState<'created'>('created', 'desc', []);
+  kindFilter = signal<OutreachEventKind | ''>('');
+
+  visibleEvents = computed(() => {
+    let rows = this.events();
+    const kind = this.kindFilter();
+    if (kind) rows = rows.filter((e) => e.kind === kind);
+    return sortItems(rows, (e) => e.created_at, this.eventSort.dir());
+  });
 
   // Nudges
   nudges = signal<OutreachNudge[]>([]);
@@ -170,7 +183,8 @@ export class OutreachComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (events) => {
-          this.events.set([...events].reverse());
+          // Store in natural (server) order; visibleEvents applies sort/filter.
+          this.events.set(events);
           this.timelineLoading.set(false);
         },
         error: (err) => {
@@ -196,6 +210,15 @@ export class OutreachComponent implements OnInit {
           this.nudgesError.set(err?.error?.detail ?? 'Could not load follow-up nudges.');
         },
       });
+  }
+
+  onEventSort(event: Event): void {
+    const parsed = parseSortToken<'created'>((event.target as HTMLSelectElement).value);
+    if (parsed) this.eventSort.set(parsed.field, parsed.dir);
+  }
+
+  onKindFilterChange(event: Event): void {
+    this.kindFilter.set((event.target as HTMLSelectElement).value as OutreachEventKind | '');
   }
 
   selectNudge(nudge: OutreachNudge): void {

@@ -5,7 +5,7 @@ class _FakeRepo:
     def __init__(self) -> None:
         self.calls: list[int] = []
 
-    def list_recent(self, *, limit, offset, provider, model, feature_key, since):
+    def list_recent(self, *, limit, offset, provider, model, feature_key, since, sort=None):
         self.calls.append(limit)
         # Return exactly `limit` synthetic records so we can also assert bounding.
         return [

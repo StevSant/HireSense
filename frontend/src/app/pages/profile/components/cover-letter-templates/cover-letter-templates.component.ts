@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -13,6 +14,11 @@ import { CoverLetterTemplatesService } from '../../../../core/services/cover-let
 import { CoverLetterTemplate } from '../../models/cover-letter-template.model';
 import { CoverLetterTemplateEditingState } from '../../models/cover-letter-template-editing-state.model';
 import { CoverLetterTemplateUpsert } from '../../models/cover-letter-template-upsert.model';
+import { createSortState } from '../../../../core/utils/sort-state';
+import { sortItems } from '../../../../core/utils/sort-items';
+import { parseSortToken } from '../../../../core/utils/parse-sort-token';
+
+type TemplateSortField = 'updated' | 'name' | 'tone' | 'language';
 
 const BLANK_FORM = {
   name: '',
@@ -42,6 +48,45 @@ export class CoverLetterTemplatesComponent implements OnInit {
   form = signal({ ...BLANK_FORM });
   saving = signal(false);
   deletingId = signal<string | null>(null);
+
+  sort = createSortState<TemplateSortField>('updated', 'desc', ['name', 'tone', 'language']);
+  toneFilter = signal('');
+  languageFilter = signal('');
+
+  tones = computed(() => [...new Set(this.templates().map((t) => t.tone))].sort());
+  languages = computed(() => [...new Set(this.templates().map((t) => t.language))].sort());
+
+  visibleTemplates = computed(() => {
+    let rows = this.templates();
+    const tone = this.toneFilter();
+    if (tone) rows = rows.filter((t) => t.tone === tone);
+    const lang = this.languageFilter();
+    if (lang) rows = rows.filter((t) => t.language === lang);
+    const field = this.sort.field();
+    return sortItems(rows, (t) => this.sortValue(t, field), this.sort.dir());
+  });
+
+  private sortValue(t: CoverLetterTemplate, field: TemplateSortField): string | null {
+    switch (field) {
+      case 'updated': return t.updated_at;
+      case 'name': return t.name;
+      case 'tone': return t.tone;
+      case 'language': return t.language;
+    }
+  }
+
+  onSortSelect(event: Event): void {
+    const parsed = parseSortToken<TemplateSortField>((event.target as HTMLSelectElement).value);
+    if (parsed) this.sort.set(parsed.field, parsed.dir);
+  }
+
+  onToneFilterChange(event: Event): void {
+    this.toneFilter.set((event.target as HTMLSelectElement).value);
+  }
+
+  onLanguageFilterChange(event: Event): void {
+    this.languageFilter.set((event.target as HTMLSelectElement).value);
+  }
 
   ngOnInit(): void {
     this.refresh();

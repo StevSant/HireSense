@@ -19,8 +19,9 @@ export class AutohuntService {
       .pipe(map((res) => (res.status === 204 || !res.body ? null : res.body)));
   }
 
-  listRecent(limit = 20): Observable<Digest[]> {
-    const params = new HttpParams().set('limit', limit);
+  listRecent(limit = 20, sort?: string): Observable<Digest[]> {
+    let params = new HttpParams().set('limit', limit);
+    if (sort) params = params.set('sort', sort);
     return this.http.get<Digest[]>(`${this.base}/digests`, { params });
   }
 

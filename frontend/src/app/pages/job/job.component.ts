@@ -43,9 +43,14 @@ export class JobDetailComponent implements OnInit {
   tracking = signal(false);
   trackError = signal('');
 
+  // Prefer the Tier-2 deep-analysis score once it loads (the authoritative,
+  // displayed value), falling back to the LLM quick-score and finally the
+  // persisted heuristic blend that `getJob` returns. This keeps the header in
+  // sync with the list's LLM score instead of showing the lower heuristic %.
   pillScore = computed<number | null>(() => {
     const j = this.job();
-    return j ? (j.llm_score ?? j.match_score) : null;
+    if (!j) return null;
+    return this.analysis()?.overall_score ?? j.llm_score ?? j.match_score;
   });
   scorePercent = computed(() => formatScorePercent(this.pillScore()));
   tracked = computed(() => {

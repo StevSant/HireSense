@@ -35,6 +35,29 @@ def test_settings_enabled_sources_parsed(monkeypatch: pytest.MonkeyPatch) -> Non
     assert settings.enabled_job_sources == ["remotive", "remoteok"]
 
 
+@pytest.mark.parametrize(
+    ("env_var", "placeholder"),
+    [
+        ("AUTH_PASSWORD", "changeme"),
+        ("JWT_SECRET_KEY", "change-this-to-a-random-secret"),
+    ],
+)
+def test_settings_rejects_placeholder_secrets(
+    monkeypatch: pytest.MonkeyPatch, env_var: str, placeholder: str
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://test:test@localhost/test")
+    monkeypatch.setenv("AUTH_USERNAME", "admin")
+    monkeypatch.setenv("AUTH_PASSWORD", "pass")
+    monkeypatch.setenv("JWT_SECRET_KEY", "secret")
+    monkeypatch.setenv("LLM_API_KEY", "sk-test")
+    monkeypatch.setenv(env_var, placeholder)
+
+    from hiresense.config import Settings
+
+    with pytest.raises(ValueError, match="placeholder"):
+        Settings()
+
+
 def test_embedding_device_configurable(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://test:test@localhost/test")
     monkeypatch.setenv("AUTH_USERNAME", "admin")

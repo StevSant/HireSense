@@ -4,6 +4,7 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
+from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api import get_portal_scanner, get_portals_config, router
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
@@ -54,6 +55,7 @@ def _make_app(scanner: FakePortalScanner, config: PortalsConfig = _SAMPLE_PORTAL
     app = FastAPI()
     app.dependency_overrides[get_portal_scanner] = lambda: scanner
     app.dependency_overrides[get_portals_config] = lambda: config
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
     return app
 

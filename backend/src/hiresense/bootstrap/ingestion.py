@@ -72,7 +72,7 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
             sources.append(RemoteOKAdapter(http_client=http_client, base_url=s.remoteok_api_url))
             normalizers["remoteok"] = RemoteOKNormalizer()
         elif source_name == "csv":
-            sources.append(CSVImportAdapter())
+            sources.append(CSVImportAdapter(import_dir=s.csv_import_dir))
             normalizers["csv"] = CSVNormalizer()
         elif source_name == "jobicy":
             sources.append(JobicyAdapter(http_client=http_client, base_url=s.jobicy_api_url))
@@ -205,7 +205,11 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
     from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
     from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
 
-    semantic_scoring = SemanticScoringService(embedding_port=infra.embedding)
+    semantic_scoring = SemanticScoringService(
+        embedding_port=infra.embedding,
+        job_cache_size=s.semantic_job_cache_size,
+        profile_cache_size=s.semantic_profile_cache_size,
+    )
 
     # SemanticPreRanker wires vector store + embedding for global ANN pre-ranking.
     # When vector store is None (no pgvector configured), pre_ranker is still
@@ -217,6 +221,7 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
         skill_weight=s.prerank_weight_skill,
         semantic_weight=s.prerank_weight_semantic,
         preference=preference_query,
+        profile_cache_size=s.semantic_profile_cache_size,
     )
 
     match_cache_repo = JobMatchCacheRepository(session_factory=infra.sync_session_factory)

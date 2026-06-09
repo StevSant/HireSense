@@ -41,7 +41,19 @@ def build_shared_infra(settings: Settings, http_client: httpx.AsyncClient) -> Sh
     )
 
     sync_db_url = settings.database_url.replace("+asyncpg", "")
-    sync_engine = create_engine(sync_db_url, echo=settings.debug)
+    # SQLite (tests) has no server-side pool semantics — pool kwargs would be
+    # rejected or meaningless there.
+    pool_kwargs = (
+        {}
+        if sync_db_url.startswith("sqlite")
+        else {
+            "pool_size": settings.db_pool_size,
+            "max_overflow": settings.db_max_overflow,
+            "pool_pre_ping": settings.db_pool_pre_ping,
+            "pool_recycle": settings.db_pool_recycle_seconds,
+        }
+    )
+    sync_engine = create_engine(sync_db_url, echo=settings.debug, **pool_kwargs)
     sync_session_factory = sessionmaker(bind=sync_engine, expire_on_commit=False)
 
     # Imported lazily so the heavy sentence-transformers model is only loaded

@@ -1,6 +1,22 @@
 from typing import Any, ClassVar
 
-from pydantic_settings import BaseSettings, DotEnvSettingsSource, EnvSettingsSource, SettingsConfigDict
+from pydantic import field_validator
+from pydantic_settings import (
+    BaseSettings,
+    DotEnvSettingsSource,
+    EnvSettingsSource,
+    SettingsConfigDict,
+)
+
+# Known sample values shipped in .env.example. Startup refuses to run with
+# these so a copied-but-unedited .env fails loudly instead of exposing the
+# instance behind guessable credentials.
+_PLACEHOLDER_SECRETS: frozenset[str] = frozenset(
+    {
+        "changeme",
+        "change-this-to-a-random-secret",
+    }
+)
 
 
 class _CommaSeparatedMixin:
@@ -13,6 +29,8 @@ class _CommaSeparatedMixin:
             "getonboard_categories",
             "job_closed_markers",
             "http_retry_status_codes",
+            "cors_allow_methods",
+            "cors_allow_headers",
         }
     )
 
@@ -44,6 +62,11 @@ class Settings(BaseSettings):
     app_port: int = 8000
     debug: bool = False
     cors_origins: list[str] = ["http://localhost:4200"]
+    # Explicit CORS method/header allow-lists. Wildcards are deliberately not
+    # the default: combined with allow_credentials=True they over-grant to any
+    # origin that slips into cors_origins.
+    cors_allow_methods: list[str] = ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    cors_allow_headers: list[str] = ["Authorization", "Content-Type"]
 
     # --- Observability (OpenTelemetry) ---
     # Master switch. When False, setup_telemetry() is a no-op and the app
@@ -73,12 +96,31 @@ class Settings(BaseSettings):
     auth_username: str
     auth_password: str
     jwt_secret_key: str
+
+    @field_validator("auth_password", "jwt_secret_key")
+    @classmethod
+    def _reject_placeholder_secrets(cls, value: str, info: Any) -> str:
+        if value in _PLACEHOLDER_SECRETS:
+            raise ValueError(
+                f"{info.field_name} is still set to the .env.example placeholder; "
+                'generate a real value (e.g. python -c "import secrets; print(secrets.token_urlsafe(48))")'
+            )
+        return value
+
     # Role embedded in issued tokens. A single-user instance is admin by default;
     # set to a non-admin value to genuinely exercise the admin gate.
     auth_role: str = "admin"
 
     # Database
     database_url: str
+    # Connection-pool sizing for the shared sync engine. pool_size persistent
+    # connections + up to max_overflow burst ones; pre_ping validates a
+    # connection before reuse (drops stale ones after DB restarts); recycle
+    # replaces connections older than this many seconds.
+    db_pool_size: int = 10
+    db_max_overflow: int = 20
+    db_pool_pre_ping: bool = True
+    db_pool_recycle_seconds: int = 3600
 
     # LLM
     llm_provider: str = "anthropic"
@@ -124,6 +166,9 @@ class Settings(BaseSettings):
         "linkedin",
     ]
 
+    # Directory CSV-import file_path filters are confined to (path-traversal guard).
+    csv_import_dir: str = "./csv_imports"
+
     # LaTeX
     latex_compiler: str = "xelatex"
     latex_timeout_seconds: float = 60.0
@@ -136,6 +181,11 @@ class Settings(BaseSettings):
     # this re-introduces the tag-dilution failure mode for verbose-tag
     # sources like getonboard; only raise if scoring is also fixed.
     ingestion_min_match_score: float = 0.0
+
+    # Hard cap on the ?page_size accepted by job-listing endpoints. Values
+    # above this are clamped server-side to bound per-request memory and
+    # scoring cost.
+    ingestion_max_page_size: int = 100
 
     # Hide job listings whose posted_date is older than this many days (stale /
     # re-surfaced postings — e.g. WeWorkRemotely keeps the original RSS pubDate
@@ -226,6 +276,10 @@ class Settings(BaseSettings):
     # A cap larger than the corpus keeps the global-ordering guarantee intact
     # while bounding ANN query cost on large data sets.
     prerank_top_k_cap: int = 2000
+    # Bounds for the in-process embedding caches (LRU eviction). Job vectors
+    # are ~3 KB each; profile entries are one per distinct profile text.
+    semantic_job_cache_size: int = 2000
+    semantic_profile_cache_size: int = 8
 
     # Matching weights (must sum to 100)
     weight_semantic: int = 15
@@ -336,6 +390,18 @@ class Settings(BaseSettings):
     match_quick_job_char_limit: int = 1500
     # Per-job description truncation (chars) for the deeper single-job analysis.
     match_deep_job_char_limit: int = 6000
+
+    # Seconds the shutdown lifespan waits for in-flight domain-event handlers
+    # before cancelling them.
+    event_bus_drain_timeout_seconds: float = 5.0
+
+    # --- Rate limiting (expensive endpoints) ---
+    # In-process sliding-window limiter applied to LLM/network-heavy endpoints
+    # (ingestion fetch/scan/list/analysis/backfill, matching, optimization).
+    # Keyed by client IP. Disable for load tests with RATE_LIMIT_ENABLED=false.
+    rate_limit_enabled: bool = True
+    rate_limit_max_requests: int = 30
+    rate_limit_window_seconds: float = 60.0
 
     # Upload
     max_upload_bytes: int = 10 * 1024 * 1024  # 10 MB

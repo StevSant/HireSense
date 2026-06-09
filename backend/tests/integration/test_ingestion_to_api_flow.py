@@ -16,8 +16,10 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import create_engine
+from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import sessionmaker
 
+from hiresense.identity.api.dependencies import require_auth
 from hiresense.infrastructure.database import Base
 from hiresense.ingestion.api import (
     get_ingestion_orchestrator,
@@ -81,7 +83,7 @@ class _FakeProfileService:
 
 
 class _EmptyScanner:
-    def list_jobs(self):
+    def list_jobs(self, criteria=None):
         return []
 
     def get_job_by_id(self, job_id):  # noqa: ARG002
@@ -90,7 +92,9 @@ class _EmptyScanner:
 
 @pytest.mark.asyncio
 async def test_ingested_jobs_persist_and_surface_via_api() -> None:
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(engine)
     session_factory = sessionmaker(bind=engine, expire_on_commit=False)
     repo = JobsRepository(session_factory=session_factory, bucket="boards")
@@ -113,6 +117,7 @@ async def test_ingested_jobs_persist_and_surface_via_api() -> None:
     app.dependency_overrides[get_portal_scanner] = lambda: _EmptyScanner()
     app.dependency_overrides[get_profile_service] = lambda: _FakeProfileService()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

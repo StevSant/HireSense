@@ -211,7 +211,10 @@
             }
           </div>
         </div>
-        <button (click)="addAnotherLanguage()" class="btn-secondary">+ Add Language</button>
+        <div class="profile-header-actions">
+          <button (click)="replaceCv()" class="btn-secondary">Replace CV</button>
+          <button (click)="addAnotherLanguage()" class="btn-secondary">+ Add Language</button>
+        </div>
       </div>
 
       @if (uploadedLanguages().length > 1) {
@@ -233,7 +236,7 @@
       @if (showUploadForm()) {
         <div class="inline-upload">
           <div class="inline-upload-header">
-            <h3>Upload {{ language() === 'es' ? 'Spanish' : 'English' }} CV</h3>
+            <h3>{{ uploadIntent() === 'replace' ? 'Replace' : 'Upload' }} {{ language() === 'es' ? 'Spanish' : 'English' }} CV</h3>
             <button (click)="cancelUpload()" class="btn-secondary btn-sm">Cancel</button>
           </div>
           <div class="language-selector">

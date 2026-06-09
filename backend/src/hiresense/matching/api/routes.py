@@ -22,7 +22,7 @@ from hiresense.matching.api.schemas import (
 )
 from hiresense.matching.domain.models import MatchResult
 
-router = APIRouter(prefix="/matching", tags=["matching"])
+router = APIRouter(prefix="/matching", tags=["matching"], dependencies=[Depends(require_auth)])
 
 
 class AnalyzeRequest(BaseModel):
@@ -77,7 +77,7 @@ async def analyze_match(
     )
 
 
-@router.post("/batch-evaluate", response_model=BatchEvaluationResponse, dependencies=[Depends(require_auth)])
+@router.post("/batch-evaluate", response_model=BatchEvaluationResponse)
 async def batch_evaluate(
     body: BatchEvaluateRequest,
     batch_service: Annotated[object, Depends(get_batch_evaluation_service)],

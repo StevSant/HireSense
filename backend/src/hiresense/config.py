@@ -387,6 +387,10 @@ class Settings(BaseSettings):
     # Per-job description truncation (chars) for the deeper single-job analysis.
     match_deep_job_char_limit: int = 6000
 
+    # Seconds the shutdown lifespan waits for in-flight domain-event handlers
+    # before cancelling them.
+    event_bus_drain_timeout_seconds: float = 5.0
+
     # --- Rate limiting (expensive endpoints) ---
     # In-process sliding-window limiter applied to LLM/network-heavy endpoints
     # (ingestion fetch/scan/list/analysis/backfill, matching, optimization).

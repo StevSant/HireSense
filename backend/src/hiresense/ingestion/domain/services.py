@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 import uuid
@@ -104,7 +105,7 @@ class IngestionOrchestrator:
 
                     # One bulk identity lookup + one commit per source instead
                     # of 2 queries per job. Outcomes carry the resolved ids.
-                    outcomes = self._repository.bulk_upsert(normalized)
+                    outcomes = await asyncio.to_thread(self._repository.bulk_upsert, normalized)
                     seen_keys = {identity_key(o.job) for o in outcomes}
                     touched: list[NormalizedJob] = []
                     for outcome in outcomes:
@@ -130,8 +131,11 @@ class IngestionOrchestrator:
                     # Disappearance-based closure: only for snapshot sources, only after a
                     # successful fetch (errored fetches `continue` above and never reach here).
                     if source.supports_snapshot_closure():
-                        closed_ids = self._repository.bump_missed_and_close(
-                            source_name, seen_keys, self._closure_miss_threshold
+                        closed_ids = await asyncio.to_thread(
+                            self._repository.bump_missed_and_close,
+                            source_name,
+                            seen_keys,
+                            self._closure_miss_threshold,
                         )
                         if closed_ids and self._indexer is not None:
                             await self._indexer.remove(closed_ids)
@@ -143,11 +147,12 @@ class IngestionOrchestrator:
                     try:
                         verdicts = await self._quality_classifier.classify(all_touched)
                         if verdicts:
-                            self._repository.bulk_update_quality(
+                            await asyncio.to_thread(
+                                self._repository.bulk_update_quality,
                                 [
                                     QualityUpdate(v.job_id, v.quality.value, v.reason)
                                     for v in verdicts.values()
-                                ]
+                                ],
                             )
                     except Exception:
                         logger.exception("Job-quality classification failed; left as 'ok'")
@@ -207,7 +212,7 @@ class IngestionOrchestrator:
             return
         cutoff = datetime.now(timezone.utc) - timedelta(days=self._retention_days)
         try:
-            removed_ids = self._repository.prune_older_than(cutoff)
+            removed_ids = await asyncio.to_thread(self._repository.prune_older_than, cutoff)
         except Exception:
             logger.exception("Job pruning failed")
             return

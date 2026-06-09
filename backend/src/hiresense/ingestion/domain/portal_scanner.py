@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -106,7 +107,7 @@ class PortalScanner:
             return
         cutoff = datetime.now(timezone.utc) - timedelta(days=self._retention_days)
         try:
-            removed_ids = self._repository.prune_older_than(cutoff)
+            removed_ids = await asyncio.to_thread(self._repository.prune_older_than, cutoff)
         except Exception:
             logger.exception("Job pruning failed")
             return
@@ -172,7 +173,7 @@ class PortalScanner:
 
             # One bulk identity lookup + one commit per portal (was 2 queries
             # per job). Outcomes carry the resolved ids.
-            outcomes = self._repository.bulk_upsert(normalized)
+            outcomes = await asyncio.to_thread(self._repository.bulk_upsert, normalized)
             seen_keys = {identity_key(o.job) for o in outcomes}
             touched: list[NormalizedJob] = []
             for outcome in outcomes:
@@ -191,8 +192,11 @@ class PortalScanner:
             # Disappearance closure: snapshot portals only, and never during a
             # keyword-filtered scan (that is not a complete snapshot of the board).
             if adapter.supports_snapshot_closure() and not filters.keyword:
-                closed_ids = self._repository.bump_missed_and_close(
-                    portal.name, seen_keys, self._closure_miss_threshold
+                closed_ids = await asyncio.to_thread(
+                    self._repository.bump_missed_and_close,
+                    portal.name,
+                    seen_keys,
+                    self._closure_miss_threshold,
                 )
                 if closed_ids and self._indexer is not None:
                     await self._indexer.remove(closed_ids)

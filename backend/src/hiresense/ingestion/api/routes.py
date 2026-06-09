@@ -147,8 +147,8 @@ async def list_jobs(
     semantic_scoring: Annotated[SemanticScoringService | None, Depends(get_semantic_scoring)],
     quick_scoring: Annotated[QuickScoringService | None, Depends(get_quick_scoring)],
     pre_ranker: Annotated[SemanticPreRanker | None, Depends(get_pre_ranker)],
-    page: int = 1,
-    page_size: int = 20,
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1)] = 20,
     source: str | None = None,
     company: str | None = None,
     keyword: str | None = None,
@@ -176,6 +176,11 @@ async def list_jobs(
         min_score = settings.ingestion_min_match_score
     if max_age_days is None and settings is not None:
         max_age_days = settings.ingestion_max_job_age_days
+    # Clamp page_size to the configured cap (bounds per-request memory and
+    # quick-scoring cost). The cap lives in settings, so it can't be a static
+    # Query(le=) bound.
+    if settings is not None:
+        page_size = min(page_size, settings.ingestion_max_page_size)
     all_jobs = orchestrator.list_jobs() if tab == "boards" else scanner.list_jobs()
 
     candidate_skills, candidate_summary = await _gather_profile(profile_service)

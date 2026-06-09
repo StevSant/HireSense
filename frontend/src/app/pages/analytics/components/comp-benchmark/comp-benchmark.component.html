@@ -1,0 +1,32 @@
+@if (comp().insufficient_data) {
+  <p class="comp-empty">
+    Not enough salaried matches for your profile yet — add skills/CV or fetch more jobs.
+  </p>
+} @else {
+  <app-salary-band [target]="comp()" />
+
+  @if (comp().ask_min_annual !== null) {
+    <p class="comp-ask">
+      Suggested ask:
+      <strong>{{ comp().currency }} {{ fmt(comp().ask_min_annual) }}–{{ fmt(comp().ask_max_annual) }}</strong>
+      <span class="comp-sub">/ year</span>
+    </p>
+  }
+
+  @if (comp().your_median_annual !== null) {
+    <p class="comp-pipeline" [class.below]="(pipelineDelta() ?? 0) < 0" [class.above]="(pipelineDelta() ?? 0) > 0">
+      Your tracked jobs' median: <strong>{{ comp().currency }} {{ fmt(comp().your_median_annual) }}</strong>
+      @if (pipelineDelta() !== null) {
+        <span class="comp-delta">
+          ({{ pipelineDelta()! > 0 ? '+' : '' }}{{ pipelineDelta() }}% vs market median)
+        </span>
+      }
+      <span class="comp-sub">· {{ comp().your_sample_size }} sampled</span>
+    </p>
+  }
+
+  @if (seniorityRows().length > 0) {
+    <h4 class="comp-sub-head">Median by seniority</h4>
+    <app-bar-chart [rows]="seniorityRows()" emptyText="No seniority breakdown." />
+  }
+}

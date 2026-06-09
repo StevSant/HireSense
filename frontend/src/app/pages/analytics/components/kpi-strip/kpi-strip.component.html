@@ -1,0 +1,9 @@
+<div class="kpi-strip">
+  @for (t of tiles(); track t.label) {
+    <div class="kpi-tile">
+      <span class="kpi-value">{{ t.value }}</span>
+      <span class="kpi-label">{{ t.label }}</span>
+      @if (t.hint) { <span class="kpi-hint">{{ t.hint }}</span> }
+    </div>
+  }
+</div>

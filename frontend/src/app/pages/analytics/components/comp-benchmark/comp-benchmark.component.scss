@@ -1,0 +1,37 @@
+.comp-empty {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.comp-ask {
+  margin-top: 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+
+  strong { color: var(--accent-text); }
+}
+
+.comp-pipeline {
+  margin-top: 0.35rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+
+  &.below .comp-delta { color: var(--danger); }
+  &.above .comp-delta { color: #15803d; }
+}
+
+.comp-delta { font-weight: 600; }
+
+.comp-sub {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.comp-sub-head {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}

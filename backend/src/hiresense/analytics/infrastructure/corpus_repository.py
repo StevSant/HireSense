@@ -1,11 +1,28 @@
 from __future__ import annotations
 
+import dataclasses
 from datetime import datetime
 from typing import Any
 
 from sqlalchemy import func, select
 
 from hiresense.ingestion.infrastructure.models import IngestedJob
+
+
+@dataclasses.dataclass(frozen=True)
+class CorpusJobRow:
+    """A read-only projection of an ingested job for analytics enrichment."""
+
+    id: str
+    title: str
+    company: str
+    location: str
+    source: str
+    salary_range: str | None
+    posted_date: datetime | None
+    remote_modality: str | None
+    status: str
+    quality: str
 
 
 class CorpusAnalyticsRepository:
@@ -74,3 +91,35 @@ class CorpusAnalyticsRepository:
                 IngestedJob.id.in_(job_ids)
             )
             return {row[0]: row[1] for row in session.execute(stmt).all()}
+
+    def descriptions_for_ids(self, job_ids: list[str]) -> dict[str, str]:
+        """Job descriptions keyed by id (for seniority detection on matched jobs)."""
+        if not job_ids:
+            return {}
+        with self._session_factory() as session:
+            stmt = select(IngestedJob.id, IngestedJob.description).where(
+                IngestedJob.id.in_(job_ids)
+            )
+            return {row[0]: (row[1] or "") for row in session.execute(stmt).all()}
+
+    def rows_for_ids(self, job_ids: list[str]) -> dict[str, CorpusJobRow]:
+        """Full projections keyed by id — enrichment for comp / focus / by-source.
+
+        Returns only the ids that exist; callers filter on status/quality.
+        """
+        if not job_ids:
+            return {}
+        with self._session_factory() as session:
+            stmt = select(
+                IngestedJob.id, IngestedJob.title, IngestedJob.company, IngestedJob.location,
+                IngestedJob.source, IngestedJob.salary_range, IngestedJob.posted_date,
+                IngestedJob.remote_modality, IngestedJob.status, IngestedJob.quality,
+            ).where(IngestedJob.id.in_(job_ids))
+            return {
+                r[0]: CorpusJobRow(
+                    id=r[0], title=r[1] or "", company=r[2] or "", location=r[3] or "",
+                    source=r[4] or "", salary_range=r[5], posted_date=r[6],
+                    remote_modality=r[7], status=r[8] or "open", quality=r[9] or "ok",
+                )
+                for r in session.execute(stmt).all()
+            }

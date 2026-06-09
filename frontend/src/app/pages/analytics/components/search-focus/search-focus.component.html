@@ -1,0 +1,46 @@
+@if (focus().insufficient_data) {
+  <p class="focus-empty">
+    Add skills or a CV (and fetch jobs) to see where your profile fits best.
+  </p>
+} @else {
+  <div class="focus-stats">
+    <span class="focus-stat"><strong>{{ focus().match_count }}</strong> profile matches</span>
+    @if (remotePct() !== null) {
+      <span class="focus-stat"><strong>{{ remotePct() }}%</strong> remote</span>
+    }
+    <span class="focus-stat focus-fresh"><strong>{{ focus().fresh_fit_count }}</strong> fresh</span>
+  </div>
+
+  <div class="focus-cols">
+    <div class="focus-col">
+      <h4 class="focus-head">Best-fit companies</h4>
+      @if (focus().best_fit_companies.length) {
+        <ul class="focus-list">
+          @for (c of focus().best_fit_companies; track c.label) {
+            <li><span class="focus-label">{{ c.label }}</span><span class="focus-count">{{ c.count }}</span></li>
+          }
+        </ul>
+      } @else { <p class="focus-empty">—</p> }
+    </div>
+
+    <div class="focus-col">
+      <h4 class="focus-head">Best-fit roles</h4>
+      @if (focus().best_fit_roles.length) {
+        <ul class="focus-list">
+          @for (r of focus().best_fit_roles; track r.label) {
+            <li><span class="focus-label">{{ r.label }}</span><span class="focus-count">{{ r.count }}</span></li>
+          }
+        </ul>
+      } @else { <p class="focus-empty">—</p> }
+    </div>
+  </div>
+
+  @if (focus().top_locations.length) {
+    <h4 class="focus-head">Where they are</h4>
+    <ul class="focus-chips">
+      @for (l of focus().top_locations; track l.label) {
+        <li class="focus-chip">{{ l.label }} <span class="focus-count">{{ l.count }}</span></li>
+      }
+    </ul>
+  }
+}

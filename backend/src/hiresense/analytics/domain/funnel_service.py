@@ -19,16 +19,29 @@ class FunnelStage(BaseModel):
     current: int
 
 
+class SourceOutcome(BaseModel):
+    """Per job-source pipeline outcome: how many tracked apps came from this
+    source and what share reached the interview stage (by current status)."""
+
+    source: str
+    applications: int
+    reached_interview: int
+    interview_rate: float
+
+
 class FunnelMetrics(BaseModel):
     stages: list[FunnelStage]
     rejected: int
     current_rejected: int
     total_applications: int
+    by_source: list[SourceOutcome] = []
 
 
 class FunnelService:
-    def __init__(self, history: Any) -> None:
+    def __init__(self, history: Any, applications_read: Any = None, corpus: Any = None) -> None:
         self._history = history
+        self._applications = applications_read
+        self._corpus = corpus
 
     def compute(self) -> FunnelMetrics:
         rows = self._history.list_history()
@@ -91,4 +104,39 @@ class FunnelService:
         return FunnelMetrics(
             stages=stages_out, rejected=rejected,
             current_rejected=current_rejected, total_applications=len(by_app),
+            by_source=self._by_source(),
         )
+
+    def _by_source(self) -> list[SourceOutcome]:
+        """Outcomes grouped by the job's source. Uses each tracked app's current
+        status (rank >= interviewing counts as reached-interview) — a simple
+        which-source-converts signal, not a high-water-mark over history."""
+        if self._applications is None or self._corpus is None:
+            return []
+        try:
+            apps = self._applications.list()
+        except Exception:
+            return []
+        job_ids = [str(a.job_id) for a in apps if getattr(a, "job_id", None)]
+        if not job_ids:
+            return []
+        rows = self._corpus.rows_for_ids(job_ids)
+        totals: dict[str, int] = defaultdict(int)
+        reached: dict[str, int] = defaultdict(int)
+        for app in apps:
+            jid = str(app.job_id) if getattr(app, "job_id", None) else None
+            row = rows.get(jid) if jid else None
+            if row is None or not row.source:
+                continue
+            totals[row.source] += 1
+            if _RANK.get(app.status, -1) >= _RANK["interviewing"]:
+                reached[row.source] += 1
+        outcomes = [
+            SourceOutcome(
+                source=src, applications=n, reached_interview=reached[src],
+                interview_rate=round(reached[src] / n, 4) if n else 0.0,
+            )
+            for src, n in totals.items()
+        ]
+        outcomes.sort(key=lambda o: (o.applications, o.interview_rate), reverse=True)
+        return outcomes

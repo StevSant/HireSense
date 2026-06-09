@@ -73,31 +73,37 @@ export class AnalyticsComponent implements OnInit {
     const c = this.comp();
     const f = this.funnel();
     const focus = this.focus();
+    const compReady = c !== null && !c.insufficient_data && c.median_annual !== null;
+    const focusReady = focus !== null && !focus.insufficient_data;
     const applyToInterview = f
       ? f.stages.find((s) => s.stage === 'interviewing')?.conversion_from_prev ?? null
       : null;
+    const applied = f?.stages.find((s) => s.stage === 'applied')?.reached ?? null;
+    const interviewing = f?.stages.find((s) => s.stage === 'interviewing')?.reached ?? null;
     return [
       {
         label: 'Target median',
-        value: c && !c.insufficient_data && c.median_annual !== null
-          ? `${c.currency ?? ''} ${c.median_annual.toLocaleString('en-US')}`.trim()
+        value: compReady
+          ? `${c!.currency ?? ''} ${c!.median_annual!.toLocaleString('en-US')}`.trim()
           : '—',
-        hint: 'for your profile',
+        hint: compReady ? `across ${c!.sample_size} matched roles` : 'for your profile',
       },
       {
         label: 'Apply → interview',
         value: applyToInterview === null ? '—' : `${Math.round(applyToInterview * PERCENT)}%`,
-        hint: f ? `${f.total_applications} tracked` : undefined,
+        hint: applied !== null && applied > 0
+          ? `${interviewing ?? 0} of ${applied} reached interview`
+          : f ? `${f.total_applications} tracked` : undefined,
       },
       {
         label: 'Fresh-fit jobs',
-        value: focus && !focus.insufficient_data ? `${focus.fresh_fit_count}` : '—',
-        hint: 'matched, recent',
+        value: focusReady ? `${focus!.fresh_fit_count}` : '—',
+        hint: focusReady ? `new in the last ${focus!.fresh_days} days` : 'matched, recent',
       },
       {
         label: 'Best-fit companies',
-        value: focus && !focus.insufficient_data ? `${focus.best_fit_companies.length}` : '—',
-        hint: focus && !focus.insufficient_data ? `${focus.match_count} matches` : undefined,
+        value: focusReady ? `${focus!.best_fit_companies.length}` : '—',
+        hint: focusReady ? `${focus!.match_count} matches` : undefined,
       },
     ];
   });

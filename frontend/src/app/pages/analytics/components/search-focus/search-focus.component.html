@@ -11,6 +11,13 @@
     <span class="focus-stat focus-fresh"><strong>{{ focus().fresh_fit_count }}</strong> fresh</span>
   </div>
 
+  @if (topRole() || topCompany()) {
+    <p class="focus-insight">
+      @if (topRole(); as r) { Your strongest role fit is <strong>{{ r.label }}</strong>. }
+      @if (topCompany(); as c) { <strong>{{ c.label }}</strong> has the most openings for you (<strong>{{ c.count }}</strong>). }
+    </p>
+  }
+
   <div class="focus-cols">
     <div class="focus-col">
       <h4 class="focus-head">Best-fit companies</h4>

@@ -2,6 +2,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from fastapi import FastAPI
 
+from hiresense.identity.api.dependencies import require_auth
 from hiresense.optimization.api.routes import get_cv_optimizer, router
 from hiresense.optimization.domain.models import OptimizationResult, SectionChange
 
@@ -32,6 +33,7 @@ async def test_optimize_endpoint() -> None:
     app = FastAPI()
     fake = FakeCVOptimizer()
     app.dependency_overrides[get_cv_optimizer] = lambda: fake
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
 
     async with AsyncClient(
@@ -57,3 +59,13 @@ async def test_optimize_endpoint() -> None:
     assert data["changes"][0]["section_name"] == "SUMMARY"
     assert data["improvement_summary"] == "Improved summary section"
     assert data["optimized_tex"] != data["original_tex"]
+
+
+@pytest.mark.asyncio
+async def test_requires_auth_without_token() -> None:
+    """Router-level auth: requests with no bearer token are rejected."""
+    app = FastAPI()
+    app.include_router(router)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/optimization/optimize")
+    assert resp.status_code == 401

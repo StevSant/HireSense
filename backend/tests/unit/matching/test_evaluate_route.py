@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from hiresense.identity.api.dependencies import require_auth
 from hiresense.matching.api.dependencies import get_matching_orchestrator
 from hiresense.matching.api.routes import router
 from hiresense.matching.domain.scorers.base import DimensionResult
@@ -23,6 +24,7 @@ class FakeOrchestrator:
 
 def _make_app():
     app = FastAPI()
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
     app.dependency_overrides[get_matching_orchestrator] = lambda: FakeOrchestrator()
     return app

@@ -5,9 +5,10 @@ from datetime import datetime, timezone
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
 from hiresense.ingestion.domain.identity import identity_key
+from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.upsert_result import UpsertResult
-from hiresense.ingestion.ports.jobs_repository import QualityUpdate, ScoreUpdate
+from hiresense.ingestion.ports.jobs_repository import QualityUpdate, ScoreUpdate, UpsertOutcome
 
 
 class InMemoryJobsRepository:
@@ -77,6 +78,16 @@ class InMemoryJobsRepository:
     def get_id_by_identity(self, source: str, job: NormalizedJob) -> str | None:
         return self._identity_to_id.get((source, identity_key(job)))
 
+    def bulk_upsert(self, jobs: list[NormalizedJob]) -> list[UpsertOutcome]:
+        """Batch wrapper over upsert(); resolves each job's stored id first."""
+        outcomes: list[UpsertOutcome] = []
+        for job in jobs:
+            existing_id = self.get_id_by_identity(job.source, job)
+            if existing_id:
+                job = job.model_copy(update={"id": existing_id})
+            outcomes.append(UpsertOutcome(job=job, result=self.upsert(job)))
+        return outcomes
+
     def mark_closed(self, job_ids: list[str]) -> None:
         for jid in job_ids:
             job = self._jobs.get(jid)
@@ -123,6 +134,9 @@ class InMemoryJobsRepository:
 
     def list_all(self) -> list[NormalizedJob]:
         return list(self._jobs.values())
+
+    def list_filtered(self, criteria: JobListCriteria) -> list[NormalizedJob]:
+        return [j for j in self._jobs.values() if criteria.matches(j)]
 
     def get_by_id(self, job_id: str) -> NormalizedJob | None:
         return self._jobs.get(job_id)

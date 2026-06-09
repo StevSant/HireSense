@@ -58,6 +58,63 @@ async def test_failing_handler_is_isolated_and_logged(caplog) -> None:
 
 
 @pytest.mark.asyncio
+async def test_publish_holds_strong_task_references() -> None:
+    """In-flight handler tasks are referenced by the bus (GC safety) and
+    discarded once done."""
+    bus = InMemoryEventBus()
+    release = asyncio.Event()
+
+    async def slow_handler(event: DomainEvent) -> None:
+        await release.wait()
+
+    bus.subscribe("slow.event", slow_handler)
+    await bus.publish(DomainEvent(event_type="slow.event"))
+    assert len(bus._tasks) == 1
+    release.set()
+    await asyncio.sleep(0.05)
+    assert len(bus._tasks) == 0
+
+
+@pytest.mark.asyncio
+async def test_aclose_waits_for_in_flight_handlers() -> None:
+    bus = InMemoryEventBus()
+    finished: list[str] = []
+
+    async def handler(event: DomainEvent) -> None:
+        await asyncio.sleep(0.05)
+        finished.append("done")
+
+    bus.subscribe("drain.event", handler)
+    await bus.publish(DomainEvent(event_type="drain.event"))
+    await bus.aclose(timeout=2.0)
+    assert finished == ["done"]
+
+
+@pytest.mark.asyncio
+async def test_aclose_cancels_stragglers_after_timeout() -> None:
+    bus = InMemoryEventBus()
+    cancelled: list[str] = []
+
+    async def hung_handler(event: DomainEvent) -> None:
+        try:
+            await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            cancelled.append("cancelled")
+            raise
+
+    bus.subscribe("hung.event", hung_handler)
+    await bus.publish(DomainEvent(event_type="hung.event"))
+    await bus.aclose(timeout=0.05)
+    assert cancelled == ["cancelled"]
+
+
+@pytest.mark.asyncio
+async def test_aclose_noop_when_idle() -> None:
+    bus = InMemoryEventBus()
+    await bus.aclose(timeout=0.01)
+
+
+@pytest.mark.asyncio
 async def test_multiple_subscribers() -> None:
     bus = InMemoryEventBus()
     calls: list[str] = []

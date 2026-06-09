@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
+from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.ports.jobs_repository import JobsRepositoryPort
 from hiresense.ports.embedding import EmbeddingPort
@@ -59,8 +60,11 @@ class EmbeddingBackfillService:
             return BackfillResult(boards=0, portals=0)
 
         # NOTE: single-batch embed; chunk if corpus grows large
-        boards_jobs = [j for j in self._boards_repo.list_all() if j.status == "open"]
-        portals_jobs = [j for j in self._portals_repo.list_all() if j.status == "open"]
+        # Open-only, filtered DB-side; low-quality jobs are still indexed
+        # (quality is a display concern, not an embedding one).
+        open_only = JobListCriteria(include_closed=False, include_low_quality=True)
+        boards_jobs = self._boards_repo.list_filtered(open_only)
+        portals_jobs = self._portals_repo.list_filtered(open_only)
 
         boards_count = await self._backfill_bucket(boards_jobs, bucket="boards")
         portals_count = await self._backfill_bucket(portals_jobs, bucket="portals")

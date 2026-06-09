@@ -65,4 +65,11 @@ describe('CompanyComponent', () => {
     const fixture = mount(service);
     expect(fixture.nativeElement.querySelector('.company-state-error')).not.toBeNull();
   });
+
+  it('links each job to its detail page', () => {
+    const service = { queryJobs: (tab: string) => of(page(tab === 'boards' ? [job()] : [])) };
+    const fixture = mount(service);
+    const link = fixture.nativeElement.querySelector('a.company-job-title') as HTMLAnchorElement;
+    expect(link?.getAttribute('href')).toBe('/dashboard/job/1');
+  });
 });

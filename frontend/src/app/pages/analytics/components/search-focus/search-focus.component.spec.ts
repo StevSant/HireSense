@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { SearchFocusComponent } from './search-focus.component';
 import { SearchFocus } from '../../models/search-focus.model';
 
@@ -14,7 +15,10 @@ function focus(over: Partial<SearchFocus> = {}): SearchFocus {
 
 describe('SearchFocusComponent', () => {
   function mount(f: SearchFocus) {
-    TestBed.configureTestingModule({ imports: [SearchFocusComponent] });
+    TestBed.configureTestingModule({
+      imports: [SearchFocusComponent],
+      providers: [provideRouter([])],
+    });
     const fixture = TestBed.createComponent(SearchFocusComponent);
     fixture.componentRef.setInput('focus', f);
     fixture.detectChanges();
@@ -39,5 +43,14 @@ describe('SearchFocusComponent', () => {
     expect(insight).not.toBeNull();
     expect(insight.textContent).toContain('Backend Engineer');
     expect(insight.textContent).toContain('Acme');
+  });
+
+  it('links companies to their page and roles to filtered ingestion', () => {
+    const fixture = mount(focus());
+    const hrefs = Array.from(fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>).map(
+      (a) => a.getAttribute('href'),
+    );
+    expect(hrefs).toContain('/dashboard/company/Acme');
+    expect(hrefs.some((h) => h?.startsWith('/dashboard/ingestion') && h.includes('keyword=Backend'))).toBe(true);
   });
 });

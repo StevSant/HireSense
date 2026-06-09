@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { SearchFocus } from '../../models/search-focus.model';
 
 const PERCENT = 100;
@@ -6,6 +7,7 @@ const PERCENT = 100;
 @Component({
   selector: 'app-search-focus',
   standalone: true,
+  imports: [RouterLink],
   templateUrl: './search-focus.component.html',
   styleUrl: './search-focus.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

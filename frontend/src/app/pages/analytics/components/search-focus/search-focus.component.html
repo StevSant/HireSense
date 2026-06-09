@@ -24,7 +24,7 @@
       @if (focus().best_fit_companies.length) {
         <ul class="focus-list">
           @for (c of focus().best_fit_companies; track c.label) {
-            <li><span class="focus-label">{{ c.label }}</span><span class="focus-count">{{ c.count }}</span></li>
+            <li><a class="focus-label focus-link" [routerLink]="['/dashboard/company', c.label]">{{ c.label }}</a><span class="focus-count">{{ c.count }}</span></li>
           }
         </ul>
       } @else { <p class="focus-empty">—</p> }
@@ -35,7 +35,7 @@
       @if (focus().best_fit_roles.length) {
         <ul class="focus-list">
           @for (r of focus().best_fit_roles; track r.label) {
-            <li><span class="focus-label">{{ r.label }}</span><span class="focus-count">{{ r.count }}</span></li>
+            <li><a class="focus-label focus-link" routerLink="/dashboard/ingestion" [queryParams]="{ keyword: r.label }">{{ r.label }}</a><span class="focus-count">{{ r.count }}</span></li>
           }
         </ul>
       } @else { <p class="focus-empty">—</p> }

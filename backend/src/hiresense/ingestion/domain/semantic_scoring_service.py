@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from hiresense.ingestion.domain.models import NormalizedJob
+from hiresense.kernel import LRUCache
 from hiresense.matching.domain.semantic_scorer import SemanticScorer
 
 logger = logging.getLogger(__name__)
@@ -36,11 +37,20 @@ class SemanticScoringService:
     on first use, batched per request.
     """
 
-    def __init__(self, embedding_port: Any, scorer: SemanticScorer | None = None) -> None:
+    def __init__(
+        self,
+        embedding_port: Any,
+        scorer: SemanticScorer | None = None,
+        *,
+        job_cache_size: int = 2000,
+        profile_cache_size: int = 8,
+    ) -> None:
         self._embedding = embedding_port
         self._scorer = scorer or SemanticScorer()
-        self._job_cache: dict[str, list[float]] = {}
-        self._profile_cache: dict[str, list[float]] = {}
+        # Bounded: embeddings are ~3 KB each; unbounded dicts grow for the
+        # lifetime of the process.
+        self._job_cache: LRUCache[str, list[float]] = LRUCache(job_cache_size)
+        self._profile_cache: LRUCache[str, list[float]] = LRUCache(profile_cache_size)
         self._lock = asyncio.Lock()
 
     async def score_jobs(

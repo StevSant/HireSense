@@ -33,6 +33,7 @@ from hiresense.config import Settings
 from hiresense.observability import setup_telemetry
 from hiresense.cover_letter_templates.api import router as cover_letter_templates_router
 from hiresense.identity.api import router as auth_router
+from hiresense.kernel import SlidingWindowRateLimiter
 from hiresense.ingestion.api import router as ingestion_router
 from hiresense.interview.api import router as interview_router
 from hiresense.matching.api import router as matching_router
@@ -51,6 +52,11 @@ def create_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         yield
+        # Drain in-flight event handlers before tearing infrastructure down so
+        # events published late in a request aren't silently dropped.
+        event_bus = getattr(app.state, "event_bus", None)
+        if event_bus is not None:
+            await event_bus.aclose(timeout=settings.event_bus_drain_timeout_seconds)
         await http_client.aclose()
         # Flush and shut down any OTel providers set up by setup_telemetry. No-op
         # when telemetry is disabled (no providers were stored). Guarded so a
@@ -69,17 +75,30 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=settings.cors_allow_methods,
+        allow_headers=settings.cors_allow_headers,
     )
 
     app.state.settings = settings
+
+    # Per-client-IP limiter for LLM/network-heavy endpoints (see
+    # enforce_expensive_rate_limit). None disables enforcement.
+    app.state.rate_limiter = (
+        SlidingWindowRateLimiter(
+            max_requests=settings.rate_limit_max_requests,
+            window_seconds=settings.rate_limit_window_seconds,
+        )
+        if settings.rate_limit_enabled
+        else None
+    )
 
     # Initialize observability (traces/metrics/logs) before any engine/client
     # is built so auto-instrumentation can hook them. No-op when disabled.
     setup_telemetry(app, settings)
 
     infra = build_shared_infra(settings, http_client)
+    # Exposed for the lifespan drain above.
+    app.state.event_bus = infra.event_bus
 
     # --- Admin (owns the tracked-LLM factory the other modules share) ---
     admin = build_admin(infra)

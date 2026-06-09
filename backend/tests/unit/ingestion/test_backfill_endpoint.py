@@ -71,6 +71,9 @@ class _FakeRepo:
     def list_all(self) -> list[NormalizedJob]:
         return list(self._jobs.values())
 
+    def list_filtered(self, criteria) -> list[NormalizedJob]:
+        return [j for j in self._jobs.values() if criteria.matches(j)]
+
 
 def _make_auth_service() -> AuthService:
     return AuthService(username="admin", password="secret", jwt_secret="test-secret")

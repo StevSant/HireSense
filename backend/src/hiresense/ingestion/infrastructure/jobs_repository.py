@@ -3,15 +3,16 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
 from hiresense.ingestion.domain.identity import identity_key
+from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.infrastructure.models import IngestedJob
-from hiresense.ingestion.ports.jobs_repository import QualityUpdate, ScoreUpdate
+from hiresense.ingestion.ports.jobs_repository import QualityUpdate, ScoreUpdate, UpsertOutcome
 
 
 def _to_orm(job: NormalizedJob, bucket: str) -> IngestedJob:
@@ -86,6 +87,36 @@ class JobsRepository:
         self._session_factory = session_factory
         self._bucket = bucket
 
+    @staticmethod
+    def _apply_to_row(row: IngestedJob, job: NormalizedJob, new_hash: str, now: datetime) -> UpsertResult:
+        """Apply one job's upsert semantics to an existing row (no commit)."""
+        row.last_seen_at = now
+        row.missed_count = 0
+        reopened = row.status == "closed"
+        if reopened:
+            row.status = "open"
+            row.closed_at = None
+
+        changed = row.content_hash != new_hash
+        if changed:
+            row.title = job.title
+            row.company = job.company
+            row.description = job.description
+            row.location = job.location
+            row.salary_range = job.salary_range
+            row.skills = list(job.skills)
+            row.categories = list(job.categories)
+            row.countries = list(job.countries)
+            row.remote_modality = job.remote_modality
+            row.content_hash = new_hash
+            row.updated_at = now
+
+        if reopened:
+            return UpsertResult.REOPENED
+        if changed:
+            return UpsertResult.UPDATED
+        return UpsertResult.UNCHANGED
+
     def upsert(self, job: NormalizedJob) -> UpsertResult:
         ident = identity_key(job)
         new_hash = content_hash(job)
@@ -103,36 +134,47 @@ class JobsRepository:
                 session.commit()
                 return UpsertResult.INSERTED
 
-            row.last_seen_at = now
-            row.missed_count = 0
-            reopened = row.status == "closed"
-            if reopened:
-                row.status = "open"
-                row.closed_at = None
-
-            changed = row.content_hash != new_hash
-            if changed:
-                row.title = job.title
-                row.company = job.company
-                row.description = job.description
-                row.location = job.location
-                row.salary_range = job.salary_range
-                row.skills = list(job.skills)
-                row.categories = list(job.categories)
-                row.countries = list(job.countries)
-                row.remote_modality = job.remote_modality
-                row.content_hash = new_hash
-                row.updated_at = now
-
-            if reopened:
-                session.commit()
-                return UpsertResult.REOPENED
-            if changed:
-                session.commit()
-                return UpsertResult.UPDATED
-
+            result = self._apply_to_row(row, job, new_hash, now)
             session.commit()
-            return UpsertResult.UNCHANGED
+            return result
+
+    def bulk_upsert(self, jobs: list[NormalizedJob]) -> list[UpsertOutcome]:
+        """One bulk identity SELECT + one commit for the whole batch.
+
+        Preserves upsert()'s per-job semantics via _apply_to_row. In-batch
+        duplicate identities resolve against the row created/updated earlier
+        in the same batch.
+        """
+        if not jobs:
+            return []
+        now = datetime.now(timezone.utc)
+        idents = [identity_key(j) for j in jobs]
+        with self._session_factory() as session:
+            rows = session.scalars(
+                select(IngestedJob).where(
+                    IngestedJob.bucket == self._bucket,
+                    IngestedJob.source.in_({j.source for j in jobs}),
+                    IngestedJob.identity_key.in_(idents),
+                )
+            ).all()
+            by_key: dict[tuple[str, str], IngestedJob] = {
+                (r.source, r.identity_key): r for r in rows
+            }
+            outcomes: list[UpsertOutcome] = []
+            for job, ident in zip(jobs, idents):
+                key = (job.source, ident)
+                row = by_key.get(key)
+                if row is None:
+                    orm = _to_orm(job, self._bucket)
+                    session.add(orm)
+                    by_key[key] = orm
+                    outcomes.append(UpsertOutcome(job=job, result=UpsertResult.INSERTED))
+                    continue
+                resolved = job.model_copy(update={"id": row.id})
+                result = self._apply_to_row(row, resolved, content_hash(resolved), now)
+                outcomes.append(UpsertOutcome(job=resolved, result=result))
+            session.commit()
+        return outcomes
 
     def get_id_by_identity(self, source: str, job: NormalizedJob) -> str | None:
         with self._session_factory() as session:
@@ -222,6 +264,33 @@ class JobsRepository:
     def list_all(self) -> list[NormalizedJob]:
         with self._session_factory() as session:
             stmt = select(IngestedJob).where(IngestedJob.bucket == self._bucket)
+            return [_to_domain(r) for r in session.scalars(stmt).all()]
+
+    def list_filtered(self, criteria: JobListCriteria) -> list[NormalizedJob]:
+        """Selective predicates pushed into the WHERE clause (see port docstring)."""
+        with self._session_factory() as session:
+            stmt = select(IngestedJob).where(IngestedJob.bucket == self._bucket)
+            if not criteria.include_closed:
+                stmt = stmt.where(IngestedJob.status != "closed")
+            if not criteria.include_low_quality:
+                stmt = stmt.where(
+                    (IngestedJob.quality.is_(None)) | (IngestedJob.quality == "ok")
+                )
+            if criteria.source:
+                stmt = stmt.where(IngestedJob.source == criteria.source)
+            if criteria.company:
+                target = criteria.company.strip().lower()
+                stmt = stmt.where(func.lower(func.trim(IngestedJob.company)) == target)
+            if criteria.date_from:
+                stmt = stmt.where(
+                    IngestedJob.posted_date.is_not(None),
+                    IngestedJob.posted_date >= criteria.date_from,
+                )
+            if criteria.date_to:
+                stmt = stmt.where(
+                    IngestedJob.posted_date.is_not(None),
+                    IngestedJob.posted_date <= criteria.date_to,
+                )
             return [_to_domain(r) for r in session.scalars(stmt).all()]
 
     def list_since(self, cutoff: datetime, *, status: str = "open") -> list[NormalizedJob]:

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from hiresense.identity.api.dependencies import require_auth
+from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.ingestion.api.dependencies import (
     get_backfill_service,
     get_deep_analysis,
@@ -95,7 +95,7 @@ class FetchResponse(BaseModel):
     jobs: list[NormalizedJob]
 
 
-@router.post("/fetch", response_model=FetchResponse)
+@router.post("/fetch", response_model=FetchResponse, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def fetch_jobs(
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
 ) -> FetchResponse | JSONResponse:
@@ -110,7 +110,7 @@ async def fetch_jobs(
     return FetchResponse(count=len(jobs), jobs=jobs)
 
 
-@router.post("/scan-portals", response_model=ScanResult)
+@router.post("/scan-portals", response_model=ScanResult, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def scan_portals(
     filters: ScanFilters,
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
@@ -137,7 +137,7 @@ async def revalidate_jobs(
     return RevalidationResponse(closed=len(closed))
 
 
-@router.get("/jobs", response_model=PaginatedResult)
+@router.get("/jobs", response_model=PaginatedResult, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def list_jobs(
     request: Request,
     tab: Annotated[Literal["boards", "portals"], Query()],
@@ -342,7 +342,7 @@ async def list_jobs(
     return result
 
 
-@router.get("/jobs/{job_id}/analysis", response_model=DeepAnalysisResult)
+@router.get("/jobs/{job_id}/analysis", response_model=DeepAnalysisResult, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def analyze_job(
     job_id: str,
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
@@ -388,7 +388,7 @@ class BackfillResponse(BaseModel):
     total: int
 
 
-@router.post("/backfill-embeddings", response_model=BackfillResponse)
+@router.post("/backfill-embeddings", response_model=BackfillResponse, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def backfill_embeddings(
     service: Annotated[EmbeddingBackfillService | None, Depends(get_backfill_service)],
 ) -> BackfillResponse:

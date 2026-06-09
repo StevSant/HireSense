@@ -1,0 +1,13 @@
+<nav class="hub-tabs" role="tablist">
+  @for (tab of hub().tabs; track tab.path) {
+    <a
+      class="hub-tab"
+      role="tab"
+      [routerLink]="tab.path"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      {{ tab.label }}
+    </a>
+  }
+</nav>

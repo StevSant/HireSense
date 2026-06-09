@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Protocol
 from hiresense.ingestion.domain.models import NormalizedJob
 
 if TYPE_CHECKING:
+    from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
     from hiresense.ingestion.domain.upsert_result import UpsertResult
 
 
@@ -87,6 +88,15 @@ class JobsRepositoryPort(Protocol):
         ...
 
     def list_all(self) -> list[NormalizedJob]: ...
+
+    def list_filtered(self, criteria: "JobListCriteria") -> list[NormalizedJob]:
+        """Jobs matching the cheap selective predicates in `criteria`.
+
+        SQL implementations push these into the WHERE clause so unfiltered
+        rows never leave the database; in-memory implementations apply
+        criteria.matches(). Ordering is unspecified (callers re-sort).
+        """
+        ...
 
     def get_by_id(self, job_id: str) -> NormalizedJob | None: ...
 

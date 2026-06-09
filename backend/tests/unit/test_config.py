@@ -70,3 +70,23 @@ def test_embedding_device_configurable(monkeypatch: pytest.MonkeyPatch) -> None:
 
     settings = Settings()
     assert settings.embedding_device == "cuda"
+
+
+def test_portfolio_settings_defaults_and_parsing(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://test:test@localhost/test")
+    monkeypatch.setenv("AUTH_USERNAME", "admin")
+    monkeypatch.setenv("AUTH_PASSWORD", "pass")
+    monkeypatch.setenv("JWT_SECRET_KEY", "secret")
+    monkeypatch.setenv("LLM_API_KEY", "sk-test")
+    monkeypatch.setenv("PORTFOLIO_SOURCES", "supabase,github")
+    # Pin these explicitly: the local backend/.env may populate them, and env
+    # vars take precedence over the dotenv source.
+    monkeypatch.setenv("PORTFOLIO_SUPABASE_URL", "")
+    monkeypatch.setenv("PORTFOLIO_SUPABASE_ANON_KEY", "")
+
+    from hiresense.config import Settings
+
+    settings = Settings()
+    assert settings.portfolio_sources == ["supabase", "github"]
+    assert settings.portfolio_supabase_url == ""
+    assert settings.portfolio_profile_char_cap == 1200

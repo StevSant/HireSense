@@ -33,7 +33,7 @@
       @for (job of jobs(); track job.id) {
         <li class="company-job">
           <div class="company-job-main">
-            <a class="company-job-title" routerLink="/dashboard/ingestion" [queryParams]="{ job_id: job.id }">{{ job.title }}</a>
+            <a class="company-job-title" [routerLink]="['/dashboard/job', job.id]">{{ job.title }}</a>
             <div class="company-job-meta">
               <span>{{ job.location }}</span>
               <span class="company-job-source">{{ job.source }}</span>

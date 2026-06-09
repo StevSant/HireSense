@@ -6,10 +6,11 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel
 
+from hiresense.identity.api.dependencies import require_auth
 from hiresense.profile.api.dependencies import get_profile_service
 from hiresense.profile.domain.models import CandidateProfile
 
-router = APIRouter(prefix="/profile", tags=["profile"])
+router = APIRouter(prefix="/profile", tags=["profile"], dependencies=[Depends(require_auth)])
 
 _ALLOWED_EXTENSIONS = {".pdf", ".tex"}
 

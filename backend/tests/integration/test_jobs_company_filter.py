@@ -7,6 +7,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from hiresense.identity.api.dependencies import require_auth
 from hiresense.infrastructure.database import Base
 from hiresense.ingestion.api import (
     get_ingestion_orchestrator,
@@ -95,6 +96,7 @@ async def test_company_query_param_narrows_results() -> None:
     app.dependency_overrides[get_portal_scanner] = lambda: _EmptyScanner()
     app.dependency_overrides[get_profile_service] = lambda: _FakeProfileService()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

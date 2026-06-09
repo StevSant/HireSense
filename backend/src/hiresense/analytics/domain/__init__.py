@@ -1,5 +1,20 @@
 from hiresense.analytics.domain.analytics_service import AnalyticsService
-from hiresense.analytics.domain.funnel_service import FunnelMetrics, FunnelService, FunnelStage
+from hiresense.analytics.domain.comp_benchmark_service import (
+    CompBenchmark,
+    CompBenchmarkService,
+    SeniorityBand,
+)
+from hiresense.analytics.domain.funnel_service import (
+    FunnelMetrics,
+    FunnelService,
+    FunnelStage,
+    SourceOutcome,
+)
+from hiresense.analytics.domain.search_focus_service import (
+    FocusItem,
+    SearchFocus,
+    SearchFocusService,
+)
 from hiresense.analytics.domain.market_service import (
     MarketIntel,
     MarketIntelService,
@@ -15,9 +30,16 @@ from hiresense.analytics.domain.ttl_cache import TtlCache
 
 __all__ = [
     "AnalyticsService",
+    "CompBenchmark",
+    "CompBenchmarkService",
+    "FocusItem",
     "FunnelMetrics",
     "FunnelService",
     "FunnelStage",
+    "SearchFocus",
+    "SearchFocusService",
+    "SeniorityBand",
+    "SourceOutcome",
     "MarketIntel",
     "MarketIntelService",
     "ParsedSalary",

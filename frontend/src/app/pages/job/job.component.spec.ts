@@ -21,7 +21,7 @@ const analysis = {
   recommendations: [], narrative: 'Solid fit.',
 };
 
-function mount(over: Partial<Record<string, unknown>> = {}, id = 'j1') {
+function mount(over: Partial<Record<string, unknown>> = {}, appsOver: Record<string, unknown> = {}, id = 'j1') {
   const ingestion = {
     getJob: () => of(job()),
     getCachedAnalysis: () => undefined,
@@ -35,7 +35,7 @@ function mount(over: Partial<Record<string, unknown>> = {}, id = 'j1') {
     providers: [
       provideRouter([]),
       { provide: IngestionService, useValue: ingestion },
-      { provide: ApplicationsService, useValue: { createFromJob: () => of({}) } },
+      { provide: ApplicationsService, useValue: { createFromJob: () => of({}), ...appsOver } },
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id }) } } },
     ],
   });
@@ -61,5 +61,17 @@ describe('JobDetailComponent', () => {
   it('shows the analysis error state when analysis fails', () => {
     const fixture = mount({ getJobAnalysis: () => throwError(() => ({ error: { detail: 'nope' } })) });
     expect(fixture.nativeElement.querySelector('.job-analysis-error')).not.toBeNull();
+  });
+
+  it('does not mark tracked and shows an error when tracking fails (non-409)', () => {
+    const marked: string[] = [];
+    const fixture = mount(
+      { markTracked: (id: string) => marked.push(id) },
+      { createFromJob: () => throwError(() => ({ status: 500, error: { detail: 'server boom' } })) },
+    );
+    fixture.componentInstance.track();
+    fixture.detectChanges();
+    expect(marked).toEqual([]);
+    expect(fixture.componentInstance.trackError()).toContain('server boom');
   });
 });

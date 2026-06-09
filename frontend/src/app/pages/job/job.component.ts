@@ -41,6 +41,7 @@ export class JobDetailComponent implements OnInit {
   analysisError = signal('');
 
   tracking = signal(false);
+  trackError = signal('');
 
   pillScore = computed<number | null>(() => {
     const j = this.job();
@@ -101,14 +102,19 @@ export class JobDetailComponent implements OnInit {
     const j = this.job();
     if (!j || this.tracked() || this.tracking()) return;
     this.tracking.set(true);
+    this.trackError.set('');
     this.applications.createFromJob(j.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.ingestion.markTracked(j.id);
         this.tracking.set(false);
       },
-      error: () => {
-        this.ingestion.markTracked(j.id);
+      error: (err) => {
         this.tracking.set(false);
+        if (err?.status === 409) {
+          this.ingestion.markTracked(j.id);   // already tracked
+          return;
+        }
+        this.trackError.set(err?.error?.detail || 'Failed to track this job. Please try again.');
       },
     });
   }

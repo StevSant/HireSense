@@ -18,6 +18,7 @@ from hiresense.cover_letter_templates.infrastructure import CoverLetterTemplateO
 from hiresense.ingestion.infrastructure import IngestedJob, JobMatchCache  # noqa: F401
 from hiresense.interview.infrastructure import StoryOrm  # noqa: F401
 from hiresense.outreach.infrastructure import OutreachEventOrm  # noqa: F401
+from hiresense.portfolio.infrastructure import PortfolioProjectOrm  # noqa: F401
 from hiresense.preference.infrastructure import FeedbackSignalOrm, PreferenceModelOrm  # noqa: F401
 from hiresense.profile.infrastructure import ProfileOrm  # noqa: F401
 from hiresense.research.infrastructure import CompanyResearchOrm  # noqa: F401

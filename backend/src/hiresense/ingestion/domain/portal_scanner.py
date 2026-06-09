@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -8,6 +9,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from hiresense.ingestion.domain.identity import identity_key
+from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.normalizer import JobNormalizer
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
@@ -60,8 +62,12 @@ class PortalScanner:
         self._indexer = indexer
         self._closure_miss_threshold = closure_miss_threshold
 
-    def list_jobs(self) -> list[NormalizedJob]:
-        return self._repository.list_all()
+    def list_jobs(self, criteria: JobListCriteria | None = None) -> list[NormalizedJob]:
+        """Full corpus, or — given criteria — only rows matching the cheap
+        selective predicates (filtered DB-side by the SQL repository)."""
+        if criteria is None:
+            return self._repository.list_all()
+        return self._repository.list_filtered(criteria)
 
     def get_job_by_id(self, job_id: str) -> NormalizedJob | None:
         return self._repository.get_by_id(job_id)
@@ -101,7 +107,7 @@ class PortalScanner:
             return
         cutoff = datetime.now(timezone.utc) - timedelta(days=self._retention_days)
         try:
-            removed_ids = self._repository.prune_older_than(cutoff)
+            removed_ids = await asyncio.to_thread(self._repository.prune_older_than, cutoff)
         except Exception:
             logger.exception("Job pruning failed")
             return
@@ -146,8 +152,7 @@ class PortalScanner:
                 )
                 continue
 
-            seen_keys: set[str] = set()
-            touched: list[NormalizedJob] = []
+            normalized: list[NormalizedJob] = []
             for raw in raw_jobs:
                 total_fetched += 1
                 normalized_data = normalizer.normalize(raw)
@@ -164,20 +169,22 @@ class PortalScanner:
                     kw = filters.keyword.lower()
                     if kw not in job.title.lower() and kw not in job.description.lower():
                         continue
+                normalized.append(job)
 
-                existing_id = self._repository.get_id_by_identity(portal.name, job)
-                if existing_id:
-                    job = job.model_copy(update={"id": existing_id})
-                seen_keys.add(identity_key(job))
-                result = self._repository.upsert(job)
-                if result in (
+            # One bulk identity lookup + one commit per portal (was 2 queries
+            # per job). Outcomes carry the resolved ids.
+            outcomes = await asyncio.to_thread(self._repository.bulk_upsert, normalized)
+            seen_keys = {identity_key(o.job) for o in outcomes}
+            touched: list[NormalizedJob] = []
+            for outcome in outcomes:
+                if outcome.result in (
                     UpsertResult.INSERTED,
                     UpsertResult.UPDATED,
                     UpsertResult.REOPENED,
                 ):
-                    touched.append(job)
-                    if result == UpsertResult.INSERTED:
-                        new_jobs.append(job)
+                    touched.append(outcome.job)
+                    if outcome.result == UpsertResult.INSERTED:
+                        new_jobs.append(outcome.job)
 
             if touched and self._indexer is not None:
                 await self._indexer.index(touched)
@@ -185,8 +192,11 @@ class PortalScanner:
             # Disappearance closure: snapshot portals only, and never during a
             # keyword-filtered scan (that is not a complete snapshot of the board).
             if adapter.supports_snapshot_closure() and not filters.keyword:
-                closed_ids = self._repository.bump_missed_and_close(
-                    portal.name, seen_keys, self._closure_miss_threshold
+                closed_ids = await asyncio.to_thread(
+                    self._repository.bump_missed_and_close,
+                    portal.name,
+                    seen_keys,
+                    self._closure_miss_threshold,
                 )
                 if closed_ids and self._indexer is not None:
                     await self._indexer.remove(closed_ids)

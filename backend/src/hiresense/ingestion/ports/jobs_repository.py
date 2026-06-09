@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Protocol
 from hiresense.ingestion.domain.models import NormalizedJob
 
 if TYPE_CHECKING:
+    from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
     from hiresense.ingestion.domain.upsert_result import UpsertResult
 
 
@@ -32,6 +33,19 @@ class QualityUpdate:
     quality_reason: str | None
 
 
+@dataclasses.dataclass(frozen=True)
+class UpsertOutcome:
+    """Result of one job inside a bulk_upsert call.
+
+    `job` carries the RESOLVED id: when the identity already existed, the
+    stored row's id replaces the caller's freshly generated one (absorbing the
+    old get_id_by_identity pre-lookup).
+    """
+
+    job: NormalizedJob
+    result: "UpsertResult"
+
+
 class JobsRepositoryPort(Protocol):
     def upsert(self, job: NormalizedJob) -> "UpsertResult":
         """Insert, update-in-place (preserving id), reopen, or no-op a job,
@@ -40,6 +54,16 @@ class JobsRepositoryPort(Protocol):
 
     def get_id_by_identity(self, source: str, job: NormalizedJob) -> str | None:
         """Stored row id for this job's identity, or None if absent."""
+        ...
+
+    def bulk_upsert(self, jobs: list[NormalizedJob]) -> list["UpsertOutcome"]:
+        """Upsert a batch of jobs, preserving upsert()'s per-job semantics.
+
+        Returns one outcome per input job, in order, with the resolved row id
+        on each outcome's job. SQL implementations MUST do one bulk identity
+        lookup + one commit for the whole batch (not 2 queries per job);
+        in-batch duplicate identities resolve against the earlier row.
+        """
         ...
 
     def mark_closed(self, job_ids: list[str]) -> None:
@@ -64,6 +88,15 @@ class JobsRepositoryPort(Protocol):
         ...
 
     def list_all(self) -> list[NormalizedJob]: ...
+
+    def list_filtered(self, criteria: "JobListCriteria") -> list[NormalizedJob]:
+        """Jobs matching the cheap selective predicates in `criteria`.
+
+        SQL implementations push these into the WHERE clause so unfiltered
+        rows never leave the database; in-memory implementations apply
+        criteria.matches(). Ordering is unspecified (callers re-sort).
+        """
+        ...
 
     def get_by_id(self, job_id: str) -> NormalizedJob | None: ...
 

@@ -1,6 +1,7 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 from fastapi import FastAPI
+from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api import get_ingestion_orchestrator, get_portal_scanner, router
 from hiresense.ingestion.api.dependencies import get_semantic_scoring
 from hiresense.ingestion.domain.models import NormalizedJob
@@ -49,7 +50,7 @@ class FakeOrchestrator:
         self.called = True
         return [BOARD_JOB]
 
-    def list_jobs(self) -> list[NormalizedJob]:
+    def list_jobs(self, criteria=None) -> list[NormalizedJob]:
         return [BOARD_JOB]
 
     def persist_scores(self, job_id, match_score, semantic_score) -> None:
@@ -60,7 +61,7 @@ class FakeOrchestrator:
 
 
 class FakeScanner:
-    def list_jobs(self) -> list[NormalizedJob]:
+    def list_jobs(self, criteria=None) -> list[NormalizedJob]:
         return [PORTAL_JOB]
 
     def get_job_by_id(self, job_id):
@@ -81,6 +82,7 @@ def _make_app() -> tuple[FastAPI, FakeOrchestrator, FakeScanner]:
     app.dependency_overrides[get_portal_scanner] = lambda: scanner
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileService()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
     return app, orch, scanner
 
@@ -214,7 +216,7 @@ async def test_list_jobs_strict_location_filters_non_matching() -> None:
         async def run(self, filters=None) -> list[NormalizedJob]:
             return []
 
-        def list_jobs(self) -> list[NormalizedJob]:
+        def list_jobs(self, criteria=None) -> list[NormalizedJob]:
             return [chile_job, restricted_job, ambiguous_remote_job, worldwide_job]
 
         def persist_scores(self, job_id, match_score, semantic_score) -> None:
@@ -228,6 +230,7 @@ async def test_list_jobs_strict_location_filters_non_matching() -> None:
     app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileService()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -306,6 +309,7 @@ async def test_revalidate_endpoint_returns_closed_count() -> None:
 
     app = FastAPI()
     app.dependency_overrides[get_revalidation_service] = lambda: FakeRevalidation()
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -318,6 +322,7 @@ async def test_revalidate_endpoint_returns_closed_count() -> None:
 @pytest.mark.asyncio
 async def test_revalidate_endpoint_503_when_unconfigured() -> None:
     app = FastAPI()  # no override -> dependency returns None (no app.state.ingestion)
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post("/ingestion/revalidate")
@@ -340,7 +345,7 @@ async def test_pre_ranker_promotes_job_to_page_one_before_pagination() -> None:
 
     class _Orch:
         async def run(self, filters=None): return []
-        def list_jobs(self): return list(jobs)
+        def list_jobs(self, criteria=None): return list(jobs)
         def persist_scores(self, *a): pass
         def persist_scores_batch(self, updates): pass
 
@@ -356,6 +361,7 @@ async def test_pre_ranker_promotes_job_to_page_one_before_pagination() -> None:
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileService()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
     app.dependency_overrides[get_pre_ranker] = lambda: _PreRanker()
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -422,7 +428,7 @@ def _make_rescore_app(pre_ranker, quick_scoring):
         async def run(self, filters=None):
             return []
 
-        def list_jobs(self):
+        def list_jobs(self, criteria=None):
             return list(jobs)
 
         def persist_scores(self, *a):
@@ -438,6 +444,7 @@ def _make_rescore_app(pre_ranker, quick_scoring):
     app.dependency_overrides[get_semantic_scoring] = lambda: None
     app.dependency_overrides[get_pre_ranker] = lambda: pre_ranker
     app.dependency_overrides[get_quick_scoring] = lambda: quick_scoring
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
     return app
 
@@ -550,7 +557,7 @@ async def test_cached_llm_score_ranks_globally_before_pagination() -> None:
         async def run(self, filters=None):
             return []
 
-        def list_jobs(self):
+        def list_jobs(self, criteria=None):
             return [job_hn, job_gob]  # heuristic order: hn first
 
         def persist_scores(self, *a):
@@ -565,6 +572,7 @@ async def test_cached_llm_score_ranks_globally_before_pagination() -> None:
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileSummaryOnly()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
     app.dependency_overrides[get_quick_scoring] = lambda: _CachedQuickScoring()
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -579,3 +587,13 @@ async def test_cached_llm_score_ranks_globally_before_pagination() -> None:
     assert body["total"] == 2
     assert body["jobs"][0]["id"] == "job-gob"  # cached LLM 0.82 outranks heuristic 0.78
     assert body["jobs"][0]["match_score"] == 0.82
+
+
+@pytest.mark.asyncio
+async def test_requires_auth_without_token() -> None:
+    """Router-level auth: requests with no bearer token are rejected."""
+    app = FastAPI()
+    app.include_router(router)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/ingestion/jobs")
+    assert resp.status_code == 401

@@ -41,14 +41,14 @@ class JobRevalidationService:
         self._delay = delay
 
     async def sweep(self) -> list[str]:
-        jobs = self._repo.find_open_stale(self._sources, self._batch)
+        jobs = await asyncio.to_thread(self._repo.find_open_stale, self._sources, self._batch)
         if not jobs:
             return []
         verdicts = await asyncio.gather(*(self._probe(j) for j in jobs))
         to_close = [j.id for j, v in zip(jobs, verdicts) if v == Verdict.CLOSED]
-        self._repo.mark_checked([j.id for j in jobs])
+        await asyncio.to_thread(self._repo.mark_checked, [j.id for j in jobs])
         if to_close:
-            self._repo.mark_closed(to_close)
+            await asyncio.to_thread(self._repo.mark_closed, to_close)
             if self._indexer is not None:
                 await self._indexer.remove(to_close)
         logger.info(
@@ -60,7 +60,10 @@ class JobRevalidationService:
         async with self._sem:
             try:
                 resp = await self._http.get(job.url, follow_redirects=True)
-            except Exception:
+            except Exception as exc:
+                # Transient transport failures must never close a job, but a
+                # silently swallowed probe makes sweeps undebuggable — log it.
+                logger.warning("Revalidation probe failed for %s: %s", job.url, exc)
                 return Verdict.UNKNOWN
             finally:
                 if self._delay:

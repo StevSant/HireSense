@@ -1,20 +1,32 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AnalyticsService } from '../../core/services/analytics.service';
 import { FunnelMetrics } from './models/funnel-metrics.model';
 import { MarketIntel } from './models/market-intel.model';
 import { SkillGap } from './models/skill-gap.model';
-import { TargetSalary } from './models/target-salary.model';
+import { CompBenchmark } from './models/comp-benchmark.model';
+import { SearchFocus } from './models/search-focus.model';
 import { BarRow } from './models/bar-row.model';
 import { BarChartComponent } from './components/bar-chart/bar-chart.component';
 import { FunnelChartComponent } from './components/funnel-chart/funnel-chart.component';
 import { TrendLineComponent } from './components/trend-line/trend-line.component';
-import { SalaryBandComponent } from './components/salary-band/salary-band.component';
+import { CompBenchmarkComponent } from './components/comp-benchmark/comp-benchmark.component';
+import { SearchFocusComponent } from './components/search-focus/search-focus.component';
+import { KpiStripComponent, KpiTile } from './components/kpi-strip/kpi-strip.component';
+
+const PERCENT = 100;
 
 @Component({
   selector: 'app-analytics',
   standalone: true,
-  imports: [BarChartComponent, FunnelChartComponent, TrendLineComponent, SalaryBandComponent],
+  imports: [
+    BarChartComponent,
+    FunnelChartComponent,
+    TrendLineComponent,
+    CompBenchmarkComponent,
+    SearchFocusComponent,
+    KpiStripComponent,
+  ],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,8 +44,11 @@ export class AnalyticsComponent implements OnInit {
   skillGap = signal<SkillGap | null>(null);
   skillGapError = signal(false);
 
-  targetSalary = signal<TargetSalary | null>(null);
-  targetSalaryError = signal(false);
+  comp = signal<CompBenchmark | null>(null);
+  compError = signal(false);
+
+  focus = signal<SearchFocus | null>(null);
+  focusError = signal(false);
 
   ngOnInit(): void {
     this.analytics.funnel().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -45,9 +60,55 @@ export class AnalyticsComponent implements OnInit {
     this.analytics.skillGap().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (v) => this.skillGap.set(v), error: () => this.skillGapError.set(true),
     });
-    this.analytics.targetSalary().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (v) => this.targetSalary.set(v), error: () => this.targetSalaryError.set(true),
+    this.analytics.comp().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (v) => this.comp.set(v), error: () => this.compError.set(true),
     });
+    this.analytics.focus().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (v) => this.focus.set(v), error: () => this.focusError.set(true),
+    });
+  }
+
+  // Headline KPIs, composed from the section payloads. Each degrades to "—".
+  kpis = computed<KpiTile[]>(() => {
+    const c = this.comp();
+    const f = this.funnel();
+    const focus = this.focus();
+    const applyToInterview = f
+      ? f.stages.find((s) => s.stage === 'interviewing')?.conversion_from_prev ?? null
+      : null;
+    return [
+      {
+        label: 'Target median',
+        value: c && !c.insufficient_data && c.median_annual !== null
+          ? `${c.currency ?? ''} ${c.median_annual.toLocaleString('en-US')}`.trim()
+          : '—',
+        hint: 'for your profile',
+      },
+      {
+        label: 'Apply → interview',
+        value: applyToInterview === null ? '—' : `${Math.round(applyToInterview * PERCENT)}%`,
+        hint: f ? `${f.total_applications} tracked` : undefined,
+      },
+      {
+        label: 'Fresh-fit jobs',
+        value: focus && !focus.insufficient_data ? `${focus.fresh_fit_count}` : '—',
+        hint: 'matched, recent',
+      },
+      {
+        label: 'Best-fit companies',
+        value: focus && !focus.insufficient_data ? `${focus.best_fit_companies.length}` : '—',
+        hint: focus && !focus.insufficient_data ? `${focus.match_count} matches` : undefined,
+      },
+    ];
+  });
+
+  sourceRows(f: FunnelMetrics): BarRow[] {
+    return f.by_source.map((o) => ({
+      label: o.source,
+      value: o.applications,
+      pct: Math.round(o.interview_rate * PERCENT),
+      note: `${o.reached_interview}/${o.applications} → interview`,
+    }));
   }
 
   skillRows(m: MarketIntel): BarRow[] {
@@ -61,7 +122,7 @@ export class AnalyticsComponent implements OnInit {
   remoteRows(m: MarketIntel): BarRow[] {
     const total = Object.values(m.remote_mix).reduce((a, b) => a + b, 0) || 1;
     return Object.entries(m.remote_mix).map(([k, v]) => ({
-      label: k, value: v, pct: Math.round((v / total) * 100), note: `${Math.round((v / total) * 100)}%`,
+      label: k, value: v, pct: Math.round((v / total) * PERCENT), note: `${Math.round((v / total) * PERCENT)}%`,
     }));
   }
 

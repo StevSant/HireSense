@@ -1,3 +1,5 @@
+import { SourceOutcome } from './source-outcome.model';
+
 export interface FunnelStage {
   stage: string;
   reached: number;
@@ -11,4 +13,5 @@ export interface FunnelMetrics {
   rejected: number;
   current_rejected: number;
   total_applications: number;
+  by_source: SourceOutcome[];
 }

@@ -1,0 +1,87 @@
+.focus-empty {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.focus-stats {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.focus-stat {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+
+  strong { color: var(--text-primary); font-size: 1.05rem; }
+  &.focus-fresh strong { color: var(--accent-text); }
+}
+
+.focus-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 560px) {
+  .focus-cols { grid-template-columns: 1fr; }
+}
+
+.focus-head {
+  margin: 0.75rem 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.focus-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.875rem;
+  }
+}
+
+.focus-label {
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.focus-count {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+  padding-left: 0.5rem;
+}
+
+.focus-chips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+}
+
+.focus-chip {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 0.2rem 0.65rem;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+
+  .focus-count { padding-left: 0.3rem; }
+}

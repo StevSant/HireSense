@@ -33,6 +33,7 @@ from hiresense.config import Settings
 from hiresense.observability import setup_telemetry
 from hiresense.cover_letter_templates.api import router as cover_letter_templates_router
 from hiresense.identity.api import router as auth_router
+from hiresense.kernel import SlidingWindowRateLimiter
 from hiresense.ingestion.api import router as ingestion_router
 from hiresense.interview.api import router as interview_router
 from hiresense.matching.api import router as matching_router
@@ -74,6 +75,17 @@ def create_app() -> FastAPI:
     )
 
     app.state.settings = settings
+
+    # Per-client-IP limiter for LLM/network-heavy endpoints (see
+    # enforce_expensive_rate_limit). None disables enforcement.
+    app.state.rate_limiter = (
+        SlidingWindowRateLimiter(
+            max_requests=settings.rate_limit_max_requests,
+            window_seconds=settings.rate_limit_window_seconds,
+        )
+        if settings.rate_limit_enabled
+        else None
+    )
 
     # Initialize observability (traces/metrics/logs) before any engine/client
     # is built so auto-instrumentation can hook them. No-op when disabled.

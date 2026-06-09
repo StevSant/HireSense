@@ -34,6 +34,24 @@ def get_current_user(
     return payload
 
 
+def enforce_expensive_rate_limit(request: Request) -> None:
+    """Per-client-IP sliding-window limit for LLM/network-heavy endpoints.
+
+    No-ops when no limiter is wired on app.state (bare test apps, or
+    RATE_LIMIT_ENABLED=false).
+    """
+    limiter = getattr(request.app.state, "rate_limiter", None)
+    if limiter is None:
+        return
+    key = request.client.host if request.client else "unknown"
+    if not limiter.allow(key):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded for expensive operations",
+            headers={"Retry-After": str(int(limiter.window_seconds))},
+        )
+
+
 def require_admin(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],

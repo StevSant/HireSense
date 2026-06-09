@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime
 from typing import Annotated, Literal
 
@@ -194,7 +195,11 @@ async def list_jobs(
         date_from=date_from,
         date_to=date_to,
     )
-    all_jobs = orchestrator.list_jobs(criteria) if tab == "boards" else scanner.list_jobs(criteria)
+    # Corpus load + score persists below run sync SQLAlchemy sessions; offload
+    # to a worker thread so they don't block the event loop.
+    all_jobs = await asyncio.to_thread(
+        orchestrator.list_jobs if tab == "boards" else scanner.list_jobs, criteria
+    )
 
     candidate_skills, candidate_summary = await _gather_profile(profile_service)
 
@@ -235,8 +240,9 @@ async def list_jobs(
         )
 
     if candidate_skills:
-        persist_scores_batch(
-            [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in all_jobs]
+        await asyncio.to_thread(
+            persist_scores_batch,
+            [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in all_jobs],
         )
 
     # GLOBAL apply of already-cached Tier-1 LLM scores BEFORE pagination. The
@@ -318,8 +324,9 @@ async def list_jobs(
             )
             for j in result.jobs
         ]
-        persist_scores_batch(
-            [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in result.jobs]
+        await asyncio.to_thread(
+            persist_scores_batch,
+            [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in result.jobs],
         )
         # Page-level re-sort so the order reflects the post-semantic match_score
         # that the user actually sees. Phase-1 sort happens pre-pagination on

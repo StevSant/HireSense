@@ -16,6 +16,7 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import create_engine
+from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import sessionmaker
 
 from hiresense.identity.api.dependencies import require_auth
@@ -91,7 +92,9 @@ class _EmptyScanner:
 
 @pytest.mark.asyncio
 async def test_ingested_jobs_persist_and_surface_via_api() -> None:
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(engine)
     session_factory = sessionmaker(bind=engine, expire_on_commit=False)
     repo = JobsRepository(session_factory=session_factory, bucket="boards")

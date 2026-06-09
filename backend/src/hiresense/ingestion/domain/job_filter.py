@@ -18,6 +18,7 @@ class JobQueryParams(BaseModel):
     page: int = 1
     page_size: int = 20
     source: str | None = None
+    company: str | None = None
     keyword: str | None = None
     location: str | None = None
     skills: str | None = None
@@ -73,6 +74,10 @@ def filter_and_paginate(
 
     if params.source:
         filtered = [j for j in filtered if j.source == params.source]
+
+    if params.company:
+        target = params.company.strip().lower()
+        filtered = [j for j in filtered if j.company.strip().lower() == target]
 
     if params.keyword:
         kw = params.keyword.lower()

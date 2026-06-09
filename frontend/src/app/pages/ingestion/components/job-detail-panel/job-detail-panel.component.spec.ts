@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { JobDetailPanelComponent } from './job-detail-panel.component';
 import { NormalizedJob } from '../../models/normalized-job.model';
 
@@ -30,17 +30,16 @@ function makeJob(overrides: Partial<NormalizedJob> = {}): NormalizedJob {
 }
 
 describe('JobDetailPanelComponent', () => {
-  let navigate: ReturnType<typeof vi.fn>;
+  let navigate: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
-    navigate = vi.fn();
-
     await TestBed.configureTestingModule({
       imports: [JobDetailPanelComponent],
-      providers: [
-        { provide: Router, useValue: { navigate } },
-      ],
+      providers: [provideRouter([])],
     }).compileComponents();
+    // Spy on the real router so routerLink still renders hrefs while the
+    // shortcut buttons' navigate() calls remain assertable.
+    navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   });
 
   function mount(job: NormalizedJob = makeJob(), inputs: Partial<{ tracked: boolean; tracking: boolean }> = {}) {
@@ -130,19 +129,14 @@ describe('JobDetailPanelComponent', () => {
     expect(kind).toBe('thumbs_up');
   });
 
-  it('links to the full analysis page instead of expanding analysis inline', () => {
+  it('links to the full analysis page in a new tab', () => {
     const fixture = mount();
-    let closed = false;
-    fixture.componentInstance.closed.subscribe(() => (closed = true));
-
     expect(fixture.nativeElement.querySelector('app-deep-analysis')).toBeNull();
     const link = Array.from(
-      fixture.nativeElement.querySelectorAll('button.deep-toggle') as NodeListOf<HTMLButtonElement>,
-    ).find((b) => b.textContent?.includes('Full analysis'))!;
-    link.click();
-
-    expect(navigate).toHaveBeenCalledWith(['/dashboard/job', 'job-1']);
-    expect(closed).toBe(true);
+      fixture.nativeElement.querySelectorAll('a.deep-toggle') as NodeListOf<HTMLAnchorElement>,
+    ).find((a) => a.textContent?.includes('Full analysis'))!;
+    expect(link.getAttribute('href')).toBe('/dashboard/job/job-1');
+    expect(link.getAttribute('target')).toBe('_blank');
   });
 
   it('emits close when the overlay backdrop is clicked', () => {

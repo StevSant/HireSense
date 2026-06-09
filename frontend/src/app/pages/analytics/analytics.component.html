@@ -30,7 +30,21 @@
           <div class="perf-col"><app-funnel-chart [metrics]="f" /></div>
           <div class="perf-col">
             <h3 class="sub">Outcomes by source</h3>
-            <app-bar-chart [rows]="sourceRows(f)" emptyText="Track jobs to compare sources." />
+            @if (f.by_source.length) {
+              <ul class="source-list">
+                @for (o of f.by_source; track o.source) {
+                  <li class="source-row">
+                    <span class="source-name">{{ o.source }}</span>
+                    <span class="source-apps">{{ o.applications }} tracked</span>
+                    <span class="source-rate" [class.zero]="o.reached_interview === 0">
+                      {{ interviewPct(o) }}% → interview
+                    </span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="section-empty">Track jobs to compare sources.</p>
+            }
           </div>
         </div>
       }

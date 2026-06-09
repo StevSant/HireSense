@@ -63,6 +63,20 @@ describe('JobDetailComponent', () => {
     expect(fixture.nativeElement.querySelector('.job-analysis-error')).not.toBeNull();
   });
 
+  it('prefers the deep-analysis overall_score for the header pill', () => {
+    // analysis.overall_score (0.8 → 80%) wins over the job's match_score (0.82 → 82%).
+    const fixture = mount();
+    expect(fixture.componentInstance.pillScore()).toBe(0.8);
+    expect(fixture.nativeElement.querySelector('.job-score-num')?.textContent).toContain('80%');
+  });
+
+  it('falls back to the job score when analysis is unavailable', () => {
+    const fixture = mount({ getJobAnalysis: () => throwError(() => ({ error: { detail: 'nope' } })) });
+    // No analysis → llm_score (null) ?? match_score (0.82 → 82%).
+    expect(fixture.componentInstance.pillScore()).toBe(0.82);
+    expect(fixture.nativeElement.querySelector('.job-score-num')?.textContent).toContain('82%');
+  });
+
   it('does not mark tracked and shows an error when tracking fails (non-409)', () => {
     const marked: string[] = [];
     const fixture = mount(

@@ -878,3 +878,9 @@ $transition: 0.2s ease;
 .tab-panel .coming-soon-card + .coming-soon-card {
   margin-top: 1.25rem;
 }
+
+.profile-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}

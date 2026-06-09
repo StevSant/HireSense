@@ -276,6 +276,10 @@ class Settings(BaseSettings):
     # A cap larger than the corpus keeps the global-ordering guarantee intact
     # while bounding ANN query cost on large data sets.
     prerank_top_k_cap: int = 2000
+    # Bounds for the in-process embedding caches (LRU eviction). Job vectors
+    # are ~3 KB each; profile entries are one per distinct profile text.
+    semantic_job_cache_size: int = 2000
+    semantic_profile_cache_size: int = 8
 
     # Matching weights (must sum to 100)
     weight_semantic: int = 15

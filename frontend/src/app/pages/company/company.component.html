@@ -1,0 +1,50 @@
+<div class="company-page">
+  <a class="company-back" routerLink="/dashboard/analytics">← Analytics</a>
+
+  <header class="company-header">
+    <p class="company-eyebrow">Company</p>
+    <h1 class="company-title">{{ company() }}</h1>
+    @if (!loading() && !error() && jobs().length) {
+      <p class="company-summary">
+        <strong>{{ jobs().length }}</strong> open {{ jobs().length === 1 ? 'job' : 'jobs' }}
+        @if (scoredCount() > 0) {
+          · <strong>{{ scoredCount() }}</strong> scored for your profile
+          @if (avgMatchPct() !== null) { · avg <strong>{{ avgMatchPct() }}%</strong> match }
+        }
+      </p>
+      @if (topLocations().length) {
+        <ul class="company-locations">
+          @for (loc of topLocations(); track loc.label) {
+            <li class="company-loc">{{ loc.label }} <span>{{ loc.count }}</span></li>
+          }
+        </ul>
+      }
+    }
+  </header>
+
+  @if (loading()) {
+    <p class="company-state">Loading…</p>
+  } @else if (error()) {
+    <p class="company-state company-state-error">Couldn't load this company's jobs.</p>
+  } @else if (!jobs().length) {
+    <p class="company-state">No open jobs for this company right now.</p>
+  } @else {
+    <ul class="company-jobs">
+      @for (job of jobs(); track job.id) {
+        <li class="company-job">
+          <div class="company-job-main">
+            <a class="company-job-title" routerLink="/dashboard/ingestion" [queryParams]="{ job_id: job.id }">{{ job.title }}</a>
+            <div class="company-job-meta">
+              <span>{{ job.location }}</span>
+              <span class="company-job-source">{{ job.source }}</span>
+              @if (job.posted_date) { <span>{{ job.posted_date | date: 'mediumDate' }}</span> }
+            </div>
+          </div>
+          <span class="company-job-score" [class.none]="matchPct(job) === null">
+            @if (matchPct(job) !== null) { {{ matchPct(job) }}% } @else { — }
+          </span>
+        </li>
+      }
+    </ul>
+  }
+</div>

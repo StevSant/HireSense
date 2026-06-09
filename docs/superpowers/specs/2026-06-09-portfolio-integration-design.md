@@ -53,13 +53,17 @@ New bounded context `src/hiresense/portfolio/` with the standard layout
 
 ### Domain
 
-- `PortfolioProject` (Pydantic): `id` (HireSense uuid), `source_key` (portfolio's `code`),
-  `url`, `demo_url`, `pinned`, `position`, `tech: list[str]`,
+- `PortfolioProject` (Pydantic): `id` (HireSense uuid), `source` (adapter name, e.g.
+  `"supabase"`, `"github"`), `source_key` (the source's stable id — portfolio `code`,
+  GitHub repo full name), `url`, `demo_url`, `pinned`, `position`, `tech: list[str]`,
   `translations: dict[str, ProjectText]` where `ProjectText = {title, description}` keyed
   by language code (`en`/`es`).
-- `PortfolioSyncService`: `sync() -> SyncResult` — calls `PortfolioSourcePort.fetch_projects()`,
-  normalizes, and **replaces** the stored snapshot in one transaction (no partial state).
-  Archived projects are excluded at fetch time.
+- `PortfolioSyncService`: `sync() -> SyncResult` — iterates the configured source
+  adapters (mirroring how ingestion iterates `enabled_job_sources`), calls each
+  `PortfolioSourcePort.fetch_projects()`, normalizes, and **replaces** that source's
+  slice of the stored snapshot in one transaction (no partial state). A failing source
+  leaves its previous slice intact and is reported in `SyncResult.errors`; other sources
+  still sync. Archived projects are excluded at fetch time.
 - `RelevantProjectSelector` (pure): `select(job_skills, job_text, projects, top_n) ->
   list[PortfolioProject]` — ranks by overlap between job skills/description and project
   `tech` + title tokens. Deterministic, no LLM. Pinned projects win ties.
@@ -106,18 +110,23 @@ New bounded context `src/hiresense/portfolio/` with the standard layout
 ### Configuration (config.py + .env + .env.example)
 
 ```
-PORTFOLIO_SOURCE_PROVIDER=supabase        # adapter selector; empty disables the module
-PORTFOLIO_SOURCE_URL=                     # Supabase project URL (https://xyz.supabase.co)
-PORTFOLIO_SOURCE_ANON_KEY=                # public anon key (read-only by RLS)
+PORTFOLIO_SOURCES=supabase                # comma-separated adapter list (like ENABLED_JOB_SOURCES); empty disables the module
+PORTFOLIO_SUPABASE_URL=                   # Supabase project URL (https://xyz.supabase.co)
+PORTFOLIO_SUPABASE_ANON_KEY=              # public anon key (read-only by RLS)
 PORTFOLIO_PUBLIC_URL=https://your-portfolio.example.com   # link target in artifacts
 PORTFOLIO_REF_PREFIX=hiresense            # tracked-link slug prefix
 PORTFOLIO_PROFILE_CHAR_CAP=1200           # enrichment text cap
 PORTFOLIO_RELEVANT_PROJECTS_TOP_N=2
 PORTFOLIO_ANALYTICS_READ_KEY=             # Phase 3; empty disables engagement readback
+# Phase 1.5 (github adapter):
+# PORTFOLIO_GITHUB_USERNAME=              # public repos of this user
+# PORTFOLIO_GITHUB_TOKEN=                 # optional PAT (rate limits / private repos)
 ```
 
-When `PORTFOLIO_SOURCE_PROVIDER`/URL are unset the provider is `None` and every consumer
-degrades to today's behavior (the module is fully optional — key to "other people" reuse).
+When `PORTFOLIO_SOURCES` is empty the provider is `None` and every consumer degrades to
+today's behavior (the module is fully optional — key to "other people" reuse). Each
+adapter reads only its own config keys; enabling a source without its keys is a startup
+configuration error.
 
 ## Phase 1 — Sync + profile enrichment
 
@@ -163,7 +172,32 @@ degrades to today's behavior (the module is fully optional — key to "other peo
   visible in `_gather_profile` output; everything green without network/Supabase.
 - No live Supabase in CI. Manual smoke against the real portfolio documented in the plan.
 
+## Roadmap: additional account sources (approved direction, own specs later)
+
+The port/adapter split exists precisely so other "proof of work / account" sources can
+feed the same pipeline. Agreed follow-ups, in priority order:
+
+1. **Phase 1.5 — GitHub adapter** (second `PortfolioSourcePort` implementation; validates
+   the port). Public REST API: repos → `PortfolioProject` (name/description/topics +
+   languages as `tech`; stars/pinned-equivalent via `position`). Config:
+   `PORTFOLIO_GITHUB_USERNAME`, optional `PORTFOLIO_GITHUB_TOKEN`. Small enough to ride
+   the Phase 1 architecture with no design changes.
+2. **LinkedIn data-export import** (own spec; different shape — NOT a portfolio source).
+   Research findings (2026-06-09): there is no usable personal API — "Sign in with
+   LinkedIn" exposes only name/email/photo, the Member Data Portability API is EU/EEA-only
+   (DMA), and logged-in scraping violates ToS. The viable path is LinkedIn's data-export
+   ZIP (Settings → "Get a copy of your data"): import `Positions.csv`/`Skills.csv` into
+   the profile, and `Connections.csv` into a new contacts store powering
+   "you know someone at this company" badges on job listings and outreach suggestions.
+   Refresh = re-upload a new export.
+3. **GetOnBoard account sync** (research task first). Their API docs mention
+   authentication to "manage jobs, applications and recruitment processes", but it is
+   unclear whether that is job-seeker-side or employer-side. If a personal authenticated
+   API exists, auto-sync application status into the tracking module; otherwise drop.
+
 ## Rollout
 
 Three phases = three spec'd plans / PRs. Phase 1 first; Phases 2–3 each get a short plan
-referencing this spec.
+referencing this spec. Roadmap items 1–3 above are separate initiatives: item 1 is a
+small plan against this spec; items 2–3 get their own specs (and item 3 starts as a
+research note, not code).

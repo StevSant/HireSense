@@ -117,8 +117,14 @@ export class IngestionComponent implements OnInit {
       .pipe(debounceTime(environment.feedbackRefetchDebounceMs), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.loadJobs());
     this.loadPortals();
+    this.applyKeywordFromQueryParam();
     this.loadJobs();
     this.openDetailFromQueryParam();
+  }
+
+  private applyKeywordFromQueryParam(): void {
+    const keyword = this.route.snapshot.queryParamMap.get('keyword');
+    if (keyword) this.filters.set({ ...this.filters(), keyword });
   }
 
   private openDetailFromQueryParam(): void {

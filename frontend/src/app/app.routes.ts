@@ -22,6 +22,7 @@ export const routes: Routes = [
       { path: 'autohunt', loadComponent: () => import('./pages/autohunt/autohunt.component').then(m => m.AutohuntComponent) },
       { path: 'analytics', loadComponent: () => import('./pages/analytics/analytics.component').then(m => m.AnalyticsComponent) },
       { path: 'company/:name', loadComponent: () => import('./pages/company/company.component').then(m => m.CompanyComponent) },
+      { path: 'job/:id', loadComponent: () => import('./pages/job/job.component').then(m => m.JobDetailComponent) },
       { path: 'interview', loadComponent: () => import('./pages/interview/interview.component').then(m => m.InterviewComponent) },
       { path: 'admin/llm-settings', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/admin-llm-settings.component').then(m => m.AdminLLMSettingsComponent) },
       { path: 'admin/usage', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/admin-usage.component').then(m => m.AdminUsageComponent) },

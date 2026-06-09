@@ -20,6 +20,10 @@ class InMemoryEventBus:
         self._subscribers: dict[
             str, list[Callable[[DomainEvent], Awaitable[None]]]
         ] = defaultdict(list)
+        # Strong references to in-flight handler tasks: the event loop only
+        # holds weak refs, so without these the GC may drop a task mid-run.
+        # They also let shutdown drain handlers instead of orphaning them.
+        self._tasks: set[asyncio.Task[None]] = set()
 
     def subscribe(
         self,
@@ -33,7 +37,21 @@ class InMemoryEventBus:
         metrics.events_published_total.add(1, {"type": event.event_type})
         handlers = self._subscribers.get(event.event_type, [])
         for handler in handlers:
-            asyncio.create_task(self._safe_invoke(handler, event))
+            task = asyncio.create_task(self._safe_invoke(handler, event))
+            self._tasks.add(task)
+            task.add_done_callback(self._tasks.discard)
+
+    async def aclose(self, timeout: float = 5.0) -> None:
+        """Drain in-flight handlers on shutdown; cancel stragglers after timeout."""
+        pending = {task for task in self._tasks if not task.done()}
+        if not pending:
+            return
+        _done, still_pending = await asyncio.wait(pending, timeout=timeout)
+        for task in still_pending:
+            logger.warning("Cancelling event handler still running at shutdown: %r", task)
+            task.cancel()
+        if still_pending:
+            await asyncio.gather(*still_pending, return_exceptions=True)
 
     async def _safe_invoke(
         self,

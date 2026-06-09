@@ -55,6 +55,9 @@ describe('DashboardComponent', () => {
     cmp.activeHub.set('discover');
     expect(cmp.hubTabs()?.id).toBe('discover');
 
+    cmp.activeHub.set('admin');
+    expect(cmp.hubTabs()?.id).toBe('admin');
+
     cmp.activeHub.set('profile');
     expect(cmp.hubTabs()).toBeNull();
 

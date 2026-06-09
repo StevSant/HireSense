@@ -48,6 +48,7 @@ export class IngestionService {
     if (includeLowQuality) params = params.set('include_low_quality', 'true');
 
     if (filters.source) params = params.set('source', filters.source);
+    if (filters.company) params = params.set('company', filters.company);
     if (filters.keyword) params = params.set('keyword', filters.keyword);
     if (filters.location) params = params.set('location', filters.location);
     if (filters.skills) params = params.set('skills', filters.skills);

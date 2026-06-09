@@ -2,6 +2,7 @@ import { SeniorityLevel } from './seniority-level.model';
 
 export interface JobFilters {
   source?: string;
+  company?: string;
   keyword?: string;
   location?: string;
   skills?: string;

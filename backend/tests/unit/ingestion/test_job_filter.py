@@ -371,3 +371,15 @@ def test_min_score_exempts_jobs_without_semantic_score() -> None:
     ]
     out = filter_and_paginate(jobs, JobQueryParams(min_score=0.5))
     assert {j.id for j in out.jobs} == {"getonboard"}
+
+
+def test_company_filter_is_exact_and_case_insensitive() -> None:
+    jobs = [
+        _job(id="1", company="Coderslab.io"),
+        _job(id="2", company="coderslab.io"),
+        _job(id="3", company="Coderslab LATAM"),
+        _job(id="4", company="Other Co"),
+    ]
+    params = JobQueryParams(company="  CODERSLAB.IO ")
+    result = filter_and_paginate(jobs, params)
+    assert {j.id for j in result.jobs} == {"1", "2"}  # trimmed, case-insensitive, exact

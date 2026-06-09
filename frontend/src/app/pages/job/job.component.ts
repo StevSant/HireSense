@@ -7,6 +7,7 @@ import { JobAnalysis } from '../ingestion/models/job-analysis.model';
 import { IngestionService } from '../../core/services/ingestion.service';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { DeepAnalysisComponent } from '../ingestion/components/deep-analysis/deep-analysis.component';
+import { MatchBreakdownComponent } from '../ingestion/components/match-breakdown/match-breakdown.component';
 import { JobDescriptionComponent } from '../ingestion/components/job-description/job-description.component';
 import { FeedbackControlsComponent } from '../ingestion/components/feedback-controls/feedback-controls.component';
 import { formatScorePercent } from '../../core/utils/format-score-percent';
@@ -17,7 +18,7 @@ type Feature = 'matching' | 'optimization' | 'interview';
 @Component({
   selector: 'app-job-detail',
   standalone: true,
-  imports: [DatePipe, RouterLink, DeepAnalysisComponent, JobDescriptionComponent, FeedbackControlsComponent],
+  imports: [DatePipe, RouterLink, DeepAnalysisComponent, MatchBreakdownComponent, JobDescriptionComponent, FeedbackControlsComponent],
   templateUrl: './job.component.html',
   styleUrl: './job.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

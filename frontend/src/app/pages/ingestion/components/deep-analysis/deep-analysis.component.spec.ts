@@ -8,7 +8,6 @@ const FULL_ANALYSIS: JobAnalysis = {
   verdict: 'strong',
   dimensions: [
     { dimension: 'skills_role_fit', score: 0.9, rationale: 'Strong overlap on core stack.' },
-    { dimension: 'seniority', score: 0.6, rationale: '' },
   ],
   matched_skills: ['python', 'fastapi'],
   missing_skills: ['kubernetes'],
@@ -45,13 +44,6 @@ describe('DeepAnalysisComponent', () => {
     return fixture;
   }
 
-  it('renders the overall score as a percentage and the verdict', () => {
-    const fixture = mount(FULL_ANALYSIS);
-    const score = fixture.nativeElement.querySelector('.deep-overall-score');
-    expect(score.textContent.trim()).toBe('82%');
-    expect(fixture.nativeElement.querySelector('.deep-verdict').textContent.trim()).toBe('strong');
-  });
-
   it('renders the narrative when present', () => {
     const fixture = mount(FULL_ANALYSIS);
     expect(fixture.nativeElement.querySelector('.deep-narrative').textContent.trim()).toBe(
@@ -59,17 +51,8 @@ describe('DeepAnalysisComponent', () => {
     );
   });
 
-  it('renders a row per dimension with a humanized label', () => {
-    const fixture = mount(FULL_ANALYSIS);
-    const rows = fixture.nativeElement.querySelectorAll('.dim-row');
-    expect(rows.length).toBe(2);
-    const firstName = fixture.nativeElement.querySelector('.dim-name');
-    expect(firstName.textContent.trim()).toBe('Skills role fit');
-  });
-
   it('renders matched skills, gaps, pros, cons and recommendations', () => {
-    const fixture = mount(FULL_ANALYSIS);
-    const el = fixture.nativeElement;
+    const el = mount(FULL_ANALYSIS).nativeElement;
     expect(el.querySelectorAll('.tag-match').length).toBe(2);
     expect(el.querySelectorAll('.tag-miss').length).toBe(1);
     expect(el.querySelectorAll('.pc-pro').length).toBe(1);
@@ -78,25 +61,10 @@ describe('DeepAnalysisComponent', () => {
   });
 
   it('omits optional blocks when their collections are empty', () => {
-    const fixture = mount(EMPTY_ANALYSIS);
-    const el = fixture.nativeElement;
+    const el = mount(EMPTY_ANALYSIS).nativeElement;
     expect(el.querySelector('.deep-narrative')).toBeNull();
-    expect(el.querySelector('.deep-verdict')).toBeNull();
-    expect(el.querySelector('.dim-list')).toBeNull();
     expect(el.querySelector('.deep-skills')).toBeNull();
     expect(el.querySelector('.deep-proscons')).toBeNull();
-  });
-
-  it('barWidth clamps the score into a 0-100% range', () => {
-    const fixture = mount(FULL_ANALYSIS);
-    const c = fixture.componentInstance;
-    expect(c.barWidth(0.5)).toBe('50%');
-    expect(c.barWidth(-1)).toBe('0%');
-    expect(c.barWidth(5)).toBe('100%');
-  });
-
-  it('humanize replaces underscores and capitalizes', () => {
-    const fixture = mount(FULL_ANALYSIS);
-    expect(fixture.componentInstance.humanize('skills_role_fit')).toBe('Skills role fit');
+    expect(el.querySelector('.rec-list')).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NormalizedJob } from '../../models/normalized-job.model';
 import { parseJobDescription } from '../../lib/parse-job-description';
 import { formatScorePercent } from '../../../../core/utils/format-score-percent';
@@ -12,7 +12,7 @@ import { FeedbackKind } from '../../models/feedback-kind.model';
 @Component({
   selector: 'app-job-detail-panel',
   standalone: true,
-  imports: [DatePipe, JobDescriptionComponent, FeedbackControlsComponent],
+  imports: [DatePipe, RouterLink, JobDescriptionComponent, FeedbackControlsComponent],
   templateUrl: './job-detail-panel.component.html',
   styleUrl: './job-detail-panel.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -79,11 +79,6 @@ export class JobDetailPanelComponent {
 
   goToInterview(): void {
     this.router.navigate(['/dashboard/interview'], { queryParams: { job_id: this.job().id } });
-    this.closed.emit();
-  }
-
-  goToFullAnalysis(): void {
-    this.router.navigate(['/dashboard/job', this.job().id]);
     this.closed.emit();
   }
 }

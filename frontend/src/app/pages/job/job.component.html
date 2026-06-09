@@ -70,21 +70,36 @@
 
       <aside class="job-aside">
         <div class="job-card job-snapshot">
-          @if (pillScore() !== null) {
-            <div class="job-score">
-              <span class="job-score-num" [style.color]="scoreColor(pillScore())">{{ scorePercent() }}</span>
-              <span class="job-score-label">match<br />score</span>
-            </div>
-            @if (j.verdict) {
-              <span class="job-verdict" [style.color]="scoreColor(pillScore())" [style.border-color]="scoreColor(pillScore())">{{ j.verdict }} fit</span>
+          <div class="job-score-row">
+            @if (pillScore() !== null) {
+              <div class="job-score">
+                <span class="job-score-num" [style.color]="scoreColor(pillScore())">{{ scorePercent() }}</span>
+                <span class="job-score-label">match<br />score</span>
+              </div>
+              @if (analysis(); as a) {
+                @if (a.verdict) {
+                  <span class="job-verdict" [style.color]="scoreColor(pillScore())" [style.border-color]="scoreColor(pillScore())">{{ a.verdict }} fit</span>
+                }
+              }
+            } @else {
+              <p class="job-analysis-state">No score yet — add a profile or CV to see your match.</p>
             }
-          } @else {
-            <p class="job-analysis-state">No score yet — add a profile or CV to see your match.</p>
+          </div>
+
+          @if (analysis(); as a) {
+            @if (a.dimensions.length) {
+              <div class="job-snapshot-block">
+                <h3 class="job-section-label">Score breakdown</h3>
+                <app-match-breakdown [dimensions]="a.dimensions" />
+              </div>
+            }
+          } @else if (analysisLoading()) {
+            <p class="job-snapshot-block job-analysis-state">Scoring…</p>
           }
 
           @if (j.skills.length) {
             <div class="job-snapshot-block">
-              <h3 class="job-section-label">Skills</h3>
+              <h3 class="job-section-label">Listed skills</h3>
               <div class="job-chips">
                 @for (s of j.skills; track s) { <span class="job-tag">{{ s }}</span> }
               </div>

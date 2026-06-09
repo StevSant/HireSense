@@ -1,59 +1,6 @@
 <div class="deep-analysis">
-  <!-- Summary: the headline read, always visible -->
-  <div class="deep-summary">
-    <div class="deep-overall">
-      <span class="deep-overall-score" [style.color]="scoreColor(analysis().overall_score)">
-        {{ formatScorePercent(analysis().overall_score) }}
-      </span>
-      <span class="deep-overall-label">overall fit</span>
-      @if (analysis().verdict) {
-        <span class="deep-verdict" [style.color]="scoreColor(analysis().overall_score)">
-          {{ analysis().verdict }}
-        </span>
-      }
-    </div>
-    @if (analysis().narrative) {
-      <p class="deep-narrative">{{ analysis().narrative }}</p>
-    }
-  </div>
-
-  <!-- Dimension breakdown: bars always visible; rationale tucked behind each row. -->
-  @if (analysis().dimensions.length) {
-    <div class="deep-block">
-      <span class="deep-block-label">Breakdown</span>
-      <div class="dim-list">
-        @for (dim of analysis().dimensions; track dim.dimension) {
-          @if (dim.rationale) {
-            <details class="dim-row dim-row-toggle">
-              <summary class="dim-summary">
-                <div class="dim-head">
-                  <span class="dim-name">{{ humanize(dim.dimension) }}</span>
-                  <span class="dim-score" [style.color]="scoreColor(dim.score)">
-                    {{ formatScorePercent(dim.score) }}
-                  </span>
-                </div>
-                <div class="dim-bar-track">
-                  <div class="dim-bar-fill" [style.width]="barWidth(dim.score)" [style.background]="scoreColor(dim.score)"></div>
-                </div>
-              </summary>
-              <p class="dim-rationale">{{ dim.rationale }}</p>
-            </details>
-          } @else {
-            <div class="dim-row">
-              <div class="dim-head">
-                <span class="dim-name">{{ humanize(dim.dimension) }}</span>
-                <span class="dim-score" [style.color]="scoreColor(dim.score)">
-                  {{ formatScorePercent(dim.score) }}
-                </span>
-              </div>
-              <div class="dim-bar-track">
-                <div class="dim-bar-fill" [style.width]="barWidth(dim.score)" [style.background]="scoreColor(dim.score)"></div>
-              </div>
-            </div>
-          }
-        }
-      </div>
-    </div>
+  @if (analysis().narrative) {
+    <p class="deep-narrative">{{ analysis().narrative }}</p>
   }
 
   <!-- Pros / cons: the decision content — open by default. -->

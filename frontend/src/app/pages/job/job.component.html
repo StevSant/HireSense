@@ -40,6 +40,7 @@
       <button type="button" class="job-btn" (click)="goTo('optimization')">Optimize CV</button>
       <button type="button" class="job-btn" (click)="goTo('interview')">Prep Interview</button>
     </div>
+    @if (trackError()) { <p class="job-track-error">{{ trackError() }}</p> }
 
     <section class="job-feedback">
       <app-feedback-controls [jobId]="j.id" />

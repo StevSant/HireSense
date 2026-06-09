@@ -95,6 +95,8 @@
   &:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
 }
 
+.job-track-error { margin: -0.75rem 0 1rem; color: var(--danger); font-size: 0.85rem; }
+
 .job-feedback { margin-bottom: 1.25rem; }
 
 .job-card {

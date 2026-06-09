@@ -1,0 +1,30 @@
+.jd-prose {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+.jd-intro { margin-bottom: 0.75rem; }
+.jd-section {
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--border-default);
+  border-radius: var(--radius-md);
+
+  &[data-emphasis='compensation'] { border-left-color: var(--success); }
+  &[data-emphasis='apply'] { border-left-color: var(--accent); }
+  &[data-emphasis='stack'] { border-left-color: var(--info-text); }
+  &[data-emphasis='role'] { border-left-color: var(--warning); }
+}
+.jd-section-title {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}

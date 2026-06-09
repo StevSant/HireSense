@@ -81,38 +81,12 @@
         </div>
       }
 
-      <!-- Deep analysis (lazy, advanced model) -->
-      <div class="panel-section section-card" [attr.data-emphasis]="'role'">
-        <button type="button" class="deep-toggle" (click)="toggleDeepAnalysis()">
-          <span class="section-label">Deep analysis</span>
-          <span class="deep-toggle-action">
-            @if (analysisExpanded()) {
-              Hide
-            } @else if (analysis()) {
-              Show
-            } @else {
-              Run advanced analysis ▸
-            }
-          </span>
+      <!-- Full analysis lives on the dedicated job page -->
+      <div class="panel-section">
+        <button type="button" class="deep-toggle" (click)="goToFullAnalysis()">
+          <span class="section-label">Full analysis</span>
+          <span class="deep-toggle-action">View pros, cons &amp; breakdown →</span>
         </button>
-
-        @if (analysisExpanded()) {
-          @if (analysisLoading()) {
-            <div class="deep-state deep-loading">
-              <div class="spinner-sm"></div>
-              <span>Running advanced model…</span>
-            </div>
-          } @else if (analysisError()) {
-            <div class="deep-state deep-error">
-              <p>{{ analysisError() }}</p>
-              <button type="button" class="btn-retry" (click)="retryAnalysis()">Retry</button>
-            </div>
-          } @else if (analysis(); as a) {
-            <app-deep-analysis [analysis]="a" />
-          } @else {
-            <p class="deep-state deep-empty">No deep analysis available.</p>
-          }
-        }
       </div>
 
       <!-- Skills -->
@@ -127,26 +101,11 @@
         </div>
       }
 
-      <!-- Description: structured (HN with *Headers*) or plain -->
-      @if (hasStructuredSections()) {
-        @if (parsedDescription().intro) {
-          <div class="panel-section">
-            <span class="section-label">Overview</span>
-            <p class="prose">{{ parsedDescription().intro }}</p>
-          </div>
-        }
-        @for (section of parsedDescription().sections; track section.title) {
-          <div class="panel-section section-card" [attr.data-emphasis]="section.emphasis">
-            <span class="section-label">{{ section.title }}</span>
-            <p class="prose">{{ section.body }}</p>
-          </div>
-        }
-      } @else {
-        <div class="panel-section">
-          <span class="section-label">Description</span>
-          <p class="prose">{{ job().description }}</p>
-        </div>
-      }
+      <!-- Description -->
+      <div class="panel-section">
+        <span class="section-label">Description</span>
+        <app-job-description [description]="job().description" />
+      </div>
 
       <!-- Categories (portal scans) -->
       @if (job().categories.length > 0) {

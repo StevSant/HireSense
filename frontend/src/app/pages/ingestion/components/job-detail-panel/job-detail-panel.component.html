@@ -81,12 +81,12 @@
         </div>
       }
 
-      <!-- Full analysis lives on the dedicated job page -->
+      <!-- Full analysis lives on the dedicated job page (opens in a new tab) -->
       <div class="panel-section">
-        <button type="button" class="deep-toggle" (click)="goToFullAnalysis()">
+        <a class="deep-toggle" [routerLink]="['/dashboard/job', job().id]" target="_blank" rel="noopener">
           <span class="section-label">Full analysis</span>
-          <span class="deep-toggle-action">View pros, cons &amp; breakdown →</span>
-        </button>
+          <span class="deep-toggle-action">View pros, cons &amp; breakdown ↗</span>
+        </a>
       </div>
 
       <!-- Skills -->

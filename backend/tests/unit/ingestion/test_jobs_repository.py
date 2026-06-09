@@ -194,6 +194,99 @@ def test_in_memory_repo_upsert_parity():
     assert mem.list_all()[0].status == "open"
 
 
+def test_bulk_upsert_mixes_insert_update_reopen_unchanged(repo):
+    repo.upsert(_job("a", source_id="n1", url="https://e.com/1"))          # → UNCHANGED
+    repo.upsert(_job("b", source_id="n2", url="https://e.com/2"))          # → UPDATED
+    repo.upsert(_job("c", source_id="n3", url="https://e.com/3"))          # → REOPENED
+    repo.mark_closed(["c"])
+
+    outcomes = repo.bulk_upsert(
+        [
+            _job("x1", source_id="n1", url="https://e.com/1"),
+            _job("x2", source_id="n2", url="https://e.com/2", salary_range="$200k"),
+            _job("x3", source_id="n3", url="https://e.com/3"),
+            _job("x4", source_id="n4", url="https://e.com/4"),               # → INSERTED
+        ]
+    )
+
+    assert [o.result for o in outcomes] == [
+        UpsertResult.UNCHANGED,
+        UpsertResult.UPDATED,
+        UpsertResult.REOPENED,
+        UpsertResult.INSERTED,
+    ]
+    # Existing identities resolve to their stored ids; the new one keeps its own.
+    assert [o.job.id for o in outcomes] == ["a", "b", "c", "x4"]
+    stored = {j.source_id: j for j in repo.list_all()}
+    assert stored["n2"].salary_range == "$200k"
+    assert stored["n3"].status == "open"
+    assert len(stored) == 4
+
+
+def test_bulk_upsert_handles_in_batch_duplicate_identity(repo):
+    outcomes = repo.bulk_upsert(
+        [
+            _job("d1", source_id="n1", url="https://e.com/1"),
+            _job("d2", source_id="n1", url="https://e.com/1"),  # same identity in batch
+        ]
+    )
+    assert outcomes[0].result == UpsertResult.INSERTED
+    assert outcomes[1].result == UpsertResult.UNCHANGED
+    assert outcomes[1].job.id == "d1"
+    assert len(repo.list_all()) == 1
+
+
+def test_bulk_upsert_empty_is_noop(repo):
+    assert repo.bulk_upsert([]) == []
+
+
+def test_bulk_upsert_in_memory_parity():
+    mem = InMemoryJobsRepository()
+    mem.upsert(_job("a", source_id="n1", url="https://e.com/1"))
+    outcomes = mem.bulk_upsert(
+        [
+            _job("y1", source_id="n1", url="https://e.com/1", salary_range="$150k"),
+            _job("y2", source_id="n2", url="https://e.com/2"),
+        ]
+    )
+    assert [o.result for o in outcomes] == [UpsertResult.UPDATED, UpsertResult.INSERTED]
+    assert outcomes[0].job.id == "a"
+
+
+def test_list_filtered_pushes_predicates_to_sql(repo):
+    from hiresense.ingestion.domain import JobListCriteria
+
+    repo.upsert(_job("a", source_id="n1", url="https://e.com/1", company="Acme"))
+    repo.upsert(_job("b", source_id="n2", url="https://e.com/2", company="Beta", source="other"))
+    repo.upsert(_job("c", source_id="n3", url="https://e.com/3", company="Acme"))
+    repo.mark_closed(["c"])
+
+    open_jobs = repo.list_filtered(JobListCriteria())
+    assert {j.id for j in open_jobs} == {"a", "b"}
+
+    closed_included = repo.list_filtered(JobListCriteria(include_closed=True))
+    assert {j.id for j in closed_included} == {"a", "b", "c"}
+
+    by_source = repo.list_filtered(JobListCriteria(source="other"))
+    assert [j.id for j in by_source] == ["b"]
+
+    by_company = repo.list_filtered(JobListCriteria(company="  ACME "))
+    assert {j.id for j in by_company} == {"a"}
+
+
+def test_list_filtered_in_memory_parity():
+    from hiresense.ingestion.domain import JobListCriteria
+
+    mem = InMemoryJobsRepository()
+    mem.upsert(_job("a", source_id="n1", url="https://e.com/1", company="Acme"))
+    mem.upsert(_job("b", source_id="n2", url="https://e.com/2", company="Beta", source="other"))
+    mem.mark_closed(["a"])
+
+    assert [j.id for j in mem.list_filtered(JobListCriteria())] == ["b"]
+    assert {j.id for j in mem.list_filtered(JobListCriteria(include_closed=True))} == {"a", "b"}
+    assert [j.id for j in mem.list_filtered(JobListCriteria(company="beta"))] == ["b"]
+
+
 def test_bump_missed_and_close_persists_per_row(repo):
     from hiresense.ingestion.domain.identity import identity_key
 

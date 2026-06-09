@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 import uuid
@@ -9,6 +10,7 @@ from typing import Any
 from opentelemetry import trace
 
 from hiresense.ingestion.domain.identity import identity_key
+from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.normalizer import JobNormalizer
 from hiresense.ingestion.domain.upsert_result import UpsertResult
@@ -88,32 +90,35 @@ class IngestionOrchestrator:
                     fetched_count = len(raw_jobs)
                     _metrics.jobs_fetched_total.add(fetched_count, {"source": source_name})
 
-                    seen_keys: set[str] = set()
-                    touched: list[NormalizedJob] = []
+                    normalized: list[NormalizedJob] = []
                     for raw in raw_jobs:
                         normalized_data = normalizer.normalize(raw)
-                        job = NormalizedJob(
-                            id=str(uuid.uuid4()),
-                            source=source_name,
-                            source_type=source.source_type().value,
-                            source_id=raw.source_id,
-                            **normalized_data,
+                        normalized.append(
+                            NormalizedJob(
+                                id=str(uuid.uuid4()),
+                                source=source_name,
+                                source_type=source.source_type().value,
+                                source_id=raw.source_id,
+                                **normalized_data,
+                            )
                         )
-                        existing_id = self._repository.get_id_by_identity(source_name, job)
-                        if existing_id:
-                            job = job.model_copy(update={"id": existing_id})
-                        seen_keys.add(identity_key(job))
-                        result = self._repository.upsert(job)
+
+                    # One bulk identity lookup + one commit per source instead
+                    # of 2 queries per job. Outcomes carry the resolved ids.
+                    outcomes = await asyncio.to_thread(self._repository.bulk_upsert, normalized)
+                    seen_keys = {identity_key(o.job) for o in outcomes}
+                    touched: list[NormalizedJob] = []
+                    for outcome in outcomes:
                         # INSERTED/UPDATED/REOPENED all need (re-)indexing; REOPENED matters
                         # because closure removed the job from the vector store.
-                        if result in (
+                        if outcome.result in (
                             UpsertResult.INSERTED,
                             UpsertResult.UPDATED,
                             UpsertResult.REOPENED,
                         ):
-                            touched.append(job)
-                            if result == UpsertResult.INSERTED:
-                                new_jobs.append(job)
+                            touched.append(outcome.job)
+                            if outcome.result == UpsertResult.INSERTED:
+                                new_jobs.append(outcome.job)
 
                     indexed_count = len(touched)
                     _metrics.jobs_indexed_total.add(indexed_count, {"source": source_name})
@@ -126,8 +131,11 @@ class IngestionOrchestrator:
                     # Disappearance-based closure: only for snapshot sources, only after a
                     # successful fetch (errored fetches `continue` above and never reach here).
                     if source.supports_snapshot_closure():
-                        closed_ids = self._repository.bump_missed_and_close(
-                            source_name, seen_keys, self._closure_miss_threshold
+                        closed_ids = await asyncio.to_thread(
+                            self._repository.bump_missed_and_close,
+                            source_name,
+                            seen_keys,
+                            self._closure_miss_threshold,
                         )
                         if closed_ids and self._indexer is not None:
                             await self._indexer.remove(closed_ids)
@@ -139,11 +147,12 @@ class IngestionOrchestrator:
                     try:
                         verdicts = await self._quality_classifier.classify(all_touched)
                         if verdicts:
-                            self._repository.bulk_update_quality(
+                            await asyncio.to_thread(
+                                self._repository.bulk_update_quality,
                                 [
                                     QualityUpdate(v.job_id, v.quality.value, v.reason)
                                     for v in verdicts.values()
-                                ]
+                                ],
                             )
                     except Exception:
                         logger.exception("Job-quality classification failed; left as 'ok'")
@@ -175,8 +184,12 @@ class IngestionOrchestrator:
     def get_job_by_id(self, job_id: str) -> NormalizedJob | None:
         return self._repository.get_by_id(job_id)
 
-    def list_jobs(self) -> list[NormalizedJob]:
-        return self._repository.list_all()
+    def list_jobs(self, criteria: JobListCriteria | None = None) -> list[NormalizedJob]:
+        """Full corpus, or — given criteria — only rows matching the cheap
+        selective predicates (filtered DB-side by the SQL repository)."""
+        if criteria is None:
+            return self._repository.list_all()
+        return self._repository.list_filtered(criteria)
 
     def persist_scores(
         self,
@@ -199,7 +212,7 @@ class IngestionOrchestrator:
             return
         cutoff = datetime.now(timezone.utc) - timedelta(days=self._retention_days)
         try:
-            removed_ids = self._repository.prune_older_than(cutoff)
+            removed_ids = await asyncio.to_thread(self._repository.prune_older_than, cutoff)
         except Exception:
             logger.exception("Job pruning failed")
             return

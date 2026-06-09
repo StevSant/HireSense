@@ -4,11 +4,12 @@ import { Router } from '@angular/router';
 import { TitleCasePipe } from '@angular/common';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { ApplicationListItem } from '../../applications/models/application-list-item.model';
+import { CompanyLinkComponent } from '../../../core/components/company-link';
 
 @Component({
   selector: 'app-applications-prep-list',
   standalone: true,
-  imports: [TitleCasePipe],
+  imports: [TitleCasePipe, CompanyLinkComponent],
   templateUrl: './applications-prep-list.component.html',
   styleUrl: './applications-prep-list.component.scss',
 })

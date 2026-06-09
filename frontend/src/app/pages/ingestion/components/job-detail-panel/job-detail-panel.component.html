@@ -9,7 +9,7 @@
     <div class="panel-header">
       <div class="header-text">
         <h2 class="panel-title" id="job-panel-title">{{ job().title || 'Untitled role' }}</h2>
-        <p class="panel-company">{{ job().company }}</p>
+        <p class="panel-company"><app-company-link [name]="job().company" /></p>
         <div class="header-chips">
           <span class="chip chip-source">{{ job().source }}</span>
           @if (job().location) {

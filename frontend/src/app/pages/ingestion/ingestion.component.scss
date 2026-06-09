@@ -140,9 +140,14 @@ table {
 
 /* Column sizing — fixed layout prevents long cells from blowing out the row. */
 .col-match { width: 72px; }
+.col-salary { width: 130px; }
 .col-source { width: 110px; }
 .col-posted { width: 110px; }
 .col-actions { width: 140px; }
+
+.salary-cell {
+  color: var(--text-secondary);
+}
 
 .cell-truncate {
   overflow: hidden;

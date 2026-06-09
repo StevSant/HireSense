@@ -40,7 +40,7 @@
             <li class="entry-row">
               <div class="entry-main">
                 <span class="entry-title">{{ entry.title }}</span>
-                <span class="entry-company">@ {{ entry.company }}</span>
+                <span class="entry-company">@ <app-company-link [name]="entry.company" /></span>
               </div>
               <div class="entry-actions">
                 <span class="score-badge">{{ scorePercent(entry.score) }}%</span>
@@ -105,7 +105,7 @@
                     <li class="entry-row">
                       <div class="entry-main">
                         <span class="entry-title">{{ entry.title }}</span>
-                        <span class="entry-company">@ {{ entry.company }}</span>
+                        <span class="entry-company">@ <app-company-link [name]="entry.company" /></span>
                       </div>
                       <div class="entry-actions">
                         <span class="score-badge">{{ scorePercent(entry.score) }}%</span>

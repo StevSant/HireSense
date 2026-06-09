@@ -124,7 +124,7 @@
           <tbody>
             @for (app of visibleApplications(); track app.id) {
               <tr>
-                <td class="company">{{ app.company }}</td>
+                <td class="company"><app-company-link [name]="app.company" /></td>
                 <td class="title">
                   @if (app.job_id) {
                     <a [routerLink]="['/dashboard/ingestion']" [queryParams]="{ job_id: app.job_id }" class="link">{{ app.title }}</a>
@@ -261,7 +261,7 @@
                   <span class="rank">#{{ i + 1 }}</span>
                   <div class="leaderboard-info">
                     <span class="leaderboard-title">{{ result.job_title }}</span>
-                    <span class="leaderboard-company">{{ result.company }}</span>
+                    <span class="leaderboard-company"><app-company-link [name]="result.company" /></span>
                   </div>
                   <span class="leaderboard-badge badge-{{ result.source }}">{{ result.source }}</span>
                   @if (result.failed) {

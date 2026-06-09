@@ -220,7 +220,7 @@
 
     @if (prepResult(); as prep) {
       <div class="prep-results">
-        <h2>Interview Prep for {{ prep.job_title }} at {{ prep.company }}</h2>
+        <h2>Interview Prep for {{ prep.job_title }} at <app-company-link [name]="prep.company" /></h2>
 
         @if (prep.matched_stories.length > 0) {
           <div class="prep-card">

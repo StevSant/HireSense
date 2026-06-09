@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime
 from typing import Annotated, Literal
 
@@ -7,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from hiresense.identity.api.dependencies import require_auth
+from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.ingestion.api.dependencies import (
     get_backfill_service,
     get_deep_analysis,
@@ -21,6 +22,7 @@ from hiresense.ingestion.api.dependencies import (
 )
 from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
 from hiresense.ingestion.domain.job_filter import JobQueryParams, PaginatedResult, filter_and_paginate
+from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.job_sort import sort_jobs
 from hiresense.ingestion.domain.job_scorer import (
@@ -42,7 +44,9 @@ from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
 from hiresense.profile.api.dependencies import get_profile_service
 from hiresense.profile.domain import ProfileService
 
-router = APIRouter(prefix="/ingestion", tags=["ingestion"])
+router = APIRouter(
+    prefix="/ingestion", tags=["ingestion"], dependencies=[Depends(require_auth)]
+)
 
 # Accepted sort tokens (`<field>_<dir>`) plus the legacy `date_*` aliases. Any
 # value outside this set falls back to the default `match_desc`.
@@ -93,7 +97,7 @@ class FetchResponse(BaseModel):
     jobs: list[NormalizedJob]
 
 
-@router.post("/fetch", response_model=FetchResponse)
+@router.post("/fetch", response_model=FetchResponse, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def fetch_jobs(
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
 ) -> FetchResponse | JSONResponse:
@@ -108,7 +112,7 @@ async def fetch_jobs(
     return FetchResponse(count=len(jobs), jobs=jobs)
 
 
-@router.post("/scan-portals", response_model=ScanResult)
+@router.post("/scan-portals", response_model=ScanResult, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def scan_portals(
     filters: ScanFilters,
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
@@ -135,7 +139,7 @@ async def revalidate_jobs(
     return RevalidationResponse(closed=len(closed))
 
 
-@router.get("/jobs", response_model=PaginatedResult)
+@router.get("/jobs", response_model=PaginatedResult, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def list_jobs(
     request: Request,
     tab: Annotated[Literal["boards", "portals"], Query()],
@@ -145,8 +149,8 @@ async def list_jobs(
     semantic_scoring: Annotated[SemanticScoringService | None, Depends(get_semantic_scoring)],
     quick_scoring: Annotated[QuickScoringService | None, Depends(get_quick_scoring)],
     pre_ranker: Annotated[SemanticPreRanker | None, Depends(get_pre_ranker)],
-    page: int = 1,
-    page_size: int = 20,
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1)] = 20,
     source: str | None = None,
     company: str | None = None,
     keyword: str | None = None,
@@ -174,7 +178,28 @@ async def list_jobs(
         min_score = settings.ingestion_min_match_score
     if max_age_days is None and settings is not None:
         max_age_days = settings.ingestion_max_job_age_days
-    all_jobs = orchestrator.list_jobs() if tab == "boards" else scanner.list_jobs()
+    # Clamp page_size to the configured cap (bounds per-request memory and
+    # quick-scoring cost). The cap lives in settings, so it can't be a static
+    # Query(le=) bound.
+    if settings is not None:
+        page_size = min(page_size, settings.ingestion_max_page_size)
+    # Push the cheap selective predicates into the repository (SQL WHERE) so
+    # closed/filtered rows never reach the scoring pipeline below.
+    # filter_and_paginate re-applies them idempotently alongside the
+    # Python-only heuristics.
+    criteria = JobListCriteria(
+        include_closed=include_closed,
+        include_low_quality=include_low_quality,
+        source=source,
+        company=company,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    # Corpus load + score persists below run sync SQLAlchemy sessions; offload
+    # to a worker thread so they don't block the event loop.
+    all_jobs = await asyncio.to_thread(
+        orchestrator.list_jobs if tab == "boards" else scanner.list_jobs, criteria
+    )
 
     candidate_skills, candidate_summary = await _gather_profile(profile_service)
 
@@ -215,8 +240,9 @@ async def list_jobs(
         )
 
     if candidate_skills:
-        persist_scores_batch(
-            [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in all_jobs]
+        await asyncio.to_thread(
+            persist_scores_batch,
+            [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in all_jobs],
         )
 
     # GLOBAL apply of already-cached Tier-1 LLM scores BEFORE pagination. The
@@ -298,8 +324,9 @@ async def list_jobs(
             )
             for j in result.jobs
         ]
-        persist_scores_batch(
-            [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in result.jobs]
+        await asyncio.to_thread(
+            persist_scores_batch,
+            [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in result.jobs],
         )
         # Page-level re-sort so the order reflects the post-semantic match_score
         # that the user actually sees. Phase-1 sort happens pre-pagination on
@@ -335,7 +362,7 @@ async def list_jobs(
     return result
 
 
-@router.get("/jobs/{job_id}/analysis", response_model=DeepAnalysisResult)
+@router.get("/jobs/{job_id}/analysis", response_model=DeepAnalysisResult, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def analyze_job(
     job_id: str,
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
@@ -381,11 +408,8 @@ class BackfillResponse(BaseModel):
     total: int
 
 
-@router.post("/backfill-embeddings", response_model=BackfillResponse)
+@router.post("/backfill-embeddings", response_model=BackfillResponse, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def backfill_embeddings(
-    # The authenticated user IS the operator — this is a single-user app with
-    # no role system. require_auth verifies the JWT and returns the subject claim.
-    _operator: Annotated[str, Depends(require_auth)],
     service: Annotated[EmbeddingBackfillService | None, Depends(get_backfill_service)],
 ) -> BackfillResponse:
     """Re-embed all ingested jobs into pgvector so SemanticPreRanker can rank them.

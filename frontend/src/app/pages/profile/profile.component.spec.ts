@@ -108,6 +108,7 @@ describe('ProfileComponent', () => {
         { provide: ProfileService, useValue: profileService },
         { provide: ApplicationsService, useValue: { listCoverLetters: () => of([]) } },
         { provide: CoverLetterTemplatesService, useValue: { list: () => of([]) } },
+        { provide: AuthService, useValue: { me: () => of({ username: 'x', role: 'user' }), logout: () => {} } },
       ],
     });
     const fixture = TestBed.createComponent(ProfileComponent);
@@ -152,5 +153,6 @@ describe('ProfileComponent', () => {
 
     expect(cmp.showUploadForm()).toBe(true);
     expect(cmp.uploadIntent()).toBe('add');
+    expect(cmp.language()).toBe('es');
   });
 });

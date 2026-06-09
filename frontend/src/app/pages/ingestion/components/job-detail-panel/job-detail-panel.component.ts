@@ -1,29 +1,24 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { NormalizedJob } from '../../models/normalized-job.model';
-import { JobAnalysis } from '../../models/job-analysis.model';
 import { parseJobDescription } from '../../lib/parse-job-description';
-import { IngestionService } from '../../../../core/services/ingestion.service';
 import { formatScorePercent } from '../../../../core/utils/format-score-percent';
 import { scoreColor } from '../../../../core/utils/score-color';
-import { DeepAnalysisComponent } from '../deep-analysis/deep-analysis.component';
+import { JobDescriptionComponent } from '../job-description/job-description.component';
 import { FeedbackControlsComponent } from '../feedback-controls/feedback-controls.component';
 import { FeedbackKind } from '../../models/feedback-kind.model';
 
 @Component({
   selector: 'app-job-detail-panel',
   standalone: true,
-  imports: [DatePipe, DeepAnalysisComponent, FeedbackControlsComponent],
+  imports: [DatePipe, JobDescriptionComponent, FeedbackControlsComponent],
   templateUrl: './job-detail-panel.component.html',
   styleUrl: './job-detail-panel.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JobDetailPanelComponent {
   private router = inject(Router);
-  private ingestionService = inject(IngestionService);
-  private readonly destroyRef = inject(DestroyRef);
 
   job = input.required<NormalizedJob>();
   tracked = input<boolean>(false);
@@ -40,18 +35,7 @@ export class JobDetailPanelComponent {
   pillScore = computed<number | null>(() => this.job().llm_score ?? this.job().match_score);
   scorePercent = computed(() => formatScorePercent(this.pillScore()));
 
-  // Deep analysis (lazy, advanced model). The result is cached in the service
-  // (keyed by job id) so it survives the panel being destroyed on close.
-  analysis = computed<JobAnalysis | null>(
-    () => this.ingestionService.getCachedAnalysis(this.job().id) ?? null,
-  );
-  analysisExpanded = signal(false);
-  analysisLoading = signal(false);
-  analysisError = signal('');
-
   parsedDescription = computed(() => parseJobDescription(this.job().description ?? ''));
-
-  hasStructuredSections = computed(() => this.parsedDescription().sections.length > 0);
 
   /** Pull out the most prominent compensation line for the header strip. */
   compensationHighlight = computed(() => {
@@ -83,30 +67,6 @@ export class JobDetailPanelComponent {
     this.track.emit(this.job().id);
   }
 
-  toggleDeepAnalysis(): void {
-    const next = !this.analysisExpanded();
-    this.analysisExpanded.set(next);
-    if (next && this.analysis() === null && !this.analysisLoading()) {
-      this.loadAnalysis();
-    }
-  }
-
-  loadAnalysis(force = false): void {
-    this.analysisLoading.set(true);
-    this.analysisError.set('');
-    this.ingestionService.getJobAnalysis(this.job().id, force).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => this.analysisLoading.set(false),
-      error: (err) => {
-        this.analysisError.set(err.error?.detail || 'Deep analysis failed');
-        this.analysisLoading.set(false);
-      },
-    });
-  }
-
-  retryAnalysis(): void {
-    this.loadAnalysis();
-  }
-
   goToMatching(): void {
     this.router.navigate(['/dashboard/matching'], { queryParams: { job_id: this.job().id } });
     this.closed.emit();
@@ -119,6 +79,11 @@ export class JobDetailPanelComponent {
 
   goToInterview(): void {
     this.router.navigate(['/dashboard/interview'], { queryParams: { job_id: this.job().id } });
+    this.closed.emit();
+  }
+
+  goToFullAnalysis(): void {
+    this.router.navigate(['/dashboard/job', this.job().id]);
     this.closed.emit();
   }
 }

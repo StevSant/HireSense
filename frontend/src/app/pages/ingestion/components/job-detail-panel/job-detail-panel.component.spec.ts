@@ -1,10 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
 import { JobDetailPanelComponent } from './job-detail-panel.component';
-import { IngestionService } from '../../../../core/services/ingestion.service';
 import { NormalizedJob } from '../../models/normalized-job.model';
-import { JobAnalysis } from '../../models/job-analysis.model';
 
 function makeJob(overrides: Partial<NormalizedJob> = {}): NormalizedJob {
   return {
@@ -32,34 +29,16 @@ function makeJob(overrides: Partial<NormalizedJob> = {}): NormalizedJob {
   };
 }
 
-const ANALYSIS: JobAnalysis = {
-  job_id: 'job-1',
-  overall_score: 0.82,
-  verdict: 'strong',
-  dimensions: [],
-  matched_skills: [],
-  missing_skills: [],
-  pros: [],
-  cons: [],
-  recommendations: [],
-  narrative: 'Looks good.',
-};
-
 describe('JobDetailPanelComponent', () => {
   let navigate: ReturnType<typeof vi.fn>;
-  let getJobAnalysis: ReturnType<typeof vi.fn>;
-  let getCachedAnalysis: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     navigate = vi.fn();
-    getJobAnalysis = vi.fn().mockReturnValue(of(ANALYSIS));
-    getCachedAnalysis = vi.fn().mockReturnValue(undefined);
 
     await TestBed.configureTestingModule({
       imports: [JobDetailPanelComponent],
       providers: [
         { provide: Router, useValue: { navigate } },
-        { provide: IngestionService, useValue: { getJobAnalysis, getCachedAnalysis } },
       ],
     }).compileComponents();
   });
@@ -151,40 +130,19 @@ describe('JobDetailPanelComponent', () => {
     expect(kind).toBe('thumbs_up');
   });
 
-  it('loads deep analysis on first expand and renders the success state', () => {
+  it('links to the full analysis page instead of expanding analysis inline', () => {
     const fixture = mount();
+    let closed = false;
+    fixture.componentInstance.closed.subscribe(() => (closed = true));
 
-    // Uncached at expand time, so the toggle triggers a service load.
-    fixture.componentInstance.toggleDeepAnalysis();
-    fixture.detectChanges();
-    expect(getJobAnalysis).toHaveBeenCalledWith('job-1', false);
-    expect(fixture.componentInstance.analysisLoading()).toBe(false);
+    expect(fixture.nativeElement.querySelector('app-deep-analysis')).toBeNull();
+    const link = Array.from(
+      fixture.nativeElement.querySelectorAll('button.deep-toggle') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.includes('Full analysis'))!;
+    link.click();
 
-    // Service now reports the result as cached. The `analysis` computed reads it
-    // via the `job` signal, so re-setting `job` recomputes it and the
-    // <app-deep-analysis> child renders.
-    getCachedAnalysis.mockReturnValue(ANALYSIS);
-    fixture.componentRef.setInput('job', makeJob());
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.analysis()).toEqual(ANALYSIS);
-    expect(fixture.nativeElement.querySelector('app-deep-analysis')).not.toBeNull();
-  });
-
-  it('surfaces the deep analysis error state and retries', () => {
-    getJobAnalysis.mockReturnValue(throwError(() => ({ error: { detail: 'boom' } })));
-    const fixture = mount();
-
-    fixture.componentInstance.toggleDeepAnalysis();
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.analysisError()).toBe('boom');
-    expect(fixture.nativeElement.querySelector('.deep-error')).not.toBeNull();
-
-    // Retry re-invokes the service.
-    getJobAnalysis.mockClear();
-    fixture.componentInstance.retryAnalysis();
-    expect(getJobAnalysis).toHaveBeenCalledWith('job-1', false);
+    expect(navigate).toHaveBeenCalledWith(['/dashboard/job', 'job-1']);
+    expect(closed).toBe(true);
   });
 
   it('emits close when the overlay backdrop is clicked', () => {

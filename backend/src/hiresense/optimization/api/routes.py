@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from hiresense.identity.api.dependencies import require_auth
+from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.optimization.api.dependencies import get_cv_optimizer
 from hiresense.optimization.domain.models import OptimizationResult
 
@@ -25,7 +25,7 @@ class OptimizeRequest(BaseModel):
     recommendations: list[str] = []
 
 
-@router.post("/optimize", response_model=OptimizationResult)
+@router.post("/optimize", response_model=OptimizationResult, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def optimize_cv(
     body: OptimizeRequest,
     optimizer: Annotated[object, Depends(get_cv_optimizer)],

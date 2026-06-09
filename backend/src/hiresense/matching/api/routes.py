@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from hiresense.identity.api.dependencies import require_auth
+from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.matching.api.dependencies import (
     get_batch_evaluation_service,
     get_ingestion_orchestrator_for_matching,
@@ -36,7 +36,7 @@ class AnalyzeRequest(BaseModel):
     job_embedding: list[float] | None = None
 
 
-@router.post("/evaluate", response_model=EvaluationResponse)
+@router.post("/evaluate", response_model=EvaluationResponse, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def evaluate_job(
     body: EvaluateRequest,
     orchestrator: Annotated[object, Depends(get_matching_orchestrator)],
@@ -60,7 +60,7 @@ async def evaluate_job(
     )
 
 
-@router.post("/analyze", response_model=MatchResult)
+@router.post("/analyze", response_model=MatchResult, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def analyze_match(
     body: AnalyzeRequest,
     orchestrator: Annotated[object, Depends(get_matching_orchestrator)],
@@ -77,7 +77,7 @@ async def analyze_match(
     )
 
 
-@router.post("/batch-evaluate", response_model=BatchEvaluationResponse)
+@router.post("/batch-evaluate", response_model=BatchEvaluationResponse, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def batch_evaluate(
     body: BatchEvaluateRequest,
     batch_service: Annotated[object, Depends(get_batch_evaluation_service)],

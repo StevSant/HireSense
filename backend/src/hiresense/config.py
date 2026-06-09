@@ -379,6 +379,14 @@ class Settings(BaseSettings):
     # Per-job description truncation (chars) for the deeper single-job analysis.
     match_deep_job_char_limit: int = 6000
 
+    # --- Rate limiting (expensive endpoints) ---
+    # In-process sliding-window limiter applied to LLM/network-heavy endpoints
+    # (ingestion fetch/scan/list/analysis/backfill, matching, optimization).
+    # Keyed by client IP. Disable for load tests with RATE_LIMIT_ENABLED=false.
+    rate_limit_enabled: bool = True
+    rate_limit_max_requests: int = 30
+    rate_limit_window_seconds: float = 60.0
+
     # Upload
     max_upload_bytes: int = 10 * 1024 * 1024  # 10 MB
 

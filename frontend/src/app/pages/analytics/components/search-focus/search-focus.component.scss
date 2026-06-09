@@ -97,3 +97,11 @@
 
   .focus-count { padding-left: 0.3rem; }
 }
+
+.focus-link {
+  text-decoration: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover { color: var(--accent); text-decoration: underline; }
+}

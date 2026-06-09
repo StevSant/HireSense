@@ -40,6 +40,7 @@ export class ProfileComponent implements OnInit {
   initialLoading = signal(true);
   error = signal('');
   showUploadForm = signal(false);
+  uploadIntent = signal<'add' | 'replace'>('add');
 
   profile = this.profileService.profile;
   profiles = this.profileService.profiles;
@@ -66,6 +67,7 @@ export class ProfileComponent implements OnInit {
   }
 
   addAnotherLanguage(): void {
+    this.uploadIntent.set('add');
     // Pre-select a language that hasn't been uploaded yet
     const uploaded = this.uploadedLanguages();
     if (!uploaded.includes('es')) {
@@ -76,11 +78,20 @@ export class ProfileComponent implements OnInit {
     this.showUploadForm.set(true);
   }
 
+  replaceCv(): void {
+    this.language.set(this.activeLanguage());
+    this.uploadIntent.set('replace');
+    this.selectedFile.set(null);
+    this.error.set('');
+    this.showUploadForm.set(true);
+  }
+
   cancelUpload(): void {
     this.showUploadForm.set(false);
     this.selectedFile.set(null);
     this.texContent.set('');
     this.error.set('');
+    this.uploadIntent.set('add');
   }
 
   onDragOver(event: DragEvent): void {

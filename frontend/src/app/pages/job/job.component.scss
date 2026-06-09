@@ -1,4 +1,4 @@
-.job-page { padding: 1.5rem 1.75rem 2.5rem; max-width: 860px; }
+.job-page { padding: 1.5rem 1.75rem 2.5rem; max-width: 1100px; }
 
 .job-back {
   background: none;
@@ -15,18 +15,28 @@
 .job-state { color: var(--text-muted); font-size: 0.9rem; }
 .job-state-error { color: var(--danger); }
 
-.job-header { margin-bottom: 1.25rem; }
+/* ---- Header ---- */
+.job-header { margin-bottom: 1.1rem; }
+.job-eyebrow {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
 .job-title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 1.7rem;
+  font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+  line-height: 1.15;
   color: var(--text-primary);
 }
 .job-company {
   display: inline-block;
-  margin-top: 0.2rem;
+  margin-top: 0.25rem;
   font-size: 1rem;
   font-weight: 600;
   color: var(--accent-text);
@@ -49,29 +59,18 @@
   color: var(--text-secondary);
 }
 .job-fact-source { text-transform: capitalize; }
-.job-score {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  margin-top: 0.9rem;
-}
-.job-score-num { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.job-score-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.job-verdict {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: capitalize;
-  border: 1px solid;
-  border-radius: var(--radius-full);
-  padding: 0.1rem 0.55rem;
-}
 
+/* ---- Action bar ---- */
 .job-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--border-subtle);
 }
+.job-feedback { margin-left: auto; }
 .job-btn {
   font: inherit;
   font-size: 0.85rem;
@@ -94,14 +93,32 @@
 
   &:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
 }
+.job-track-error { margin: 0.25rem 0 0; color: var(--danger); font-size: 0.85rem; }
 
-.job-track-error { margin: -0.75rem 0 1rem; color: var(--danger); font-size: 0.85rem; }
+/* ---- Two-pane body: main content + sticky snapshot ---- */
+.job-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(17rem, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+  margin-top: 1.25rem;
+}
+@media (max-width: 820px) {
+  .job-body { grid-template-columns: 1fr; }
+  .job-aside { order: -1; } /* snapshot first on narrow screens */
+}
 
-.job-feedback { margin-bottom: 1.25rem; }
+.job-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.job-aside { position: sticky; top: 1rem; }
 
 .job-card {
-  margin-bottom: 1rem;
-  padding: 1.1rem 1.25rem;
+  padding: 1.2rem 1.35rem;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
@@ -109,7 +126,7 @@
 }
 .job-section-label {
   display: block;
-  margin: 0 0 0.6rem;
+  margin: 0 0 0.7rem;
   font-family: var(--font-display);
   font-size: 0.78rem;
   font-weight: 600;
@@ -118,8 +135,43 @@
   color: var(--text-muted);
 }
 
-.reason-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
-.reason-item, .dealbreaker-item { font-size: 0.875rem; color: var(--text-secondary); }
+/* ---- Snapshot (right rail) ---- */
+.job-snapshot { display: flex; flex-direction: column; gap: 1.1rem; }
+.job-score {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.job-score-num {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.job-score-label {
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.job-verdict {
+  align-self: flex-start;
+  margin-top: -0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  border: 1px solid;
+  border-radius: var(--radius-full);
+  padding: 0.15rem 0.6rem;
+}
+.job-snapshot-block { border-top: 1px solid var(--border-subtle); padding-top: 1rem; }
+.job-snapshot-block .job-section-label { margin-bottom: 0.5rem; }
+
+/* ---- Shared bits ---- */
+.reason-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.reason-item, .dealbreaker-item { font-size: 0.825rem; line-height: 1.45; color: var(--text-secondary); }
 .dealbreaker-list { margin-top: 0.5rem; }
 .dealbreaker-item { color: var(--danger); }
 

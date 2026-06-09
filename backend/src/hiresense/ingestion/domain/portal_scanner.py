@@ -146,8 +146,7 @@ class PortalScanner:
                 )
                 continue
 
-            seen_keys: set[str] = set()
-            touched: list[NormalizedJob] = []
+            normalized: list[NormalizedJob] = []
             for raw in raw_jobs:
                 total_fetched += 1
                 normalized_data = normalizer.normalize(raw)
@@ -164,20 +163,22 @@ class PortalScanner:
                     kw = filters.keyword.lower()
                     if kw not in job.title.lower() and kw not in job.description.lower():
                         continue
+                normalized.append(job)
 
-                existing_id = self._repository.get_id_by_identity(portal.name, job)
-                if existing_id:
-                    job = job.model_copy(update={"id": existing_id})
-                seen_keys.add(identity_key(job))
-                result = self._repository.upsert(job)
-                if result in (
+            # One bulk identity lookup + one commit per portal (was 2 queries
+            # per job). Outcomes carry the resolved ids.
+            outcomes = self._repository.bulk_upsert(normalized)
+            seen_keys = {identity_key(o.job) for o in outcomes}
+            touched: list[NormalizedJob] = []
+            for outcome in outcomes:
+                if outcome.result in (
                     UpsertResult.INSERTED,
                     UpsertResult.UPDATED,
                     UpsertResult.REOPENED,
                 ):
-                    touched.append(job)
-                    if result == UpsertResult.INSERTED:
-                        new_jobs.append(job)
+                    touched.append(outcome.job)
+                    if outcome.result == UpsertResult.INSERTED:
+                        new_jobs.append(outcome.job)
 
             if touched and self._indexer is not None:
                 await self._indexer.index(touched)

@@ -52,6 +52,11 @@ def create_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         yield
+        # Drain in-flight event handlers before tearing infrastructure down so
+        # events published late in a request aren't silently dropped.
+        event_bus = getattr(app.state, "event_bus", None)
+        if event_bus is not None:
+            await event_bus.aclose(timeout=settings.event_bus_drain_timeout_seconds)
         await http_client.aclose()
         # Flush and shut down any OTel providers set up by setup_telemetry. No-op
         # when telemetry is disabled (no providers were stored). Guarded so a
@@ -92,6 +97,8 @@ def create_app() -> FastAPI:
     setup_telemetry(app, settings)
 
     infra = build_shared_infra(settings, http_client)
+    # Exposed for the lifespan drain above.
+    app.state.event_bus = infra.event_bus
 
     # --- Admin (owns the tracked-LLM factory the other modules share) ---
     admin = build_admin(infra)

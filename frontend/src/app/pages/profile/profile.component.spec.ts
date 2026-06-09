@@ -130,4 +130,27 @@ describe('ProfileComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('ada-user');
   });
+
+  it('replaceCv pre-selects the active language and opens the upload form', () => {
+    const { fixture, profileService } = mount({ profiles: { en: makeProfile() } });
+    const cmp = fixture.componentInstance;
+    (profileService.activeLanguage as { set: (v: string) => void }).set('en');
+
+    cmp.replaceCv();
+
+    expect(cmp.showUploadForm()).toBe(true);
+    expect(cmp.uploadIntent()).toBe('replace');
+    expect(cmp.language()).toBe('en');
+    expect(cmp.selectedFile()).toBeNull();
+  });
+
+  it('addAnotherLanguage marks the intent as add', () => {
+    const { fixture } = mount({ profiles: { en: makeProfile() } });
+    const cmp = fixture.componentInstance;
+
+    cmp.addAnotherLanguage();
+
+    expect(cmp.showUploadForm()).toBe(true);
+    expect(cmp.uploadIntent()).toBe('add');
+  });
 });

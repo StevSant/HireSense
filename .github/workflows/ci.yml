@@ -34,7 +34,7 @@ jobs:
     env:
       # config.py has no defaults for these — supply them so Settings() resolves.
       AUTH_USERNAME: admin
-      AUTH_PASSWORD: changeme
+      AUTH_PASSWORD: ci-test-password-not-for-production
       JWT_SECRET_KEY: ci-test-secret-not-for-production
       LLM_API_KEY: test-key
       DATABASE_URL: postgresql+asyncpg://hiresense:hiresense@localhost:5432/hiresense

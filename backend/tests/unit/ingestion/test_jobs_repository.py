@@ -253,6 +253,40 @@ def test_bulk_upsert_in_memory_parity():
     assert outcomes[0].job.id == "a"
 
 
+def test_list_filtered_pushes_predicates_to_sql(repo):
+    from hiresense.ingestion.domain import JobListCriteria
+
+    repo.upsert(_job("a", source_id="n1", url="https://e.com/1", company="Acme"))
+    repo.upsert(_job("b", source_id="n2", url="https://e.com/2", company="Beta", source="other"))
+    repo.upsert(_job("c", source_id="n3", url="https://e.com/3", company="Acme"))
+    repo.mark_closed(["c"])
+
+    open_jobs = repo.list_filtered(JobListCriteria())
+    assert {j.id for j in open_jobs} == {"a", "b"}
+
+    closed_included = repo.list_filtered(JobListCriteria(include_closed=True))
+    assert {j.id for j in closed_included} == {"a", "b", "c"}
+
+    by_source = repo.list_filtered(JobListCriteria(source="other"))
+    assert [j.id for j in by_source] == ["b"]
+
+    by_company = repo.list_filtered(JobListCriteria(company="  ACME "))
+    assert {j.id for j in by_company} == {"a"}
+
+
+def test_list_filtered_in_memory_parity():
+    from hiresense.ingestion.domain import JobListCriteria
+
+    mem = InMemoryJobsRepository()
+    mem.upsert(_job("a", source_id="n1", url="https://e.com/1", company="Acme"))
+    mem.upsert(_job("b", source_id="n2", url="https://e.com/2", company="Beta", source="other"))
+    mem.mark_closed(["a"])
+
+    assert [j.id for j in mem.list_filtered(JobListCriteria())] == ["b"]
+    assert {j.id for j in mem.list_filtered(JobListCriteria(include_closed=True))} == {"a", "b"}
+    assert [j.id for j in mem.list_filtered(JobListCriteria(company="beta"))] == ["b"]
+
+
 def test_bump_missed_and_close_persists_per_row(repo):
     from hiresense.ingestion.domain.identity import identity_key
 

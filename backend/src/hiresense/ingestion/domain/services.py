@@ -9,6 +9,7 @@ from typing import Any
 from opentelemetry import trace
 
 from hiresense.ingestion.domain.identity import identity_key
+from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.normalizer import JobNormalizer
 from hiresense.ingestion.domain.upsert_result import UpsertResult
@@ -178,8 +179,12 @@ class IngestionOrchestrator:
     def get_job_by_id(self, job_id: str) -> NormalizedJob | None:
         return self._repository.get_by_id(job_id)
 
-    def list_jobs(self) -> list[NormalizedJob]:
-        return self._repository.list_all()
+    def list_jobs(self, criteria: JobListCriteria | None = None) -> list[NormalizedJob]:
+        """Full corpus, or — given criteria — only rows matching the cheap
+        selective predicates (filtered DB-side by the SQL repository)."""
+        if criteria is None:
+            return self._repository.list_all()
+        return self._repository.list_filtered(criteria)
 
     def persist_scores(
         self,

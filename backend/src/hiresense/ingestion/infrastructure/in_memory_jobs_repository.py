@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
 from hiresense.ingestion.domain.identity import identity_key
+from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.ports.jobs_repository import QualityUpdate, ScoreUpdate, UpsertOutcome
@@ -133,6 +134,9 @@ class InMemoryJobsRepository:
 
     def list_all(self) -> list[NormalizedJob]:
         return list(self._jobs.values())
+
+    def list_filtered(self, criteria: JobListCriteria) -> list[NormalizedJob]:
+        return [j for j in self._jobs.values() if criteria.matches(j)]
 
     def get_by_id(self, job_id: str) -> NormalizedJob | None:
         return self._jobs.get(job_id)

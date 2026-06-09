@@ -21,6 +21,7 @@ from hiresense.ingestion.api.dependencies import (
 )
 from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
 from hiresense.ingestion.domain.job_filter import JobQueryParams, PaginatedResult, filter_and_paginate
+from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.job_sort import sort_jobs
 from hiresense.ingestion.domain.job_scorer import (
@@ -181,7 +182,19 @@ async def list_jobs(
     # Query(le=) bound.
     if settings is not None:
         page_size = min(page_size, settings.ingestion_max_page_size)
-    all_jobs = orchestrator.list_jobs() if tab == "boards" else scanner.list_jobs()
+    # Push the cheap selective predicates into the repository (SQL WHERE) so
+    # closed/filtered rows never reach the scoring pipeline below.
+    # filter_and_paginate re-applies them idempotently alongside the
+    # Python-only heuristics.
+    criteria = JobListCriteria(
+        include_closed=include_closed,
+        include_low_quality=include_low_quality,
+        source=source,
+        company=company,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    all_jobs = orchestrator.list_jobs(criteria) if tab == "boards" else scanner.list_jobs(criteria)
 
     candidate_skills, candidate_summary = await _gather_profile(profile_service)
 

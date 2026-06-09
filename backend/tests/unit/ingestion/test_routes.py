@@ -50,7 +50,7 @@ class FakeOrchestrator:
         self.called = True
         return [BOARD_JOB]
 
-    def list_jobs(self) -> list[NormalizedJob]:
+    def list_jobs(self, criteria=None) -> list[NormalizedJob]:
         return [BOARD_JOB]
 
     def persist_scores(self, job_id, match_score, semantic_score) -> None:
@@ -61,7 +61,7 @@ class FakeOrchestrator:
 
 
 class FakeScanner:
-    def list_jobs(self) -> list[NormalizedJob]:
+    def list_jobs(self, criteria=None) -> list[NormalizedJob]:
         return [PORTAL_JOB]
 
     def get_job_by_id(self, job_id):
@@ -216,7 +216,7 @@ async def test_list_jobs_strict_location_filters_non_matching() -> None:
         async def run(self, filters=None) -> list[NormalizedJob]:
             return []
 
-        def list_jobs(self) -> list[NormalizedJob]:
+        def list_jobs(self, criteria=None) -> list[NormalizedJob]:
             return [chile_job, restricted_job, ambiguous_remote_job, worldwide_job]
 
         def persist_scores(self, job_id, match_score, semantic_score) -> None:
@@ -345,7 +345,7 @@ async def test_pre_ranker_promotes_job_to_page_one_before_pagination() -> None:
 
     class _Orch:
         async def run(self, filters=None): return []
-        def list_jobs(self): return list(jobs)
+        def list_jobs(self, criteria=None): return list(jobs)
         def persist_scores(self, *a): pass
         def persist_scores_batch(self, updates): pass
 
@@ -428,7 +428,7 @@ def _make_rescore_app(pre_ranker, quick_scoring):
         async def run(self, filters=None):
             return []
 
-        def list_jobs(self):
+        def list_jobs(self, criteria=None):
             return list(jobs)
 
         def persist_scores(self, *a):
@@ -557,7 +557,7 @@ async def test_cached_llm_score_ranks_globally_before_pagination() -> None:
         async def run(self, filters=None):
             return []
 
-        def list_jobs(self):
+        def list_jobs(self, criteria=None):
             return [job_hn, job_gob]  # heuristic order: hn first
 
         def persist_scores(self, *a):

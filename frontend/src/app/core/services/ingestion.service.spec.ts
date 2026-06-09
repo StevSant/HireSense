@@ -41,4 +41,11 @@ describe('IngestionService', () => {
     expect(req.request.params.has('rescore')).toBe(false);
     req.flush(empty);
   });
+
+  it('queryJobs sends the company filter param', () => {
+    service.queryJobs('boards', 1, 100, { company: 'Acme' }).subscribe();
+    const req = httpMock.expectOne((r) => r.url === `${environment.apiUrl}/ingestion/jobs`);
+    expect(req.request.params.get('company')).toBe('Acme');
+    req.flush(empty);
+  });
 });

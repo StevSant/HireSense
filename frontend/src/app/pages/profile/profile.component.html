@@ -4,10 +4,11 @@
     <p class="page-subtitle">Your CV, personal details, cover letters, and account in one place.</p>
   </div>
 
-  <div class="page-tabs" role="tablist">
+  <div class="page-tabs" role="tablist" aria-label="Profile sections">
     <button
       type="button"
       role="tab"
+      id="tab-cv"
       class="page-tab"
       [class.active]="pageTab() === 'cv'"
       [attr.aria-selected]="pageTab() === 'cv'"
@@ -19,6 +20,7 @@
     <button
       type="button"
       role="tab"
+      id="tab-personal"
       class="page-tab"
       [class.active]="pageTab() === 'personal'"
       [attr.aria-selected]="pageTab() === 'personal'"
@@ -30,6 +32,7 @@
     <button
       type="button"
       role="tab"
+      id="tab-cover-letters"
       class="page-tab"
       [class.active]="pageTab() === 'cover-letters'"
       [attr.aria-selected]="pageTab() === 'cover-letters'"
@@ -41,6 +44,7 @@
     <button
       type="button"
       role="tab"
+      id="tab-account"
       class="page-tab"
       [class.active]="pageTab() === 'account'"
       [attr.aria-selected]="pageTab() === 'account'"
@@ -52,7 +56,7 @@
   </div>
 
   @if (pageTab() === 'cv') {
-  <section class="tab-panel" id="panel-cv" role="tabpanel">
+  <section class="tab-panel" id="panel-cv" role="tabpanel" aria-labelledby="tab-cv">
   @if (initialLoading()) {
     <div class="loading-state">
       <div class="loading-spinner"></div>
@@ -348,7 +352,7 @@
   }
 
   @if (pageTab() === 'personal') {
-  <section class="tab-panel" id="panel-personal" role="tabpanel">
+  <section class="tab-panel" id="panel-personal" role="tabpanel" aria-labelledby="tab-personal">
     @if (profile(); as p) {
       <div class="details-card">
         <div class="details-grid">
@@ -417,7 +421,7 @@
   }
 
   @if (pageTab() === 'cover-letters') {
-  <section class="tab-panel" id="panel-cover-letters" role="tabpanel">
+  <section class="tab-panel" id="panel-cover-letters" role="tabpanel" aria-labelledby="tab-cover-letters">
     <div class="per-job-card">
       <div class="per-job-icon" aria-hidden="true">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
@@ -449,7 +453,7 @@
   }
 
   @if (pageTab() === 'account') {
-  <section class="tab-panel" id="panel-account" role="tabpanel">
+  <section class="tab-panel" id="panel-account" role="tabpanel" aria-labelledby="tab-account">
     <app-account />
   </section>
   }

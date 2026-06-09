@@ -88,32 +88,35 @@ class IngestionOrchestrator:
                     fetched_count = len(raw_jobs)
                     _metrics.jobs_fetched_total.add(fetched_count, {"source": source_name})
 
-                    seen_keys: set[str] = set()
-                    touched: list[NormalizedJob] = []
+                    normalized: list[NormalizedJob] = []
                     for raw in raw_jobs:
                         normalized_data = normalizer.normalize(raw)
-                        job = NormalizedJob(
-                            id=str(uuid.uuid4()),
-                            source=source_name,
-                            source_type=source.source_type().value,
-                            source_id=raw.source_id,
-                            **normalized_data,
+                        normalized.append(
+                            NormalizedJob(
+                                id=str(uuid.uuid4()),
+                                source=source_name,
+                                source_type=source.source_type().value,
+                                source_id=raw.source_id,
+                                **normalized_data,
+                            )
                         )
-                        existing_id = self._repository.get_id_by_identity(source_name, job)
-                        if existing_id:
-                            job = job.model_copy(update={"id": existing_id})
-                        seen_keys.add(identity_key(job))
-                        result = self._repository.upsert(job)
+
+                    # One bulk identity lookup + one commit per source instead
+                    # of 2 queries per job. Outcomes carry the resolved ids.
+                    outcomes = self._repository.bulk_upsert(normalized)
+                    seen_keys = {identity_key(o.job) for o in outcomes}
+                    touched: list[NormalizedJob] = []
+                    for outcome in outcomes:
                         # INSERTED/UPDATED/REOPENED all need (re-)indexing; REOPENED matters
                         # because closure removed the job from the vector store.
-                        if result in (
+                        if outcome.result in (
                             UpsertResult.INSERTED,
                             UpsertResult.UPDATED,
                             UpsertResult.REOPENED,
                         ):
-                            touched.append(job)
-                            if result == UpsertResult.INSERTED:
-                                new_jobs.append(job)
+                            touched.append(outcome.job)
+                            if outcome.result == UpsertResult.INSERTED:
+                                new_jobs.append(outcome.job)
 
                     indexed_count = len(touched)
                     _metrics.jobs_indexed_total.add(indexed_count, {"source": source_name})

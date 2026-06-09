@@ -7,8 +7,9 @@ import { CvSectionContentComponent } from './components/cv-section-content/cv-se
 import { ManualFieldsFormComponent } from './components/manual-fields-form/manual-fields-form.component';
 import { CoverLetterLibraryComponent } from './components/cover-letter-library/cover-letter-library.component';
 import { CoverLetterTemplatesComponent } from './components/cover-letter-templates/cover-letter-templates.component';
+import { AccountComponent } from '../account/account.component';
 
-type ProfilePageTab = 'cv' | 'personal' | 'cover-letters';
+type ProfilePageTab = 'cv' | 'personal' | 'cover-letters' | 'account';
 
 @Component({
   selector: 'app-profile',
@@ -20,6 +21,7 @@ type ProfilePageTab = 'cv' | 'personal' | 'cover-letters';
     ManualFieldsFormComponent,
     CoverLetterLibraryComponent,
     CoverLetterTemplatesComponent,
+    AccountComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',

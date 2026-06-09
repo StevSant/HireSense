@@ -32,6 +32,15 @@
     >
       Cover letters
     </button>
+    <button
+      type="button"
+      role="tab"
+      class="page-tab"
+      [class.active]="pageTab() === 'account'"
+      (click)="pageTab.set('account')"
+    >
+      Account
+    </button>
   </div>
 
   @if (pageTab() === 'cv') {
@@ -425,6 +434,12 @@
     <div class="details-card">
       <app-cover-letter-templates />
     </div>
+  </section>
+  }
+
+  @if (pageTab() === 'account') {
+  <section class="tab-panel">
+    <app-account />
   </section>
   }
 </div>

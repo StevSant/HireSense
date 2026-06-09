@@ -6,6 +6,7 @@ import { ProfileComponent } from './profile.component';
 import { ProfileService } from '../../core/services/profile.service';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { CoverLetterTemplatesService } from '../../core/services/cover-letter-templates.service';
+import { AuthService } from '../../core/services/auth.service';
 
 function makeProfile(over: Partial<Record<string, unknown>> = {}) {
   return {
@@ -50,6 +51,7 @@ describe('ProfileComponent', () => {
         { provide: ProfileService, useValue: profileService },
         { provide: ApplicationsService, useValue: { listCoverLetters: () => of([]) } },
         { provide: CoverLetterTemplatesService, useValue: { list: () => of([]) } },
+        { provide: AuthService, useValue: { me: () => of({ username: 'ada-user', role: 'admin' }), logout: () => {} } },
       ],
     });
     const fixture = TestBed.createComponent(ProfileComponent);
@@ -117,5 +119,15 @@ describe('ProfileComponent', () => {
 
     expect(cmp.error()).toBe('bad file');
     expect(cmp.loading()).toBe(false);
+  });
+
+  it('shows the Account tab content when the account tab is active', () => {
+    const { fixture } = mount({ profiles: { en: makeProfile() } });
+    const cmp = fixture.componentInstance;
+
+    cmp.pageTab.set('account');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('ada-user');
   });
 });

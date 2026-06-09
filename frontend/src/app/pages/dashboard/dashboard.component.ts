@@ -18,10 +18,13 @@ export class DashboardComponent {
   private destroyRef = inject(DestroyRef);
 
   sidebarOpen = signal(false);
+  // router.url at construction time is already the post-redirect URL; the NavigationEnd
+  // subscription uses urlAfterRedirects for the same reason on later navigations.
   activeHub = signal(hubForUrl(this.router.url));
 
   hubTabs = computed(() => {
     const id = this.activeHub();
+    // 'profile' uses its own internal signal tabs; suppress the shared hub tab bar for it.
     if (!id || id === 'profile') return null;
     return HUBS.find((hub) => hub.id === id) ?? null;
   });

@@ -1,0 +1,28 @@
+<div class="mb-list">
+  @for (dim of dimensions(); track dim.dimension) {
+    @if (dim.rationale) {
+      <details class="mb-row mb-row-toggle">
+        <summary class="mb-summary">
+          <div class="mb-head">
+            <span class="mb-name">{{ humanize(dim.dimension) }}</span>
+            <span class="mb-score" [style.color]="scoreColor(dim.score)">{{ formatScorePercent(dim.score) }}</span>
+          </div>
+          <div class="mb-bar-track">
+            <div class="mb-bar-fill" [style.width]="barWidth(dim.score)" [style.background]="scoreColor(dim.score)"></div>
+          </div>
+        </summary>
+        <p class="mb-rationale">{{ dim.rationale }}</p>
+      </details>
+    } @else {
+      <div class="mb-row">
+        <div class="mb-head">
+          <span class="mb-name">{{ humanize(dim.dimension) }}</span>
+          <span class="mb-score" [style.color]="scoreColor(dim.score)">{{ formatScorePercent(dim.score) }}</span>
+        </div>
+        <div class="mb-bar-track">
+          <div class="mb-bar-fill" [style.width]="barWidth(dim.score)" [style.background]="scoreColor(dim.score)"></div>
+        </div>
+      </div>
+    }
+  }
+</div>

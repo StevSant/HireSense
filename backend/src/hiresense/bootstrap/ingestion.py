@@ -72,7 +72,7 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
             sources.append(RemoteOKAdapter(http_client=http_client, base_url=s.remoteok_api_url))
             normalizers["remoteok"] = RemoteOKNormalizer()
         elif source_name == "csv":
-            sources.append(CSVImportAdapter())
+            sources.append(CSVImportAdapter(import_dir=s.csv_import_dir))
             normalizers["csv"] = CSVNormalizer()
         elif source_name == "jobicy":
             sources.append(JobicyAdapter(http_client=http_client, base_url=s.jobicy_api_url))

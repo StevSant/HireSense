@@ -1,8 +1,9 @@
 .analytics-page { padding: 1.25rem; }
 .analytics-title { font-size: 1.4rem; margin: 0 0 1rem; }
-.analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 1rem; }
-.analytics-card { border: 1px solid var(--border, #e2e8f0); border-radius: 10px; padding: 1rem; background: var(--surface, #fff); }
-.card-title { font-size: 1rem; margin: 0 0 0.75rem; }
+/* align-items: start so a short card (Pay) never stretches to match a tall one (Focus). */
+.analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 1rem; align-items: start; }
+.analytics-card { border: 1px solid var(--border-subtle, #eae8e4); border-radius: var(--radius-lg, 12px); padding: 1.25rem 1.4rem; background: var(--bg-card, #fff); }
+.card-title { font-size: 1.0625rem; font-weight: 600; margin: 0 0 1rem; letter-spacing: -0.01em; }
 .sub { font-size: 0.8rem; color: var(--muted, #64748b); margin: 0.9rem 0 0.4rem; text-transform: uppercase; letter-spacing: 0.03em; }
 .salary-line { font-size: 0.9rem; }
 .section-loading, .section-empty { color: var(--muted, #64748b); font-size: 0.85rem; }
@@ -10,8 +11,28 @@
 
 /* Performance spans the full grid width and splits into funnel + by-source. */
 .analytics-card-wide { grid-column: 1 / -1; }
-.perf-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.perf-cols { display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; }
 @media (max-width: 640px) { .perf-cols { grid-template-columns: 1fr; } }
+
+/* Outcomes-by-source: a compact stat list (not a misleading 0%-wide bar). */
+.source-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.source-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle, #eae8e4);
+  font-size: 0.85rem;
+}
+.source-name { font-weight: 600; color: var(--text-primary, #18181b); }
+.source-apps { color: var(--text-muted, #a1a1aa); font-size: 0.8125rem; }
+.source-rate {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--accent-text, #065f46);
+  &.zero { color: var(--text-muted, #a1a1aa); font-weight: 400; }
+}
 
 /* Market context demoted into a collapsible footer. */
 .analytics-context {

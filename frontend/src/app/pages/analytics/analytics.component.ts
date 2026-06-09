@@ -102,21 +102,23 @@ export class AnalyticsComponent implements OnInit {
     ];
   });
 
-  sourceRows(f: FunnelMetrics): BarRow[] {
-    return f.by_source.map((o) => ({
-      label: o.source,
-      value: o.applications,
-      pct: Math.round(o.interview_rate * PERCENT),
-      note: `${o.reached_interview}/${o.applications} → interview`,
-    }));
+  // Cap the secondary market/skill-gap lists so they don't become 20-row walls.
+  private static readonly MARKET_ROW_CAP = 8;
+
+  interviewPct(o: { interview_rate: number }): number {
+    return Math.round(o.interview_rate * PERCENT);
   }
 
   skillRows(m: MarketIntel): BarRow[] {
-    return m.top_skills.map((s) => ({ label: s.skill, value: s.count, pct: s.pct, note: `${s.pct}%` }));
+    return m.top_skills
+      .slice(0, AnalyticsComponent.MARKET_ROW_CAP)
+      .map((s) => ({ label: s.skill, value: s.count, pct: s.pct, note: `${s.pct}%` }));
   }
 
   gapRows(g: SkillGap): BarRow[] {
-    return g.missing.map((s) => ({ label: s.skill, value: s.count, pct: s.pct, note: `in ${s.pct}%` }));
+    return g.missing
+      .slice(0, AnalyticsComponent.MARKET_ROW_CAP)
+      .map((s) => ({ label: s.skill, value: s.count, pct: s.pct, note: `in ${s.pct}%` }));
   }
 
   remoteRows(m: MarketIntel): BarRow[] {

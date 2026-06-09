@@ -1,6 +1,22 @@
 from typing import Any, ClassVar
 
-from pydantic_settings import BaseSettings, DotEnvSettingsSource, EnvSettingsSource, SettingsConfigDict
+from pydantic import field_validator
+from pydantic_settings import (
+    BaseSettings,
+    DotEnvSettingsSource,
+    EnvSettingsSource,
+    SettingsConfigDict,
+)
+
+# Known sample values shipped in .env.example. Startup refuses to run with
+# these so a copied-but-unedited .env fails loudly instead of exposing the
+# instance behind guessable credentials.
+_PLACEHOLDER_SECRETS: frozenset[str] = frozenset(
+    {
+        "changeme",
+        "change-this-to-a-random-secret",
+    }
+)
 
 
 class _CommaSeparatedMixin:
@@ -73,6 +89,17 @@ class Settings(BaseSettings):
     auth_username: str
     auth_password: str
     jwt_secret_key: str
+
+    @field_validator("auth_password", "jwt_secret_key")
+    @classmethod
+    def _reject_placeholder_secrets(cls, value: str, info: Any) -> str:
+        if value in _PLACEHOLDER_SECRETS:
+            raise ValueError(
+                f"{info.field_name} is still set to the .env.example placeholder; "
+                'generate a real value (e.g. python -c "import secrets; print(secrets.token_urlsafe(48))")'
+            )
+        return value
+
     # Role embedded in issued tokens. A single-user instance is admin by default;
     # set to a non-admin value to genuinely exercise the admin gate.
     auth_role: str = "admin"

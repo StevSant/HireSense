@@ -158,6 +158,9 @@ class Settings(BaseSettings):
         "linkedin",
     ]
 
+    # Directory CSV-import file_path filters are confined to (path-traversal guard).
+    csv_import_dir: str = "./csv_imports"
+
     # LaTeX
     latex_compiler: str = "xelatex"
     latex_timeout_seconds: float = 60.0

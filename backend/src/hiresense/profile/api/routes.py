@@ -15,6 +15,28 @@ router = APIRouter(prefix="/profile", tags=["profile"], dependencies=[Depends(re
 _ALLOWED_EXTENSIONS = {".pdf", ".tex"}
 
 
+def _validate_upload_content(ext: str, file_bytes: bytes) -> None:
+    """Cheap content sniffing so the declared extension matches the payload.
+
+    A `.tex` upload flows into the LaTeX pipeline, so a binary blob renamed to
+    .tex (or a TeX file renamed to .pdf) is rejected up front instead of
+    failing deeper in parsing/compilation.
+    """
+    if ext == ".pdf" and not file_bytes.startswith(b"%PDF-"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File content does not match the .pdf extension",
+        )
+    if ext == ".tex":
+        try:
+            file_bytes.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File content is not valid UTF-8 text for a .tex upload",
+            ) from exc
+
+
 class UploadCVRequest(BaseModel):
     tex_content: str
     language: str = "en"
@@ -64,6 +86,7 @@ async def upload_file(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"File too large. Maximum size: {max_bytes // (1024 * 1024)} MB",
         )
+    _validate_upload_content(ext, file_bytes)
     return await service.parse_file_and_create(file_bytes, filename, language)
 
 

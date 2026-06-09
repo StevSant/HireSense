@@ -30,6 +30,7 @@ from typing import Any
 
 from hiresense.ingestion.domain.job_scorer import combine_fit_score
 from hiresense.ingestion.domain.models import NormalizedJob
+from hiresense.kernel import LRUCache
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,7 @@ class SemanticPreRanker:
         skill_weight: float,
         semantic_weight: float,
         preference: Any = None,
+        profile_cache_size: int = 8,
     ) -> None:
         self._vector_store = vector_store
         self._embedding = embedding
@@ -73,8 +75,9 @@ class SemanticPreRanker:
         self._skill_weight = skill_weight
         self._semantic_weight = semantic_weight
         self._preference = preference
-        # In-process profile embedding cache: sha256(profile_text) → vector
-        self._profile_cache: dict[str, list[float]] = {}
+        # In-process profile embedding cache: sha256(profile_text) → vector.
+        # Bounded — distinct profile texts would otherwise accumulate forever.
+        self._profile_cache: LRUCache[str, list[float]] = LRUCache(profile_cache_size)
         self._lock = asyncio.Lock()
 
     async def rerank(

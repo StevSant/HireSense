@@ -153,6 +153,7 @@
           <col />
           <col />
           <col />
+          <col class="col-salary" />
           <col class="col-source" />
           <col class="col-posted" />
           <col class="col-actions" />
@@ -163,6 +164,7 @@
             <th appSortHeader [state]="sort" field="title" (sorted)="onSorted()">Title</th>
             <th appSortHeader [state]="sort" field="company" (sorted)="onSorted()">Company</th>
             <th appSortHeader [state]="sort" field="location" (sorted)="onSorted()">Location</th>
+            <th>Salary</th>
             <th appSortHeader [state]="sort" field="source" (sorted)="onSorted()">Source</th>
             <th appSortHeader [state]="sort" field="posted" (sorted)="onSorted()">Posted</th>
             <th>Actions</th>
@@ -190,8 +192,9 @@
                   <span class="badge badge-closed">Closed</span>
                 }
               </td>
-              <td class="cell-truncate" [title]="job.company">{{ job.company }}</td>
+              <td class="cell-truncate" [title]="job.company"><app-company-link [name]="job.company" /></td>
               <td class="cell-truncate" [title]="job.location">{{ job.location }}</td>
+              <td class="cell-truncate salary-cell" [title]="job.salary_range">{{ job.salary_range || '—' }}</td>
               <td><span class="badge source-badge-{{ job.source }}">{{ job.source }}</span></td>
               <td class="date-cell">{{ job.posted_date ? (job.posted_date | date:'mediumDate') : '—' }}</td>
               <td class="actions-cell">

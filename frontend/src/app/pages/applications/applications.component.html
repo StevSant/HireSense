@@ -48,7 +48,7 @@
         @for (app of visibleApplications(); track app.id) {
           <tr (click)="open(app.id)" class="row">
             <td>{{ app.title }}</td>
-            <td>{{ app.company }}</td>
+            <td><app-company-link [name]="app.company" /></td>
             <td><span class="status-pill status-{{app.status}}">{{ app.status | titlecase }}</span></td>
             <td>
               @if (app.latest_match_score !== null) {

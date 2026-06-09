@@ -22,6 +22,7 @@ import { FeedbackControlsComponent } from './components/feedback-controls/feedba
 import { PreferenceTuningComponent } from './components/preference-tuning/preference-tuning.component';
 import { FeedbackKind } from './models/feedback-kind.model';
 import { SortableHeaderDirective } from '../../core/components/sortable-header';
+import { CompanyLinkComponent } from '../../core/components/company-link';
 import { createSortState } from '../../core/utils/sort-state';
 
 @Component({
@@ -35,6 +36,7 @@ import { createSortState } from '../../core/utils/sort-state';
     FeedbackControlsComponent,
     PreferenceTuningComponent,
     SortableHeaderDirective,
+    CompanyLinkComponent,
   ],
   templateUrl: './ingestion.component.html',
   styleUrl: './ingestion.component.scss',

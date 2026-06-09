@@ -8,6 +8,7 @@ import { ApplicationCreateDialogComponent } from './components/application-creat
 import { scoreColor as toScoreColor } from '../../core/utils/score-color';
 import { formatScorePercent } from '../../core/utils/format-score-percent';
 import { SortableHeaderDirective } from '../../core/components/sortable-header';
+import { CompanyLinkComponent } from '../../core/components/company-link';
 import { createSortState } from '../../core/utils/sort-state';
 import { sortItems } from '../../core/utils/sort-items';
 
@@ -16,7 +17,7 @@ type AppSortField = 'title' | 'company' | 'status' | 'match' | 'created';
 @Component({
   selector: 'app-applications',
   standalone: true,
-  imports: [DatePipe, TitleCasePipe, RouterLink, ApplicationCreateDialogComponent, SortableHeaderDirective],
+  imports: [DatePipe, TitleCasePipe, RouterLink, ApplicationCreateDialogComponent, SortableHeaderDirective, CompanyLinkComponent],
   templateUrl: './applications.component.html',
   styleUrl: './applications.component.scss',
 })

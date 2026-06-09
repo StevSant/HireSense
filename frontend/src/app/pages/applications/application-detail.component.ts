@@ -11,6 +11,7 @@ import { MatchTabComponent } from './components/match-tab.component';
 import { CvTabComponent } from './components/cv-tab.component';
 import { InterviewTabComponent } from './components/interview-tab.component';
 import { ApplyTabComponent } from './components/apply-tab.component';
+import { CompanyLinkComponent } from '../../core/components/company-link';
 
 type TabKey = 'job' | 'match' | 'cv' | 'interview' | 'apply';
 
@@ -25,6 +26,7 @@ type TabKey = 'job' | 'match' | 'cv' | 'interview' | 'apply';
     CvTabComponent,
     InterviewTabComponent,
     ApplyTabComponent,
+    CompanyLinkComponent,
   ],
   templateUrl: './application-detail.component.html',
   styleUrl: './application-detail.component.scss',

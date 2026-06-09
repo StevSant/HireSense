@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { TrackingComponent } from './tracking.component';
 import { TrackingService } from '../../core/services/tracking.service';
@@ -64,6 +65,7 @@ describe('TrackingComponent', () => {
     TestBed.configureTestingModule({
       imports: [TrackingComponent],
       providers: [
+        provideRouter([]),
         { provide: TrackingService, useValue: { list, create, update, delete: deleteFn, batchEvaluate } },
         { provide: ResearchService, useValue: { research, refresh } },
       ],
@@ -248,6 +250,7 @@ describe('TrackingComponent sorting/filtering', () => {
     TestBed.configureTestingModule({
       imports: [TrackingComponent],
       providers: [
+        provideRouter([]),
         { provide: TrackingService, useValue: { list: () => of(rows), create: () => of(rows[0]), update: () => of(rows[0]), delete: () => of(undefined), batchEvaluate: () => of({ results: [] }) } },
         { provide: ResearchService, useValue: { research: () => of(makeResearch()), refresh: () => of(makeResearch()) } },
       ],

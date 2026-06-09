@@ -7,3 +7,23 @@
 .salary-line { font-size: 0.9rem; }
 .section-loading, .section-empty { color: var(--muted, #64748b); font-size: 0.85rem; }
 .section-error { color: var(--danger, #dc2626); font-size: 0.85rem; }
+
+/* Performance spans the full grid width and splits into funnel + by-source. */
+.analytics-card-wide { grid-column: 1 / -1; }
+.perf-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 640px) { .perf-cols { grid-template-columns: 1fr; } }
+
+/* Market context demoted into a collapsible footer. */
+.analytics-context {
+  margin-top: 1.5rem;
+
+  summary {
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--muted, #64748b);
+    padding: 0.5rem 0;
+  }
+
+  .analytics-grid { margin-top: 0.75rem; }
+}

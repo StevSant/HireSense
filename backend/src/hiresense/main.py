@@ -144,7 +144,9 @@ def create_app() -> FastAPI:
     app.include_router(autohunt_router)
 
     # --- Analytics (read-only funnel + market + skill-gap) ---
-    analytics = build_analytics(infra, profile.service, tracking.status_history_read)
+    analytics = build_analytics(
+        infra, profile.service, tracking.status_history_read, tracking_read=tracking.service
+    )
     app.state.analytics = analytics.provider
     app.include_router(analytics_router)
 

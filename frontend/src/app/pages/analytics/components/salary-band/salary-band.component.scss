@@ -1,7 +1,8 @@
 .band-numbers { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.35rem; }
 .band-numbers strong { font-size: 1.1rem; }
-.band-track { position: relative; height: 0.8rem; background: var(--surface-hover, #f1f5f9); border-radius: 999px; }
-.band-fill { position: absolute; top: 0; height: 100%; background: var(--accent-soft, #c7d2fe); border-radius: 999px; }
-.band-median { position: absolute; top: -2px; width: 2px; height: calc(100% + 4px); background: var(--accent, #4f46e5); }
-.band-sample { font-size: 0.75rem; color: var(--muted, #64748b); margin-top: 0.35rem; }
-.band-insufficient { color: var(--muted, #64748b); font-size: 0.85rem; }
+.band-track { position: relative; height: 0.8rem; background: var(--bg-inset, #f0efeb); border-radius: 999px; }
+.band-fill { position: absolute; top: 0; height: 100%; background: var(--accent-soft, #5eead4); border-radius: 999px; }
+.band-median { position: absolute; top: -2px; width: 2px; height: calc(100% + 4px); background: var(--accent, #0f766e); }
+.band-caps { display: flex; justify-content: space-between; margin-top: 0.3rem; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #a1a1aa); }
+.band-sample { font-size: 0.75rem; color: var(--text-muted, #a1a1aa); margin-top: 0.5rem; }
+.band-insufficient { color: var(--text-muted, #a1a1aa); font-size: 0.85rem; }

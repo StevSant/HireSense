@@ -12,5 +12,10 @@
     <span class="band-fill" [style.left.%]="b.left" [style.width.%]="b.width"></span>
     @if (b.median !== null) { <span class="band-median" [style.left.%]="b.median"></span> }
   </div>
-  <p class="band-sample">Based on {{ target().sample_size }} profile-similar roles.</p>
+  <div class="band-caps">
+    <span>Low</span>
+    <span>Median</span>
+    <span>High</span>
+  </div>
+  <p class="band-sample">Across {{ target().sample_size }} jobs matched to your profile.</p>
 }

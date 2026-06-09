@@ -17,4 +17,7 @@ export class SearchFocusComponent {
     const r = this.focus().remote_share;
     return r === null ? null : Math.round(r * PERCENT);
   });
+
+  topRole = computed(() => this.focus().best_fit_roles[0] ?? null);
+  topCompany = computed(() => this.focus().best_fit_companies[0] ?? null);
 }

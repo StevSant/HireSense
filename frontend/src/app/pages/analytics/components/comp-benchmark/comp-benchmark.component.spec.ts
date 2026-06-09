@@ -33,6 +33,7 @@ describe('CompBenchmarkComponent', () => {
   it('flags a below-market pipeline', () => {
     const fixture = mount(comp({ your_median_annual: 90000, your_sample_size: 3 }));
     expect(fixture.componentInstance.pipelineDelta()).toBeLessThan(0);
-    expect(fixture.nativeElement.querySelector('.comp-pipeline.below')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.comp-insight.below')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('18% below');
   });
 });

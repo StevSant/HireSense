@@ -1,38 +1,110 @@
-.analytics-page { padding: 1.25rem; }
-.analytics-title { font-size: 1.4rem; margin: 0 0 1rem; }
-/* align-items: start so a short card (Pay) never stretches to match a tall one (Focus). */
-.analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 1rem; align-items: start; }
-.analytics-card { border: 1px solid var(--border-subtle, #eae8e4); border-radius: var(--radius-lg, 12px); padding: 1.25rem 1.4rem; background: var(--bg-card, #fff); }
-.card-title { font-size: 1.0625rem; font-weight: 600; margin: 0 0 1rem; letter-spacing: -0.01em; }
-.sub { font-size: 0.8rem; color: var(--muted, #64748b); margin: 0.9rem 0 0.4rem; text-transform: uppercase; letter-spacing: 0.03em; }
-.salary-line { font-size: 0.9rem; }
-.section-loading, .section-empty { color: var(--muted, #64748b); font-size: 0.85rem; }
-.section-error { color: var(--danger, #dc2626); font-size: 0.85rem; }
+.analytics-page { padding: 1.5rem 1.75rem 2.5rem; }
 
-/* Performance spans the full grid width and splits into funnel + by-source. */
-.analytics-card-wide { grid-column: 1 / -1; }
-.perf-cols { display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; }
-@media (max-width: 640px) { .perf-cols { grid-template-columns: 1fr; } }
-
-/* Outcomes-by-source: a compact stat list (not a misleading 0%-wide bar). */
-.source-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-.source-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: baseline;
-  gap: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-subtle, #eae8e4);
-  font-size: 0.85rem;
-}
-.source-name { font-weight: 600; color: var(--text-primary, #18181b); }
-.source-apps { color: var(--text-muted, #a1a1aa); font-size: 0.8125rem; }
-.source-rate {
-  font-variant-numeric: tabular-nums;
+/* --- Page header --- */
+.analytics-header { margin: 0 0 1.5rem; }
+.analytics-eyebrow {
+  margin: 0 0 0.2rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  color: var(--accent-text, #065f46);
-  &.zero { color: var(--text-muted, #a1a1aa); font-weight: 400; }
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
 }
+.analytics-title {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--text-primary);
+}
+.analytics-lede {
+  margin: 0.3rem 0 0;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+/* --- Grid + cards --- */
+/* Two equal columns (Pay | Focus, Market | Skill gap); Performance spans both.
+   align-items: start so a short card (Pay) never stretches to match a tall one (Focus). */
+.analytics-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; align-items: start; }
+@media (max-width: 760px) { .analytics-grid { grid-template-columns: 1fr; } }
+.analytics-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.35rem 1.5rem;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Card title with a small accent tick for an editorial feel. */
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin: 0 0 1.15rem;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+
+  &::before {
+    content: "";
+    flex: none;
+    width: 0.28rem;
+    height: 1.05rem;
+    border-radius: var(--radius-full);
+    background: var(--accent);
+  }
+}
+
+.sub { font-size: 0.75rem; color: var(--text-muted); margin: 1rem 0 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.salary-line { font-size: 0.9rem; }
+.section-loading, .section-empty { color: var(--text-muted); font-size: 0.85rem; }
+.section-error { color: var(--danger); font-size: 0.85rem; }
+
+/* Performance spans the full grid width: funnel left, source cards right. */
+.analytics-card-wide { grid-column: 1 / -1; }
+.perf-cols { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(14rem, 1fr); gap: 2rem; align-items: start; }
+@media (max-width: 720px) { .perf-cols { grid-template-columns: 1fr; } }
+.perf-sources .sub { margin-top: 0; }
+
+/* Outcomes-by-source: stacked stat cards (never a misleading 0%-wide bar). */
+.source-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.source-card {
+  padding: 0.8rem 1rem;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.source-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+.source-name { font-weight: 600; color: var(--text-primary); font-size: 0.875rem; text-transform: capitalize; }
+.source-apps { color: var(--text-muted); font-size: 0.75rem; }
+.source-rate {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--accent-text);
+
+  &.zero { color: var(--text-muted); font-weight: 600; }
+}
+.source-rate-unit { font-family: var(--font-body); font-size: 0.72rem; font-weight: 500; color: var(--text-muted); }
 
 /* Market context demoted into a collapsible footer. */
 .analytics-context {
@@ -42,7 +114,7 @@
     cursor: pointer;
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--muted, #64748b);
+    color: var(--text-secondary);
     padding: 0.5rem 0;
   }
 

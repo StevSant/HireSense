@@ -18,6 +18,18 @@
   &.focus-fresh strong { color: var(--accent-text); }
 }
 
+.focus-insight {
+  margin: 0 0 1.1rem;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--accent-text);
+  background: var(--accent-subtle);
+  border-radius: var(--radius-md);
+
+  strong { font-weight: 700; }
+}
+
 .focus-cols {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -1,5 +1,9 @@
 <div class="analytics-page">
-  <h1 class="analytics-title">Analytics</h1>
+  <header class="analytics-header">
+    <p class="analytics-eyebrow">Career intelligence</p>
+    <h1 class="analytics-title">Analytics</h1>
+    <p class="analytics-lede">Where your profile sits in the market — pay, fit, and pipeline.</p>
+  </header>
 
   <app-kpi-strip [tiles]="kpis()" />
 
@@ -28,16 +32,18 @@
       @else if (funnel(); as f) {
         <div class="perf-cols">
           <div class="perf-col"><app-funnel-chart [metrics]="f" /></div>
-          <div class="perf-col">
+          <div class="perf-col perf-sources">
             <h3 class="sub">Outcomes by source</h3>
             @if (f.by_source.length) {
               <ul class="source-list">
                 @for (o of f.by_source; track o.source) {
-                  <li class="source-row">
-                    <span class="source-name">{{ o.source }}</span>
-                    <span class="source-apps">{{ o.applications }} tracked</span>
+                  <li class="source-card">
+                    <div class="source-card-top">
+                      <span class="source-name">{{ o.source }}</span>
+                      <span class="source-apps">{{ o.applications }} tracked</span>
+                    </div>
                     <span class="source-rate" [class.zero]="o.reached_interview === 0">
-                      {{ interviewPct(o) }}% → interview
+                      {{ interviewPct(o) }}% <span class="source-rate-unit">→ interview</span>
                     </span>
                   </li>
                 }

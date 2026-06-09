@@ -12,4 +12,5 @@ export interface SearchFocus {
   remote_share: number | null;
   top_locations: FocusItem[];
   fresh_fit_count: number;
+  fresh_days: number;
 }

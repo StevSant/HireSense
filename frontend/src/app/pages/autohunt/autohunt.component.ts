@@ -5,13 +5,14 @@ import { AutohuntService } from '../../core/services/autohunt.service';
 import { Digest } from './models/digest.model';
 import { createSortState } from '../../core/utils/sort-state';
 import { parseSortToken } from '../../core/utils/parse-sort-token';
+import { CompanyLinkComponent } from '../../core/components/company-link';
 
 type DigestSortField = 'created' | 'count';
 
 @Component({
   selector: 'app-autohunt',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, CompanyLinkComponent],
   templateUrl: './autohunt.component.html',
   styleUrl: './autohunt.component.scss',
 })

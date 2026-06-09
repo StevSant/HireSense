@@ -19,7 +19,7 @@
         @for (a of applications(); track a.id) {
           <tr>
             <td>{{ a.title }}</td>
-            <td>{{ a.company }}</td>
+            <td><app-company-link [name]="a.company" /></td>
             <td>{{ a.status | titlecase }}</td>
             <td>
               @if (a.has_prep) {

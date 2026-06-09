@@ -8,11 +8,12 @@ import { scoreColor } from '../../../../core/utils/score-color';
 import { JobDescriptionComponent } from '../job-description/job-description.component';
 import { FeedbackControlsComponent } from '../feedback-controls/feedback-controls.component';
 import { FeedbackKind } from '../../models/feedback-kind.model';
+import { CompanyLinkComponent } from '../../../../core/components/company-link';
 
 @Component({
   selector: 'app-job-detail-panel',
   standalone: true,
-  imports: [DatePipe, RouterLink, JobDescriptionComponent, FeedbackControlsComponent],
+  imports: [DatePipe, RouterLink, JobDescriptionComponent, FeedbackControlsComponent, CompanyLinkComponent],
   templateUrl: './job-detail-panel.component.html',
   styleUrl: './job-detail-panel.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

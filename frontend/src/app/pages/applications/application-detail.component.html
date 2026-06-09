@@ -9,7 +9,7 @@
         <button class="btn-back" (click)="backToList()">← Applications</button>
         <h1>{{ agg.title }}</h1>
         <p class="company">
-          {{ agg.company }} ·
+          <app-company-link [name]="agg.company" /> ·
           <span class="status-pill status-{{agg.status}}">{{ agg.status | titlecase }}</span>
           @if (agg.applied_at) {
             <span class="applied-at">· Applied {{ agg.applied_at | date:'mediumDate' }}</span>

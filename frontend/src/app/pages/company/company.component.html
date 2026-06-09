@@ -29,22 +29,68 @@
   } @else if (!jobs().length) {
     <p class="company-state">No open jobs for this company right now.</p>
   } @else {
-    <ul class="company-jobs">
-      @for (job of jobs(); track job.id) {
-        <li class="company-job">
-          <div class="company-job-main">
-            <a class="company-job-title" [routerLink]="['/dashboard/job', job.id]">{{ job.title }}</a>
-            <div class="company-job-meta">
-              <span>{{ job.location }}</span>
-              <span class="company-job-source">{{ job.source }}</span>
-              @if (job.posted_date) { <span>{{ job.posted_date | date: 'mediumDate' }}</span> }
-            </div>
-          </div>
-          <span class="company-job-score" [class.none]="matchPct(job) === null">
-            @if (matchPct(job) !== null) { {{ matchPct(job) }}% } @else { — }
-          </span>
-        </li>
-      }
-    </ul>
+    <div class="table-container">
+      <table>
+        <colgroup>
+          <col class="col-match" />
+          <col />
+          <col />
+          <col class="col-salary" />
+          <col class="col-source" />
+          <col class="col-posted" />
+          <col class="col-actions" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th appSortHeader [state]="sort" field="match">Match</th>
+            <th appSortHeader [state]="sort" field="title">Title</th>
+            <th appSortHeader [state]="sort" field="location">Location</th>
+            <th>Salary</th>
+            <th appSortHeader [state]="sort" field="source">Source</th>
+            <th appSortHeader [state]="sort" field="posted">Posted</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (job of sortedJobs(); track job.id) {
+            <tr (click)="openJob(job)" class="clickable-row" [class.closed]="job.status === 'closed'" [class.dimmed]="isDimmed(job.id)">
+              <td>
+                @if (matchPct(job) !== null) {
+                  <span class="score-badge" [class]="scoreBadgeClass(job)" [title]="job.verdict ? job.verdict + ' match' : ''">
+                    {{ matchPct(job) }}%
+                  </span>
+                } @else {
+                  <span class="score-badge score-na">—</span>
+                }
+              </td>
+              <td class="title" [title]="job.title">
+                {{ job.title || '—' }}
+                @if (job.status === 'closed') { <span class="badge badge-closed">Closed</span> }
+              </td>
+              <td class="cell-truncate" [title]="job.location">{{ job.location }}</td>
+              <td class="cell-truncate salary-cell" [title]="job.salary_range">{{ job.salary_range || '—' }}</td>
+              <td><span class="badge source-badge-{{ job.source }}">{{ job.source }}</span></td>
+              <td class="date-cell">{{ job.posted_date ? (job.posted_date | date: 'mediumDate') : '—' }}</td>
+              <td class="actions-cell">
+                <a [href]="job.url" target="_blank" rel="noopener" class="link" (click)="$event.stopPropagation()">View</a>
+                <app-feedback-controls
+                  [jobId]="job.id"
+                  [compact]="true"
+                  (feedbackSubmitted)="onFeedback(job.id, $event)"
+                  (click)="$event.stopPropagation()"
+                />
+                @if (isTracked(job.id)) {
+                  <button class="btn-tracked" disabled (click)="$event.stopPropagation()">Tracked</button>
+                } @else if (isTracking(job.id)) {
+                  <button class="btn-track" disabled (click)="$event.stopPropagation()">Tracking…</button>
+                } @else {
+                  <button class="btn-track" [disabled]="trackingJobId() !== null" (click)="trackJob(job.id); $event.stopPropagation()">Track</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
 </div>

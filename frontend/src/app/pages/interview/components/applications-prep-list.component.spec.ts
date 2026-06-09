@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { ApplicationsPrepListComponent } from './applications-prep-list.component';
 import { ApplicationsService } from '../../../core/services/applications.service';
@@ -21,13 +21,13 @@ function makeApp(over: Partial<Record<string, unknown>> = {}) {
 }
 
 describe('ApplicationsPrepListComponent', () => {
-  function mount(opts: { list?: () => unknown; router?: unknown } = {}) {
+  function mount(opts: { list?: () => unknown } = {}) {
     const service = { list: opts.list ?? (() => of([makeApp()])) };
     TestBed.configureTestingModule({
       imports: [ApplicationsPrepListComponent],
       providers: [
+        provideRouter([]),
         { provide: ApplicationsService, useValue: service },
-        { provide: Router, useValue: opts.router ?? { navigate: () => {} } },
       ],
     });
     const fixture = TestBed.createComponent(ApplicationsPrepListComponent);
@@ -64,8 +64,9 @@ describe('ApplicationsPrepListComponent', () => {
   });
 
   it('navigates to the application interview tab on openPrep', () => {
-    const navigate = vi.fn();
-    const fixture = mount({ router: { navigate } });
+    const fixture = mount();
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
     fixture.componentInstance.openPrep('app-1');
 

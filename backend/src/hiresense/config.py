@@ -29,6 +29,8 @@ class _CommaSeparatedMixin:
             "getonboard_categories",
             "job_closed_markers",
             "http_retry_status_codes",
+            "cors_allow_methods",
+            "cors_allow_headers",
         }
     )
 
@@ -60,6 +62,11 @@ class Settings(BaseSettings):
     app_port: int = 8000
     debug: bool = False
     cors_origins: list[str] = ["http://localhost:4200"]
+    # Explicit CORS method/header allow-lists. Wildcards are deliberately not
+    # the default: combined with allow_credentials=True they over-grant to any
+    # origin that slips into cors_origins.
+    cors_allow_methods: list[str] = ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    cors_allow_headers: list[str] = ["Authorization", "Content-Type"]
 
     # --- Observability (OpenTelemetry) ---
     # Master switch. When False, setup_telemetry() is a no-op and the app
@@ -163,6 +170,11 @@ class Settings(BaseSettings):
     # this re-introduces the tag-dilution failure mode for verbose-tag
     # sources like getonboard; only raise if scoring is also fixed.
     ingestion_min_match_score: float = 0.0
+
+    # Hard cap on the ?page_size accepted by job-listing endpoints. Values
+    # above this are clamped server-side to bound per-request memory and
+    # scoring cost.
+    ingestion_max_page_size: int = 100
 
     # Hide job listings whose posted_date is older than this many days (stale /
     # re-surfaced postings — e.g. WeWorkRemotely keeps the original RSS pubDate

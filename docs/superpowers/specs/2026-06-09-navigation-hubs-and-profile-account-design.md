@@ -49,33 +49,26 @@ Replace the current flat nav with 5 hub links. Each hub link:
 - Targets the hub's **default tab path** (e.g. Discover → `routerLink="ingestion"`).
 - Is highlighted as active whenever the current URL belongs to that hub — **not** via `routerLinkActive` (which would only match the default tab), but via a computed `activeHub()` signal driven by the router URL.
 
-Active-hub derivation lives in `DashboardComponent`:
+Active-hub derivation lives in `DashboardComponent`, computed from the shared `HUBS` constant via a pure `hubForUrl(url)` helper (exact path match after stripping query/fragment):
 
 ```ts
-private static readonly HUB_BY_PATH: Record<string, string> = {
-  ingestion: 'discover', matching: 'discover', autohunt: 'discover',
-  applications: 'pipeline', interview: 'pipeline', tracking: 'pipeline', outreach: 'pipeline',
-  analytics: 'insights',
-  profile: 'profile', account: 'profile',
-  'admin/llm-settings': 'admin', 'admin/usage': 'admin',
-};
-activeHub = signal<string>('discover'); // updated on NavigationEnd
+activeHub = signal<HubId | null>(hubForUrl(this.router.url)); // updated on NavigationEnd
 ```
 
-`HUB_BY_PATH` is the single source of truth for hub membership; `HubTabsComponent` consumes the same mapping (shared constant) so sidebar and tab bar can't drift. The detail pages (`job`, `company`, `applications/:id`, `optimization`) intentionally have no entry → no hub highlighted, which is correct for a drill-down.
+`HUBS` is the single source of truth for hub membership; both the sidebar highlight and the tab bar derive from it, so they can't drift. Exact-match means detail pages (`job/:id`, `company/:name`, `applications/:id`, `optimization`) resolve to `null` → no hub highlighted and no tab bar, which is correct for a drill-down. Query-param routes (`/dashboard/matching?job_id=…`) still match their base path.
 
 Reuse the existing inline-SVG icon style (`width="18" height="18"`, `stroke-width="1.75"`). Keep the existing `nav-section-label` styling where useful, but hub items are top-level (no section labels needed once the list is 5 long).
 
-### 3. `HubTabsComponent` (new, shared)
+### 3. `HubTabsComponent` (new, shared) — rendered once in the dashboard shell
 
-A small standalone presentational component placed at the top of each grouped page.
+A small standalone presentational component, rendered **once** by `DashboardComponent` in the `.content` area immediately above `<router-outlet>` — *not* duplicated into each page template. This is the key DRY decision: the tab bar lives at one insertion point and is driven by the same `activeHub` signal that highlights the sidebar.
 
-- **Input:** `hub` (one of `'discover' | 'pipeline' | 'insights' | 'admin'`). Profile is excluded — it keeps its own internal signal-tab bar (see §4).
-- **Renders:** a horizontal tab bar of `routerLink`s to each sibling page in the hub, with the current route's tab marked active via `routerLinkActive`.
-- **Styling:** promote/reuse the existing `.page-tabs` / `.page-tab` styles already used by the Profile page so the tab bar looks identical everywhere. Extract those rules into a shared stylesheet or duplicate minimally — no new visual pattern.
-- **Data:** a static `HUBS` constant maps each hub to its ordered list of `{ label, path }`. Single definition, imported by both the component and (for membership) the sidebar.
+- **Input:** `hub` — the full `Hub` object for the active hub (signal input, `input.required<Hub>()`, `OnPush`).
+- **Renders:** a horizontal tab bar of `routerLink`s to each sibling page in the hub, current tab marked active via `routerLinkActive` with `{ exact: true }`.
+- **Styling:** mirror the existing `.page-tabs` / `.page-tab` look (Profile page) using the global CSS custom properties (`--border-default`, `--text-muted`, `--text-secondary`, `--accent`) so it needs no SCSS-variable imports and looks identical everywhere.
+- **Data:** a static `HUBS` constant (one entry per hub, each with an ordered `tabs: { label, path }[]`) is the single source of truth. `DashboardComponent` derives both the active-hub highlight and which tab bar to show from it via a pure `hubForUrl(url)` helper.
 
-Placement: each grouped page template gets `<app-hub-tabs hub="discover" />` (etc.) as its first child, above the page's existing header/content. Five existing page templates get this one-line addition; no logic in those components changes.
+`DashboardComponent` does not render the bar when the active hub is `profile` (Profile keeps its own internal signal tabs) or when no hub matches (chromeless detail routes: `job/:id`, `company/:name`, `applications/:id`, `optimization`). No grouped page template changes at all.
 
 Per the code-style rule (one symbol per file), the `HUBS` constant and the `HubTabsComponent` live in separate files, with the package `index.ts` re-exporting both.
 
@@ -99,32 +92,32 @@ Profile already uses internal signal tabs (`pageTab = signal<'cv' | 'personal' |
 ## Files touched
 
 **Create:**
-- `frontend/src/app/core/components/hub-tabs/hub-tabs.component.ts` — `HubTabsComponent`
-- `frontend/src/app/core/components/hub-tabs/hub-tabs.component.html` / `.scss`
-- `frontend/src/app/core/components/hub-tabs/hubs.const.ts` — `HUBS` definition (hub → ordered tabs)
-- `frontend/src/app/core/components/hub-tabs/index.ts` — re-export both symbols
-- `frontend/src/app/core/components/hub-tabs/hub-tabs.component.spec.ts`
+- `frontend/src/app/core/nav/hubs.const.ts` — `HUBS` definition + `HubId`/`Hub`/`HubTab` types
+- `frontend/src/app/core/nav/hub-for-url.ts` — `hubForUrl(url): HubId | null` pure helper
+- `frontend/src/app/core/nav/hub-for-url.spec.ts`
+- `frontend/src/app/core/nav/hub-tabs.component.ts` — `HubTabsComponent`
+- `frontend/src/app/core/nav/hub-tabs.component.html` / `.scss`
+- `frontend/src/app/core/nav/hub-tabs.component.spec.ts`
+- `frontend/src/app/core/nav/index.ts` — re-export all symbols
 
 **Modify:**
-- `frontend/src/app/pages/dashboard/dashboard.component.html` — replace 11+ nav links with 5 hub links
-- `frontend/src/app/pages/dashboard/dashboard.component.ts` — `activeHub` signal + `HUB_BY_PATH` derivation on `NavigationEnd`
-- `frontend/src/app/pages/dashboard/dashboard.component.scss` — active-hub class hook (since `routerLinkActive` no longer drives it)
+- `frontend/src/app/pages/dashboard/dashboard.component.html` — replace 11+ nav links with 5 hub links; render `<app-hub-tabs>` once above `<router-outlet>`
+- `frontend/src/app/pages/dashboard/dashboard.component.ts` — `activeHub` signal + `hubTabs` computed (from `HUBS`/`hubForUrl`) on `NavigationEnd`
+- `frontend/src/app/pages/dashboard/dashboard.component.scss` — active-hub class hook (since `routerLinkActive` no longer drives the sidebar)
 - `frontend/src/app/pages/dashboard/dashboard.component.spec.ts` — assert 5 hub links + active-hub logic
 - `frontend/src/app/app.routes.ts` — add `account → profile` redirect (keep all other paths)
-- `frontend/src/app/pages/profile/profile.component.ts` — add `'account'` to `pageTab` union; `uploadIntent` signal; `replaceCv()` handler
-- `frontend/src/app/pages/profile/profile.component.html` — Account tab + `<app-account />`; Replace CV button; intent-aware inline-form heading
+- `frontend/src/app/pages/profile/profile.component.ts` — add `'account'` to `pageTab` union; import `AccountComponent`; `uploadIntent` signal; `replaceCv()` handler
+- `frontend/src/app/pages/profile/profile.component.html` — Account tab button + `<app-account />` panel; Replace CV button; intent-aware inline-form heading
 - `frontend/src/app/pages/profile/profile.component.spec.ts` — Account tab renders; Replace CV reveals form with current language
-- Each grouped page template — add one `<app-hub-tabs hub="…" />` line as its first child (10 pages across the 4 routed hubs; Profile is excluded as it keeps its own internal tabs):
-  Discover → `ingestion`, `matching`, `autohunt`; Pipeline → `applications`, `interview`, `tracking`, `outreach`; Insights → `analytics`; Admin → `admin-llm-settings`, `admin-usage`
-  (Insights has a single tab; still render the bar for consistency, or skip — see Open question.)
 
-**Delete:** None. `AccountComponent` is retained and reused inside the Profile tab.
+**Delete:** None. `AccountComponent` is retained and reused inside the Profile tab. No grouped page template changes.
 
 ## Testing
 
 - **Unit (Vitest):**
   - `HubTabsComponent` renders the correct sibling tabs for each hub and marks the active one.
-  - `DashboardComponent` exposes exactly 5 hub links; `activeHub()` resolves correctly for representative URLs (e.g. `/dashboard/matching` → `discover`, `/dashboard/account` → `profile`, `/dashboard/job/1` → none).
+  - `hubForUrl()` resolves representative URLs (`/dashboard/matching` → `discover`, `/dashboard/profile` → `profile`, `/dashboard/matching?job_id=1` → `discover`, `/dashboard/applications/1` → `null`, `/dashboard/job/1` → `null`).
+  - `DashboardComponent` exposes exactly 5 hub links and highlights the active hub.
   - `ProfileComponent`: Account tab renders; `replaceCv()` sets `showUploadForm` true with the active language and `uploadIntent='replace'`.
 - **Lint:** run `npx ng lint` before pushing — CI runs it; `npm test`/`npm run build` skip it (known gotcha).
 - **Manual:** sidebar shows 5 items; clicking a hub lands on its default tab; switching tabs stays within the hub and keeps the hub highlighted; Replace CV on an existing profile reveals the upload form pre-set to the current language; `/dashboard/account` redirects to Profile.

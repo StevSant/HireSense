@@ -1,0 +1,103 @@
+<div class="job-page">
+  <button type="button" class="job-back" (click)="back()">← Back</button>
+
+  @if (loading()) {
+    <p class="job-state">Loading…</p>
+  } @else if (error() || !job()) {
+    <p class="job-state job-state-error">Couldn't load this job.</p>
+  } @else if (job(); as j) {
+    <header class="job-header">
+      <h1 class="job-title">{{ j.title || 'Untitled role' }}</h1>
+      <a class="job-company" [routerLink]="['/dashboard/company', j.company]">{{ j.company }}</a>
+      <div class="job-facts">
+        <span class="job-fact job-fact-source">{{ j.source }}</span>
+        @if (j.location) { <span class="job-fact">📍 {{ j.location }}</span> }
+        @if (j.salary_range) { <span class="job-fact">💰 {{ j.salary_range }}</span> }
+        @if (j.posted_date) { <span class="job-fact">📅 {{ j.posted_date | date: 'mediumDate' }}</span> }
+        @if (j.department) { <span class="job-fact">🏷 {{ j.department }}</span> }
+      </div>
+      @if (pillScore() !== null) {
+        <div class="job-score">
+          <span class="job-score-num" [style.color]="scoreColor(pillScore())">{{ scorePercent() }}</span>
+          <span class="job-score-label">match score</span>
+          @if (j.verdict) {
+            <span class="job-verdict" [style.color]="scoreColor(pillScore())" [style.border-color]="scoreColor(pillScore())">{{ j.verdict }} fit</span>
+          }
+        </div>
+      }
+    </header>
+
+    <div class="job-actions">
+      <a [href]="j.url" target="_blank" rel="noopener" class="job-btn job-btn-primary">View Original ↗</a>
+      @if (tracked()) {
+        <button type="button" class="job-btn" disabled>Tracked ✓</button>
+      } @else if (tracking()) {
+        <button type="button" class="job-btn" disabled>Tracking…</button>
+      } @else {
+        <button type="button" class="job-btn" (click)="track()">Track</button>
+      }
+      <button type="button" class="job-btn" (click)="goTo('matching')">Match</button>
+      <button type="button" class="job-btn" (click)="goTo('optimization')">Optimize CV</button>
+      <button type="button" class="job-btn" (click)="goTo('interview')">Prep Interview</button>
+    </div>
+
+    <section class="job-feedback">
+      <app-feedback-controls [jobId]="j.id" />
+    </section>
+
+    @if (j.reasons.length || j.dealbreakers.length) {
+      <section class="job-card">
+        <h2 class="job-section-label">Why this score</h2>
+        @if (j.reasons.length) {
+          <ul class="reason-list">
+            @for (r of j.reasons; track r) { <li class="reason-item">{{ r }}</li> }
+          </ul>
+        }
+        @if (j.dealbreakers.length) {
+          <ul class="reason-list dealbreaker-list">
+            @for (d of j.dealbreakers; track d) { <li class="dealbreaker-item">⚠ {{ d }}</li> }
+          </ul>
+        }
+      </section>
+    }
+
+    <section class="job-card">
+      <h2 class="job-section-label">Deep analysis</h2>
+      @if (analysisLoading()) {
+        <p class="job-analysis-state">Running advanced model…</p>
+      } @else if (analysisError()) {
+        <div class="job-analysis-state job-analysis-error">
+          <p>{{ analysisError() }}</p>
+          <button type="button" class="job-btn" (click)="retryAnalysis()">Retry</button>
+        </div>
+      } @else if (analysis(); as a) {
+        <app-deep-analysis [analysis]="a" />
+      } @else {
+        <p class="job-analysis-state">No deep analysis available.</p>
+      }
+    </section>
+
+    @if (j.skills.length) {
+      <section class="job-card">
+        <h2 class="job-section-label">Skills</h2>
+        <div class="job-chips">
+          @for (s of j.skills; track s) { <span class="job-tag">{{ s }}</span> }
+        </div>
+      </section>
+    }
+
+    <section class="job-card">
+      <h2 class="job-section-label">Description</h2>
+      <app-job-description [description]="j.description" />
+    </section>
+
+    @if (j.categories.length) {
+      <section class="job-card">
+        <h2 class="job-section-label">Categories</h2>
+        <div class="job-chips">
+          @for (c of j.categories; track c) { <span class="job-tag">{{ c }}</span> }
+        </div>
+      </section>
+    }
+  }
+</div>

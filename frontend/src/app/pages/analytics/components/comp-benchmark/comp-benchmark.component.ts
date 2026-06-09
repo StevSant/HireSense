@@ -24,7 +24,7 @@ export class CompBenchmarkComponent {
       label: b.level,
       value: b.median_annual,
       pct: Math.round((b.median_annual / max) * PERCENT),
-      note: this.fmt(b.median_annual),
+      note: `· ${b.sample_size}`,
     }));
   });
 

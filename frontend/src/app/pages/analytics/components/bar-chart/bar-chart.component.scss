@@ -1,8 +1,36 @@
-.bar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
-.bar-row { display: grid; grid-template-columns: 9rem 1fr auto; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
-.bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bar-track { background: var(--surface-hover, #f1f5f9); border-radius: 999px; height: 0.6rem; overflow: hidden; }
-.bar-fill { display: block; height: 100%; background: var(--accent, #4f46e5); border-radius: 999px; transition: width 0.3s; }
-.bar-value { font-variant-numeric: tabular-nums; color: var(--muted, #64748b); }
-.bar-note { margin-left: 0.35rem; }
-.bar-empty { color: var(--muted, #64748b); font-size: 0.85rem; }
+.bar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+.bar-row {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr 4.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+}
+.bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+.bar-track {
+  background: var(--bg-inset);
+  border-radius: var(--radius-full);
+  height: 0.5rem;
+  overflow: hidden;
+}
+.bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 0.5rem; /* a present-but-tiny value reads as a sliver, never "broken empty" */
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+}
+.bar-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: right;
+}
+.bar-note { margin-left: 0.35rem; color: var(--text-muted); font-weight: 400; }
+.bar-empty { color: var(--text-muted); font-size: 0.85rem; }

@@ -26,7 +26,7 @@ export const routes: Routes = [
       { path: 'interview', loadComponent: () => import('./pages/interview/interview.component').then(m => m.InterviewComponent) },
       { path: 'admin/llm-settings', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/admin-llm-settings.component').then(m => m.AdminLLMSettingsComponent) },
       { path: 'admin/usage', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/admin-usage.component').then(m => m.AdminUsageComponent) },
-      { path: 'account', loadComponent: () => import('./pages/account/account.component').then(m => m.AccountComponent) },
+      { path: 'account', redirectTo: 'profile', pathMatch: 'full' },
     ],
   },
   { path: '**', redirectTo: 'login' },

@@ -1,27 +1,41 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { RouterOutlet, RouterLink, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
+import { HUBS, HubTabsComponent, hubForUrl } from '../../core/nav';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, HubTabsComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
 export class DashboardComponent {
+  private auth = inject(AuthService);
+  private router = inject(Router);
   private destroyRef = inject(DestroyRef);
-  sidebarOpen = signal(false);
 
-  constructor(private auth: AuthService, private router: Router) {
+  sidebarOpen = signal(false);
+  activeHub = signal(hubForUrl(this.router.url));
+
+  hubTabs = computed(() => {
+    const id = this.activeHub();
+    if (!id || id === 'profile') return null;
+    return HUBS.find((hub) => hub.id === id) ?? null;
+  });
+
+  constructor() {
     this.router.events
       .pipe(
-        filter((e) => e instanceof NavigationEnd),
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(() => this.sidebarOpen.set(false));
+      .subscribe((e) => {
+        this.sidebarOpen.set(false);
+        this.activeHub.set(hubForUrl(e.urlAfterRedirects));
+      });
   }
 
   toggleSidebar(): void {

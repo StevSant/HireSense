@@ -6,6 +6,8 @@ import { FunnelMetrics } from '../../pages/analytics/models/funnel-metrics.model
 import { MarketIntel } from '../../pages/analytics/models/market-intel.model';
 import { SkillGap } from '../../pages/analytics/models/skill-gap.model';
 import { TargetSalary } from '../../pages/analytics/models/target-salary.model';
+import { CompBenchmark } from '../../pages/analytics/models/comp-benchmark.model';
+import { SearchFocus } from '../../pages/analytics/models/search-focus.model';
 
 @Injectable({ providedIn: 'root' })
 export class AnalyticsService {
@@ -25,5 +27,13 @@ export class AnalyticsService {
 
   targetSalary(): Observable<TargetSalary> {
     return this.http.get<TargetSalary>(`${environment.apiUrl}/analytics/target-salary`);
+  }
+
+  comp(): Observable<CompBenchmark> {
+    return this.http.get<CompBenchmark>(`${environment.apiUrl}/analytics/comp`);
+  }
+
+  focus(): Observable<SearchFocus> {
+    return this.http.get<SearchFocus>(`${environment.apiUrl}/analytics/focus`);
   }
 }

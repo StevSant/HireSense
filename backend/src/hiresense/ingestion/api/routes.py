@@ -42,7 +42,9 @@ from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
 from hiresense.profile.api.dependencies import get_profile_service
 from hiresense.profile.domain import ProfileService
 
-router = APIRouter(prefix="/ingestion", tags=["ingestion"])
+router = APIRouter(
+    prefix="/ingestion", tags=["ingestion"], dependencies=[Depends(require_auth)]
+)
 
 # Accepted sort tokens (`<field>_<dir>`) plus the legacy `date_*` aliases. Any
 # value outside this set falls back to the default `match_desc`.
@@ -383,9 +385,6 @@ class BackfillResponse(BaseModel):
 
 @router.post("/backfill-embeddings", response_model=BackfillResponse)
 async def backfill_embeddings(
-    # The authenticated user IS the operator — this is a single-user app with
-    # no role system. require_auth verifies the JWT and returns the subject claim.
-    _operator: Annotated[str, Depends(require_auth)],
     service: Annotated[EmbeddingBackfillService | None, Depends(get_backfill_service)],
 ) -> BackfillResponse:
     """Re-embed all ingested jobs into pgvector so SemanticPreRanker can rank them.

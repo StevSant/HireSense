@@ -2,6 +2,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from fastapi import FastAPI
 
+from hiresense.identity.api.dependencies import require_auth
 from hiresense.matching.api.routes import get_matching_orchestrator, router
 from hiresense.matching.domain.models import MatchResult, ScoreBreakdown
 
@@ -32,6 +33,7 @@ async def test_analyze_endpoint() -> None:
     app = FastAPI()
     fake = FakeMatchingOrchestrator()
     app.dependency_overrides[get_matching_orchestrator] = lambda: fake
+    app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
 
     async with AsyncClient(
@@ -54,3 +56,13 @@ async def test_analyze_endpoint() -> None:
     assert "python" in data["matched_skills"]
     assert "kubernetes" in data["missing_skills"]
     assert len(data["pros"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_requires_auth_without_token() -> None:
+    """Router-level auth: requests with no bearer token are rejected."""
+    app = FastAPI()
+    app.include_router(router)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/matching/analyze")
+    assert resp.status_code == 401

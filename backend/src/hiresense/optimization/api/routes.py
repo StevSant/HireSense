@@ -5,10 +5,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
+from hiresense.identity.api.dependencies import require_auth
 from hiresense.optimization.api.dependencies import get_cv_optimizer
 from hiresense.optimization.domain.models import OptimizationResult
 
-router = APIRouter(prefix="/optimization", tags=["optimization"])
+router = APIRouter(
+    prefix="/optimization", tags=["optimization"], dependencies=[Depends(require_auth)]
+)
 
 
 class OptimizeRequest(BaseModel):

@@ -60,7 +60,10 @@ class JobRevalidationService:
         async with self._sem:
             try:
                 resp = await self._http.get(job.url, follow_redirects=True)
-            except Exception:
+            except Exception as exc:
+                # Transient transport failures must never close a job, but a
+                # silently swallowed probe makes sweeps undebuggable — log it.
+                logger.warning("Revalidation probe failed for %s: %s", job.url, exc)
                 return Verdict.UNKNOWN
             finally:
                 if self._delay:

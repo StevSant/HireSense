@@ -14,6 +14,11 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1G
 
   otel-lgtm:
     image: grafana/otel-lgtm
@@ -26,6 +31,11 @@ services:
       # HireSense Grafana dashboards (provisioned, read-only mounts).
       - ./observability/grafana/provisioning/dashboards/hiresense.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/hiresense.yaml:ro
       - ./observability/grafana/dashboards:/var/lib/grafana/dashboards/hiresense:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
 
   app:
     build: ./backend
@@ -45,6 +55,11 @@ services:
         condition: service_started
     volumes:
       - ./cvs:/app/cvs
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
 
   frontend:
     build: ./frontend
@@ -52,6 +67,11 @@ services:
       - "${FRONTEND_PORT:-4200}:80"
     depends_on:
       - app
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
 volumes:
   pgdata:

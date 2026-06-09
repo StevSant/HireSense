@@ -1,0 +1,15 @@
+<nav class="hub-tabs" role="tablist" aria-label="Section tabs">
+  @for (tab of hub().tabs; track tab.path) {
+    <a
+      class="hub-tab"
+      role="tab"
+      [routerLink]="tab.path"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      #rla="routerLinkActive"
+      [attr.aria-selected]="rla.isActive"
+    >
+      {{ tab.label }}
+    </a>
+  }
+</nav>

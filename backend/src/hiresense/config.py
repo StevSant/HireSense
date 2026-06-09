@@ -280,6 +280,9 @@ class Settings(BaseSettings):
     # minimum parseable-salaried matches required before reporting a band.
     analytics_target_salary_top_k: int = 50
     analytics_target_salary_min_sample: int = 5
+    # Search-focus "fresh fit": a profile-matched job counts as fresh if its
+    # posted_date is within this many days.
+    analytics_focus_fresh_days: int = 14
     # Sampling cap for the full-corpus aggregation scans (top-skills, skill-gap,
     # posting trend, salary distribution). These read every open posting into
     # memory; this caps the number of rows fetched per scan so memory/CPU stay

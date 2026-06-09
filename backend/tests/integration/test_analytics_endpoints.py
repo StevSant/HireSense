@@ -11,9 +11,11 @@ from hiresense.analytics.api import router as analytics_router
 from hiresense.analytics.api.dependencies import get_analytics_service
 from hiresense.analytics.domain import (
     AnalyticsService,
+    CompBenchmarkService,
     FunnelService,
     MarketIntelService,
     SalaryParser,
+    SearchFocusService,
     SkillGapService,
     SkillNormalizer,
     TargetSalaryService,
@@ -64,15 +66,20 @@ def _seed(factory):
     return repo
 
 
-def _build_app(factory, history):
+def _build_app(factory, history, tracking_read=None):
     corpus = CorpusAnalyticsRepository(session_factory=factory, sample_cap=5000)
     norm, sal = SkillNormalizer(), SalaryParser()
     service = AnalyticsService(
-        funnel=FunnelService(history),
+        funnel=FunnelService(history, applications_read=tracking_read, corpus=corpus),
         market=MarketIntelService(corpus, norm, sal),
         skill_gap=SkillGapService(corpus, norm),
         target_salary=TargetSalaryService(embedding=_Emb(), vector_store=_Store(), corpus=corpus,
                                           salary_parser=sal, top_k=50, min_sample=5),
+        comp_benchmark=CompBenchmarkService(embedding=_Emb(), vector_store=_Store(), corpus=corpus,
+                                            salary_parser=sal, tracking_read=tracking_read,
+                                            top_k=50, min_sample=5),
+        search_focus=SearchFocusService(embedding=_Emb(), vector_store=_Store(), corpus=corpus,
+                                        top_k=50, fresh_days=14),
         profile_service=_FakeProfile(),
         cache=TtlCache(ttl_seconds=300),
     )
@@ -134,3 +141,98 @@ async def test_target_salary_insufficient():
         r = await c.get("/analytics/target-salary")
         assert r.status_code == 200
         assert r.json()["insufficient_data"] is True  # _Store returns no matches
+
+
+class _MatchStore:
+    """Returns ANN results for the given ids (descending score)."""
+
+    def __init__(self, ids):
+        self._ids = ids
+
+    async def search(self, query_embedding, *, top_k=10, filters=None):
+        n = len(self._ids)
+        return [
+            type("R", (), {"id": jid, "score": 1.0 - i / max(n, 1)})()
+            for i, jid in enumerate(self._ids)
+        ]
+
+
+def _seed_salaried(factory, n=6):
+    """Seed n open jobs with parseable USD salaries + senior titles."""
+    ids = [f"s{i}" for i in range(n)]
+    with factory() as s:
+        for i, jid in enumerate(ids):
+            s.add(IngestedJob(
+                id=jid, bucket="boards", source="getonboard" if i % 2 else "linkedin",
+                source_type="board", title=f"Senior Backend Engineer {i}",
+                description="Senior role, 5+ years", skills=["python"],
+                remote_modality="remote" if i % 2 else "on_site",
+                salary_range=f"${100 + i * 5}k-${120 + i * 5}k", status="open",
+                quality="ok", identity_key=f"sk{i}", company=f"Co{i}",
+                location="Remote" if i % 2 else "NYC",
+                posted_date=datetime.now(timezone.utc),
+            ))
+        s.commit()
+    return ids
+
+
+def _build_app_with_store(factory, history, store, tracking_read=None):
+    corpus = CorpusAnalyticsRepository(session_factory=factory, sample_cap=5000)
+    norm, sal = SkillNormalizer(), SalaryParser()
+    service = AnalyticsService(
+        funnel=FunnelService(history, applications_read=tracking_read, corpus=corpus),
+        market=MarketIntelService(corpus, norm, sal),
+        skill_gap=SkillGapService(corpus, norm),
+        target_salary=TargetSalaryService(embedding=_Emb(), vector_store=store, corpus=corpus,
+                                          salary_parser=sal, top_k=50, min_sample=5),
+        comp_benchmark=CompBenchmarkService(embedding=_Emb(), vector_store=store, corpus=corpus,
+                                            salary_parser=sal, tracking_read=tracking_read,
+                                            top_k=50, min_sample=5),
+        search_focus=SearchFocusService(embedding=_Emb(), vector_store=store, corpus=corpus,
+                                        top_k=50, fresh_days=14),
+        profile_service=_FakeProfile(),
+        cache=TtlCache(ttl_seconds=300),
+    )
+    app = FastAPI()
+    app.dependency_overrides[require_auth] = lambda: "test-user"
+    app.dependency_overrides[get_analytics_service] = lambda: service
+    app.include_router(analytics_router)
+    return app
+
+
+@pytest.mark.asyncio
+async def test_comp_endpoint_returns_band_and_seniority():
+    factory = _factory()
+    history = _seed(factory)
+    ids = _seed_salaried(factory, n=6)
+    app = _build_app_with_store(factory, history, _MatchStore(ids))
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
+        r = await c.get("/analytics/comp")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["insufficient_data"] is False
+        assert data["currency"] == "USD"
+        assert data["median_annual"] is not None
+        assert data["ask_min_annual"] == data["median_annual"]
+        # all 6 are "Senior ..." → a senior band with the full sample
+        levels = {b["level"] for b in data["by_seniority"]}
+        assert "senior" in levels
+
+
+@pytest.mark.asyncio
+async def test_focus_endpoint_aggregates_matches():
+    factory = _factory()
+    history = _seed(factory)
+    ids = _seed_salaried(factory, n=6)
+    app = _build_app_with_store(factory, history, _MatchStore(ids))
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
+        r = await c.get("/analytics/focus")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["insufficient_data"] is False
+        assert data["match_count"] == 6
+        assert len(data["best_fit_companies"]) > 0
+        # titles normalise to "Backend Engineer" (seniority stripped)
+        assert any("Backend Engineer" in role["label"] for role in data["best_fit_roles"])
+        assert data["remote_share"] is not None
+        assert data["fresh_fit_count"] == 6  # all posted now

@@ -51,6 +51,7 @@
   margin-top: 0.75rem;
 }
 .job-fact {
+  max-width: 100%;
   background: var(--bg-inset);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
@@ -59,6 +60,13 @@
   color: var(--text-secondary);
 }
 .job-fact-source { text-transform: capitalize; }
+/* Some sources stuff a whole paragraph into `location` — keep it to one line. */
+.job-fact-clamp {
+  max-width: 26rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ---- Action bar ---- */
 .job-actions {

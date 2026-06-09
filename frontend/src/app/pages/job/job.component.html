@@ -12,7 +12,7 @@
       <a class="job-company" [routerLink]="['/dashboard/company', j.company]">{{ j.company }}</a>
       <div class="job-facts">
         <span class="job-fact job-fact-source">{{ j.source }}</span>
-        @if (j.location) { <span class="job-fact">📍 {{ j.location }}</span> }
+        @if (j.location) { <span class="job-fact job-fact-clamp" [title]="j.location">📍 {{ j.location }}</span> }
         @if (j.salary_range) { <span class="job-fact">💰 {{ j.salary_range }}</span> }
         @if (j.posted_date) { <span class="job-fact">📅 {{ j.posted_date | date: 'mediumDate' }}</span> }
         @if (j.department) { <span class="job-fact">🏷 {{ j.department }}</span> }

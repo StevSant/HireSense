@@ -3,11 +3,12 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
 from hiresense.ingestion.domain.identity import identity_key
+from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.infrastructure.models import IngestedJob
@@ -263,6 +264,33 @@ class JobsRepository:
     def list_all(self) -> list[NormalizedJob]:
         with self._session_factory() as session:
             stmt = select(IngestedJob).where(IngestedJob.bucket == self._bucket)
+            return [_to_domain(r) for r in session.scalars(stmt).all()]
+
+    def list_filtered(self, criteria: JobListCriteria) -> list[NormalizedJob]:
+        """Selective predicates pushed into the WHERE clause (see port docstring)."""
+        with self._session_factory() as session:
+            stmt = select(IngestedJob).where(IngestedJob.bucket == self._bucket)
+            if not criteria.include_closed:
+                stmt = stmt.where(IngestedJob.status != "closed")
+            if not criteria.include_low_quality:
+                stmt = stmt.where(
+                    (IngestedJob.quality.is_(None)) | (IngestedJob.quality == "ok")
+                )
+            if criteria.source:
+                stmt = stmt.where(IngestedJob.source == criteria.source)
+            if criteria.company:
+                target = criteria.company.strip().lower()
+                stmt = stmt.where(func.lower(func.trim(IngestedJob.company)) == target)
+            if criteria.date_from:
+                stmt = stmt.where(
+                    IngestedJob.posted_date.is_not(None),
+                    IngestedJob.posted_date >= criteria.date_from,
+                )
+            if criteria.date_to:
+                stmt = stmt.where(
+                    IngestedJob.posted_date.is_not(None),
+                    IngestedJob.posted_date <= criteria.date_to,
+                )
             return [_to_domain(r) for r in session.scalars(stmt).all()]
 
     def list_since(self, cutoff: datetime, *, status: str = "open") -> list[NormalizedJob]:

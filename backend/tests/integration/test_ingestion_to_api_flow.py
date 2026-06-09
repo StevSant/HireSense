@@ -82,7 +82,7 @@ class _FakeProfileService:
 
 
 class _EmptyScanner:
-    def list_jobs(self):
+    def list_jobs(self, criteria=None):
         return []
 
     def get_job_by_id(self, job_id):  # noqa: ARG002

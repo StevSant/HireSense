@@ -8,7 +8,7 @@ function focus(over: Partial<SearchFocus> = {}): SearchFocus {
     best_fit_companies: [{ label: 'Acme', count: 3, avg_score: 0.8 }],
     best_fit_roles: [{ label: 'Backend Engineer', count: 4, avg_score: 0.7 }],
     remote_share: 0.5, top_locations: [{ label: 'Remote', count: 3, avg_score: 0.7 }],
-    fresh_fit_count: 4, ...over,
+    fresh_fit_count: 4, fresh_days: 7, ...over,
   };
 }
 
@@ -31,5 +31,13 @@ describe('SearchFocusComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Acme');
     expect(fixture.nativeElement.textContent).toContain('Backend Engineer');
     expect(fixture.componentInstance.remotePct()).toBe(50);
+  });
+
+  it('synthesises a top role/company insight', () => {
+    const fixture = mount(focus());
+    const insight = fixture.nativeElement.querySelector('.focus-insight');
+    expect(insight).not.toBeNull();
+    expect(insight.textContent).toContain('Backend Engineer');
+    expect(insight.textContent).toContain('Acme');
   });
 });

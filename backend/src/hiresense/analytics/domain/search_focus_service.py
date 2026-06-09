@@ -27,6 +27,7 @@ class SearchFocus(BaseModel):
     remote_share: float | None = None
     top_locations: list[FocusItem] = []
     fresh_fit_count: int = 0
+    fresh_days: int = 0
 
 
 def _normalize_title(title: str) -> str:
@@ -118,4 +119,5 @@ class SearchFocusService:
             remote_share=round(remote / len(matches), 4),
             top_locations=_top(locations, self._top_n),
             fresh_fit_count=fresh,
+            fresh_days=self._fresh_days,
         )

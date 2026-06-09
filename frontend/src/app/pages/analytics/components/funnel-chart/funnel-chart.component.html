@@ -16,5 +16,6 @@
       </li>
     }
   </ul>
+  @if (insight(); as ins) { <p class="funnel-insight">{{ ins }}</p> }
   <p class="funnel-rejected">Rejected: {{ metrics().rejected }} total ({{ metrics().current_rejected }} currently)</p>
 }

@@ -4,27 +4,58 @@
 }
 
 .comp-ask {
-  margin-top: 0.75rem;
+  margin-top: 0.85rem;
   font-size: 0.9375rem;
   color: var(--text-secondary);
 
   strong { color: var(--accent-text); }
 }
 
-.comp-pipeline {
-  margin-top: 0.35rem;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-
-  &.below .comp-delta { color: var(--danger); }
-  &.above .comp-delta { color: #15803d; }
-}
-
-.comp-delta { font-weight: 600; }
-
 .comp-sub {
   color: var(--text-muted);
   font-size: 0.8125rem;
+}
+
+/* Plain-language read on pipeline pay vs the profile's market median. */
+.comp-insight {
+  margin-top: 0.9rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--text-muted);
+  border-radius: var(--radius-md);
+  background: var(--bg-inset);
+
+  &.below { border-left-color: var(--danger); background: var(--danger-bg); }
+  &.above { border-left-color: var(--success); background: var(--success-bg); }
+}
+
+.comp-insight-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
+.comp-insight-body {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+
+  strong { color: var(--text-primary); }
+}
+
+.comp-delta { font-weight: 700; }
+.comp-insight.below .comp-delta { color: var(--danger); }
+.comp-insight.above .comp-delta { color: var(--success); }
+
+.comp-insight-note {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
 }
 
 .comp-sub-head {

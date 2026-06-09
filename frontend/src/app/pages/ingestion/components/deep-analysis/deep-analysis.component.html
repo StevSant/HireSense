@@ -1,112 +1,127 @@
 <div class="deep-analysis">
-  <!-- Overall -->
-  <div class="deep-overall">
-    <span class="deep-overall-score" [style.color]="scoreColor(analysis().overall_score)">
-      {{ formatScorePercent(analysis().overall_score) }}
-    </span>
-    <span class="deep-overall-label">overall fit</span>
-    @if (analysis().verdict) {
-      <span class="deep-verdict" [style.color]="scoreColor(analysis().overall_score)">
-        {{ analysis().verdict }}
+  <!-- Summary: the headline read, always visible -->
+  <div class="deep-summary">
+    <div class="deep-overall">
+      <span class="deep-overall-score" [style.color]="scoreColor(analysis().overall_score)">
+        {{ formatScorePercent(analysis().overall_score) }}
       </span>
+      <span class="deep-overall-label">overall fit</span>
+      @if (analysis().verdict) {
+        <span class="deep-verdict" [style.color]="scoreColor(analysis().overall_score)">
+          {{ analysis().verdict }}
+        </span>
+      }
+    </div>
+    @if (analysis().narrative) {
+      <p class="deep-narrative">{{ analysis().narrative }}</p>
     }
   </div>
 
-  <!-- Narrative -->
-  @if (analysis().narrative) {
-    <p class="deep-narrative">{{ analysis().narrative }}</p>
-  }
-
-  <!-- Dimension breakdown -->
+  <!-- Dimension breakdown: bars always visible; rationale tucked behind each row. -->
   @if (analysis().dimensions.length) {
     <div class="deep-block">
       <span class="deep-block-label">Breakdown</span>
       <div class="dim-list">
         @for (dim of analysis().dimensions; track dim.dimension) {
-          <div class="dim-row">
-            <div class="dim-head">
-              <span class="dim-name">{{ humanize(dim.dimension) }}</span>
-              <span class="dim-score" [style.color]="scoreColor(dim.score)">
-                {{ formatScorePercent(dim.score) }}
-              </span>
-            </div>
-            <div class="dim-bar-track">
-              <div
-                class="dim-bar-fill"
-                [style.width]="barWidth(dim.score)"
-                [style.background]="scoreColor(dim.score)"
-              ></div>
-            </div>
-            @if (dim.rationale) {
+          @if (dim.rationale) {
+            <details class="dim-row dim-row-toggle">
+              <summary class="dim-summary">
+                <div class="dim-head">
+                  <span class="dim-name">{{ humanize(dim.dimension) }}</span>
+                  <span class="dim-score" [style.color]="scoreColor(dim.score)">
+                    {{ formatScorePercent(dim.score) }}
+                  </span>
+                </div>
+                <div class="dim-bar-track">
+                  <div class="dim-bar-fill" [style.width]="barWidth(dim.score)" [style.background]="scoreColor(dim.score)"></div>
+                </div>
+              </summary>
               <p class="dim-rationale">{{ dim.rationale }}</p>
-            }
-          </div>
+            </details>
+          } @else {
+            <div class="dim-row">
+              <div class="dim-head">
+                <span class="dim-name">{{ humanize(dim.dimension) }}</span>
+                <span class="dim-score" [style.color]="scoreColor(dim.score)">
+                  {{ formatScorePercent(dim.score) }}
+                </span>
+              </div>
+              <div class="dim-bar-track">
+                <div class="dim-bar-fill" [style.width]="barWidth(dim.score)" [style.background]="scoreColor(dim.score)"></div>
+              </div>
+            </div>
+          }
         }
       </div>
     </div>
   }
 
-  <!-- Matched / missing skills -->
-  @if (analysis().matched_skills.length || analysis().missing_skills.length) {
-    <div class="deep-block deep-skills">
-      @if (analysis().matched_skills.length) {
-        <div class="skills-col">
-          <span class="deep-block-label">Matched skills</span>
-          <div class="tag-row">
-            @for (s of analysis().matched_skills; track s) {
-              <span class="tag tag-match">{{ s }}</span>
-            }
-          </div>
-        </div>
-      }
-      @if (analysis().missing_skills.length) {
-        <div class="skills-col">
-          <span class="deep-block-label">Gaps</span>
-          <div class="tag-row">
-            @for (s of analysis().missing_skills; track s) {
-              <span class="tag tag-miss">{{ s }}</span>
-            }
-          </div>
-        </div>
-      }
-    </div>
-  }
-
-  <!-- Pros / cons -->
+  <!-- Pros / cons: the decision content — open by default. -->
   @if (analysis().pros.length || analysis().cons.length) {
-    <div class="deep-block deep-proscons">
-      @if (analysis().pros.length) {
-        <div class="pc-col">
-          <span class="deep-block-label">Pros</span>
-          <ul class="pc-list">
-            @for (p of analysis().pros; track p) {
-              <li class="pc-pro">{{ p }}</li>
-            }
-          </ul>
-        </div>
-      }
-      @if (analysis().cons.length) {
-        <div class="pc-col">
-          <span class="deep-block-label">Cons</span>
-          <ul class="pc-list">
-            @for (c of analysis().cons; track c) {
-              <li class="pc-con">{{ c }}</li>
-            }
-          </ul>
-        </div>
-      }
-    </div>
+    <details class="deep-collapsible" open>
+      <summary class="deep-collapsible-label">
+        Pros &amp; cons
+        <span class="deep-count">{{ analysis().pros.length }} pros · {{ analysis().cons.length }} cons</span>
+      </summary>
+      <div class="deep-proscons">
+        @if (analysis().pros.length) {
+          <div class="pc-col">
+            <span class="deep-block-label">Pros</span>
+            <ul class="pc-list">
+              @for (p of analysis().pros; track p) { <li class="pc-pro">{{ p }}</li> }
+            </ul>
+          </div>
+        }
+        @if (analysis().cons.length) {
+          <div class="pc-col">
+            <span class="deep-block-label">Cons</span>
+            <ul class="pc-list">
+              @for (c of analysis().cons; track c) { <li class="pc-con">{{ c }}</li> }
+            </ul>
+          </div>
+        }
+      </div>
+    </details>
   }
 
-  <!-- Recommendations -->
-  @if (analysis().recommendations.length) {
-    <div class="deep-block">
-      <span class="deep-block-label">Recommendations</span>
-      <ul class="rec-list">
-        @for (r of analysis().recommendations; track r) {
-          <li>{{ r }}</li>
+  <!-- Matched / missing skills: collapsed by default (verbose). -->
+  @if (analysis().matched_skills.length || analysis().missing_skills.length) {
+    <details class="deep-collapsible">
+      <summary class="deep-collapsible-label">
+        Skills &amp; gaps
+        <span class="deep-count">{{ analysis().matched_skills.length }} matched · {{ analysis().missing_skills.length }} gaps</span>
+      </summary>
+      <div class="deep-skills">
+        @if (analysis().matched_skills.length) {
+          <div class="skills-col">
+            <span class="deep-block-label">Matched skills</span>
+            <div class="tag-row">
+              @for (s of analysis().matched_skills; track s) { <span class="tag tag-match">{{ s }}</span> }
+            </div>
+          </div>
         }
+        @if (analysis().missing_skills.length) {
+          <div class="skills-col">
+            <span class="deep-block-label">Gaps</span>
+            <div class="tag-row">
+              @for (s of analysis().missing_skills; track s) { <span class="tag tag-miss">{{ s }}</span> }
+            </div>
+          </div>
+        }
+      </div>
+    </details>
+  }
+
+  <!-- Recommendations: collapsed by default. -->
+  @if (analysis().recommendations.length) {
+    <details class="deep-collapsible">
+      <summary class="deep-collapsible-label">
+        Recommendations
+        <span class="deep-count">{{ analysis().recommendations.length }}</span>
+      </summary>
+      <ul class="rec-list">
+        @for (r of analysis().recommendations; track r) { <li>{{ r }}</li> }
       </ul>
-    </div>
+    </details>
   }
 </div>

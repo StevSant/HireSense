@@ -5,34 +5,40 @@
   margin-top: 0.85rem;
 }
 
-/* ---- Overall ---- */
+/* Strip native disclosure markers; we draw our own chevrons. */
+details > summary { list-style: none; cursor: pointer; }
+details > summary::-webkit-details-marker { display: none; }
+
+/* ---- Summary (headline) ---- */
+.deep-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
 .deep-overall {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
   flex-wrap: wrap;
 }
-
 .deep-overall-score {
+  font-family: var(--font-display);
   font-size: 1.6rem;
   font-weight: 700;
   line-height: 1;
 }
-
 .deep-overall-label {
   font-size: 0.75rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-
 .deep-verdict {
   margin-left: auto;
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: capitalize;
 }
-
 .deep-narrative {
   font-size: 0.875rem;
   line-height: 1.6;
@@ -42,7 +48,7 @@
   word-break: break-word;
 }
 
-/* ---- Generic block ---- */
+/* ---- Block label (non-collapsible, e.g. Breakdown / Pros / Cons headers) ---- */
 .deep-block-label {
   display: block;
   font-size: 0.6875rem;
@@ -53,31 +59,81 @@
   font-weight: 600;
 }
 
+/* ---- Collapsible sections (Pros/cons, Skills, Recommendations) ---- */
+.deep-collapsible {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.85rem;
+}
+.deep-collapsible-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+
+  &::after {
+    content: "›";
+    margin-left: auto;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--text-muted);
+    transform: rotate(90deg);
+    transition: transform 0.2s var(--ease);
+  }
+}
+details[open] > .deep-collapsible-label::after { transform: rotate(-90deg); }
+.deep-count {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.deep-collapsible > *:not(summary) { margin-top: 0.85rem; }
+
 /* ---- Dimensions ---- */
 .dim-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
+.dim-row { padding: 0.1rem 0; }
+.dim-row-toggle {
+  border-radius: var(--radius-md);
+  transition: background 0.15s var(--ease);
 
+  &:hover { background: var(--bg-inset); }
+}
+.dim-summary { padding: 0.25rem; }
 .dim-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 0.5rem;
 }
-
 .dim-name {
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text-primary);
 }
-
+/* Chevron hint that a rationale is available on the expandable rows. */
+.dim-row-toggle .dim-name::after {
+  content: "›";
+  display: inline-block;
+  margin-left: 0.3rem;
+  color: var(--text-muted);
+  transform: rotate(90deg);
+  transition: transform 0.2s var(--ease);
+}
+.dim-row-toggle[open] .dim-name::after { transform: rotate(-90deg); }
 .dim-score {
   font-size: 0.8125rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
-
 .dim-bar-track {
   margin-top: 0.3rem;
   height: 6px;
@@ -85,17 +141,16 @@
   border-radius: 999px;
   overflow: hidden;
 }
-
 .dim-bar-fill {
   height: 100%;
   border-radius: 999px;
   transition: width 0.3s var(--ease);
 }
-
 .dim-rationale {
-  margin: 0.35rem 0 0;
+  margin: 0.4rem 0 0.1rem;
+  padding: 0 0.25rem;
   font-size: 0.8125rem;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--text-secondary);
 }
 
@@ -106,8 +161,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }
-
-@media (max-width: 480px) {
+@media (max-width: 560px) {
   .deep-skills,
   .deep-proscons {
     grid-template-columns: 1fr;
@@ -119,23 +173,15 @@
   flex-wrap: wrap;
   gap: 0.35rem;
 }
-
 .tag {
   padding: 0.2rem 0.55rem;
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 500;
+  line-height: 1.35;
 }
-
-.tag-match {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.tag-miss {
-  background: #fee2e2;
-  color: #991b1b;
-}
+.tag-match { background: var(--success-bg); color: #166534; }
+.tag-miss { background: var(--danger-bg); color: #991b1b; }
 
 /* ---- Pros / cons ---- */
 .pc-list {
@@ -143,22 +189,15 @@
   padding-left: 1.1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.35rem;
 }
-
 .pc-list li {
   font-size: 0.8125rem;
   line-height: 1.5;
   color: var(--text-secondary);
 }
-
-.pc-pro::marker {
-  color: #16a34a;
-}
-
-.pc-con::marker {
-  color: #dc2626;
-}
+.pc-pro::marker { color: #16a34a; }
+.pc-con::marker { color: #dc2626; }
 
 /* ---- Recommendations ---- */
 .rec-list {
@@ -168,7 +207,6 @@
   flex-direction: column;
   gap: 0.4rem;
 }
-
 .rec-list li {
   font-size: 0.8125rem;
   line-height: 1.55;

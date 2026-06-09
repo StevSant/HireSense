@@ -83,10 +83,16 @@ class JobQualityClassifier:
         llm: LLMPort | None,
         batch_size: int = 20,
         desc_char_limit: int = _DESC_CHAR_LIMIT,
+        max_concurrency: int = 4,
     ) -> None:
         self._llm = llm
         self._batch_size = max(1, batch_size)
         self._desc_char_limit = desc_char_limit
+        # Cap concurrent LLM chunk calls so a large ingestion (or a backfill)
+        # can't fan out one request per 20-job chunk all at once and trip the
+        # provider's rate limit. Created lazily per classify() so it always
+        # binds to the running event loop.
+        self._max_concurrency = max(1, max_concurrency)
 
     async def classify(self, jobs: list[NormalizedJob]) -> dict[str, JobQualityVerdict]:
         """Return a verdict for EVERY input job (default OK)."""
@@ -114,7 +120,13 @@ class JobQualityClassifier:
             needs_llm[i : i + self._batch_size]
             for i in range(0, len(needs_llm), self._batch_size)
         ]
-        scored_chunks = await asyncio.gather(*(self._classify_chunk(c) for c in chunks))
+        sem = asyncio.Semaphore(self._max_concurrency)
+
+        async def _bounded(chunk: list[NormalizedJob]) -> dict[str, JobQualityVerdict]:
+            async with sem:
+                return await self._classify_chunk(chunk)
+
+        scored_chunks = await asyncio.gather(*(_bounded(c) for c in chunks))
         for chunk_results in scored_chunks:
             results.update(chunk_results)
         return results

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 
 import pytest
@@ -81,6 +82,32 @@ async def test_unparseable_llm_response_fails_open() -> None:
     svc = JobQualityClassifier(llm=StubLLM("the model rambled"))
     out = await svc.classify([_job("a")])
     assert out["a"].quality is JobQuality.OK
+
+
+@pytest.mark.asyncio
+async def test_classify_bounds_llm_concurrency() -> None:
+    """A whole-corpus classify() must not fire one LLM call per 20-job chunk all
+    at once — concurrency is capped so a big ingestion can't burst rate limits."""
+
+    class ConcurrencyTrackingLLM:
+        def __init__(self) -> None:
+            self.current = 0
+            self.max_seen = 0
+
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            self.current += 1
+            self.max_seen = max(self.max_seen, self.current)
+            await asyncio.sleep(0.02)
+            self.current -= 1
+            return "[]"
+
+    llm = ConcurrencyTrackingLLM()
+    svc = JobQualityClassifier(llm=llm, batch_size=10, max_concurrency=2)
+    jobs = [_job(f"j{i}") for i in range(50)]  # 5 chunks
+
+    await svc.classify(jobs)
+
+    assert llm.max_seen == 2  # capped at max_concurrency, and did run concurrently
 
 
 @pytest.mark.asyncio

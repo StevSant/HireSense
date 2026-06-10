@@ -8,6 +8,7 @@ import { ManualFieldsFormComponent } from './components/manual-fields-form/manua
 import { CoverLetterLibraryComponent } from './components/cover-letter-library/cover-letter-library.component';
 import { CoverLetterTemplatesComponent } from './components/cover-letter-templates/cover-letter-templates.component';
 import { AccountComponent } from '../account/account.component';
+import { PortfolioCardComponent } from './components/portfolio-card/portfolio-card.component';
 
 type ProfilePageTab = 'cv' | 'personal' | 'cover-letters' | 'account';
 
@@ -22,6 +23,7 @@ type ProfilePageTab = 'cv' | 'personal' | 'cover-letters' | 'account';
     CoverLetterLibraryComponent,
     CoverLetterTemplatesComponent,
     AccountComponent,
+    PortfolioCardComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',

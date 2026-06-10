@@ -31,6 +31,7 @@ class _CommaSeparatedMixin:
             "http_retry_status_codes",
             "cors_allow_methods",
             "cors_allow_headers",
+            "portfolio_sources",
         }
     )
 
@@ -408,6 +409,19 @@ class Settings(BaseSettings):
 
     # Batch processing
     batch_concurrency: int = 3
+
+    # --- Portfolio (external proof-of-work sources) ---
+    # Comma-separated adapter list (mirrors enabled_job_sources). Empty list
+    # disables the portfolio module entirely: no provider is built and every
+    # consumer (enrichment, endpoints, frontend card) degrades gracefully.
+    portfolio_sources: list[str] = []
+    # Supabase PostgREST base URL + public anon key (read-only by RLS) for the
+    # "supabase" source adapter.
+    portfolio_supabase_url: str = ""
+    portfolio_supabase_anon_key: str = ""
+    # Char cap for the "Portfolio projects" block appended to the matching
+    # profile summary.
+    portfolio_profile_char_cap: int = 1200
 
     @classmethod
     def settings_customise_sources(

@@ -5,7 +5,9 @@ import { TitleCasePipe, DatePipe } from '@angular/common';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { CoverLetterRunnerService } from '../../core/services/cover-letter-runner.service';
 import { CvOptimizationRunnerService } from '../../core/services/cv-optimization-runner.service';
+import { PortfolioService } from '../../core/services/portfolio.service';
 import { ApplicationAggregate } from './models/application-aggregate.model';
+import { PortfolioVisit } from '../profile/models/portfolio-engagement.model';
 import { JobTabComponent } from './components/job-tab.component';
 import { MatchTabComponent } from './components/match-tab.component';
 import { CvTabComponent } from './components/cv-tab.component';
@@ -37,6 +39,7 @@ export class ApplicationDetailComponent implements OnInit {
   private service = inject(ApplicationsService);
   private optimizationRunner = inject(CvOptimizationRunnerService);
   private coverLetterRunner = inject(CoverLetterRunnerService);
+  private portfolioService = inject(PortfolioService);
   private destroyRef = inject(DestroyRef);
 
   aggregate = signal<ApplicationAggregate | null>(null);
@@ -44,6 +47,7 @@ export class ApplicationDetailComponent implements OnInit {
   error = signal('');
   activeTab = signal<TabKey>('job');
   deleting = signal(false);
+  portfolioVisit = signal<PortfolioVisit | null>(null);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -56,6 +60,14 @@ export class ApplicationDetailComponent implements OnInit {
       this.activeTab.set(tab);
     }
     this.load(id);
+    this.portfolioService.engagement().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (res) => {
+        if (!res.configured) return;
+        const match = res.visits.find((v) => v.application_id === id) ?? null;
+        this.portfolioVisit.set(match);
+      },
+      error: () => { /* accessory — swallow silently */ },
+    });
 
     // Refetch the aggregate whenever a background CV optimization or cover
     // letter generation finishes — even if the user has switched tabs since

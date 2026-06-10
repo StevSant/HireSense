@@ -23,6 +23,7 @@ from hiresense.bootstrap import (
     build_matching,
     build_optimization,
     build_outreach,
+    build_portfolio,
     build_preference,
     build_profile,
     build_research,
@@ -39,6 +40,7 @@ from hiresense.interview.api import router as interview_router
 from hiresense.matching.api import router as matching_router
 from hiresense.optimization.api import router as optimization_router
 from hiresense.outreach.api import router as outreach_router
+from hiresense.portfolio.api import router as portfolio_router
 from hiresense.preference.api import router as preference_router
 from hiresense.profile.api import router as profile_router
 from hiresense.research.api import router as research_router
@@ -128,6 +130,14 @@ def create_app() -> FastAPI:
     profile = build_profile(infra, tracked)
     app.state.profile = profile.provider
     app.include_router(profile_router)
+
+    # --- Portfolio (external proof-of-work sources; optional) ---
+    portfolio = build_portfolio(infra)
+    if portfolio is not None:
+        app.state.portfolio = portfolio.provider
+    # Router is always mounted: with no provider the endpoints degrade
+    # (sync → 503, projects → empty) instead of 404ing the frontend card.
+    app.include_router(portfolio_router)
 
     # --- Matching ---
     matching = build_matching(infra, tracked, preference=preference.service)

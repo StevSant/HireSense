@@ -6,4 +6,5 @@ export interface PaginatedJobsResponse {
   page: number;
   page_size: number;
   total_pages: number;
+  connections_by_job?: Record<string, number>;
 }

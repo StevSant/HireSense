@@ -125,18 +125,22 @@ class MatchingOrchestrator:
         cv_text: str | None = None,
     ) -> MatchResult:
         # 1. Semantic score
-        if cv_embedding and job_embedding:
-            semantic_score = self._semantic_scorer.score(cv_embedding, job_embedding)
-        elif self._embedding and cv_summary and job_description:
-            embeddings = await self._embedding.embed([cv_summary, job_description])
-            semantic_score = self._semantic_scorer.score(embeddings[0], embeddings[1])
-        else:
-            semantic_score = 0.0
+        async def semantic() -> float:
+            if cv_embedding and job_embedding:
+                return self._semantic_scorer.score(cv_embedding, job_embedding)
+            if self._embedding and cv_summary and job_description:
+                embeddings = await self._embedding.embed([cv_summary, job_description])
+                return self._semantic_scorer.score(embeddings[0], embeddings[1])
+            return 0.0
 
         # 2. LLM analysis for experience, language, pros/cons, and a verdict on
         # which required skills the candidate demonstrably has (present_skills).
-        llm_analysis = await self._get_llm_analysis(
-            job_description, job_skills, cv_summary, cv_skills, cv_text
+        # Independent of the semantic score, so both run concurrently.
+        semantic_score, llm_analysis = await asyncio.gather(
+            semantic(),
+            self._get_llm_analysis(
+                job_description, job_skills, cv_summary, cv_skills, cv_text
+            ),
         )
 
         # 3. Skill match. A required skill counts as matched when it is in the

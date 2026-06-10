@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import uuid
 from typing import Any
 
@@ -70,11 +71,17 @@ class GitHubPortfolioAdapter:
         )
         kept = kept[: self._max_repos]
 
-        projects: list[PortfolioProject] = []
-        for index, repo in enumerate(kept):
-            languages = await self._get(
-                f"{self._api}/repos/{repo['full_name']}/languages"
+        # One /languages request per kept repo — issued concurrently so a sync
+        # costs one round-trip of latency instead of max_repos sequential ones.
+        language_maps = await asyncio.gather(
+            *(
+                self._get(f"{self._api}/repos/{repo['full_name']}/languages")
+                for repo in kept
             )
+        )
+
+        projects: list[PortfolioProject] = []
+        for index, (repo, languages) in enumerate(zip(kept, language_maps)):
             tech = sorted(
                 {language.lower() for language in languages}
                 | {topic.lower() for topic in repo.get("topics") or []}

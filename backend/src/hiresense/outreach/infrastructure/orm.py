@@ -14,7 +14,9 @@ class OutreachEventOrm(Base):
 
     __tablename__ = "outreach_events"
     __table_args__ = (
-        Index("ix_outreach_events_application_id", "application_id"),
+        # Composite: serves the per-application timeline lookups and the
+        # latest-per-application window query (partition + order columns).
+        Index("ix_outreach_events_application_created", "application_id", "created_at"),
     )
 
     id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)

@@ -25,6 +25,7 @@ class OutreachService:
         followup_cadence_days: int,
         max_chars: int,
         language: str,
+        portfolio_citation: Any = None,
     ) -> None:
         self._tracking = tracking_service
         self._profile = profile_service
@@ -35,6 +36,7 @@ class OutreachService:
         self._cadence = followup_cadence_days
         self._max_chars = max_chars
         self._language = language
+        self._portfolio_citation = portfolio_citation
 
     async def generate(
         self, application_id: uuid.UUID, *, contact_name: str | None = None, channel: str | None = None
@@ -43,10 +45,19 @@ class OutreachService:
         profile = await self._profile.get_current_profile(self._language)
         view = self._profile.get_for_language(self._language)
         research = self._research.get(app.company)
+        job_description = getattr(app, "notes", "") or ""
+        portfolio_section = None
+        if self._portfolio_citation is not None:
+            portfolio_section = await self._portfolio_citation.citation_for(
+                job_skills=[],
+                job_text=job_description,
+                application_id=str(application_id),
+                language=self._language,
+            )
         return await self._generator.generate(
             company=app.company,
             title=getattr(app, "title", ""),
-            job_description=getattr(app, "notes", "") or "",
+            job_description=job_description,
             candidate_name=(profile.name if profile is not None else ""),
             candidate_summary=(view.summary if view is not None else ""),
             candidate_skills=(list(view.skills) if view is not None else []),
@@ -55,6 +66,7 @@ class OutreachService:
             style_guide=load_style_guide(self._style_guide_path),
             channel=channel,
             max_chars=self._max_chars,
+            portfolio_section=portfolio_section,
         )
 
     def record(

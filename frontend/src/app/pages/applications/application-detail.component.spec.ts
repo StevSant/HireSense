@@ -6,7 +6,9 @@ import { ApplicationDetailComponent } from './application-detail.component';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { CvOptimizationRunnerService } from '../../core/services/cv-optimization-runner.service';
 import { CoverLetterRunnerService } from '../../core/services/cover-letter-runner.service';
+import { PortfolioService } from '../../core/services/portfolio.service';
 import { ApplicationAggregate } from './models/application-aggregate.model';
+import { PortfolioEngagementResponse } from '../profile/models/portfolio-engagement.model';
 
 function makeAggregate(over: Partial<ApplicationAggregate> = {}): ApplicationAggregate {
   return {
@@ -48,12 +50,14 @@ describe('ApplicationDetailComponent', () => {
     navigate?: ReturnType<typeof vi.fn>;
     optCompleted$?: Subject<string>;
     clCompleted$?: Subject<string>;
+    engagement?: () => unknown;
   } = {}) {
     const get = vi.fn(opts.get ?? (() => of(makeAggregate())));
     const remove = vi.fn(opts.remove ?? (() => of(undefined)));
     const navigate = opts.navigate ?? vi.fn();
     const optCompleted$ = opts.optCompleted$ ?? new Subject<string>();
     const clCompleted$ = opts.clCompleted$ ?? new Subject<string>();
+    const engagement = vi.fn(opts.engagement ?? (() => of({ configured: false, visits: [] } as PortfolioEngagementResponse)));
 
     const route = {
       snapshot: {
@@ -83,11 +87,12 @@ describe('ApplicationDetailComponent', () => {
         { provide: ApplicationsService, useValue: { get, remove } },
         { provide: CvOptimizationRunnerService, useValue: optRunner },
         { provide: CoverLetterRunnerService, useValue: clRunner },
+        { provide: PortfolioService, useValue: { engagement, listProjects: vi.fn(), sync: vi.fn() } },
       ],
     });
     const fixture = TestBed.createComponent(ApplicationDetailComponent);
     fixture.detectChanges();
-    return { fixture, get, remove, navigate, optCompleted$, clCompleted$ };
+    return { fixture, get, remove, navigate, optCompleted$, clCompleted$, engagement };
   }
 
   it('loads the aggregate on init and renders the header', () => {
@@ -192,5 +197,28 @@ describe('ApplicationDetailComponent', () => {
     fixture.componentInstance.remove();
     expect(fixture.componentInstance.error()).toBe('cannot');
     expect(fixture.componentInstance.deleting()).toBe(false);
+  });
+
+  it('shows the portfolio visit chip when a matching visit exists', () => {
+    const visit = {
+      ref: 'ref-1', application_id: 'app-1', first_seen: '2026-06-01T00:00:00Z',
+      last_seen: '2026-06-09T00:00:00Z', page_views: 3, cv_downloads: 0,
+      country: 'US', organization: 'Acme',
+    };
+    const { fixture } = mount({
+      engagement: () => of({ configured: true, visits: [visit] } as PortfolioEngagementResponse),
+    });
+    fixture.detectChanges();
+    const chip = fixture.nativeElement.querySelector('.portfolio-visit-chip');
+    expect(chip).not.toBeNull();
+    expect(chip.textContent).toContain('Portfolio visited — 3 page views');
+  });
+
+  it('hides the portfolio visit chip when visits list is empty', () => {
+    const { fixture } = mount({
+      engagement: () => of({ configured: true, visits: [] } as PortfolioEngagementResponse),
+    });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.portfolio-visit-chip')).toBeNull();
   });
 });

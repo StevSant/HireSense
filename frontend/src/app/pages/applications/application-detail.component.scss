@@ -42,6 +42,19 @@
 
 .applied-at { color: #9ca3af; font-size: 0.9em; }
 
+.portfolio-visit-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.4rem;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  font-size: 0.85em;
+  font-weight: 500;
+}
+
 .tabs {
   display: flex;
   gap: 4px;

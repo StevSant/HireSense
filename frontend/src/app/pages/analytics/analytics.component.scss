@@ -106,6 +106,48 @@
 }
 .source-rate-unit { font-family: var(--font-body); font-size: 0.72rem; font-weight: 500; color: var(--text-muted); }
 
+/* Portfolio engagement visit list. */
+.engagement-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.engagement-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.875rem;
+
+  &:last-child { border-bottom: none; }
+}
+.engagement-id {
+  font-weight: 600;
+  color: var(--text-primary);
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: none;
+}
+.engagement-views { color: var(--text-secondary); flex: none; }
+.engagement-cv {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 0.78rem;
+  font-weight: 600;
+  flex: none;
+}
+.engagement-date { color: var(--text-muted); font-size: 0.8rem; flex: none; margin-left: auto; }
+.engagement-meta { color: var(--text-muted); font-size: 0.78rem; flex: none; }
+
 /* Market context demoted into a collapsible footer. */
 .analytics-context {
   margin-top: 1.5rem;

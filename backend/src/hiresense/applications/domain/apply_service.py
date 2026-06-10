@@ -26,12 +26,15 @@ class ApplyService:
         latex_compiler: LatexCompilerPort,
         profile_service: Any,
         tracking_service: Any,
+        *,
+        portfolio_citation: Any = None,
     ) -> None:
         self._repo = repository
         self._generator = cover_letter_generator
         self._latex = latex_compiler
         self._profiles = profile_service
         self._tracking = tracking_service
+        self._portfolio_citation = portfolio_citation
 
     async def generate_cover_letter(
         self,
@@ -52,6 +55,15 @@ class ApplyService:
         missing = list(latest_match.missing_skills) if latest_match else []
         match_id = latest_match.id if latest_match else None
 
+        portfolio_section = None
+        if self._portfolio_citation is not None:
+            portfolio_section = await self._portfolio_citation.citation_for(
+                job_skills=list(snapshot.required_skills or []),
+                job_text=snapshot.description or "",
+                application_id=str(application_id),
+                language=cv_language,
+            )
+
         body = await self._generator.generate(
             title=tracked.title,
             company=tracked.company,
@@ -62,6 +74,7 @@ class ApplyService:
             pros=pros,
             missing_skills=missing,
             tone=tone,
+            portfolio_section=portfolio_section,
         )
 
         row = ApplicationCoverLetter(

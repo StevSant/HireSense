@@ -30,6 +30,12 @@ USER_PROMPT_TEMPLATE = (
     "Return only the cover letter body."
 )
 
+_PORTFOLIO_WEAVE_INSTRUCTION = (
+    "Weave at most two of these projects into the middle paragraphs only where they "
+    "genuinely match the job's needs; if a portfolio link is given above, include it "
+    "verbatim exactly once."
+)
+
 
 class CoverLetterGenerator:
     def __init__(self, llm: Any | None) -> None:
@@ -47,6 +53,7 @@ class CoverLetterGenerator:
         pros: list[str],
         missing_skills: list[str],
         tone: str = "professional",
+        portfolio_section: str | None = None,
     ) -> str:
         if self._llm is None:
             raise RuntimeError("LLM not configured — cover letter generation unavailable")
@@ -62,6 +69,17 @@ class CoverLetterGenerator:
             missing_skills=", ".join(missing_skills) or "(none)",
             tone=tone,
         )
+
+        if portfolio_section:
+            # Insert the portfolio block + weave instruction immediately before
+            # the "Constraints:" section so the LLM sees them as context before
+            # the structural instructions.
+            portfolio_block = (
+                f"{portfolio_section}\n"
+                f"{_PORTFOLIO_WEAVE_INSTRUCTION}\n\n"
+            )
+            prompt = prompt.replace("Constraints:\n", f"{portfolio_block}Constraints:\n", 1)
+
         try:
             response = await self._llm.complete(prompt, system=SYSTEM_PROMPT)
         except Exception:

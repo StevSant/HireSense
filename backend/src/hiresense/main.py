@@ -194,6 +194,7 @@ def create_app() -> FastAPI:
         cv_optimizer=optimization.cv_optimizer,
         interview_prep_service=interview.prep_service,
         profile_service=profile.service,
+        portfolio_citation=portfolio.provider.get_citation_service() if portfolio is not None else None,
     )
     app.include_router(applications_router)
 

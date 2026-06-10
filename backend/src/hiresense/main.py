@@ -194,6 +194,7 @@ def create_app() -> FastAPI:
         cv_optimizer=optimization.cv_optimizer,
         interview_prep_service=interview.prep_service,
         profile_service=profile.service,
+        portfolio_citation=portfolio.provider.get_citation_service() if portfolio is not None else None,
     )
     app.include_router(applications_router)
 
@@ -208,7 +209,12 @@ def create_app() -> FastAPI:
 
     # --- Outreach (generation + outreach-event tracking + follow-up nudges) ---
     outreach = build_outreach(
-        infra, tracked, tracking.service, profile.service, research.get_research_service()
+        infra,
+        tracked,
+        tracking.service,
+        profile.service,
+        research.get_research_service(),
+        portfolio_citation=portfolio.provider.get_citation_service() if portfolio is not None else None,
     )
     app.state.outreach = outreach.provider
     app.include_router(outreach_router)

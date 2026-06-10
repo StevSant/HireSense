@@ -431,6 +431,13 @@ class Settings(BaseSettings):
     # Char cap for the "Portfolio projects" block appended to the matching
     # profile summary.
     portfolio_profile_char_cap: int = 1200
+    # Public portfolio site linked from generated artifacts. Empty disables
+    # the tracked link (project citations still work).
+    portfolio_public_url: str = ""
+    # Slug prefix for per-application tracked links: ?ref=<prefix>-<application_id>.
+    portfolio_ref_prefix: str = "hiresense"
+    # How many relevant projects get cited per generated artifact.
+    portfolio_relevant_projects_top_n: int = 2
 
     @classmethod
     def settings_customise_sources(

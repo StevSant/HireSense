@@ -23,6 +23,7 @@ def build_applications(
     cv_optimizer: Any,
     interview_prep_service: Any,
     profile_service: Any,
+    portfolio_citation: Any = None,
 ) -> ApplicationsProvider:
     s = infra.settings
     application_repo = ApplicationRepository(session_factory=infra.sync_session_factory)
@@ -54,6 +55,7 @@ def build_applications(
         latex_compiler=latex_compiler,
         profile_service=profile_service,
         tracking_service=tracking_service,
+        portfolio_citation=portfolio_citation,
     )
     return ApplicationsProvider(
         application_service=application_service,

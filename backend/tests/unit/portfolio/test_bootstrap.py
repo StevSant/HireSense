@@ -7,6 +7,10 @@ class _Settings:
     portfolio_sources: list[str] = []
     portfolio_supabase_url = ""
     portfolio_supabase_anon_key = ""
+    portfolio_github_username = ""
+    portfolio_github_token = ""
+    portfolio_github_api_url = "https://api.github.com"
+    portfolio_github_max_repos = 30
     portfolio_profile_char_cap = 1200
     default_language = "en"
 
@@ -45,3 +49,21 @@ def test_builds_provider_with_supabase() -> None:
     assert build is not None
     assert build.provider.get_sync_service() is not None
     assert build.provider.get_enrichment_service() is not None
+
+
+def test_raises_when_github_enabled_without_username() -> None:
+    settings = _Settings()
+    settings.portfolio_sources = ["github"]
+    with pytest.raises(ValueError, match="PORTFOLIO_GITHUB_USERNAME"):
+        build_portfolio(_Infra(settings))
+
+
+def test_builds_provider_with_github_and_supabase() -> None:
+    settings = _Settings()
+    settings.portfolio_sources = ["supabase", "github"]
+    settings.portfolio_supabase_url = "https://xyz.supabase.co"
+    settings.portfolio_supabase_anon_key = "anon"
+    settings.portfolio_github_username = "StevSant"
+    build = build_portfolio(_Infra(settings))
+    assert build is not None
+    assert build.provider.get_sync_service() is not None

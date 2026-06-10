@@ -125,3 +125,18 @@ def test_portfolio_citation_settings_defaults(monkeypatch: pytest.MonkeyPatch) -
     assert settings.portfolio_public_url == ""
     assert settings.portfolio_ref_prefix == "hiresense"
     assert settings.portfolio_relevant_projects_top_n == 2
+
+
+def test_portfolio_analytics_read_key_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://test:test@localhost/test")
+    monkeypatch.setenv("AUTH_USERNAME", "admin")
+    monkeypatch.setenv("AUTH_PASSWORD", "pass")
+    monkeypatch.setenv("JWT_SECRET_KEY", "secret")
+    monkeypatch.setenv("LLM_API_KEY", "sk-test")
+    # Pin against local .env value so the test is not environment-sensitive.
+    monkeypatch.setenv("PORTFOLIO_ANALYTICS_READ_KEY", "")
+
+    from hiresense.config import Settings
+
+    settings = Settings()
+    assert settings.portfolio_analytics_read_key == ""

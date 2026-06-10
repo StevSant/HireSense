@@ -3,8 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { OutreachService } from '../../core/services/outreach.service';
+import { NetworkService } from '../../core/services/network.service';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { ApplicationListItem } from '../applications/models/application-list-item.model';
+import { NetworkContact } from '../profile/models/network-contact.model';
 import { OutreachEvent } from './models/outreach-event.model';
 import { OutreachEventKind } from './models/outreach-event-kind.model';
 import { OutreachNudge } from './models/outreach-nudge.model';
@@ -21,6 +23,7 @@ import { parseSortToken } from '../../core/utils/parse-sort-token';
 })
 export class OutreachComponent implements OnInit {
   private outreach = inject(OutreachService);
+  private network = inject(NetworkService);
   private applicationsService = inject(ApplicationsService);
   private route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -57,6 +60,9 @@ export class OutreachComponent implements OnInit {
     return sortItems(rows, (e) => e.created_at, this.eventSort.dir());
   });
 
+  // LinkedIn contact suggestions for the selected application's company.
+  suggestions = signal<NetworkContact[]>([]);
+
   // Nudges
   nudges = signal<OutreachNudge[]>([]);
   nudgesError = signal('');
@@ -88,11 +94,32 @@ export class OutreachComponent implements OnInit {
     this.selectedApplicationId.set(id);
     this.composeNotice.set('');
     this.recordError.set('');
+    this.suggestions.set([]);
     if (id) {
       this.loadTimeline();
+      this.loadSuggestions(id);
     } else {
       this.events.set([]);
     }
+  }
+
+  private loadSuggestions(applicationId: string): void {
+    const app = this.applications().find((a) => a.id === applicationId);
+    const company = app?.company?.trim();
+    if (!company) return;
+    this.network
+      .match(company)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => this.suggestions.set(res.contacts.slice(0, 5)),
+        error: () => {
+          // Suggestions are best-effort; silently swallow errors.
+        },
+      });
+  }
+
+  useContact(contact: NetworkContact): void {
+    this.contactName.set(`${contact.first_name} ${contact.last_name}`);
   }
 
   onSelectChange(id: string): void {

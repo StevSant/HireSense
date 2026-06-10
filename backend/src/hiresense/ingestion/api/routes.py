@@ -41,6 +41,9 @@ from hiresense.ingestion.domain.services import IngestionCooldownError, Ingestio
 from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
 from hiresense.matching.domain.deep_analysis_result import DeepAnalysisResult
 from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
+from hiresense.network.api.dependencies import get_contacts_repository
+from hiresense.network.domain import normalize_company
+from hiresense.network.ports import ContactsRepositoryPort
 from hiresense.portfolio.api.dependencies import get_portfolio_enrichment
 from hiresense.portfolio.domain import PortfolioEnrichmentService
 from hiresense.profile.api.dependencies import get_profile_service
@@ -164,6 +167,7 @@ async def list_jobs(
     semantic_scoring: Annotated[SemanticScoringService | None, Depends(get_semantic_scoring)],
     quick_scoring: Annotated[QuickScoringService | None, Depends(get_quick_scoring)],
     pre_ranker: Annotated[SemanticPreRanker | None, Depends(get_pre_ranker)],
+    network_repo: Annotated[ContactsRepositoryPort | None, Depends(get_contacts_repository)],
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1)] = 20,
     source: str | None = None,
@@ -373,6 +377,20 @@ async def list_jobs(
             result.jobs = [_apply_quick(j, quick_results.get(j.id)) for j in result.jobs]
             if effective_sort.startswith("match_"):
                 result.jobs = sort_jobs(result.jobs, effective_sort)
+
+    # "You know someone here" badge data: one GROUP BY over the visible page's
+    # companies. Contacts never enter prompts — this is a display-only count.
+    if network_repo is not None and result.jobs:
+        company_key_by_job = {job.id: normalize_company(job.company) for job in result.jobs}
+        counts = await asyncio.to_thread(
+            network_repo.count_by_companies,
+            sorted({key for key in company_key_by_job.values() if key}),
+        )
+        result.connections_by_job = {
+            job_id: counts[key]
+            for job_id, key in company_key_by_job.items()
+            if counts.get(key)
+        }
 
     return result
 

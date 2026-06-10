@@ -81,14 +81,14 @@ async def import_connections(
     max_bytes = request.app.state.settings.max_upload_bytes
     if file.size and file.size > max_bytes:
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
             detail=f"File too large. Maximum size: {max_bytes // (1024 * 1024)} MB",
         )
 
     file_bytes = await file.read()
     if len(file_bytes) > max_bytes:
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
             detail=f"File too large. Maximum size: {max_bytes // (1024 * 1024)} MB",
         )
 

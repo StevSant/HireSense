@@ -15,6 +15,7 @@ class _Settings:
     portfolio_public_url = ""
     portfolio_ref_prefix = "hiresense"
     portfolio_relevant_projects_top_n = 2
+    portfolio_analytics_read_key = ""
     default_language = "en"
 
 
@@ -71,3 +72,25 @@ def test_builds_provider_with_github_and_supabase() -> None:
     build = build_portfolio(_Infra(settings))
     assert build is not None
     assert build.provider.get_sync_service() is not None
+
+
+def test_engagement_service_none_when_analytics_key_unset() -> None:
+    settings = _Settings()
+    settings.portfolio_sources = ["supabase"]
+    settings.portfolio_supabase_url = "https://xyz.supabase.co"
+    settings.portfolio_supabase_anon_key = "anon"
+    # portfolio_analytics_read_key is "" by default
+    build = build_portfolio(_Infra(settings))
+    assert build is not None
+    assert build.provider.get_engagement_service() is None
+
+
+def test_engagement_service_built_when_key_and_url_set() -> None:
+    settings = _Settings()
+    settings.portfolio_sources = ["supabase"]
+    settings.portfolio_supabase_url = "https://xyz.supabase.co"
+    settings.portfolio_supabase_anon_key = "anon"
+    settings.portfolio_analytics_read_key = "service_role_key"
+    build = build_portfolio(_Infra(settings))
+    assert build is not None
+    assert build.provider.get_engagement_service() is not None

@@ -73,12 +73,19 @@ class CoverLetterGenerator:
         if portfolio_section:
             # Insert the portfolio block + weave instruction immediately before
             # the "Constraints:" section so the LLM sees them as context before
-            # the structural instructions.
+            # the structural instructions. Anchor on the LAST occurrence: the
+            # formatted {description} is external job-board data and may itself
+            # contain "Constraints:\n", which must not hijack the splice point.
             portfolio_block = (
                 f"{portfolio_section}\n"
                 f"{_PORTFOLIO_WEAVE_INSTRUCTION}\n\n"
             )
-            prompt = prompt.replace("Constraints:\n", f"{portfolio_block}Constraints:\n", 1)
+            marker = "Constraints:\n"
+            idx = prompt.rfind(marker)
+            if idx != -1:
+                prompt = prompt[:idx] + portfolio_block + prompt[idx:]
+            else:
+                prompt += "\n" + portfolio_block
 
         try:
             response = await self._llm.complete(prompt, system=SYSTEM_PROMPT)

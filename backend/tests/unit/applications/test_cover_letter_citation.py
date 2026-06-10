@@ -139,6 +139,36 @@ async def test_generator_portfolio_section_inserted_before_constraints() -> None
 
 
 @pytest.mark.asyncio
+async def test_generator_splices_at_template_constraints_not_description_decoy() -> None:
+    """A job description containing a literal "Constraints:\\n" must NOT hijack
+    the splice point — the portfolio block anchors to the template's trailing
+    Constraints section (last occurrence), not the description's decoy."""
+    llm = FakeLLM()
+    gen = CoverLetterGenerator(llm=llm)
+    portfolio_text = "Relevant portfolio: https://example.com/projects"
+    kwargs = dict(_COMMON_KWARGS)
+    kwargs["description"] = (
+        "Build microservices.\n"
+        "Constraints:\n"
+        "- must pass a background check\n"
+    )
+
+    await gen.generate(**kwargs, portfolio_section=portfolio_text)
+
+    prompt = llm.last_prompt
+    assert prompt is not None
+    # Description's fake Constraints occurrence comes BEFORE the portfolio block.
+    assert prompt.rindex("Relevant portfolio") > prompt.index("Constraints:")
+    # The block sits immediately before the LAST (template) Constraints section.
+    marker = "Constraints:\n"
+    last_constraints = prompt.rindex(marker)
+    portfolio_block_end = prompt.rindex("verbatim exactly once.") + len("verbatim exactly once.")
+    assert prompt[portfolio_block_end:last_constraints] == "\n\n"
+    # And the template's real Constraints body follows it intact.
+    assert prompt[last_constraints:].startswith("Constraints:\n- Tone:")
+
+
+@pytest.mark.asyncio
 async def test_generator_prompt_byte_identical_when_no_portfolio() -> None:
     """When portfolio_section is omitted (None), the prompt must equal USER_PROMPT_TEMPLATE.format(...)."""
     llm = FakeLLM()

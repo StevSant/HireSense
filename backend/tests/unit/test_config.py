@@ -90,3 +90,22 @@ def test_portfolio_settings_defaults_and_parsing(monkeypatch: pytest.MonkeyPatch
     assert settings.portfolio_sources == ["supabase", "github"]
     assert settings.portfolio_supabase_url == ""
     assert settings.portfolio_profile_char_cap == 1200
+
+
+def test_portfolio_github_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://test:test@localhost/test")
+    monkeypatch.setenv("AUTH_USERNAME", "admin")
+    monkeypatch.setenv("AUTH_PASSWORD", "pass")
+    monkeypatch.setenv("JWT_SECRET_KEY", "secret")
+    monkeypatch.setenv("LLM_API_KEY", "sk-test")
+    # Pin against whatever the local backend/.env contains (env > dotenv).
+    monkeypatch.setenv("PORTFOLIO_GITHUB_USERNAME", "")
+    monkeypatch.setenv("PORTFOLIO_GITHUB_TOKEN", "")
+
+    from hiresense.config import Settings
+
+    settings = Settings()
+    assert settings.portfolio_github_username == ""
+    assert settings.portfolio_github_token == ""
+    assert settings.portfolio_github_api_url == "https://api.github.com"
+    assert settings.portfolio_github_max_repos == 30

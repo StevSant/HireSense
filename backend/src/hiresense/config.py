@@ -419,6 +419,15 @@ class Settings(BaseSettings):
     # "supabase" source adapter.
     portfolio_supabase_url: str = ""
     portfolio_supabase_anon_key: str = ""
+    # GitHub source adapter: public repos of this user become portfolio
+    # projects. Token is optional (rate limit 60 -> 5000 req/h; includes
+    # private repos when set).
+    portfolio_github_username: str = ""
+    portfolio_github_token: str = ""
+    portfolio_github_api_url: str = "https://api.github.com"
+    # Repos kept after sorting by stars + recent push. Bounds the per-repo
+    # languages calls (one HTTP request per kept repo).
+    portfolio_github_max_repos: int = 30
     # Char cap for the "Portfolio projects" block appended to the matching
     # profile summary.
     portfolio_profile_char_cap: int = 1200

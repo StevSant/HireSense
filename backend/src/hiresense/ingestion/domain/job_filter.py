@@ -58,6 +58,9 @@ class PaginatedResult(BaseModel):
     page: int
     page_size: int
     total_pages: int
+    # Per-job count of imported LinkedIn connections at the job's company
+    # (normalized match). Only jobs with at least one connection appear.
+    connections_by_job: dict[str, int] = {}
 
 
 def filter_and_paginate(

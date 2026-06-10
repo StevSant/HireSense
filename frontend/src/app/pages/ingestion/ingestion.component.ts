@@ -109,6 +109,9 @@ export class IngestionComponent implements OnInit {
     ['title', 'company', 'location', 'source'],
   );
 
+  // LinkedIn connections map (job.id → count), populated from paginated response.
+  connectionsByJob = signal<Record<string, number>>({});
+
   // Show closed jobs toggle
   includeClosed = signal(false);
   // Show low-quality / spam jobs toggle (hidden by default).
@@ -169,6 +172,7 @@ export class IngestionComponent implements OnInit {
           this.jobs.set(res.jobs);
           this.total.set(res.total);
           this.totalPages.set(res.total_pages);
+          this.connectionsByJob.set(res.connections_by_job ?? {});
           this.loading.set(false);
         },
         error: (err) => {
@@ -342,5 +346,9 @@ export class IngestionComponent implements OnInit {
 
   scoreBadgeClass(score: number): string {
     return scoreClass(score);
+  }
+
+  connectionsCount(jobId: string): number | undefined {
+    return this.connectionsByJob()[jobId];
   }
 }

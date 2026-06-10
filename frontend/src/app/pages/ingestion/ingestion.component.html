@@ -192,7 +192,12 @@
                   <span class="badge badge-closed">Closed</span>
                 }
               </td>
-              <td class="cell-truncate" [title]="job.company"><app-company-link [name]="job.company" /></td>
+              <td class="cell-truncate" [title]="job.company">
+                <app-company-link [name]="job.company" />
+                @if (connectionsCount(job.id); as n) {
+                  <span class="connections-badge" [title]="n + ' LinkedIn connections at this company'">🤝 {{ n }}</span>
+                }
+              </td>
               <td class="cell-truncate" [title]="job.location">{{ job.location }}</td>
               <td class="cell-truncate salary-cell" [title]="job.salary_range">{{ job.salary_range || '—' }}</td>
               <td><span class="badge source-badge-{{ job.source }}">{{ job.source }}</span></td>

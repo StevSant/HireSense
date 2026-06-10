@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { OutreachComponent } from './outreach.component';
 import { OutreachService } from '../../core/services/outreach.service';
+import { NetworkService } from '../../core/services/network.service';
 import { ApplicationsService } from '../../core/services/applications.service';
 
 function makeApp(over: Partial<Record<string, unknown>> = {}) {
@@ -50,6 +51,7 @@ describe('OutreachComponent', () => {
     appId?: string | null;
     outreach?: Partial<Record<string, unknown>>;
     applications?: Partial<Record<string, unknown>>;
+    network?: Partial<Record<string, unknown>>;
   } = {}) {
     const route = {
       snapshot: {
@@ -69,6 +71,11 @@ describe('OutreachComponent', () => {
       list: vi.fn(() => of([makeApp()])),
       ...opts.applications,
     };
+    const network = {
+      match: vi.fn(() => of({ company_normalized: 'acme corp', contacts: [] })),
+      import: vi.fn(() => of({ contacts: 0, imported_at: null })),
+      ...opts.network,
+    };
 
     TestBed.configureTestingModule({
       imports: [OutreachComponent],
@@ -76,11 +83,12 @@ describe('OutreachComponent', () => {
         { provide: ActivatedRoute, useValue: route },
         { provide: OutreachService, useValue: outreach },
         { provide: ApplicationsService, useValue: applications },
+        { provide: NetworkService, useValue: network },
       ],
     });
     const fixture = TestBed.createComponent(OutreachComponent);
     fixture.detectChanges();
-    return { fixture, cmp: fixture.componentInstance, outreach, applications };
+    return { fixture, cmp: fixture.componentInstance, outreach, applications, network };
   }
 
   it('loads applications and preselects from the application_id query param', () => {
@@ -178,5 +186,77 @@ describe('OutreachComponent', () => {
     const { cmp } = mount({ outreach: { dueFollowups } });
 
     expect(cmp.nudgesError()).toBe('boom');
+  });
+
+  it('selecting an application with a company triggers network.match', () => {
+    const matchContacts = [
+      {
+        first_name: 'Jane',
+        last_name: 'Doe',
+        company: 'Acme Corp',
+        position: 'Engineer',
+        linkedin_url: 'https://linkedin.com/in/janedoe',
+        email: null,
+        connected_on: null,
+        company_normalized: 'acme corp',
+      },
+    ];
+    const match = vi.fn(() => of({ company_normalized: 'acme corp', contacts: matchContacts }));
+    const { cmp, network } = mount({ network: { match } });
+
+    // No selection yet
+    cmp.selectApplication('app-1');
+
+    expect(network.match).toHaveBeenCalledWith('Acme Corp');
+    expect(cmp.suggestions()).toEqual(matchContacts);
+  });
+
+  it('clicking a contact chip fills the contactName signal', () => {
+    const matchContacts = [
+      {
+        first_name: 'Jane',
+        last_name: 'Doe',
+        company: 'Acme Corp',
+        position: 'Engineer',
+        linkedin_url: null,
+        email: null,
+        connected_on: null,
+        company_normalized: 'acme corp',
+      },
+    ];
+    const match = vi.fn(() => of({ company_normalized: 'acme corp', contacts: matchContacts }));
+    const { cmp, fixture } = mount({ appId: 'app-1', network: { match } });
+
+    // Trigger suggestions render
+    fixture.detectChanges();
+
+    const chip = (fixture.nativeElement as HTMLElement).querySelector('.chip') as HTMLButtonElement | null;
+    expect(chip).toBeTruthy();
+    chip!.click();
+
+    expect(cmp.contactName()).toBe('Jane Doe');
+  });
+
+  it('clears suggestions when the selection changes', () => {
+    const matchContacts = [
+      {
+        first_name: 'Jane',
+        last_name: 'Doe',
+        company: 'Acme Corp',
+        position: 'Engineer',
+        linkedin_url: null,
+        email: null,
+        connected_on: null,
+        company_normalized: 'acme corp',
+      },
+    ];
+    const match = vi.fn(() => of({ company_normalized: 'acme corp', contacts: matchContacts }));
+    const { cmp } = mount({ appId: 'app-1', network: { match } });
+
+    expect(cmp.suggestions().length).toBe(1);
+
+    cmp.selectApplication('');
+
+    expect(cmp.suggestions().length).toBe(0);
   });
 });

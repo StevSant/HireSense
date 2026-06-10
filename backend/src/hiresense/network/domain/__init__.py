@@ -4,5 +4,12 @@ from hiresense.network.domain.connections_parser import (
     parse_connections,
 )
 from hiresense.network.domain.contact import Contact
+from hiresense.network.domain.import_service import NetworkImportService
 
-__all__ = ["Contact", "ConnectionsParseError", "normalize_company", "parse_connections"]
+__all__ = [
+    "Contact",
+    "ConnectionsParseError",
+    "NetworkImportService",
+    "normalize_company",
+    "parse_connections",
+]

@@ -37,6 +37,7 @@ class OutreachMessageGenerator:
         style_guide: str,
         channel: str | None,
         max_chars: int,
+        portfolio_section: str | None = None,
     ) -> str:
         if self._llm is None:
             raise OutreachUnavailableError("no LLM configured")
@@ -56,6 +57,12 @@ class OutreachMessageGenerator:
             parts.append(f"Address it to: {contact_name}")
         if channel:
             parts.append(f"Channel: {channel}")
+        if portfolio_section:
+            parts.append(portfolio_section)
+            parts.append(
+                "Mention at most ONE of these projects, only if it strengthens the hook; "
+                "if a portfolio link is given above, include it verbatim."
+            )
         parts.append(
             f"Keep it under ~{max_chars} characters. Greet (use the contact name "
             "if given), state the role and one specific genuine hook tying the "

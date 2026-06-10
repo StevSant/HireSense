@@ -58,6 +58,16 @@
           (ngModelChange)="contactName.set($event)"
           placeholder="e.g. Jordan Lee"
         />
+        @if (suggestions().length > 0) {
+          <div class="contact-suggestions">
+            <span class="muted">You know:</span>
+            @for (contact of suggestions(); track contact.linkedin_url ?? contact.first_name + contact.last_name) {
+              <button type="button" class="chip" (click)="useContact(contact)">
+                {{ contact.first_name }} {{ contact.last_name }} — {{ contact.position }}
+              </button>
+            }
+          </div>
+        }
       </div>
       <div class="field">
         <label for="channel">Channel (optional)</label>

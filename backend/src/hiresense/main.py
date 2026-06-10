@@ -21,6 +21,7 @@ from hiresense.bootstrap import (
     build_ingestion,
     build_interview,
     build_matching,
+    build_network,
     build_optimization,
     build_outreach,
     build_portfolio,
@@ -40,6 +41,7 @@ from hiresense.interview.api import router as interview_router
 from hiresense.matching.api import router as matching_router
 from hiresense.optimization.api import router as optimization_router
 from hiresense.outreach.api import router as outreach_router
+from hiresense.network.api import router as network_router
 from hiresense.portfolio.api import router as portfolio_router
 from hiresense.preference.api import router as preference_router
 from hiresense.profile.api import router as profile_router
@@ -138,6 +140,11 @@ def create_app() -> FastAPI:
     # Router is always mounted: with no provider the endpoints degrade
     # (sync → 503, projects → empty) instead of 404ing the frontend card.
     app.include_router(portfolio_router)
+
+    # --- Network (LinkedIn connections import; always built — upload-driven) ---
+    network = build_network(infra)
+    app.state.network = network.provider
+    app.include_router(network_router)
 
     # --- Matching ---
     matching = build_matching(infra, tracked, preference=preference.service)

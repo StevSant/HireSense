@@ -1,0 +1,36 @@
+<section class="card network-card">
+  <header class="card-header">
+    <h2>LinkedIn network</h2>
+  </header>
+
+  <p class="muted hint">
+    Upload LinkedIn's data-export ZIP or Connections.csv. Contacts stay local and never enter AI prompts.
+  </p>
+
+  <div class="import-row">
+    <input
+      id="network-file-input"
+      type="file"
+      accept=".zip,.csv"
+      (change)="onFileSelected($event)"
+      [disabled]="importing()"
+      hidden
+    />
+    <label for="network-file-input" class="btn" [class.disabled]="importing()">
+      {{ importing() ? 'Importing…' : 'Choose file' }}
+    </label>
+  </div>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  @if (result(); as r) {
+    <p class="muted">
+      {{ r.contacts }} contacts imported
+      @if (r.imported_at) {
+        · {{ r.imported_at | date: 'medium' }}
+      }
+    </p>
+  }
+</section>

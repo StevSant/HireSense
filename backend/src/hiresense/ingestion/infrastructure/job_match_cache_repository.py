@@ -5,6 +5,7 @@ from typing import Any
 
 from sqlalchemy import select
 
+from hiresense.infrastructure import SqlRepository
 from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
 from hiresense.ingestion.domain.quick_match_verdict import QuickMatchVerdict
 from hiresense.ingestion.infrastructure.job_match_cache_model import JobMatchCache
@@ -27,16 +28,13 @@ def _row_to_quick(row: JobMatchCache) -> QuickMatchResult | None:
     )
 
 
-class JobMatchCacheRepository:
+class JobMatchCacheRepository(SqlRepository):
     """Per-(job_id, profile_hash) persistence for LLM match scoring.
 
     Sync sessions (mirrors JobsRepository) since the API resolves these from a
     threadpool-friendly sessionmaker. Quick and deep results live on the same
     row; each is written independently as it's computed.
     """
-
-    def __init__(self, session_factory: Any) -> None:
-        self._session_factory = session_factory
 
     # ---- Quick (Tier-1) ----------------------------------------------
 

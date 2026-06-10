@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 
 from sqlalchemy import String, and_, cast, func, select
 
 from hiresense.admin.domain import UsageBucket, UsageRecord, UsageTotals
 from hiresense.admin.infrastructure.llm_usage_log_model import LLMUsageLog
+from hiresense.infrastructure import SqlRepository
 
 # Sortable columns for the recent-calls listing, keyed by the `<field>_<dir>`
 # token the API accepts. Anything else falls back to newest-first.
@@ -45,10 +45,7 @@ def _to_domain(row: LLMUsageLog) -> UsageRecord:
     )
 
 
-class LLMUsageLogRepository:
-    def __init__(self, session_factory: Any) -> None:
-        self._session_factory = session_factory
-
+class LLMUsageLogRepository(SqlRepository):
     def insert(
         self,
         *,
@@ -179,20 +176,19 @@ class LLMUsageLogRepository:
         until: datetime | None = None,
         sort: str | None = None,
     ) -> list[UsageRecord]:
-        with self._session_factory() as session:
-            conditions = []
-            if provider:
-                conditions.append(LLMUsageLog.provider == provider)
-            if model:
-                conditions.append(LLMUsageLog.model == model)
-            if feature_key:
-                conditions.append(LLMUsageLog.feature_key == feature_key)
-            if since is not None:
-                conditions.append(LLMUsageLog.created_at >= since)
-            if until is not None:
-                conditions.append(LLMUsageLog.created_at < until)
-            stmt = select(LLMUsageLog)
-            if conditions:
-                stmt = stmt.where(and_(*conditions))
-            stmt = stmt.order_by(_calls_order_by(sort)).limit(limit).offset(offset)
-            return [_to_domain(r) for r in session.scalars(stmt).all()]
+        conditions = []
+        if provider:
+            conditions.append(LLMUsageLog.provider == provider)
+        if model:
+            conditions.append(LLMUsageLog.model == model)
+        if feature_key:
+            conditions.append(LLMUsageLog.feature_key == feature_key)
+        if since is not None:
+            conditions.append(LLMUsageLog.created_at >= since)
+        if until is not None:
+            conditions.append(LLMUsageLog.created_at < until)
+        stmt = select(LLMUsageLog)
+        if conditions:
+            stmt = stmt.where(and_(*conditions))
+        stmt = stmt.order_by(_calls_order_by(sort)).limit(limit).offset(offset)
+        return self._select_all(stmt, _to_domain)

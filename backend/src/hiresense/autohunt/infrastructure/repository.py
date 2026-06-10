@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 
 from sqlalchemy import delete, select
 
 from hiresense.autohunt.domain import Digest, DigestEntry
 from hiresense.autohunt.infrastructure.orm import DigestOrm
+from hiresense.infrastructure import SqlRepository
 
 # Sortable columns for the digests listing, keyed by `<field>_<dir>` token.
 # Anything else falls back to newest-first.
@@ -34,32 +34,22 @@ def _to_domain(row: DigestOrm) -> Digest:
     )
 
 
-class DigestRepository:
-    def __init__(self, session_factory: Any) -> None:
-        self._session_factory = session_factory
-
+class DigestRepository(SqlRepository):
     def add(self, digest: Digest) -> Digest:
-        with self._session_factory() as session:
-            row = DigestOrm(
-                cutoff_at=digest.cutoff_at,
-                entries=[e.model_dump() for e in digest.entries],
-                job_count=digest.job_count,
-            )
-            session.add(row)
-            session.commit()
-            session.refresh(row)
-            return _to_domain(row)
+        row = DigestOrm(
+            cutoff_at=digest.cutoff_at,
+            entries=[e.model_dump() for e in digest.entries],
+            job_count=digest.job_count,
+        )
+        return self._insert(row, _to_domain)
 
     def latest(self) -> Digest | None:
-        with self._session_factory() as session:
-            stmt = select(DigestOrm).order_by(DigestOrm.created_at.desc()).limit(1)
-            row = session.scalars(stmt).first()
-            return _to_domain(row) if row is not None else None
+        stmt = select(DigestOrm).order_by(DigestOrm.created_at.desc()).limit(1)
+        return self._select_one(stmt, _to_domain)
 
     def list_recent(self, limit: int, sort: str | None = None) -> list[Digest]:
-        with self._session_factory() as session:
-            stmt = select(DigestOrm).order_by(_digest_order_by(sort)).limit(limit)
-            return [_to_domain(r) for r in session.scalars(stmt).all()]
+        stmt = select(DigestOrm).order_by(_digest_order_by(sort)).limit(limit)
+        return self._select_all(stmt, _to_domain)
 
     def prune_older_than(self, cutoff: datetime) -> int:
         with self._session_factory() as session:

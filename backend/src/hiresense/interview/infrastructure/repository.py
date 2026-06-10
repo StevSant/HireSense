@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
 
 from sqlalchemy import select
 
+from hiresense.infrastructure import SqlRepository
 from hiresense.interview.domain.models import Competency, Story
 from hiresense.interview.infrastructure.orm import StoryOrm
 
@@ -24,29 +24,19 @@ def _to_domain(row: StoryOrm) -> Story:
     return Story.model_validate(row)
 
 
-class StoryRepository:
-    def __init__(self, session_factory: Any) -> None:
-        self._session_factory = session_factory
-
+class StoryRepository(SqlRepository):
     def get_by_id(self, id: uuid.UUID) -> Story | None:
-        with self._session_factory() as session:
-            row = session.get(StoryOrm, id)
-            return _to_domain(row) if row is not None else None
+        return self._get_by_pk(StoryOrm, id, _to_domain)
 
     def list_all(self, competency: Competency | None = None) -> list[Story]:
-        with self._session_factory() as session:
-            stmt = select(StoryOrm)
-            if competency is not None:
-                stmt = stmt.where(StoryOrm.competency == competency.value)
-            return [_to_domain(r) for r in session.scalars(stmt).all()]
+        stmt = select(StoryOrm)
+        if competency is not None:
+            stmt = stmt.where(StoryOrm.competency == competency.value)
+        return self._select_all(stmt, _to_domain)
 
     def create(self, story: Story) -> Story:
-        with self._session_factory() as session:
-            row = StoryOrm(**{field: getattr(story, field) for field in _CONTENT_FIELDS})
-            session.add(row)
-            session.commit()
-            session.refresh(row)
-            return _to_domain(row)
+        row = StoryOrm(**{field: getattr(story, field) for field in _CONTENT_FIELDS})
+        return self._insert(row, _to_domain)
 
     def save(self, story: Story) -> Story:
         with self._session_factory() as session:
@@ -62,10 +52,4 @@ class StoryRepository:
             return _to_domain(row)
 
     def delete(self, id: uuid.UUID) -> bool:
-        with self._session_factory() as session:
-            row = session.get(StoryOrm, id)
-            if row is None:
-                return False
-            session.delete(row)
-            session.commit()
-            return True
+        return self._delete_by_pk(StoryOrm, id)

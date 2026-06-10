@@ -1,42 +1,30 @@
 from __future__ import annotations
 
-from typing import Any
-
 from sqlalchemy import delete, select
 
+from hiresense.infrastructure import SqlRepository
 from hiresense.preference.domain import FeedbackSignal, PreferenceModel
 from hiresense.preference.infrastructure.orm import FeedbackSignalOrm, PreferenceModelOrm
 
 _MODEL_ID = 1
 
 
-class PreferenceRepository:
-    def __init__(self, session_factory: Any) -> None:
-        self._session_factory = session_factory
-
+class PreferenceRepository(SqlRepository):
     def add_signal(self, signal: FeedbackSignal) -> FeedbackSignal:
-        with self._session_factory() as session:
-            row = FeedbackSignalOrm(
-                job_id=signal.job_id,
-                kind=signal.kind.value,
-                source=signal.source.value,
-                job_embedding=signal.job_embedding,
-                dimension_scores=signal.dimension_scores,
-            )
-            session.add(row)
-            session.commit()
-            session.refresh(row)
-            return FeedbackSignal.model_validate(row)
+        row = FeedbackSignalOrm(
+            job_id=signal.job_id,
+            kind=signal.kind.value,
+            source=signal.source.value,
+            job_embedding=signal.job_embedding,
+            dimension_scores=signal.dimension_scores,
+        )
+        return self._insert(row, FeedbackSignal.model_validate)
 
     def list_signals(self) -> list[FeedbackSignal]:
-        with self._session_factory() as session:
-            rows = session.scalars(select(FeedbackSignalOrm)).all()
-            return [FeedbackSignal.model_validate(r) for r in rows]
+        return self._select_all(select(FeedbackSignalOrm), FeedbackSignal.model_validate)
 
     def get_model(self) -> PreferenceModel | None:
-        with self._session_factory() as session:
-            row = session.get(PreferenceModelOrm, _MODEL_ID)
-            return self._to_domain(row) if row is not None else None
+        return self._get_by_pk(PreferenceModelOrm, _MODEL_ID, self._to_domain)
 
     def save_model(self, model: PreferenceModel) -> PreferenceModel:
         with self._session_factory() as session:

@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlalchemy import func, select
 
+from hiresense.infrastructure import SqlRepository
 from hiresense.ingestion.infrastructure.models import IngestedJob
 
 
@@ -25,7 +26,7 @@ class CorpusJobRow:
     quality: str
 
 
-class CorpusAnalyticsRepository:
+class CorpusAnalyticsRepository(SqlRepository):
     """Read-only aggregation over the ingested-job corpus (status='open').
 
     The full-corpus scans (`open_skill_lists`, `posting_dates`,
@@ -36,7 +37,7 @@ class CorpusAnalyticsRepository:
     """
 
     def __init__(self, session_factory: Any, sample_cap: int) -> None:
-        self._session_factory = session_factory
+        super().__init__(session_factory)
         self._sample_cap = sample_cap
 
     def open_skill_lists(self) -> list[list[str]]:

@@ -17,6 +17,7 @@ from hiresense.bootstrap.interview import InterviewBuild, build_interview
 from hiresense.bootstrap.matching import MatchingBuild, build_matching
 from hiresense.bootstrap.optimization import OptimizationBuild, build_optimization
 from hiresense.bootstrap.outreach import OutreachBuild, build_outreach
+from hiresense.bootstrap.portfolio import PortfolioBuild, build_portfolio
 from hiresense.bootstrap.preference import PreferenceBuild, build_preference
 from hiresense.bootstrap.profile import ProfileBuild, build_profile
 from hiresense.bootstrap.research import build_research
@@ -34,6 +35,7 @@ __all__ = [
     "MatchingBuild",
     "OptimizationBuild",
     "OutreachBuild",
+    "PortfolioBuild",
     "PreferenceBuild",
     "ProfileBuild",
     "SharedInfra",
@@ -49,6 +51,7 @@ __all__ = [
     "build_matching",
     "build_optimization",
     "build_outreach",
+    "build_portfolio",
     "build_preference",
     "build_profile",
     "build_research",

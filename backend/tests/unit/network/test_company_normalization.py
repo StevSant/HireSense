@@ -15,6 +15,9 @@ from hiresense.network.domain import normalize_company
         ("Thoughtworks Ltd", "thoughtworks"),
         ("Siemens GmbH", "siemens"),
         ("MixRank (YC S11)", "mixrank"),
+        ("Studio C", "studio c"),
+        ("Plan A", "plan a"),
+        ("Tesla Model S", "tesla model s"),
         ("", ""),
     ],
 )

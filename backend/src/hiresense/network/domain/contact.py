@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from hiresense.network.domain.company_normalization import normalize_company
 
 
 class Contact(BaseModel):
     """One LinkedIn connection. company_normalized is derived, never set by hand."""
+
+    model_config = ConfigDict(frozen=True)
 
     first_name: str
     last_name: str

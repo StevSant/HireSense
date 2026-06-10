@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from hiresense.matching.domain.skill_normalizer import normalize_skill
+from hiresense.kernel import normalize_skill
 
 
 @dataclass

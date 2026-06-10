@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from typing import Any
 
 from sqlalchemy import delete, func, select
 
+from hiresense.infrastructure import SqlRepository
 from hiresense.network.domain import Contact, normalize_company
 from hiresense.network.infrastructure.orm import NetworkContactOrm
 
@@ -37,11 +37,8 @@ def _to_domain(row: NetworkContactOrm) -> Contact:
     )
 
 
-class ContactsRepository:
+class ContactsRepository(SqlRepository):
     """SQL snapshot store; replace_all is atomic — one full export replaces the previous."""
-
-    def __init__(self, session_factory: Any) -> None:
-        self._session_factory = session_factory
 
     def replace_all(self, contacts: list[Contact]) -> int:
         now = datetime.now(timezone.utc)
@@ -53,22 +50,17 @@ class ContactsRepository:
         return len(contacts)
 
     def list_all(self, company: str | None = None) -> list[Contact]:
-        with self._session_factory() as session:
-            stmt = select(NetworkContactOrm)
-            if company is not None:
-                key = normalize_company(company)
-                stmt = stmt.where(NetworkContactOrm.company_normalized == key)
-            rows = session.scalars(stmt).all()
-            return [_to_domain(r) for r in rows]
+        stmt = select(NetworkContactOrm)
+        if company is not None:
+            key = normalize_company(company)
+            stmt = stmt.where(NetworkContactOrm.company_normalized == key)
+        return self._select_all(stmt, _to_domain)
 
     def find_by_company(self, company_normalized: str) -> list[Contact]:
-        with self._session_factory() as session:
-            rows = session.scalars(
-                select(NetworkContactOrm).where(
-                    NetworkContactOrm.company_normalized == company_normalized
-                )
-            ).all()
-            return [_to_domain(r) for r in rows]
+        stmt = select(NetworkContactOrm).where(
+            NetworkContactOrm.company_normalized == company_normalized
+        )
+        return self._select_all(stmt, _to_domain)
 
     def count_by_companies(self, companies_normalized: list[str]) -> dict[str, int]:
         if not companies_normalized:

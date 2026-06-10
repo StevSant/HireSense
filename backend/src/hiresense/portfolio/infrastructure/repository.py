@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
 
 from sqlalchemy import delete, func, select
 
+from hiresense.infrastructure import SqlRepository
 from hiresense.portfolio.domain import PortfolioProject, ProjectText
 from hiresense.portfolio.infrastructure.orm import PortfolioProjectOrm
 
@@ -38,11 +38,8 @@ def _to_domain(row: PortfolioProjectOrm) -> PortfolioProject:
     )
 
 
-class PortfolioProjectsRepository:
+class PortfolioProjectsRepository(SqlRepository):
     """SQL snapshot store; replace_source is atomic per source slice."""
-
-    def __init__(self, session_factory: Any) -> None:
-        self._session_factory = session_factory
 
     def replace_source(self, source: str, projects: list[PortfolioProject]) -> int:
         now = datetime.now(timezone.utc)
@@ -56,9 +53,7 @@ class PortfolioProjectsRepository:
         return len(projects)
 
     def list_all(self) -> list[PortfolioProject]:
-        with self._session_factory() as session:
-            rows = session.scalars(select(PortfolioProjectOrm)).all()
-            return [_to_domain(r) for r in rows]
+        return self._select_all(select(PortfolioProjectOrm), _to_domain)
 
     def last_synced_at(self) -> datetime | None:
         with self._session_factory() as session:

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
-
 from sqlalchemy import delete, select
 
 from hiresense.admin.domain import LLMFeatureOverrideRecord
 from hiresense.admin.infrastructure.llm_feature_override_model import LLMFeatureOverride
+from hiresense.infrastructure import SqlRepository
 
 
 def _to_domain(row: LLMFeatureOverride) -> LLMFeatureOverrideRecord:
@@ -20,19 +19,13 @@ def _to_domain(row: LLMFeatureOverride) -> LLMFeatureOverrideRecord:
     )
 
 
-class LLMFeatureOverrideRepository:
-    def __init__(self, session_factory: Any) -> None:
-        self._session_factory = session_factory
-
+class LLMFeatureOverrideRepository(SqlRepository):
     def list(self) -> list[LLMFeatureOverrideRecord]:
-        with self._session_factory() as session:
-            return [_to_domain(r) for r in session.scalars(select(LLMFeatureOverride)).all()]
+        return self._select_all(select(LLMFeatureOverride), _to_domain)
 
     def get(self, feature_key: str) -> LLMFeatureOverrideRecord | None:
-        with self._session_factory() as session:
-            stmt = select(LLMFeatureOverride).where(LLMFeatureOverride.feature_key == feature_key)
-            row = session.scalars(stmt).first()
-            return _to_domain(row) if row is not None else None
+        stmt = select(LLMFeatureOverride).where(LLMFeatureOverride.feature_key == feature_key)
+        return self._select_one(stmt, _to_domain)
 
     def upsert(
         self,

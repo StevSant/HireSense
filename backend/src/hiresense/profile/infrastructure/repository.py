@@ -5,6 +5,7 @@ from typing import Any
 
 from sqlalchemy import select
 
+from hiresense.infrastructure import SqlRepository
 from hiresense.profile.domain.models import CandidateProfile, CVSection
 from hiresense.profile.infrastructure.orm import ProfileOrm
 
@@ -50,38 +51,26 @@ def _to_orm(profile: CandidateProfile, original_filename: str | None = None) -> 
     )
 
 
-class ProfileRepository:
-    def __init__(self, session_factory: Any) -> None:
-        self._session_factory = session_factory
-
+class ProfileRepository(SqlRepository):
     def get_by_id(self, id: uuid.UUID) -> CandidateProfile | None:
-        with self._session_factory() as session:
-            row = session.get(ProfileOrm, id)
-            return _to_domain(row) if row is not None else None
+        return self._get_by_pk(ProfileOrm, id, _to_domain)
 
     def get_latest(self, language: str | None = None) -> CandidateProfile | None:
-        with self._session_factory() as session:
-            stmt = select(ProfileOrm).order_by(ProfileOrm.created_at.desc())
-            if language:
-                stmt = stmt.where(ProfileOrm.language == language)
-            stmt = stmt.limit(1)
-            row = session.scalars(stmt).first()
-            return _to_domain(row) if row is not None else None
+        stmt = select(ProfileOrm).order_by(ProfileOrm.created_at.desc())
+        if language:
+            stmt = stmt.where(ProfileOrm.language == language)
+        stmt = stmt.limit(1)
+        return self._select_one(stmt, _to_domain)
 
     def list_all(self) -> list[CandidateProfile]:
-        with self._session_factory() as session:
-            stmt = select(ProfileOrm).order_by(ProfileOrm.created_at.desc())
-            return [_to_domain(r) for r in session.scalars(stmt).all()]
+        stmt = select(ProfileOrm).order_by(ProfileOrm.created_at.desc())
+        return self._select_all(stmt, _to_domain)
 
     def create(
         self, profile: CandidateProfile, *, original_filename: str | None = None
     ) -> CandidateProfile:
-        with self._session_factory() as session:
-            row = _to_orm(profile, original_filename=original_filename)
-            session.add(row)
-            session.commit()
-            session.refresh(row)
-            return _to_domain(row)
+        row = _to_orm(profile, original_filename=original_filename)
+        return self._insert(row, _to_domain)
 
     def update(self, id: uuid.UUID, fields: dict[str, Any]) -> CandidateProfile | None:
         with self._session_factory() as session:

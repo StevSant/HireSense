@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
-
 from sqlalchemy import select
 
 from hiresense.admin.domain import LLMSettingsRecord
 from hiresense.admin.infrastructure.llm_settings_model import LLMSettings
+from hiresense.infrastructure import SqlRepository
 
 
 def _to_domain(row: LLMSettings) -> LLMSettingsRecord:
@@ -19,16 +18,11 @@ def _to_domain(row: LLMSettings) -> LLMSettingsRecord:
     )
 
 
-class LLMSettingsRepository:
+class LLMSettingsRepository(SqlRepository):
     """Single-row repository for the global LLM config."""
 
-    def __init__(self, session_factory: Any) -> None:
-        self._session_factory = session_factory
-
     def get(self) -> LLMSettingsRecord | None:
-        with self._session_factory() as session:
-            row = session.scalars(select(LLMSettings).where(LLMSettings.id == 1)).first()
-            return _to_domain(row) if row is not None else None
+        return self._select_one(select(LLMSettings).where(LLMSettings.id == 1), _to_domain)
 
     def upsert(
         self,

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.orm import aliased
 
+from hiresense.infrastructure import SqlRepository
 from hiresense.outreach.domain import OutreachEvent, OutreachEventKind
 from hiresense.outreach.infrastructure.orm import OutreachEventOrm
 
@@ -21,52 +22,47 @@ def _to_domain(row: OutreachEventOrm) -> OutreachEvent:
     )
 
 
-class OutreachRepository:
-    def __init__(self, session_factory: Any) -> None:
-        self._session_factory = session_factory
-
+class OutreachRepository(SqlRepository):
     def add(self, event: OutreachEvent) -> OutreachEvent:
-        with self._session_factory() as session:
-            row = OutreachEventOrm(
-                application_id=event.application_id,
-                kind=event.kind.value,
-                contact_name=event.contact_name,
-                channel=event.channel,
-                message=event.message,
-            )
-            session.add(row)
-            session.commit()
-            session.refresh(row)
-            return _to_domain(row)
+        row = OutreachEventOrm(
+            application_id=event.application_id,
+            kind=event.kind.value,
+            contact_name=event.contact_name,
+            channel=event.channel,
+            message=event.message,
+        )
+        return self._insert(row, _to_domain)
 
     def list_for(self, application_id: uuid.UUID) -> list[OutreachEvent]:
-        with self._session_factory() as session:
-            stmt = (
-                select(OutreachEventOrm)
-                .where(OutreachEventOrm.application_id == application_id)
-                .order_by(OutreachEventOrm.created_at)
-            )
-            return [_to_domain(r) for r in session.scalars(stmt).all()]
+        stmt = (
+            select(OutreachEventOrm)
+            .where(OutreachEventOrm.application_id == application_id)
+            .order_by(OutreachEventOrm.created_at)
+        )
+        return self._select_all(stmt, _to_domain)
 
     def latest_for(self, application_id: uuid.UUID) -> OutreachEvent | None:
-        with self._session_factory() as session:
-            stmt = (
-                select(OutreachEventOrm)
-                .where(OutreachEventOrm.application_id == application_id)
-                .order_by(OutreachEventOrm.created_at.desc())
-                .limit(1)
-            )
-            row = session.scalars(stmt).first()
-            return _to_domain(row) if row is not None else None
+        stmt = (
+            select(OutreachEventOrm)
+            .where(OutreachEventOrm.application_id == application_id)
+            .order_by(OutreachEventOrm.created_at.desc())
+            .limit(1)
+        )
+        return self._select_one(stmt, _to_domain)
 
     def latest_per_application(self) -> list[OutreachEvent]:
-        with self._session_factory() as session:
-            rows = session.scalars(
-                select(OutreachEventOrm).order_by(OutreachEventOrm.created_at)
-            ).all()
-            # Keep the last (most recent) event per application; rows are asc by
-            # created_at, so later overwrites earlier.
-            latest: dict[uuid.UUID, OutreachEventOrm] = {}
-            for r in rows:
-                latest[r.application_id] = r
-            return [_to_domain(r) for r in latest.values()]
+        # Latest event per application, computed in SQL (window function) so
+        # the full append-only event history never has to be loaded into
+        # memory. Works on both Postgres and the SQLite used in tests.
+        rank = (
+            func.row_number()
+            .over(
+                partition_by=OutreachEventOrm.application_id,
+                order_by=OutreachEventOrm.created_at.desc(),
+            )
+            .label("rank")
+        )
+        ranked = select(OutreachEventOrm, rank).subquery()
+        latest = aliased(OutreachEventOrm, ranked)
+        stmt = select(latest).where(ranked.c.rank == 1)
+        return self._select_all(stmt, _to_domain)

@@ -1,22 +1,12 @@
 from __future__ import annotations
 
-_ALIASES = {
-    "react.js": "react",
-    "reactjs": "react",
-    "react js": "react",
-    "k8s": "kubernetes",
-    "js": "javascript",
-    "ts": "typescript",
-    "node.js": "node",
-    "nodejs": "node",
-    "postgres": "postgresql",
-    "py": "python",
-}
+from hiresense.kernel import normalize_skill
 
 
 class SkillNormalizer:
-    """Lowercase/trim + a small alias map so skill variants collapse."""
+    """Injectable wrapper over the kernel's shared skill normalization, so
+    analytics canonicalizes skills exactly like matching does (same algorithm
+    and alias map — no cross-module drift)."""
 
     def normalize(self, skill: str) -> str:
-        base = (skill or "").strip().lower()
-        return _ALIASES.get(base, base)
+        return normalize_skill(skill)

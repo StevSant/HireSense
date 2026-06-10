@@ -22,10 +22,21 @@ def parse_connections(payload: bytes, *, filename: str) -> list[Contact]:
     return _parse_csv(payload)
 
 
+# Decompressed-size ceiling for the Connections.csv member. The route caps
+# the COMPRESSED upload; a crafted ZIP could still expand enormously in
+# memory without this gate (zip bomb). Real LinkedIn exports are far smaller.
+_MAX_MEMBER_BYTES = 50 * 1024 * 1024
+
+
 def _extract_connections_member(payload: bytes) -> bytes:
     with zipfile.ZipFile(io.BytesIO(payload)) as archive:
         for name in archive.namelist():
             if name.rsplit("/", 1)[-1].lower() == "connections.csv":
+                info = archive.getinfo(name)
+                if info.file_size > _MAX_MEMBER_BYTES:
+                    raise ConnectionsParseError(
+                        "Connections.csv decompresses beyond the allowed size"
+                    )
                 return archive.read(name)
     raise ConnectionsParseError("ZIP does not contain a Connections.csv")
 

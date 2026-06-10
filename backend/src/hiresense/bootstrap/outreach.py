@@ -21,6 +21,8 @@ def build_outreach(
     tracking_service: Any,
     profile_service: Any,
     research_service: Any,
+    *,
+    portfolio_citation: Any = None,
 ) -> OutreachBuild:
     s = infra.settings
     service = OutreachService(
@@ -33,5 +35,6 @@ def build_outreach(
         followup_cadence_days=s.outreach_followup_cadence_days,
         max_chars=s.outreach_max_chars,
         language=s.default_language,
+        portfolio_citation=portfolio_citation,
     )
     return OutreachBuild(provider=OutreachProvider(outreach_service=service), service=service)

@@ -1,4 +1,12 @@
-import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -20,6 +28,7 @@ import { parseSortToken } from '../../core/utils/parse-sort-token';
   imports: [FormsModule],
   templateUrl: './outreach.component.html',
   styleUrl: './outreach.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OutreachComponent implements OnInit {
   private outreach = inject(OutreachService);
@@ -40,6 +49,7 @@ export class OutreachComponent implements OnInit {
   // Inline notice for graceful degradation (503 no LLM, 404 missing app, etc.)
   composeNotice = signal('');
   copied = signal(false);
+  private copiedResetTimer: ReturnType<typeof setTimeout> | undefined;
 
   // Record
   recording = signal(false);
@@ -111,7 +121,12 @@ export class OutreachComponent implements OnInit {
       .match(company)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (res) => this.suggestions.set(res.contacts.slice(0, 5)),
+        next: (res) => {
+          // Ignore late responses for a previously selected application so a
+          // slow request can't overwrite the current selection's suggestions.
+          if (this.selectedApplicationId() !== applicationId) return;
+          this.suggestions.set(res.contacts.slice(0, 5));
+        },
         error: () => {
           // Suggestions are best-effort; silently swallow errors.
         },
@@ -166,6 +181,8 @@ export class OutreachComponent implements OnInit {
     if (!text) return;
     navigator.clipboard?.writeText(text);
     this.copied.set(true);
+    clearTimeout(this.copiedResetTimer);
+    this.copiedResetTimer = setTimeout(() => this.copied.set(false), 2000);
   }
 
   record(kind: OutreachEventKind): void {
@@ -210,11 +227,14 @@ export class OutreachComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (events) => {
+          // Ignore late responses after the user switched applications.
+          if (this.selectedApplicationId() !== applicationId) return;
           // Store in natural (server) order; visibleEvents applies sort/filter.
           this.events.set(events);
           this.timelineLoading.set(false);
         },
         error: (err) => {
+          if (this.selectedApplicationId() !== applicationId) return;
           this.timelineLoading.set(false);
           this.timelineError.set(err?.error?.detail ?? 'Could not load the timeline.');
         },

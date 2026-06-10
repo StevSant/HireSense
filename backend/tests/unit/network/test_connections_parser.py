@@ -53,3 +53,14 @@ def test_zip_without_connections_raises() -> None:
 def test_csv_without_header_raises() -> None:
     with pytest.raises(ConnectionsParseError, match="header"):
         parse_connections(b"not,a,connections,file\n1,2,3,4\n", filename="x.csv")
+
+
+def test_zip_member_decompression_ceiling(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "hiresense.network.domain.connections_parser._MAX_MEMBER_BYTES", 64
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("Connections.csv", _HEADER + "\n" + "a,b,,,c,d,e\n" * 100)
+    with pytest.raises(ConnectionsParseError, match="decompresses beyond"):
+        parse_connections(buffer.getvalue(), filename="export.zip")

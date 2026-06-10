@@ -12,6 +12,9 @@ class _Settings:
     portfolio_github_api_url = "https://api.github.com"
     portfolio_github_max_repos = 30
     portfolio_profile_char_cap = 1200
+    portfolio_public_url = ""
+    portfolio_ref_prefix = "hiresense"
+    portfolio_relevant_projects_top_n = 2
     default_language = "en"
 
 
@@ -49,6 +52,7 @@ def test_builds_provider_with_supabase() -> None:
     assert build is not None
     assert build.provider.get_sync_service() is not None
     assert build.provider.get_enrichment_service() is not None
+    assert build.provider.get_citation_service() is not None
 
 
 def test_raises_when_github_enabled_without_username() -> None:

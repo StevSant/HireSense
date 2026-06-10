@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Any
 
 from hiresense.portfolio.domain import PortfolioVisit
+
+# Session ids are interpolated into a PostgREST `in.(...)` filter; restrict
+# them to UUID-safe characters so a value containing `,`, `)` or quotes can
+# never rewrite the filter expression.
+_SAFE_SESSION_ID = re.compile(r"^[A-Za-z0-9-]+$")
 
 
 def _parse_dt(value: str) -> datetime:
@@ -45,14 +51,18 @@ class SupabaseEngagementAdapter:
             return []
 
         # Tally cv_downloads per session_id from the cv_download table.
-        session_ids = [str(s["id"]) for s in sessions]
-        downloads_raw: list[dict[str, Any]] = await self._get(
-            "/rest/v1/cv_download",
-            {
-                "select": "session_id",
-                "session_id": f"in.({','.join(session_ids)})",
-            },
-        )
+        session_ids = [
+            sid for s in sessions if _SAFE_SESSION_ID.fullmatch(sid := str(s["id"]))
+        ]
+        downloads_raw: list[dict[str, Any]] = []
+        if session_ids:
+            downloads_raw = await self._get(
+                "/rest/v1/cv_download",
+                {
+                    "select": "session_id",
+                    "session_id": f"in.({','.join(session_ids)})",
+                },
+            )
         download_count_by_session: dict[str, int] = {}
         for row in downloads_raw:
             sid = str(row["session_id"])

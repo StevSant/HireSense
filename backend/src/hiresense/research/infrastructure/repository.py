@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
-
 from sqlalchemy import func, select
 
+from hiresense.infrastructure import SqlRepository
 from hiresense.research.domain.models import CompanyResearch
 from hiresense.research.infrastructure.orm import CompanyResearchOrm
 
@@ -24,27 +23,18 @@ def _to_domain(row: CompanyResearchOrm) -> CompanyResearch:
     return CompanyResearch.model_validate(row)
 
 
-class CompanyResearchRepository:
-    def __init__(self, session_factory: Any) -> None:
-        self._session_factory = session_factory
-
+class CompanyResearchRepository(SqlRepository):
     def get_by_company_name(self, company_name: str) -> CompanyResearch | None:
-        with self._session_factory() as session:
-            stmt = select(CompanyResearchOrm).where(
-                func.lower(CompanyResearchOrm.company_name) == company_name.lower().strip()
-            )
-            row = session.scalars(stmt).first()
-            return _to_domain(row) if row is not None else None
+        stmt = select(CompanyResearchOrm).where(
+            func.lower(CompanyResearchOrm.company_name) == company_name.lower().strip()
+        )
+        return self._select_one(stmt, _to_domain)
 
     def create(self, research: CompanyResearch) -> CompanyResearch:
-        with self._session_factory() as session:
-            row = CompanyResearchOrm(
-                **{field: getattr(research, field) for field in _CONTENT_FIELDS}
-            )
-            session.add(row)
-            session.commit()
-            session.refresh(row)
-            return _to_domain(row)
+        row = CompanyResearchOrm(
+            **{field: getattr(research, field) for field in _CONTENT_FIELDS}
+        )
+        return self._insert(row, _to_domain)
 
     def save(self, research: CompanyResearch) -> CompanyResearch:
         with self._session_factory() as session:

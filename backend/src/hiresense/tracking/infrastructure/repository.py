@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
 
 from sqlalchemy import select
 
+from hiresense.infrastructure import SqlRepository
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 from hiresense.tracking.domain.status_transition import StatusTransition
 from hiresense.tracking.infrastructure.orm import TrackedApplicationOrm
@@ -23,29 +23,21 @@ def _history_to_domain(row: ApplicationStatusHistoryOrm) -> StatusTransition:
     return StatusTransition.model_validate(row)
 
 
-class TrackingRepository:
-    def __init__(self, session_factory: Any) -> None:
-        self._session_factory = session_factory
-
+class TrackingRepository(SqlRepository):
     def get_by_id(self, id: uuid.UUID) -> TrackedApplication | None:
-        with self._session_factory() as session:
-            row = session.get(TrackedApplicationOrm, id)
-            return _to_domain(row) if row is not None else None
+        return self._get_by_pk(TrackedApplicationOrm, id, _to_domain)
 
     def get_by_job_id(self, job_id: uuid.UUID) -> TrackedApplication | None:
-        with self._session_factory() as session:
-            stmt = select(TrackedApplicationOrm).where(
-                TrackedApplicationOrm.job_id == job_id
-            )
-            row = session.scalars(stmt).first()
-            return _to_domain(row) if row is not None else None
+        stmt = select(TrackedApplicationOrm).where(
+            TrackedApplicationOrm.job_id == job_id
+        )
+        return self._select_one(stmt, _to_domain)
 
     def list_all(self, status: ApplicationStatus | None = None) -> list[TrackedApplication]:
-        with self._session_factory() as session:
-            stmt = select(TrackedApplicationOrm)
-            if status is not None:
-                stmt = stmt.where(TrackedApplicationOrm.status == status.value)
-            return [_to_domain(r) for r in session.scalars(stmt).all()]
+        stmt = select(TrackedApplicationOrm)
+        if status is not None:
+            stmt = stmt.where(TrackedApplicationOrm.status == status.value)
+        return self._select_all(stmt, _to_domain)
 
     def create(self, application: TrackedApplication) -> TrackedApplication:
         with self._session_factory() as session:
@@ -121,26 +113,18 @@ class TrackingRepository:
             return _to_domain(row)
 
     def delete(self, id: uuid.UUID) -> bool:
-        with self._session_factory() as session:
-            row = session.get(TrackedApplicationOrm, id)
-            if row is None:
-                return False
-            session.delete(row)
-            session.commit()
-            return True
+        return self._delete_by_pk(TrackedApplicationOrm, id)
 
     def list_history(self) -> list[StatusTransition]:
-        with self._session_factory() as session:
-            stmt = select(ApplicationStatusHistoryOrm).order_by(
-                ApplicationStatusHistoryOrm.changed_at
-            )
-            return [_history_to_domain(r) for r in session.scalars(stmt).all()]
+        stmt = select(ApplicationStatusHistoryOrm).order_by(
+            ApplicationStatusHistoryOrm.changed_at
+        )
+        return self._select_all(stmt, _history_to_domain)
 
     def history_for(self, application_id: uuid.UUID) -> list[StatusTransition]:
-        with self._session_factory() as session:
-            stmt = (
-                select(ApplicationStatusHistoryOrm)
-                .where(ApplicationStatusHistoryOrm.application_id == application_id)
-                .order_by(ApplicationStatusHistoryOrm.changed_at)
-            )
-            return [_history_to_domain(r) for r in session.scalars(stmt).all()]
+        stmt = (
+            select(ApplicationStatusHistoryOrm)
+            .where(ApplicationStatusHistoryOrm.application_id == application_id)
+            .order_by(ApplicationStatusHistoryOrm.changed_at)
+        )
+        return self._select_all(stmt, _history_to_domain)

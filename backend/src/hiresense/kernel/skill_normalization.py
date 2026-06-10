@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from hiresense.matching.domain.skill_aliases import SKILL_ALIASES
+from hiresense.kernel.skill_aliases import SKILL_ALIASES
 
 _PARENTHETICAL_RE = re.compile(r"\([^)]*\)")
 _WHITESPACE_RE = re.compile(r"\s+")
@@ -17,7 +17,9 @@ def normalize_skill(raw: str) -> str:
     Lowercases, drops parenthetical qualifiers (e.g. "Python (primary)" ->
     "python"), trims edge punctuation/whitespace, collapses internal runs of
     whitespace, then resolves known aliases to their canonical spelling.
+    Shared by every module that compares or aggregates skills so all bounded
+    contexts agree on canonical forms.
     """
-    text = _PARENTHETICAL_RE.sub(" ", raw).lower()
+    text = _PARENTHETICAL_RE.sub(" ", raw or "").lower()
     text = _WHITESPACE_RE.sub(" ", text).strip(_EDGE_PUNCT).strip()
     return SKILL_ALIASES.get(text, text)

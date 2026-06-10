@@ -17,7 +17,11 @@ class NetworkImportService:
         self._repository = repository
 
     async def import_upload(self, payload: bytes, *, filename: str) -> int:
-        contacts = parse_connections(payload, filename=filename)
+        # ZIP decompression + CSV parsing are CPU-bound; keep them off the
+        # event loop so a large export doesn't stall other requests.
+        contacts = await asyncio.to_thread(
+            parse_connections, payload, filename=filename
+        )
         return await asyncio.to_thread(self._repository.replace_all, contacts)
 
     async def last_imported_at(self) -> datetime | None:

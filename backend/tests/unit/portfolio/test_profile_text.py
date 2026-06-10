@@ -38,3 +38,7 @@ def test_respects_char_cap_and_empty_input() -> None:
     assert portfolio_profile_text([], language="en", char_cap=100) == ""
     text = portfolio_profile_text([_project("x", desc="y" * 500)], language="en", char_cap=50)
     assert len(text) <= 50
+
+
+def test_cap_smaller_than_header_returns_empty() -> None:
+    assert portfolio_profile_text([_project("x")], language="en", char_cap=10) == ""

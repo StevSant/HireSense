@@ -4,14 +4,24 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from hiresense.identity.api.dependencies import get_auth_service, get_current_user
+from hiresense.identity.api.dependencies import (
+    enforce_expensive_rate_limit,
+    get_auth_service,
+    get_current_user,
+)
 from hiresense.identity.api.schemas import LoginRequest, MeResponse, TokenResponse
 from hiresense.identity.domain import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/login", response_model=TokenResponse)
+# Rate-limited: login is the brute-force surface for the single admin
+# credential, so it shares the per-client-IP sliding-window limiter.
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
+)
 async def login(
     body: LoginRequest,
     auth_service: Annotated[AuthService, Depends(get_auth_service)],

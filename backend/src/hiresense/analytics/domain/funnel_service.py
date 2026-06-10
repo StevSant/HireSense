@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 import statistics
 import uuid as uuid_mod
 from collections import defaultdict
 from typing import Any
 
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 _STAGES = ["saved", "applied", "interviewing", "offered", "accepted"]
 _RANK = {s: i for i, s in enumerate(_STAGES)}
@@ -116,6 +119,9 @@ class FunnelService:
         try:
             apps = self._applications.list()
         except Exception:
+            logger.exception(
+                "funnel: applications lookup failed — omitting by-source outcomes"
+            )
             return []
         job_ids = [str(a.job_id) for a in apps if getattr(a, "job_id", None)]
         if not job_ids:

@@ -9,6 +9,9 @@ async def test_health_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AUTH_PASSWORD", "pass")
     monkeypatch.setenv("JWT_SECRET_KEY", "secret")
     monkeypatch.setenv("LLM_API_KEY", "sk-test")
+    # Pin the optional portfolio module OFF — env vars beat dotenv, so this
+    # keeps app boot deterministic regardless of the developer's local .env.
+    monkeypatch.setenv("PORTFOLIO_SOURCES", "")
 
     from hiresense.main import create_app
 
@@ -30,6 +33,9 @@ async def test_login_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AUTH_PASSWORD", "testpass")
     monkeypatch.setenv("JWT_SECRET_KEY", "secret")
     monkeypatch.setenv("LLM_API_KEY", "sk-test")
+    # Pin the optional portfolio module OFF — env vars beat dotenv, so this
+    # keeps app boot deterministic regardless of the developer's local .env.
+    monkeypatch.setenv("PORTFOLIO_SOURCES", "")
 
     from hiresense.main import create_app
 
@@ -51,6 +57,11 @@ async def test_all_routers_registered(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AUTH_PASSWORD", "pass")
     monkeypatch.setenv("JWT_SECRET_KEY", "secret")
     monkeypatch.setenv("LLM_API_KEY", "sk-test")
+    # Pin the optional portfolio module OFF — env vars beat dotenv, so this
+    # keeps app boot deterministic regardless of the developer's local .env.
+    # The portfolio router is mounted unconditionally, so the /portfolio/*
+    # route assertions below still hold with the module disabled.
+    monkeypatch.setenv("PORTFOLIO_SOURCES", "")
 
     from hiresense.main import create_app
 

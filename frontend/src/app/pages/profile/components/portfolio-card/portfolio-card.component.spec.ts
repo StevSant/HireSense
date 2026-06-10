@@ -1,0 +1,72 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { PortfolioCardComponent } from './portfolio-card.component';
+import { environment } from '../../../../../environments/environment';
+
+describe('PortfolioCardComponent', () => {
+  let fixture: ComponentFixture<PortfolioCardComponent>;
+  let httpMock: HttpTestingController;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [PortfolioCardComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
+    fixture = TestBed.createComponent(PortfolioCardComponent);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => httpMock.verify());
+
+  function flushProjects(projects: unknown[], last: string | null) {
+    httpMock
+      .expectOne(`${environment.apiUrl}/portfolio/projects`)
+      .flush({ projects, last_synced_at: last });
+    fixture.detectChanges();
+  }
+
+  it('renders synced projects with tech tags', () => {
+    fixture.detectChanges(); // ngOnInit → load
+    flushProjects(
+      [
+        {
+          id: 'p1', source: 'supabase', source_key: 'hiresense', url: 'https://x', demo_url: null,
+          pinned: true, position: 1, tech: ['python', 'angular'],
+          translations: { en: { title: 'HireSense', description: 'AI job hunting' } },
+        },
+      ],
+      '2026-06-09T00:00:00Z',
+    );
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('HireSense');
+    expect(text).toContain('python');
+  });
+
+  it('shows the empty state when nothing is synced', () => {
+    fixture.detectChanges();
+    flushProjects([], null);
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('No portfolio projects synced yet');
+  });
+
+  it('sync button posts and reloads', () => {
+    fixture.detectChanges();
+    flushProjects([], null);
+    (fixture.nativeElement as HTMLElement).querySelector('button')!.click();
+    httpMock
+      .expectOne(`${environment.apiUrl}/portfolio/sync`)
+      .flush({ counts_by_source: { supabase: 1 }, errors: {}, synced_at: '2026-06-09T00:00:00Z' });
+    flushProjects(
+      [
+        {
+          id: 'p1', source: 'supabase', source_key: 'x', url: null, demo_url: null,
+          pinned: false, position: null, tech: [],
+          translations: { en: { title: 'X', description: null } },
+        },
+      ],
+      '2026-06-09T00:00:00Z',
+    );
+    expect(((fixture.nativeElement as HTMLElement).textContent ?? '')).toContain('X');
+  });
+});

@@ -1,0 +1,134 @@
+$primary: #4f46e5;
+$primary-dark: #4338ca;
+$primary-light: #e0e7ff;
+$text-dark: #1a1a2e;
+$text-light: #6b7280;
+$border: #e2e5ea;
+$surface: #ffffff;
+$danger: #dc2626;
+$danger-bg: #fef2f2;
+$radius: 10px;
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+:host {
+  display: block;
+}
+
+// Matches .details-card from profile.component.scss
+.portfolio-card {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 1.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $text-dark;
+  }
+}
+
+// Inline sync button — secondary style matching .btn-secondary in profile.component.scss
+.btn {
+  padding: 0.4rem 1rem;
+  background: $surface;
+  color: $primary;
+  border: 1px solid rgba($primary, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: #f5f3ff;
+    border-color: rgba($primary, 0.5);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.muted {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: $text-light;
+}
+
+.error {
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: $danger-bg;
+  border: 1px solid rgba($danger, 0.15);
+  color: $danger;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.project-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+  }
+}
+
+.project-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $text-dark;
+  margin-right: 0.25rem;
+}
+
+// Matches .skill-tag from profile.component.scss
+.tag {
+  padding: 0.25rem 0.6rem;
+  background: $primary-light;
+  color: $primary-dark;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge {
+  padding: 0.2rem 0.5rem;
+  background: rgba($primary, 0.1);
+  color: $primary-dark;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+a {
+  color: $primary;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+    color: $primary-dark;
+  }
+}

@@ -1,0 +1,40 @@
+<section class="card portfolio-card">
+  <header class="card-header">
+    <h2>Portfolio projects</h2>
+    <button type="button" class="btn" (click)="sync()" [disabled]="syncing()">
+      {{ syncing() ? 'Syncing…' : 'Sync now' }}
+    </button>
+  </header>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  @if (lastSyncedAt(); as last) {
+    <p class="muted">Last synced {{ last | date: 'medium' }}</p>
+  }
+
+  @if (projects().length === 0) {
+    <p class="muted">No portfolio projects synced yet.</p>
+  } @else {
+    <ul class="project-list">
+      @for (project of projects(); track project.id) {
+        <li>
+          <span class="project-title">{{ titleOf(project) }}</span>
+          @if (project.pinned) {
+            <span class="badge">pinned</span>
+          }
+          @for (tag of project.tech; track tag) {
+            <span class="tag">{{ tag }}</span>
+          }
+          @if (project.url) {
+            <a [href]="project.url" target="_blank" rel="noopener">code</a>
+          }
+          @if (project.demo_url) {
+            <a [href]="project.demo_url" target="_blank" rel="noopener">demo</a>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

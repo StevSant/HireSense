@@ -41,6 +41,8 @@ from hiresense.ingestion.domain.services import IngestionCooldownError, Ingestio
 from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
 from hiresense.matching.domain.deep_analysis_result import DeepAnalysisResult
 from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
+from hiresense.portfolio.api.dependencies import get_portfolio_enrichment
+from hiresense.portfolio.domain import PortfolioEnrichmentService
 from hiresense.profile.api.dependencies import get_profile_service
 from hiresense.profile.domain import ProfileService
 
@@ -57,11 +59,16 @@ _ALLOWED_SORTS = frozenset(
 ) | {"date_desc", "date_asc"}
 
 
-async def _gather_profile(profile_service: ProfileService) -> tuple[list[str], str]:
+async def _gather_profile(
+    profile_service: ProfileService,
+    portfolio_enrichment: PortfolioEnrichmentService | None = None,
+) -> tuple[list[str], str]:
     """Flatten all stored profiles into candidate skills + a summary blob.
 
     Shared by the list endpoint (quick scoring) and the analysis endpoint
     (deep scoring) so both score against the same profile representation.
+    When the portfolio module is configured, its synced projects are appended
+    (extra skills + a compact projects block) so scoring sees real projects.
     """
     candidate_skills: list[str] = []
     summary_parts: list[str] = []
@@ -69,6 +76,11 @@ async def _gather_profile(profile_service: ProfileService) -> tuple[list[str], s
         candidate_skills.extend(profile.skills)
         for section in profile.sections:
             summary_parts.append(section.content)
+    if portfolio_enrichment is not None:
+        extra_skills, extra_text = await portfolio_enrichment.enrichment()
+        candidate_skills.extend(extra_skills)
+        if extra_text:
+            summary_parts.append(extra_text)
     return candidate_skills, "\n".join(summary_parts)
 
 
@@ -146,6 +158,9 @@ async def list_jobs(
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
+    portfolio_enrichment: Annotated[
+        PortfolioEnrichmentService | None, Depends(get_portfolio_enrichment)
+    ],
     semantic_scoring: Annotated[SemanticScoringService | None, Depends(get_semantic_scoring)],
     quick_scoring: Annotated[QuickScoringService | None, Depends(get_quick_scoring)],
     pre_ranker: Annotated[SemanticPreRanker | None, Depends(get_pre_ranker)],
@@ -201,7 +216,7 @@ async def list_jobs(
         orchestrator.list_jobs if tab == "boards" else scanner.list_jobs, criteria
     )
 
-    candidate_skills, candidate_summary = await _gather_profile(profile_service)
+    candidate_skills, candidate_summary = await _gather_profile(profile_service, portfolio_enrichment)
 
     persist_scores_batch = (
         orchestrator.persist_scores_batch if tab == "boards" else scanner.persist_scores_batch
@@ -368,6 +383,9 @@ async def analyze_job(
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
+    portfolio_enrichment: Annotated[
+        PortfolioEnrichmentService | None, Depends(get_portfolio_enrichment)
+    ],
     deep_analysis: Annotated[DeepAnalysisService | None, Depends(get_deep_analysis)],
     force: bool = False,
 ) -> DeepAnalysisResult:
@@ -377,7 +395,7 @@ async def analyze_job(
         raise HTTPException(status_code=404, detail="Job not found")
     if deep_analysis is None:
         raise HTTPException(status_code=503, detail="Deep analysis is not available")
-    candidate_skills, candidate_summary = await _gather_profile(profile_service)
+    candidate_skills, candidate_summary = await _gather_profile(profile_service, portfolio_enrichment)
     return await deep_analysis.analyze(
         job, candidate_skills, candidate_summary, force=force
     )

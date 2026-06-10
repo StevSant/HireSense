@@ -6,14 +6,26 @@ from httpx import ASGITransport, AsyncClient
 
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.portfolio.api import router
-from hiresense.portfolio.api.dependencies import get_projects_repository, get_sync_service
-from hiresense.portfolio.domain import PortfolioProject, ProjectText, SyncResult
+from hiresense.portfolio.api.dependencies import (
+    get_engagement_service,
+    get_projects_repository,
+    get_sync_service,
+)
+from hiresense.portfolio.domain import PortfolioProject, PortfolioVisit, ProjectText, SyncResult
 
 
 def _project(key: str) -> PortfolioProject:
     return PortfolioProject(
         id=key, source="supabase", source_key=key,
         translations={"en": ProjectText(title=key)},
+    )
+
+
+def _visit(ref: str) -> PortfolioVisit:
+    return PortfolioVisit(
+        ref=ref,
+        first_seen=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        last_seen=datetime(2026, 6, 1, tzinfo=timezone.utc),
     )
 
 
@@ -36,11 +48,20 @@ class _FakeRepo:
         return self._last
 
 
-def _app(sync=None, repo=None) -> FastAPI:
+class _FakeEngagementService:
+    def __init__(self, visits: list[PortfolioVisit]) -> None:
+        self._visits = visits
+
+    async def visits(self) -> list[PortfolioVisit]:
+        return self._visits
+
+
+def _app(sync=None, repo=None, engagement=None) -> FastAPI:
     app = FastAPI()
     app.dependency_overrides[require_auth] = lambda: "test-user"
     app.dependency_overrides[get_sync_service] = lambda: sync
     app.dependency_overrides[get_projects_repository] = lambda: repo
+    app.dependency_overrides[get_engagement_service] = lambda: engagement
     app.include_router(router)
     return app
 
@@ -95,3 +116,24 @@ async def test_list_projects_with_and_without_repo() -> None:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as client:
         body = (await client.get("/portfolio/projects")).json()
     assert body == {"projects": [], "last_synced_at": None}
+
+
+@pytest.mark.asyncio
+async def test_engagement_unconfigured_returns_configured_false() -> None:
+    app = _app(engagement=None)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as client:
+        body = (await client.get("/portfolio/engagement")).json()
+    assert body["configured"] is False
+    assert body["visits"] == []
+
+
+@pytest.mark.asyncio
+async def test_engagement_returns_visits_payload() -> None:
+    visits = [_visit("hiresense-abc"), _visit("hiresense-def")]
+    app = _app(engagement=_FakeEngagementService(visits))
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as client:
+        body = (await client.get("/portfolio/engagement")).json()
+    assert body["configured"] is True
+    assert len(body["visits"]) == 2
+    refs = {v["ref"] for v in body["visits"]}
+    assert refs == {"hiresense-abc", "hiresense-def"}

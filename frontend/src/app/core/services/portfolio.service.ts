@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PortfolioProjectsResponse } from '../../pages/profile/models/portfolio-projects-response.model';
 import { PortfolioSyncResult } from '../../pages/profile/models/portfolio-sync-result.model';
+import { PortfolioEngagementResponse } from '../../pages/profile/models/portfolio-engagement.model';
 
 @Injectable({ providedIn: 'root' })
 export class PortfolioService {
@@ -16,5 +17,9 @@ export class PortfolioService {
 
   sync(): Observable<PortfolioSyncResult> {
     return this.http.post<PortfolioSyncResult>(`${this.base}/sync`, {});
+  }
+
+  engagement(): Observable<PortfolioEngagementResponse> {
+    return this.http.get<PortfolioEngagementResponse>(`${this.base}/engagement`);
   }
 }

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from hiresense.bootstrap.shared_infra import SharedInfra
-from hiresense.portfolio.adapters import SupabasePortfolioAdapter
+from hiresense.portfolio.adapters import GitHubPortfolioAdapter, SupabasePortfolioAdapter
 from hiresense.portfolio.api.provider import PortfolioProvider
 from hiresense.portfolio.domain import PortfolioEnrichmentService, PortfolioSyncService
 from hiresense.portfolio.infrastructure import PortfolioProjectsRepository
@@ -33,6 +33,21 @@ def build_portfolio(infra: SharedInfra) -> PortfolioBuild | None:
                     http_client=infra.http_client,
                     base_url=s.portfolio_supabase_url,
                     anon_key=s.portfolio_supabase_anon_key,
+                )
+            )
+        elif name == "github":
+            if not s.portfolio_github_username:
+                raise ValueError(
+                    "portfolio source 'github' is enabled but "
+                    "PORTFOLIO_GITHUB_USERNAME is not set"
+                )
+            sources.append(
+                GitHubPortfolioAdapter(
+                    http_client=infra.http_client,
+                    api_url=s.portfolio_github_api_url,
+                    username=s.portfolio_github_username,
+                    token=s.portfolio_github_token,
+                    max_repos=s.portfolio_github_max_repos,
                 )
             )
         else:

@@ -5,7 +5,12 @@ from dataclasses import dataclass
 from hiresense.bootstrap.shared_infra import SharedInfra
 from hiresense.portfolio.adapters import GitHubPortfolioAdapter, SupabasePortfolioAdapter
 from hiresense.portfolio.api.provider import PortfolioProvider
-from hiresense.portfolio.domain import PortfolioEnrichmentService, PortfolioSyncService
+from hiresense.portfolio.domain import (
+    PortfolioCitationService,
+    PortfolioEnrichmentService,
+    PortfolioSyncService,
+    RelevantProjectSelector,
+)
 from hiresense.portfolio.infrastructure import PortfolioProjectsRepository
 
 
@@ -61,6 +66,14 @@ def build_portfolio(infra: SharedInfra) -> PortfolioBuild | None:
             repository=repository,
             language=s.default_language,
             char_cap=s.portfolio_profile_char_cap,
+        ),
+        citation_service=PortfolioCitationService(
+            repository=repository,
+            selector=RelevantProjectSelector(),
+            language=s.default_language,
+            top_n=s.portfolio_relevant_projects_top_n,
+            public_url=s.portfolio_public_url,
+            ref_prefix=s.portfolio_ref_prefix,
         ),
     )
     return PortfolioBuild(provider=provider)

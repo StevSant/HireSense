@@ -438,6 +438,9 @@ class Settings(BaseSettings):
     portfolio_ref_prefix: str = "hiresense"
     # How many relevant projects get cited per generated artifact.
     portfolio_relevant_projects_top_n: int = 2
+    # Supabase service_role key for reading visitor analytics (Dashboard →
+    # Settings → API). Empty disables engagement readback entirely.
+    portfolio_analytics_read_key: str = ""
 
     @classmethod
     def settings_customise_sources(

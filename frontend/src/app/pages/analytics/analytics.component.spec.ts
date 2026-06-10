@@ -2,8 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { AnalyticsComponent } from './analytics.component';
 import { AnalyticsService } from '../../core/services/analytics.service';
+import { PortfolioService } from '../../core/services/portfolio.service';
+import { PortfolioEngagementResponse } from '../profile/models/portfolio-engagement.model';
 
-function makeService(over: Partial<Record<string, unknown>> = {}) {
+function makeAnalyticsService(over: Partial<Record<string, unknown>> = {}) {
   return {
     funnel: () => of({ stages: [], rejected: 0, current_rejected: 0, total_applications: 0, by_source: [] }),
     market: () => of({ top_skills: [{ skill: 'python', count: 3, pct: 75 }], remote_mix: { remote: 2 },
@@ -21,11 +23,18 @@ function makeService(over: Partial<Record<string, unknown>> = {}) {
   };
 }
 
+function makePortfolioService(engagement: () => unknown = () => of({ configured: false, visits: [] } as PortfolioEngagementResponse)) {
+  return { engagement, listProjects: () => of(null), sync: () => of(null) };
+}
+
 describe('AnalyticsComponent', () => {
-  function mount(service: unknown) {
+  function mount(analyticsService: unknown = makeAnalyticsService(), portfolioService: unknown = makePortfolioService()) {
     TestBed.configureTestingModule({
       imports: [AnalyticsComponent],
-      providers: [{ provide: AnalyticsService, useValue: service }],
+      providers: [
+        { provide: AnalyticsService, useValue: analyticsService },
+        { provide: PortfolioService, useValue: portfolioService },
+      ],
     });
     const fixture = TestBed.createComponent(AnalyticsComponent);
     fixture.detectChanges();
@@ -33,19 +42,44 @@ describe('AnalyticsComponent', () => {
   }
 
   it('renders the KPI strip and the section cards on success', () => {
-    const fixture = mount(makeService());
+    const fixture = mount();
     expect(fixture.nativeElement.querySelector('app-kpi-strip')).not.toBeNull();
     // 3 main sections (Pay, Focus, Performance) + 2 in the Market-context footer.
     expect(fixture.nativeElement.querySelectorAll('.analytics-card').length).toBe(5);
   });
 
   it('renders a top skill from market (in the context section)', () => {
-    const fixture = mount(makeService());
+    const fixture = mount();
     expect(fixture.nativeElement.textContent).toContain('python');
   });
 
   it('shows a section error when an endpoint fails', () => {
-    const fixture = mount(makeService({ funnel: () => throwError(() => new Error('boom')) }));
+    const fixture = mount(makeAnalyticsService({ funnel: () => throwError(() => new Error('boom')) }));
     expect(fixture.nativeElement.querySelector('.section-error')).not.toBeNull();
+  });
+
+  it('renders the portfolio engagement card with visit rows when configured and visits present', () => {
+    const visit = {
+      ref: 'ref-1', application_id: 'app-1', first_seen: '2026-06-01T00:00:00Z',
+      last_seen: '2026-06-09T00:00:00Z', page_views: 5, cv_downloads: 2,
+      country: 'US', organization: 'Acme Corp',
+    };
+    const portfolioSvc = makePortfolioService(() => of({ configured: true, visits: [visit] } as PortfolioEngagementResponse));
+    const fixture = mount(makeAnalyticsService(), portfolioSvc);
+    fixture.detectChanges();
+    const rows = fixture.nativeElement.querySelectorAll('.engagement-row');
+    expect(rows.length).toBe(1);
+    expect(fixture.nativeElement.textContent).toContain('5 views');
+    expect(fixture.nativeElement.textContent).toContain('Acme Corp');
+  });
+
+  it('hides the portfolio engagement card when configured is false', () => {
+    const portfolioSvc = makePortfolioService(() => of({ configured: false, visits: [
+      { ref: 'ref-1', application_id: 'app-1', first_seen: '2026-06-01T00:00:00Z',
+        last_seen: '2026-06-09T00:00:00Z', page_views: 1, cv_downloads: 0, country: null, organization: null },
+    ] } as PortfolioEngagementResponse));
+    const fixture = mount(makeAnalyticsService(), portfolioSvc);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.engagement-row')).toBeNull();
   });
 });

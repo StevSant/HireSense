@@ -57,6 +57,32 @@
       @else { <p class="section-loading">Loading…</p> }
     </section>
 
+    <!-- Portfolio engagement -->
+    @if (engagement(); as e) {
+      @if (e.configured && e.visits.length > 0) {
+        <section class="analytics-card analytics-card-wide">
+          <h2 class="card-title">Portfolio engagement</h2>
+          <ul class="engagement-list">
+            @for (visit of engagementRows(e); track visit.ref) {
+              <li class="engagement-row">
+                <span class="engagement-id" [title]="visitLabel(visit)">{{ visitLabel(visit) }}</span>
+                <span class="engagement-views">{{ visit.page_views }} views</span>
+                @if (visit.cv_downloads > 0) {
+                  <span class="engagement-cv">{{ visit.cv_downloads }} CV</span>
+                }
+                <span class="engagement-date">{{ visit.last_seen | date: 'mediumDate' }}</span>
+                @if (visit.organization) {
+                  <span class="engagement-meta">{{ visit.organization }}</span>
+                } @else if (visit.country) {
+                  <span class="engagement-meta">{{ visit.country }}</span>
+                }
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    }
+
   </div>
 
   <!-- Market context (secondary) -->

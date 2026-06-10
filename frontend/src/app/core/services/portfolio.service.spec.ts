@@ -43,4 +43,20 @@ describe('PortfolioService', () => {
     expect(req.request.method).toBe('POST');
     req.flush({ counts_by_source: { supabase: 3 }, errors: {}, synced_at: '2026-06-09T00:00:00Z' });
   });
+
+  it('fetches engagement data', () => {
+    const visit = {
+      ref: 'ref-1', application_id: 'app-1', first_seen: '2026-06-01T00:00:00Z',
+      last_seen: '2026-06-09T00:00:00Z', page_views: 3, cv_downloads: 1,
+      country: 'US', organization: 'Acme',
+    };
+    service.engagement().subscribe((res) => {
+      expect(res.configured).toBe(true);
+      expect(res.visits.length).toBe(1);
+      expect(res.visits[0].application_id).toBe('app-1');
+    });
+    const req = httpMock.expectOne(`${environment.apiUrl}/portfolio/engagement`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ configured: true, visits: [visit] });
+  });
 });

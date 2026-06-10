@@ -15,6 +15,11 @@
             <span class="applied-at">· Applied {{ agg.applied_at | date:'mediumDate' }}</span>
           }
         </p>
+        @if (portfolioVisit(); as visit) {
+          <span class="portfolio-visit-chip" [title]="'First seen ' + (visit.first_seen | date: 'medium')">
+            👀 Portfolio visited — {{ visit.page_views }} page views · last {{ visit.last_seen | date: 'mediumDate' }}@if (visit.cv_downloads > 0) {<ng-container> · {{ visit.cv_downloads }} CV downloads</ng-container>}
+          </span>
+        }
       </div>
       <div class="header-actions">
         @if (agg.url) {

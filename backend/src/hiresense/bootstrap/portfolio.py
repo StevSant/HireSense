@@ -3,10 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from hiresense.bootstrap.shared_infra import SharedInfra
-from hiresense.portfolio.adapters import GitHubPortfolioAdapter, SupabasePortfolioAdapter
+from hiresense.portfolio.adapters import (
+    GitHubPortfolioAdapter,
+    SupabaseEngagementAdapter,
+    SupabasePortfolioAdapter,
+)
 from hiresense.portfolio.api.provider import PortfolioProvider
 from hiresense.portfolio.domain import (
     PortfolioCitationService,
+    PortfolioEngagementService,
     PortfolioEnrichmentService,
     PortfolioSyncService,
     RelevantProjectSelector,
@@ -58,6 +63,17 @@ def build_portfolio(infra: SharedInfra) -> PortfolioBuild | None:
         else:
             raise ValueError(f"Unknown portfolio source: {name}")
 
+    engagement_service: PortfolioEngagementService | None = None
+    if s.portfolio_analytics_read_key and s.portfolio_supabase_url:
+        engagement_service = PortfolioEngagementService(
+            SupabaseEngagementAdapter(
+                http_client=infra.http_client,
+                base_url=s.portfolio_supabase_url,
+                read_key=s.portfolio_analytics_read_key,
+            ),
+            ref_prefix=s.portfolio_ref_prefix,
+        )
+
     repository = PortfolioProjectsRepository(session_factory=infra.sync_session_factory)
     provider = PortfolioProvider(
         sync_service=PortfolioSyncService(sources=sources, repository=repository),
@@ -75,5 +91,6 @@ def build_portfolio(infra: SharedInfra) -> PortfolioBuild | None:
             public_url=s.portfolio_public_url,
             ref_prefix=s.portfolio_ref_prefix,
         ),
+        engagement_service=engagement_service,
     )
     return PortfolioBuild(provider=provider)

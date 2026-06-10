@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from hiresense.portfolio.domain import (
     PortfolioCitationService,
+    PortfolioEngagementService,
     PortfolioEnrichmentService,
     PortfolioSyncService,
 )
@@ -15,11 +16,13 @@ class PortfolioProvider:
         repository: PortfolioProjectsRepositoryPort,
         enrichment_service: PortfolioEnrichmentService,
         citation_service: PortfolioCitationService,
+        engagement_service: PortfolioEngagementService | None = None,
     ) -> None:
         self._sync_service = sync_service
         self._repository = repository
         self._enrichment_service = enrichment_service
         self._citation_service = citation_service
+        self._engagement_service = engagement_service
 
     def get_sync_service(self) -> PortfolioSyncService:
         return self._sync_service
@@ -32,3 +35,6 @@ class PortfolioProvider:
 
     def get_citation_service(self) -> PortfolioCitationService:
         return self._citation_service
+
+    def get_engagement_service(self) -> PortfolioEngagementService | None:
+        return self._engagement_service

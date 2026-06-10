@@ -1,4 +1,5 @@
 from hiresense.portfolio.domain.citation_service import PortfolioCitationService
+from hiresense.portfolio.domain.engagement_service import PortfolioEngagementService
 from hiresense.portfolio.domain.enrichment_service import PortfolioEnrichmentService
 from hiresense.portfolio.domain.portfolio_project import PortfolioProject
 from hiresense.portfolio.domain.portfolio_visit import PortfolioVisit
@@ -10,6 +11,7 @@ from hiresense.portfolio.domain.sync_service import PortfolioSyncService
 
 __all__ = [
     "PortfolioCitationService",
+    "PortfolioEngagementService",
     "PortfolioEnrichmentService",
     "PortfolioProject",
     "PortfolioSyncService",

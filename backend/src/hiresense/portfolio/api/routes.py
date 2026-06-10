@@ -8,8 +8,18 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
-from hiresense.portfolio.api.dependencies import get_projects_repository, get_sync_service
-from hiresense.portfolio.domain import PortfolioProject, PortfolioSyncService, SyncResult
+from hiresense.portfolio.api.dependencies import (
+    get_engagement_service,
+    get_projects_repository,
+    get_sync_service,
+)
+from hiresense.portfolio.domain import (
+    PortfolioEngagementService,
+    PortfolioProject,
+    PortfolioSyncService,
+    PortfolioVisit,
+    SyncResult,
+)
 from hiresense.portfolio.ports import PortfolioProjectsRepositoryPort
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"], dependencies=[Depends(require_auth)])
@@ -47,3 +57,17 @@ async def list_projects(
     projects = await asyncio.to_thread(repository.list_all)
     last = await asyncio.to_thread(repository.last_synced_at)
     return ProjectsResponse(projects=projects, last_synced_at=last)
+
+
+class EngagementResponse(BaseModel):
+    configured: bool
+    visits: list[PortfolioVisit]
+
+
+@router.get("/engagement", response_model=EngagementResponse)
+async def get_engagement(
+    service: Annotated[PortfolioEngagementService | None, Depends(get_engagement_service)],
+) -> EngagementResponse:
+    if service is None:
+        return EngagementResponse(configured=False, visits=[])
+    return EngagementResponse(configured=True, visits=await service.visits())

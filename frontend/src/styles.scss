@@ -283,7 +283,9 @@ textarea#tex {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  /* Wide tables scroll inside the card instead of stretching the page. */
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 table {

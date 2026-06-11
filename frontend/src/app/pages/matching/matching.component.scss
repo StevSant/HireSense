@@ -472,3 +472,12 @@ $transition: 0.2s ease;
   font-size: 0.72rem;
   color: $text-light;
 }
+
+/* Side-by-side field pairs are too cramped on phones — stack them. */
+@media (max-width: 640px) {
+  .form-row,
+  .details-grid,
+  .dimensions-grid {
+    grid-template-columns: 1fr;
+  }
+}

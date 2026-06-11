@@ -2,6 +2,8 @@
   padding: 1.5rem;
   max-width: 1200px;
 
+  .table-scroll { overflow-x: auto; }
+
   .page-header {
     display: flex;
     flex-wrap: wrap;

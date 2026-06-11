@@ -32,6 +32,7 @@
       <p class="muted">Track a job from <a routerLink="/dashboard/ingestion">Ingestion</a> or paste a job description to start.</p>
     </div>
   } @else {
+    <div class="table-container">
     <table class="apps-table">
       <thead>
         <tr>
@@ -90,6 +91,7 @@
         }
       </tbody>
     </table>
+    </div>
   }
 
   @if (showCreateDialog()) {

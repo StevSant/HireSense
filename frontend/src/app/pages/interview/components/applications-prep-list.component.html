@@ -5,6 +5,7 @@
   } @else if (applications().length === 0) {
     <p class="muted">No applications yet. Track a job or create one to start preparing.</p>
   } @else {
+    <div class="table-scroll">
     <table>
       <thead>
         <tr>
@@ -37,5 +38,6 @@
         }
       </tbody>
     </table>
+    </div>
   }
 </section>

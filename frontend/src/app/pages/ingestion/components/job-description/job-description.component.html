@@ -5,7 +5,15 @@
   @for (section of parsed().sections; track section.title) {
     <div class="jd-section" [attr.data-emphasis]="section.emphasis">
       <span class="jd-section-title">{{ section.title }}</span>
-      <p class="jd-prose">{{ section.body }}</p>
+      @if (section.items?.length) {
+        <ul class="jd-list">
+          @for (item of section.items; track $index) {
+            <li>{{ item }}</li>
+          }
+        </ul>
+      } @else {
+        <p class="jd-prose">{{ section.body }}</p>
+      }
     </div>
   }
 } @else {

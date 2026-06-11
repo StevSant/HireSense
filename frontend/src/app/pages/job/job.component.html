@@ -93,6 +93,14 @@
                 <app-match-breakdown [dimensions]="a.dimensions" />
               </div>
             }
+            @if (a.matched_skills.length || a.missing_skills.length) {
+              <div class="job-snapshot-block">
+                <h3 class="job-section-label">Skills &amp; gaps
+                  <span class="job-section-count">{{ a.matched_skills.length }} matched · {{ a.missing_skills.length }} gaps</span>
+                </h3>
+                <app-match-skills [matched]="a.matched_skills" [missing]="a.missing_skills" />
+              </div>
+            }
           } @else if (analysisLoading()) {
             <p class="job-snapshot-block job-analysis-state">Scoring…</p>
           }

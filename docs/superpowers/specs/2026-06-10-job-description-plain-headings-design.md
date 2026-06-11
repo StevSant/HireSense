@@ -72,6 +72,18 @@ Small SCSS addition only: `.jd-list` — compact bullet list, secondary text
 color, same typography as `.jd-prose`. Existing `.jd-section` cards provide
 the boxed, color-coded look.
 
+## Addendum (same day): height clamp for column balance
+
+Long descriptions still make the left column several screens taller than the
+sticky score rail. Fix: `JobDescriptionComponent` gains a `collapsible` input
+(default `false`; the job detail page sets it). When collapsible and the
+description exceeds `JOB_DESCRIPTION_CLAMP_THRESHOLD` characters, the content
+renders inside a max-height clamp with a gradient fade and a centered
+"Show full description" / "Show less" toggle (LinkedIn pattern). The
+slide-over `job-detail-panel` keeps the unclamped behavior. The character
+threshold lives in its own constant file under `pages/ingestion/lib`; the
+pixel max-height is a presentation detail in the component SCSS.
+
 ## Testing
 
 - New `parse-job-description.spec.ts`: plain-heading detection, mid-line-colon

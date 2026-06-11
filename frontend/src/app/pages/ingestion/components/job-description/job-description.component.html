@@ -1,21 +1,28 @@
-@if (hasSections()) {
-  @if (parsed().intro) {
-    <p class="jd-prose jd-intro">{{ parsed().intro }}</p>
+<div class="jd-content" [class.jd-clamped]="clamped()">
+  @if (hasSections()) {
+    @if (parsed().intro) {
+      <p class="jd-prose jd-intro">{{ parsed().intro }}</p>
+    }
+    @for (section of parsed().sections; track section.title) {
+      <div class="jd-section" [attr.data-emphasis]="section.emphasis">
+        <span class="jd-section-title">{{ section.title }}</span>
+        @if (section.items?.length) {
+          <ul class="jd-list">
+            @for (item of section.items; track $index) {
+              <li>{{ item }}</li>
+            }
+          </ul>
+        } @else {
+          <p class="jd-prose">{{ section.body }}</p>
+        }
+      </div>
+    }
+  } @else {
+    <p class="jd-prose jd-raw">{{ description() }}</p>
   }
-  @for (section of parsed().sections; track section.title) {
-    <div class="jd-section" [attr.data-emphasis]="section.emphasis">
-      <span class="jd-section-title">{{ section.title }}</span>
-      @if (section.items?.length) {
-        <ul class="jd-list">
-          @for (item of section.items; track $index) {
-            <li>{{ item }}</li>
-          }
-        </ul>
-      } @else {
-        <p class="jd-prose">{{ section.body }}</p>
-      }
-    </div>
-  }
-} @else {
-  <p class="jd-prose jd-raw">{{ description() }}</p>
+</div>
+@if (canToggle()) {
+  <button type="button" class="jd-toggle" (click)="toggle()">
+    {{ expanded() ? 'Show less ▴' : 'Show full description ▾' }}
+  </button>
 }

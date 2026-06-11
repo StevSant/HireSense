@@ -1,3 +1,32 @@
+.jd-content.jd-clamped {
+  max-height: 30rem;
+  overflow: hidden;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 5rem;
+    background: linear-gradient(to bottom, transparent, var(--bg-card));
+    pointer-events: none;
+  }
+}
+.jd-toggle {
+  display: block;
+  margin: 0.6rem auto 0;
+  padding: 0.35rem 0.9rem;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  background: none;
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+
+  &:hover { background: var(--accent-subtle); }
+}
 .jd-prose {
   margin: 0;
   font-size: 0.9rem;

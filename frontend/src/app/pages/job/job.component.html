@@ -35,6 +35,11 @@
     </div>
     @if (trackError()) { <p class="job-track-error">{{ trackError() }}</p> }
 
+    <section class="job-card job-description-card">
+      <h2 class="job-section-label">Description</h2>
+      <app-job-description [description]="j.description" [collapsible]="true" />
+    </section>
+
     <div class="job-body">
       <main class="job-main">
         <section class="job-card">
@@ -119,10 +124,5 @@
         </div>
       </aside>
     </div>
-
-    <section class="job-card job-description-card">
-      <h2 class="job-section-label">Description</h2>
-      <app-job-description [description]="j.description" [collapsible]="true" />
-    </section>
   }
 </div>

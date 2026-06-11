@@ -78,7 +78,11 @@
   padding-bottom: 1.1rem;
   border-bottom: 1px solid var(--border-subtle);
 }
-.job-feedback { margin-left: auto; }
+.job-feedback {
+  margin-left: auto;
+  /* Match the icon buttons' height to the .job-btn row. */
+  --fb-btn-padding: 0.45rem 0.55rem;
+}
 .job-btn {
   font: inherit;
   font-size: 0.85rem;

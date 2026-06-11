@@ -3,12 +3,19 @@
   gap: 0.25rem;
   margin-bottom: 1.5rem;
   border-bottom: 1px solid var(--border-default);
+  /* On narrow screens the tab row scrolls sideways instead of clipping. */
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
 }
 
 .hub-tab {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  flex-shrink: 0;
+  white-space: nowrap;
   padding: 0.7rem 1.1rem;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;

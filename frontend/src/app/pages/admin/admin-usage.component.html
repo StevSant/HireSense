@@ -92,6 +92,7 @@
       @if (b.buckets.length === 0) {
         <div class="empty">No usage to break down.</div>
       } @else {
+        <div class="table-scroll">
         <table class="breakdown-table">
           <thead>
             <tr>
@@ -121,6 +122,7 @@
             }
           </tbody>
         </table>
+        </div>
       }
     }
   </section>
@@ -154,6 +156,7 @@
       @if (r.calls.length === 0) {
         <div class="empty">No calls match the current filters.</div>
       } @else {
+        <div class="table-scroll">
         <table class="calls-table">
           <thead>
             <tr>
@@ -190,6 +193,7 @@
             }
           </tbody>
         </table>
+        </div>
       }
     } @else {
       <div class="state">Loading…</div>

@@ -83,6 +83,11 @@
   /* Match the icon buttons' height to the .job-btn row. */
   --fb-btn-padding: 0.45rem 0.55rem;
 }
+/* When the bar is too narrow for one row, let the feedback icons flow inline
+   with the buttons instead of orphaning right-aligned on their own row. */
+@media (max-width: 980px) {
+  .job-feedback { margin-left: 0; }
+}
 .job-btn {
   font: inherit;
   font-size: 0.85rem;

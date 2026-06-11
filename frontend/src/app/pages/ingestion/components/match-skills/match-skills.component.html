@@ -1,0 +1,18 @@
+<div class="match-skills">
+  @if (matched().length) {
+    <div class="skills-col">
+      <span class="skills-label">Matched skills</span>
+      <div class="tag-row">
+        @for (s of matched(); track s) { <span class="tag tag-match">{{ s }}</span> }
+      </div>
+    </div>
+  }
+  @if (missing().length) {
+    <div class="skills-col">
+      <span class="skills-label">Gaps</span>
+      <div class="tag-row">
+        @for (s of missing(); track s) { <span class="tag tag-miss">{{ s }}</span> }
+      </div>
+    </div>
+  }
+</div>

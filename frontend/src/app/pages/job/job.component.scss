@@ -115,7 +115,7 @@
 /* ---- Two-pane body: main content + sticky snapshot ---- */
 .job-body {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(17rem, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 1fr);
   gap: 1.25rem;
   align-items: start;
   margin-top: 1.25rem;
@@ -193,6 +193,14 @@
 }
 .job-snapshot-block { border-top: 1px solid var(--border-subtle); padding-top: 1rem; }
 .job-snapshot-block .job-section-label { margin-bottom: 0.5rem; }
+.job-section-count {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-left: 0.4rem;
+}
 
 /* ---- Shared bits ---- */
 .reason-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }

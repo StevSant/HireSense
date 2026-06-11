@@ -51,19 +51,22 @@ describe('DeepAnalysisComponent', () => {
     );
   });
 
-  it('renders matched skills, gaps, pros, cons and recommendations', () => {
+  it('renders pros, cons and recommendations', () => {
     const el = mount(FULL_ANALYSIS).nativeElement;
-    expect(el.querySelectorAll('.tag-match').length).toBe(2);
-    expect(el.querySelectorAll('.tag-miss').length).toBe(1);
     expect(el.querySelectorAll('.pc-pro').length).toBe(1);
     expect(el.querySelectorAll('.pc-con').length).toBe(1);
     expect(el.querySelectorAll('.rec-list li').length).toBe(1);
   });
 
+  it('does not render matched/gap skills (those live in the rail)', () => {
+    const el = mount(FULL_ANALYSIS).nativeElement;
+    expect(el.querySelector('.tag-match')).toBeNull();
+    expect(el.querySelector('.tag-miss')).toBeNull();
+  });
+
   it('omits optional blocks when their collections are empty', () => {
     const el = mount(EMPTY_ANALYSIS).nativeElement;
     expect(el.querySelector('.deep-narrative')).toBeNull();
-    expect(el.querySelector('.deep-skills')).toBeNull();
     expect(el.querySelector('.deep-proscons')).toBeNull();
     expect(el.querySelector('.rec-list')).toBeNull();
   });

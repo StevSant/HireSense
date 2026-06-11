@@ -76,8 +76,10 @@ def pgvector_session_factory():
     Skips (rather than errors) if the DB can't be reached or the pgvector
     extension/table can't be created. Creates the ``vector_embeddings`` table and
     HNSW index idempotently, sized to ``EMBEDDING_DIM`` (settings.embedding_dim),
-    cleans rows out before/after, and drops the table at teardown so the run is
-    self-contained.
+    and cleans rows out before/after. Teardown only drops the table if this
+    fixture created it; on a pre-existing (dev/shared) DB the table is left in
+    place and only its rows are evicted, so running against the dev DATABASE_URL
+    can't leave it tableless while alembic_version still reads head.
     """
     from sqlalchemy import create_engine, text
     from sqlalchemy.exc import SQLAlchemyError
@@ -97,6 +99,17 @@ def pgvector_session_factory():
 
     try:
         with engine.begin() as conn:
+            # Detect a pre-existing table (e.g. a real dev/shared DB whose
+            # `vector_embeddings` is owned by migration 014/023) BEFORE we create
+            # ours. If it was already there we must not drop it on teardown — that
+            # would leave the dev DB tableless while alembic_version still reads
+            # head, silently disabling the SemanticPreRanker.
+            pre_existing = (
+                conn.execute(
+                    text("SELECT to_regclass('public.vector_embeddings')")
+                ).scalar()
+                is not None
+            )
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
             conn.execute(
                 text(
@@ -123,7 +136,12 @@ def pgvector_session_factory():
 
     try:
         with engine.begin() as conn:
-            conn.execute(text("DROP TABLE IF EXISTS vector_embeddings"))
+            if pre_existing:
+                # The table is owned by the schema, not this run — leave it in
+                # place and only evict the rows we inserted.
+                conn.execute(text("DELETE FROM vector_embeddings"))
+            else:
+                conn.execute(text("DROP TABLE IF EXISTS vector_embeddings"))
     except SQLAlchemyError:
         pass
     finally:

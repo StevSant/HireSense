@@ -125,6 +125,10 @@
 
 .job-aside { position: sticky; top: 1rem; }
 
+/* Description spans the full width below the analysis/score columns so a
+   long posting can never leave the score rail floating beside empty space. */
+.job-description-card { margin-top: 1.25rem; }
+
 .job-card {
   padding: 1.2rem 1.35rem;
   background: var(--bg-card);

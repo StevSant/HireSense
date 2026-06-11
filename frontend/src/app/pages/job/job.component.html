@@ -31,7 +31,7 @@
       <button type="button" class="job-btn" (click)="goTo('matching')">Match</button>
       <button type="button" class="job-btn" (click)="goTo('optimization')">Optimize CV</button>
       <button type="button" class="job-btn" (click)="goTo('interview')">Prep Interview</button>
-      <app-feedback-controls class="job-feedback" [jobId]="j.id" />
+      <app-feedback-controls class="job-feedback" [jobId]="j.id" [compact]="true" />
     </div>
     @if (trackError()) { <p class="job-track-error">{{ trackError() }}</p> }
 

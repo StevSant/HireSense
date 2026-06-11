@@ -50,7 +50,9 @@
   gap: 0.25rem;
 
   .fb-btn {
-    padding: 0.25rem 0.35rem;
+    /* Hosts can resize the icon buttons (e.g. to match a toolbar's button
+       height) by setting --fb-btn-padding on the component element. */
+    padding: var(--fb-btn-padding, 0.25rem 0.35rem);
   }
 
   .fb-icon {

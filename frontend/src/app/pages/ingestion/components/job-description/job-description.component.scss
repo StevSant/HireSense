@@ -19,6 +19,16 @@
   &[data-emphasis='stack'] { border-left-color: var(--info-text); }
   &[data-emphasis='role'] { border-left-color: var(--warning); }
 }
+.jd-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+
+  li { margin: 0.2rem 0; }
+  li::marker { color: var(--text-muted); }
+}
 .jd-section-title {
   display: block;
   margin-bottom: 0.35rem;

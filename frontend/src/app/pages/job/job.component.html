@@ -55,7 +55,7 @@
 
         <section class="job-card">
           <h2 class="job-section-label">Description</h2>
-          <app-job-description [description]="j.description" />
+          <app-job-description [description]="j.description" [collapsible]="true" />
         </section>
 
         @if (j.categories.length) {

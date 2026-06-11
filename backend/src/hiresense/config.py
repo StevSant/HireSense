@@ -188,6 +188,14 @@ class Settings(BaseSettings):
     # scoring cost.
     ingestion_max_page_size: int = 100
 
+    # Cold-start fairness for the all-sources match ranking: on a full rescore,
+    # LLM quick-score the top-N heuristic jobs of EVERY source (in addition to
+    # the visible page) so a strong job from a source the heuristic underrates
+    # (e.g. getonboard's structured tags) can reach page 1 without the user
+    # first filtering by that source. Champions are cached per profile, so the
+    # steady-state extra LLM cost is zero. 0 disables the pass.
+    ingestion_source_champions_per_source: int = 3
+
     # Hide job listings whose posted_date is older than this many days (stale /
     # re-surfaced postings — e.g. WeWorkRemotely keeps the original RSS pubDate
     # while the site shows a bumped date). Jobs with no posted_date are never

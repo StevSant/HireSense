@@ -589,6 +589,108 @@ async def test_cached_llm_score_ranks_globally_before_pagination() -> None:
     assert body["jobs"][0]["match_score"] == 0.82
 
 
+# ---------------------------------------------------------------------------
+# Cold-start source champions: with an EMPTY quick-score cache, the heuristic
+# blend is source-biased, so page 1 of the all-sources view is monopolized by
+# one source — and since only the visible page is LLM-scored, buried sources
+# never get an accurate score (self-reinforcing). The fix LLM-scores the top-K
+# heuristic champions of EVERY source on a full rescore, so a genuinely strong
+# job from a weak-heuristic source surfaces on page 1 of the first cold load.
+# ---------------------------------------------------------------------------
+
+
+class _ColdChampionQuickScoring:
+    """Empty cache: cache-only passes return {}. LLM passes score getonboard's
+    champion at 0.9 (jobs from other sources keep their heuristic)."""
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[bool, list[str]]] = []
+
+    async def score_page(self, jobs, skills, summary, *, llm_on_miss=True):
+        from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
+        from hiresense.ingestion.domain.quick_match_verdict import QuickMatchVerdict
+
+        self.calls.append((llm_on_miss, sorted(j.id for j in jobs)))
+        if not llm_on_miss:
+            return {}
+        out = {}
+        for j in jobs:
+            if j.id == "gob-best":
+                out[j.id] = QuickMatchResult(
+                    job_id=j.id, score=0.9, verdict=QuickMatchVerdict.STRONG
+                )
+        return out
+
+
+@pytest.mark.asyncio
+async def test_cold_cache_source_champions_rank_globally() -> None:
+    from types import SimpleNamespace
+
+    from hiresense.ingestion.api.dependencies import get_quick_scoring
+
+    # hn_hiring dominates the heuristic (0.7/0.6/0.5); getonboard's best job
+    # has a low heuristic (0.3) but is a genuinely strong match (LLM 0.9).
+    def _job(id_, source, score):
+        return NormalizedJob(
+            id=id_, title=id_, company="Co", description="d", skills=[],
+            source=source, source_type="api", language="en",
+            url=f"https://e.com/{id_}", match_score=score,
+        )
+
+    jobs = [
+        _job("hn-1", "hn_hiring", 0.7),
+        _job("hn-2", "hn_hiring", 0.6),
+        _job("hn-3", "hn_hiring", 0.5),
+        _job("gob-best", "getonboard", 0.3),
+        _job("gob-2", "getonboard", 0.2),
+    ]
+
+    class _Orch:
+        async def run(self, filters=None):
+            return []
+
+        def list_jobs(self, criteria=None):
+            return list(jobs)
+
+        def persist_scores(self, *a):
+            pass
+
+        def persist_scores_batch(self, updates):
+            pass
+
+    quick = _ColdChampionQuickScoring()
+    app = FastAPI()
+    app.state.settings = SimpleNamespace(
+        ingestion_min_match_score=0.0,
+        ingestion_max_job_age_days=0,
+        ingestion_max_page_size=100,
+        ingestion_source_champions_per_source=2,
+    )
+    app.dependency_overrides[get_ingestion_orchestrator] = lambda: _Orch()
+    app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
+    app.dependency_overrides[get_profile_service] = lambda: FakeProfileSummaryOnly()
+    app.dependency_overrides[get_semantic_scoring] = lambda: None
+    app.dependency_overrides[get_quick_scoring] = lambda: quick
+    app.dependency_overrides[require_auth] = lambda: "test-user"
+    app.include_router(router)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # page_size=2: without the champions pass, hn-1/hn-2 (heuristic 0.7/0.6)
+        # monopolize page 1 and gob-best is never LLM-scored at all.
+        resp = await client.get(
+            "/ingestion/jobs", params={"tab": "boards", "page_size": 2, "min_score": 0}
+        )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["jobs"][0]["id"] == "gob-best"
+    assert body["jobs"][0]["match_score"] == 0.9
+    # The champions pass scored the top-2 heuristic jobs of EVERY source
+    # (cache-empty), before pagination.
+    champion_call = next(c for c in quick.calls if c[0] is True)
+    assert champion_call[1] == ["gob-2", "gob-best", "hn-1", "hn-2"]
+
+
 @pytest.mark.asyncio
 async def test_requires_auth_without_token() -> None:
     """Router-level auth: requests with no bearer token are rejected."""

@@ -288,6 +288,47 @@ async def list_jobs(
         if cached_quick:
             all_jobs = [_apply_quick(j, cached_quick.get(j.id)) for j in all_jobs]
 
+        # SOURCE CHAMPIONS (cold-start fairness). The cache-only pass above can
+        # only rank what was LLM-scored before, and the page-level pass below
+        # only scores the visible page — so with a cold cache the source-biased
+        # heuristic decides who ever GETS an accurate score: page 1 fills with
+        # the verbose-text sources, those get scored, and a genuinely strong
+        # job from a weak-heuristic source (getonboard's structured tags) stays
+        # buried until the user happens to filter by that source. Break the
+        # loop by LLM-scoring the top-K heuristic champions of EVERY source on
+        # a full rescore of the unfiltered match-sorted view. The champion set
+        # is the stable heuristic top-K per source (cached members are counted
+        # but not re-sent), so once cached this pass costs zero LLM calls.
+        champions_k = (
+            settings.ingestion_source_champions_per_source
+            if settings is not None
+            else 0
+        )
+        if (
+            rescore
+            and champions_k > 0
+            and source is None
+            and effective_sort.startswith("match_")
+        ):
+            taken: dict[str, int] = {}
+            champions: list[NormalizedJob] = []
+            for job in sorted(
+                all_jobs, key=lambda j: j.match_score or 0.0, reverse=True
+            ):
+                if taken.get(job.source, 0) >= champions_k:
+                    continue
+                taken[job.source] = taken.get(job.source, 0) + 1
+                if job.id not in cached_quick:
+                    champions.append(job)
+            if champions:
+                champion_quick = await quick_scoring.score_page(
+                    champions, candidate_skills, candidate_summary, llm_on_miss=True
+                )
+                if champion_quick:
+                    all_jobs = [
+                        _apply_quick(j, champion_quick.get(j.id)) for j in all_jobs
+                    ]
+
     params = JobQueryParams(
         page=page,
         page_size=page_size,

@@ -26,9 +26,9 @@
       <p class="summary">
         <strong>{{ digest.job_count }}</strong>
         {{ digest.job_count === 1 ? 'new match' : 'new matches' }}
-        since {{ digest.cutoff_at }}
+        since {{ digest.cutoff_at | date: 'MMM d, y' }}
         @if (digest.created_at) {
-          <span class="run-time">· run {{ digest.created_at }}</span>
+          <span class="run-time">· run {{ digest.created_at | date: 'MMM d, y, h:mm a' }}</span>
         }
       </p>
 
@@ -90,7 +90,7 @@
         @for (digest of history(); track digest.id) {
           <li class="history-row">
             <button class="history-head" (click)="toggleExpanded(digest.id)">
-              <span class="history-date">{{ digest.created_at ?? digest.cutoff_at }}</span>
+              <span class="history-date">{{ (digest.created_at ?? digest.cutoff_at) | date: 'MMM d, y, h:mm a' }}</span>
               <span class="history-count">
                 {{ digest.job_count }} {{ digest.job_count === 1 ? 'match' : 'matches' }}
               </span>

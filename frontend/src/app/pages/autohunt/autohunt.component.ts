@@ -1,4 +1,5 @@
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { AutohuntService } from '../../core/services/autohunt.service';
@@ -12,7 +13,7 @@ type DigestSortField = 'created' | 'count';
 @Component({
   selector: 'app-autohunt',
   standalone: true,
-  imports: [RouterLink, CompanyLinkComponent],
+  imports: [DatePipe, RouterLink, CompanyLinkComponent],
   templateUrl: './autohunt.component.html',
   styleUrl: './autohunt.component.scss',
 })

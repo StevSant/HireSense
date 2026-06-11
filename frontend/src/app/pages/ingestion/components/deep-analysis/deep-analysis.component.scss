@@ -61,34 +61,17 @@ details[open] > .deep-collapsible-label::after { transform: rotate(-90deg); }
 }
 .deep-collapsible > *:not(summary) { margin-top: 0.85rem; }
 
-/* ---- Skills + pros/cons two-column ---- */
-.deep-skills,
+/* ---- Pros/cons two-column ---- */
 .deep-proscons {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }
 @media (max-width: 560px) {
-  .deep-skills,
   .deep-proscons {
     grid-template-columns: 1fr;
   }
 }
-
-.tag-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-.tag {
-  padding: 0.2rem 0.55rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1.35;
-}
-.tag-match { background: var(--success-bg); color: #166534; }
-.tag-miss { background: var(--danger-bg); color: #991b1b; }
 
 /* ---- Pros / cons ---- */
 .pc-list {

@@ -31,35 +31,8 @@
     </details>
   }
 
-  <!-- Matched / missing skills: collapsed by default (verbose). -->
-  @if (analysis().matched_skills.length || analysis().missing_skills.length) {
-    <details class="deep-collapsible">
-      <summary class="deep-collapsible-label">
-        Skills &amp; gaps
-        <span class="deep-count">{{ analysis().matched_skills.length }} matched · {{ analysis().missing_skills.length }} gaps</span>
-      </summary>
-      <div class="deep-skills">
-        @if (analysis().matched_skills.length) {
-          <div class="skills-col">
-            <span class="deep-block-label">Matched skills</span>
-            <div class="tag-row">
-              @for (s of analysis().matched_skills; track s) { <span class="tag tag-match">{{ s }}</span> }
-            </div>
-          </div>
-        }
-        @if (analysis().missing_skills.length) {
-          <div class="skills-col">
-            <span class="deep-block-label">Gaps</span>
-            <div class="tag-row">
-              @for (s of analysis().missing_skills; track s) { <span class="tag tag-miss">{{ s }}</span> }
-            </div>
-          </div>
-        }
-      </div>
-    </details>
-  }
-
-  <!-- Recommendations: collapsed by default. -->
+  <!-- Recommendations: collapsed by default.
+       (Matched/missing skills render separately in the scorecard rail.) -->
   @if (analysis().recommendations.length) {
     <details class="deep-collapsible">
       <summary class="deep-collapsible-label">

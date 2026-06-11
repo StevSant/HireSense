@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { JobAnalysis } from '../../models/job-analysis.model';
 
-/** Qualitative half of the deep analysis: narrative, pros/cons, matched/gap
- *  skills, and recommendations. The quantitative scorecard (overall score,
- *  verdict, dimension bars) is rendered separately in the job page rail. */
+/** Qualitative half of the deep analysis: narrative, pros/cons, and
+ *  recommendations. The quantitative scorecard (overall score, verdict,
+ *  dimension bars, matched/gap skills) is rendered separately in the job
+ *  page rail. */
 @Component({
   selector: 'app-deep-analysis',
   standalone: true,

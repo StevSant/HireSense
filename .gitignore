@@ -12,7 +12,7 @@ venv/
 .env
 
 # IDE
-.vscode/
+# .vscode/
 .idea/
 
 # OS

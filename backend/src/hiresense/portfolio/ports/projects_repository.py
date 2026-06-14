@@ -15,6 +15,14 @@ class PortfolioProjectsRepositoryPort(Protocol):
 
     def list_all(self) -> list[PortfolioProject]: ...
 
+    def list_for_matching(self) -> list[PortfolioProject]:
+        """Projects flagged to contribute to skill-matching enrichment."""
+        ...
+
+    def set_include_in_matching(self, id: str, value: bool) -> bool:
+        """Set a project's matching flag; returns False if no row matched `id`."""
+        ...
+
     def list_page(self, limit: int, offset: int) -> tuple[list[PortfolioProject], int]:
         """Return one page (pinned-first, then position, then source_key) and the total count."""
         ...

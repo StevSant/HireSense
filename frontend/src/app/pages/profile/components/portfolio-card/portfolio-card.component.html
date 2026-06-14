@@ -17,6 +17,9 @@
   @if (total() === 0) {
     <p class="muted">No portfolio projects synced yet.</p>
   } @else {
+    <p class="muted hint">
+      Turn off any project you don't want influencing your job-matching skills.
+    </p>
     <div class="project-grid">
       @for (project of projects(); track project.id) {
         <article class="project-card">
@@ -52,6 +55,15 @@
               }
             </div>
           }
+
+          <label class="matching-toggle">
+            <input
+              type="checkbox"
+              [checked]="project.include_in_matching"
+              (change)="toggleMatching(project, $event)"
+            />
+            <span>Counts toward matching</span>
+          </label>
         </article>
       }
     </div>

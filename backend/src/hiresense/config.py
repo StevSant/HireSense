@@ -281,6 +281,15 @@ class Settings(BaseSettings):
         "IT",
     ]
     themuse_api_key: str = ""
+    # Adzuna aggregator API (global on-site/hybrid + salary). Requires a free
+    # app_id + app_key from developer.adzuna.com. Left out of the default
+    # enabled_job_sources; only wired when both credentials are set. Countries
+    # default LATAM-leaning (mx,br,ar); widen via env (gb,us,de,...).
+    adzuna_api_url: str = "https://api.adzuna.com/v1/api/jobs"
+    adzuna_app_id: str = ""
+    adzuna_app_key: str = ""
+    adzuna_countries: list[str] = ["mx", "br", "ar"]
+    adzuna_query: str = "software developer"
 
     # Portal scanning
     portals_config_path: str = "ingestion/config/portals.yml"

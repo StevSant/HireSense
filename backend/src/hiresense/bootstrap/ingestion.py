@@ -7,6 +7,7 @@ from typing import Any
 
 import hiresense
 from hiresense.ingestion.adapters import (
+    AdzunaAdapter,
     ArbeitnowAdapter,
     AshbyAdapter,
     CSVImportAdapter,
@@ -36,6 +37,7 @@ from hiresense.ingestion.domain import (
 )
 from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
 from hiresense.ingestion.domain.normalizers import (
+    AdzunaNormalizer,
     ArbeitnowNormalizer,
     AshbyNormalizer,
     CSVNormalizer,
@@ -130,6 +132,21 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
                 )
             )
             normalizers["themuse"] = TheMuseNormalizer()
+        elif source_name == "adzuna":
+            # Key-gated: skip silently when credentials are absent so a
+            # misconfigured opt-in never breaks the whole fetch.
+            if s.adzuna_app_id and s.adzuna_app_key:
+                sources.append(
+                    AdzunaAdapter(
+                        http_client=http_client,
+                        base_url=s.adzuna_api_url,
+                        app_id=s.adzuna_app_id,
+                        app_key=s.adzuna_app_key,
+                        countries=s.adzuna_countries,
+                        query=s.adzuna_query,
+                    )
+                )
+                normalizers["adzuna"] = AdzunaNormalizer()
 
     boards_jobs_repo = JobsRepository(session_factory=infra.sync_session_factory, bucket="boards")
     portals_jobs_repo = JobsRepository(session_factory=infra.sync_session_factory, bucket="portals")

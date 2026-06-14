@@ -18,6 +18,7 @@ def _to_orm(project: PortfolioProject, synced_at: datetime) -> PortfolioProjectO
         demo_url=project.demo_url,
         pinned=project.pinned,
         position=project.position,
+        include_in_matching=project.include_in_matching,
         tech=list(project.tech),
         translations={k: v.model_dump() for k, v in project.translations.items()},
         synced_at=synced_at,
@@ -33,6 +34,7 @@ def _to_domain(row: PortfolioProjectOrm) -> PortfolioProject:
         demo_url=row.demo_url,
         pinned=row.pinned,
         position=row.position,
+        include_in_matching=row.include_in_matching,
         tech=list(row.tech or []),
         translations={k: ProjectText(**v) for k, v in (row.translations or {}).items()},
     )
@@ -44,16 +46,44 @@ class PortfolioProjectsRepository(SqlRepository):
     def replace_source(self, source: str, projects: list[PortfolioProject]) -> int:
         now = datetime.now(timezone.utc)
         with self._session_factory() as session:
+            # Preserve the user's include_in_matching choice across re-sync: the
+            # DELETE+re-INSERT below would otherwise reset every project to the
+            # default. New projects (unseen source_key) keep their incoming default.
+            kept_flag = {
+                row.source_key: row.include_in_matching
+                for row in session.scalars(
+                    select(PortfolioProjectOrm).where(PortfolioProjectOrm.source == source)
+                ).all()
+            }
             session.execute(
                 delete(PortfolioProjectOrm).where(PortfolioProjectOrm.source == source)
             )
             for project in projects:
-                session.add(_to_orm(project, now))
+                orm = _to_orm(project, now)
+                if project.source_key in kept_flag:
+                    orm.include_in_matching = kept_flag[project.source_key]
+                session.add(orm)
             session.commit()
         return len(projects)
 
     def list_all(self) -> list[PortfolioProject]:
         return self._select_all(select(PortfolioProjectOrm), _to_domain)
+
+    def list_for_matching(self) -> list[PortfolioProject]:
+        return self._select_all(
+            select(PortfolioProjectOrm).where(
+                PortfolioProjectOrm.include_in_matching.is_(True)
+            ),
+            _to_domain,
+        )
+
+    def set_include_in_matching(self, id: str, value: bool) -> bool:
+        return (
+            self._update_by_pk(
+                PortfolioProjectOrm, id, {"include_in_matching": value}, _to_domain
+            )
+            is not None
+        )
 
     def list_page(self, limit: int, offset: int) -> tuple[list[PortfolioProject], int]:
         stmt = (

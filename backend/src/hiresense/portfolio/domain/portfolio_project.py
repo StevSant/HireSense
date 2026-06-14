@@ -15,6 +15,9 @@ class PortfolioProject(BaseModel):
     demo_url: str | None = None
     pinned: bool = False
     position: int | None = None
+    # When False, this project's tech tags + summary are excluded from
+    # skill-matching enrichment (does not affect job-specific citations).
+    include_in_matching: bool = True
     tech: list[str] = Field(default_factory=list)
     translations: dict[str, ProjectText] = Field(default_factory=dict)
 

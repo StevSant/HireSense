@@ -14,27 +14,64 @@
     <p class="muted">Last synced {{ last | date: 'medium' }}</p>
   }
 
-  @if (projects().length === 0) {
+  @if (total() === 0) {
     <p class="muted">No portfolio projects synced yet.</p>
   } @else {
-    <ul class="project-list">
+    <p class="muted hint">
+      Turn off any project you don't want influencing your job-matching skills.
+    </p>
+    <div class="project-grid">
       @for (project of projects(); track project.id) {
-        <li>
-          <span class="project-title">{{ titleOf(project) }}</span>
-          @if (project.pinned) {
-            <span class="badge">pinned</span>
+        <article class="project-card">
+          <div class="project-card-head">
+            <h3 class="project-title">{{ titleOf(project) }}</h3>
+            @if (project.pinned) {
+              <span class="badge">pinned</span>
+            }
+          </div>
+
+          @if (descriptionOf(project); as desc) {
+            <p class="project-desc">{{ desc }}</p>
           }
-          @for (tag of project.tech; track tag) {
-            <span class="tag">{{ tag }}</span>
+
+          @if (project.tech.length) {
+            <div class="tech-chips">
+              @for (tag of visibleTech(project); track tag) {
+                <span class="tag">{{ tag }}</span>
+              }
+              @if (extraTechCount(project) > 0) {
+                <span class="tag tag-more">+{{ extraTechCount(project) }} more</span>
+              }
+            </div>
           }
-          @if (project.url) {
-            <a [href]="project.url" target="_blank" rel="noopener">code</a>
+
+          @if (project.url || project.demo_url) {
+            <div class="project-links">
+              @if (project.url) {
+                <a [href]="project.url" target="_blank" rel="noopener">code</a>
+              }
+              @if (project.demo_url) {
+                <a [href]="project.demo_url" target="_blank" rel="noopener">demo</a>
+              }
+            </div>
           }
-          @if (project.demo_url) {
-            <a [href]="project.demo_url" target="_blank" rel="noopener">demo</a>
-          }
-        </li>
+
+          <label class="matching-toggle">
+            <input
+              type="checkbox"
+              [checked]="project.include_in_matching"
+              (change)="toggleMatching(project, $event)"
+            />
+            <span>Counts toward matching</span>
+          </label>
+        </article>
       }
-    </ul>
+    </div>
+
+    <nav class="pagination" aria-label="Portfolio projects pages">
+      <button type="button" class="btn" (click)="prev()" [disabled]="!canPrev()">Prev</button>
+      <span class="page-indicator">{{ showingFrom() }}–{{ showingTo() }} of {{ total() }}</span>
+      <button type="button" class="btn" (click)="next()" [disabled]="!canNext()">Next</button>
+    </nav>
   }
 </section>

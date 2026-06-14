@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
@@ -27,7 +27,13 @@ router = APIRouter(prefix="/portfolio", tags=["portfolio"], dependencies=[Depend
 
 class ProjectsResponse(BaseModel):
     projects: list[PortfolioProject]
+    total: int
     last_synced_at: datetime | None
+
+
+# Fallback page size when the router is mounted without app.state.settings
+# (e.g. unit tests on a bare FastAPI). Matches the config default.
+_DEFAULT_PROJECTS_PAGE_SIZE = 12
 
 
 @router.post(
@@ -48,15 +54,25 @@ async def sync_portfolio(
 
 @router.get("/projects", response_model=ProjectsResponse)
 async def list_projects(
+    request: Request,
     repository: Annotated[
         PortfolioProjectsRepositoryPort | None, Depends(get_projects_repository)
     ],
+    limit: Annotated[int | None, Query(ge=1, le=100)] = None,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> ProjectsResponse:
     if repository is None:
-        return ProjectsResponse(projects=[], last_synced_at=None)
-    projects = await asyncio.to_thread(repository.list_all)
+        return ProjectsResponse(projects=[], total=0, last_synced_at=None)
+    if limit is None:
+        settings = getattr(request.app.state, "settings", None)
+        limit = (
+            settings.portfolio_projects_page_size
+            if settings is not None
+            else _DEFAULT_PROJECTS_PAGE_SIZE
+        )
+    projects, total = await asyncio.to_thread(repository.list_page, limit, offset)
     last = await asyncio.to_thread(repository.last_synced_at)
-    return ProjectsResponse(projects=projects, last_synced_at=last)
+    return ProjectsResponse(projects=projects, total=total, last_synced_at=last)
 
 
 class EngagementResponse(BaseModel):

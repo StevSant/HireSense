@@ -1,4 +1,5 @@
 from hiresense.ingestion.domain.normalizer import CSVNormalizer, RemoteOKNormalizer, RemotiveNormalizer
+from hiresense.ingestion.domain.normalizers.adzuna_normalizer import AdzunaNormalizer
 from hiresense.ingestion.domain.normalizers.arbeitnow_normalizer import ArbeitnowNormalizer
 from hiresense.ingestion.domain.normalizers.ashby_normalizer import AshbyNormalizer
 from hiresense.ingestion.domain.normalizers.getonboard_normalizer import GetOnBoardNormalizer
@@ -15,6 +16,7 @@ from hiresense.ingestion.domain.normalizers.weworkremotely_normalizer import WeW
 from hiresense.ingestion.domain.normalizers.workable_normalizer import WorkableNormalizer
 
 __all__ = [
+    "AdzunaNormalizer",
     "ArbeitnowNormalizer",
     "AshbyNormalizer",
     "CSVNormalizer",

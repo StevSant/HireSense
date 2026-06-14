@@ -1,3 +1,4 @@
+from hiresense.ingestion.adapters.adzuna import AdzunaAdapter
 from hiresense.ingestion.adapters.arbeitnow import ArbeitnowAdapter
 from hiresense.ingestion.adapters.ashby_adapter import AshbyAdapter
 from hiresense.ingestion.adapters.csv_import import CSVImportAdapter
@@ -17,6 +18,7 @@ from hiresense.ingestion.adapters.weworkremotely import WeWorkRemotelyAdapter
 from hiresense.ingestion.adapters.workable_adapter import WorkableAdapter
 
 __all__ = [
+    "AdzunaAdapter",
     "ArbeitnowAdapter",
     "AshbyAdapter",
     "CSVImportAdapter",

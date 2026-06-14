@@ -44,6 +44,9 @@ class _FakeRepo:
     def list_all(self):
         return self._projects
 
+    def list_page(self, limit, offset):
+        return self._projects[offset : offset + limit], len(self._projects)
+
     def last_synced_at(self):
         return self._last
 
@@ -110,12 +113,23 @@ async def test_list_projects_with_and_without_repo() -> None:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as client:
         body = (await client.get("/portfolio/projects")).json()
     assert [p["source_key"] for p in body["projects"]] == ["a"]
+    assert body["total"] == 1
     assert body["last_synced_at"] is not None
 
     app = _app(repo=None)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as client:
         body = (await client.get("/portfolio/projects")).json()
-    assert body == {"projects": [], "last_synced_at": None}
+    assert body == {"projects": [], "total": 0, "last_synced_at": None}
+
+
+@pytest.mark.asyncio
+async def test_list_projects_paginates_with_limit_and_offset() -> None:
+    projects = [_project(k) for k in ("a", "b", "c", "d", "e")]
+    app = _app(repo=_FakeRepo(projects, datetime.now(timezone.utc)))
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as client:
+        body = (await client.get("/portfolio/projects?limit=2&offset=2")).json()
+    assert [p["source_key"] for p in body["projects"]] == ["c", "d"]
+    assert body["total"] == 5
 
 
 @pytest.mark.asyncio

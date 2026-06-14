@@ -165,6 +165,8 @@ class Settings(BaseSettings):
         "weworkremotely",
         "getonboard",
         "linkedin",
+        "arbeitnow",
+        "themuse",
     ]
 
     # Directory CSV-import file_path filters are confined to (path-traversal guard).
@@ -266,6 +268,19 @@ class Settings(BaseSettings):
     # LinkedIn per-job detail fetch rate-limit knobs (guest endpoint is aggressive)
     linkedin_detail_concurrency: int = 1
     linkedin_detail_delay: float = 1.0
+    # Arbeitnow free Job Board API (Europe + remote, no auth).
+    arbeitnow_api_url: str = "https://www.arbeitnow.com/api/job-board-api"
+    # The Muse public Jobs API (global). Categories narrow the broad board to
+    # dev-relevant roles; api_key is optional (raises the rate limit).
+    themuse_api_url: str = "https://www.themuse.com/api/public/jobs"
+    themuse_categories: list[str] = [
+        "Software Engineering",
+        "Data Science",
+        "Design and UX",
+        "Product Management",
+        "IT",
+    ]
+    themuse_api_key: str = ""
 
     # Portal scanning
     portals_config_path: str = "ingestion/config/portals.yml"

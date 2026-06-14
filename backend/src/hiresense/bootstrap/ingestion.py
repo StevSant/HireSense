@@ -7,6 +7,7 @@ from typing import Any
 
 import hiresense
 from hiresense.ingestion.adapters import (
+    ArbeitnowAdapter,
     AshbyAdapter,
     CSVImportAdapter,
     GetOnBoardAdapter,
@@ -20,6 +21,7 @@ from hiresense.ingestion.adapters import (
     RemoteOKAdapter,
     RemotiveAdapter,
     SmartRecruitersAdapter,
+    TheMuseAdapter,
     WeWorkRemotelyAdapter,
     WorkableAdapter,
 )
@@ -34,6 +36,7 @@ from hiresense.ingestion.domain import (
 )
 from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
 from hiresense.ingestion.domain.normalizers import (
+    ArbeitnowNormalizer,
     AshbyNormalizer,
     CSVNormalizer,
     GetOnBoardNormalizer,
@@ -47,6 +50,7 @@ from hiresense.ingestion.domain.normalizers import (
     RemoteOKNormalizer,
     RemotiveNormalizer,
     SmartRecruitersNormalizer,
+    TheMuseNormalizer,
     WeWorkRemotelyNormalizer,
     WorkableNormalizer,
 )
@@ -113,6 +117,19 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
                 )
             )
             normalizers["linkedin"] = LinkedInNormalizer()
+        elif source_name == "arbeitnow":
+            sources.append(ArbeitnowAdapter(http_client=http_client, base_url=s.arbeitnow_api_url))
+            normalizers["arbeitnow"] = ArbeitnowNormalizer()
+        elif source_name == "themuse":
+            sources.append(
+                TheMuseAdapter(
+                    http_client=http_client,
+                    base_url=s.themuse_api_url,
+                    categories=s.themuse_categories,
+                    api_key=s.themuse_api_key,
+                )
+            )
+            normalizers["themuse"] = TheMuseNormalizer()
 
     boards_jobs_repo = JobsRepository(session_factory=infra.sync_session_factory, bucket="boards")
     portals_jobs_repo = JobsRepository(session_factory=infra.sync_session_factory, bucket="portals")

@@ -102,10 +102,10 @@
     <button
       type="button"
       class="btn-ghost"
-      (click)="reset()"
-      [disabled]="!isDirty() || saving()"
+      (click)="cancel()"
+      [disabled]="saving()"
     >
-      Discard changes
+      Cancel
     </button>
     <button
       type="submit"

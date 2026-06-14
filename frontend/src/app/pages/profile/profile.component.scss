@@ -694,6 +694,20 @@ $transition: 0.2s ease;
   margin-bottom: 1.25rem;
 }
 
+.details-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.details-card-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
 .details-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

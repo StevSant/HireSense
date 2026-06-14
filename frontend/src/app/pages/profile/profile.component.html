@@ -354,7 +354,12 @@
   @if (pageTab() === 'personal') {
   <section class="tab-panel" id="panel-personal" role="tabpanel" aria-labelledby="tab-personal">
     @if (profile(); as p) {
+      @if (!editingPersonal()) {
       <div class="details-card">
+        <div class="details-card-header">
+          <h3 class="details-card-title">Personal details</h3>
+          <button type="button" class="btn-secondary" (click)="editingPersonal.set(true)">Edit</button>
+        </div>
         <div class="details-grid">
           <div class="details-item">
             <span class="details-label">Name</span>
@@ -401,14 +406,17 @@
             }
           </div>
         </div>
-        <p class="details-source-note">
-          Parsed from your uploaded CV. Edit them in the form below.
-        </p>
+        <p class="details-source-note">Parsed from your uploaded CV.</p>
       </div>
-
+      } @else {
       <div class="details-card">
-        <app-manual-fields-form [profile]="p" />
+        <app-manual-fields-form
+          [profile]="p"
+          (saved)="editingPersonal.set(false)"
+          (cancelled)="editingPersonal.set(false)"
+        />
       </div>
+      }
     } @else {
       <div class="empty-state">
         <p class="empty-state-title">No profile yet</p>

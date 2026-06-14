@@ -49,6 +49,63 @@ def test_replace_source_only_touches_its_own_slice(repo) -> None:
     assert by_source == {("supabase", "c"), ("github", "r")}
 
 
+def _project_ordered(
+    key: str, *, pinned: bool = False, position: int | None = None
+) -> PortfolioProject:
+    return PortfolioProject(
+        id=f"id-{key}",
+        source="supabase",
+        source_key=key,
+        pinned=pinned,
+        position=position,
+        translations={"en": ProjectText(title=key.title())},
+    )
+
+
+def test_list_page_orders_pinned_first_then_position_then_source_key(repo) -> None:
+    repo.replace_source(
+        "supabase",
+        [
+            _project_ordered("zeta", position=5),
+            _project_ordered("alpha", pinned=True, position=9),
+            _project_ordered("beta", position=1),
+            _project_ordered("noposition"),  # position None -> last
+        ],
+    )
+    rows, total = repo.list_page(limit=10, offset=0)
+    assert total == 4
+    assert [p.source_key for p in rows] == ["alpha", "beta", "zeta", "noposition"]
+
+
+def test_list_page_slices_with_limit_and_offset(repo) -> None:
+    repo.replace_source(
+        "supabase", [_project_ordered(k, position=i) for i, k in enumerate("abcde")]
+    )
+    rows, total = repo.list_page(limit=2, offset=2)
+    assert total == 5
+    assert [p.source_key for p in rows] == ["c", "d"]
+
+
+def test_list_for_matching_filters_out_excluded(repo) -> None:
+    repo.replace_source("supabase", [_project("a"), _project("b")])
+    assert repo.set_include_in_matching("id-supabase-b", False) is True
+    keys = {p.source_key for p in repo.list_for_matching()}
+    assert keys == {"a"}
+
+
+def test_set_include_in_matching_unknown_id_returns_false(repo) -> None:
+    assert repo.set_include_in_matching("nope", False) is False
+
+
+def test_include_in_matching_flag_survives_resync(repo) -> None:
+    repo.replace_source("supabase", [_project("a"), _project("b")])
+    repo.set_include_in_matching("id-supabase-b", False)
+    # Re-sync the same source with b still present plus a new project c.
+    repo.replace_source("supabase", [_project("a"), _project("b"), _project("c")])
+    flags = {p.source_key: p.include_in_matching for p in repo.list_all()}
+    assert flags == {"a": True, "b": False, "c": True}  # b stays off, c defaults on
+
+
 def test_last_synced_at_none_then_set(repo) -> None:
     assert repo.last_synced_at() is None
     repo.replace_source("supabase", [_project("a")])

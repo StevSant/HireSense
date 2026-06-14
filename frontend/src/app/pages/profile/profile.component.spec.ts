@@ -145,6 +145,33 @@ describe('ProfileComponent', () => {
     expect(cmp.selectedFile()).toBeNull();
   });
 
+  it('hides the personal-details form until Edit is clicked, then swaps back on save/cancel', () => {
+    const { fixture } = mount({ profiles: { en: makeProfile() } });
+    const cmp = fixture.componentInstance;
+    cmp.pageTab.set('personal');
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    // read-only card visible, form hidden by default
+    expect(cmp.editingPersonal()).toBe(false);
+    expect(el.querySelector('.details-grid')).not.toBeNull();
+    expect(el.querySelector('app-manual-fields-form')).toBeNull();
+
+    // clicking Edit reveals the form and hides the read-only grid
+    const editBtn = [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Edit')!;
+    editBtn.click();
+    fixture.detectChanges();
+    expect(cmp.editingPersonal()).toBe(true);
+    expect(el.querySelector('app-manual-fields-form')).not.toBeNull();
+    expect(el.querySelector('.details-grid')).toBeNull();
+
+    // saved/cancelled return to the read-only view
+    cmp.editingPersonal.set(false);
+    fixture.detectChanges();
+    expect(el.querySelector('app-manual-fields-form')).toBeNull();
+    expect(el.querySelector('.details-grid')).not.toBeNull();
+  });
+
   it('addAnotherLanguage marks the intent as add', () => {
     const { fixture } = mount({ profiles: { en: makeProfile() } });
     const cmp = fixture.componentInstance;

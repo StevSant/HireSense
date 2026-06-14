@@ -3,8 +3,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { ApplicationsService } from '../../core/services/applications.service';
+import { TrackingService } from '../../core/services/tracking.service';
+import { ResearchService } from '../../core/services/research.service';
 import { ApplicationListItem } from './models/application-list-item.model';
 import { ApplicationCreateDialogComponent } from './components/application-create-dialog.component';
+import { ApplicationStatus } from '../../core/models/application-status.model';
+import { UpdateApplicationRequest } from '../tracking/models/update-application-request.model';
+import { BatchResult } from '../tracking/models/batch-result.model';
+import { CompanyResearch } from '../tracking/models/company-research.model';
 import { scoreColor as toScoreColor } from '../../core/utils/score-color';
 import { formatScorePercent } from '../../core/utils/format-score-percent';
 import { SortableHeaderDirective } from '../../core/components/sortable-header';
@@ -13,6 +19,23 @@ import { createSortState } from '../../core/utils/sort-state';
 import { sortItems } from '../../core/utils/sort-items';
 
 type AppSortField = 'title' | 'company' | 'status' | 'match' | 'created';
+
+interface StatusTab {
+  readonly value: ApplicationStatus | '';
+  readonly label: string;
+}
+
+// Canonical status tabs. Values mirror the backend ApplicationStatus enum
+// (tracking/domain/models.py); '' is the "All" pseudo-tab.
+const STATUS_TABS: readonly StatusTab[] = [
+  { value: '', label: 'All' },
+  { value: 'saved', label: 'Saved' },
+  { value: 'applied', label: 'Applied' },
+  { value: 'interviewing', label: 'Interviewing' },
+  { value: 'offered', label: 'Offer' },
+  { value: 'accepted', label: 'Accepted' },
+  { value: 'rejected', label: 'Rejected' },
+];
 
 @Component({
   selector: 'app-applications',
@@ -30,6 +53,8 @@ type AppSortField = 'title' | 'company' | 'status' | 'match' | 'created';
 })
 export class ApplicationsComponent implements OnInit {
   private service = inject(ApplicationsService);
+  private trackingService = inject(TrackingService);
+  private researchService = inject(ResearchService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -46,18 +71,52 @@ export class ApplicationsComponent implements OnInit {
   // Client-side sort + filter over the fully-loaded list.
   sort = createSortState<AppSortField>('created', 'desc', ['title', 'company', 'status']);
   query = signal('');
-  statusFilter = signal('');
+  statusFilter = signal<ApplicationStatus | ''>('');
 
-  statuses = computed(() => [...new Set(this.applications().map((a) => a.status))].sort());
+  readonly statusTabs = STATUS_TABS;
+  readonly statusOptions: ApplicationStatus[] = [
+    'saved',
+    'applied',
+    'interviewing',
+    'offered',
+    'accepted',
+    'rejected',
+  ];
+
+  // Evaluate-all leaderboard state.
+  leaderboard = signal<BatchResult[]>([]);
+  evaluating = signal(false);
+  expandedResultId = signal<string | null>(null);
+
+  // Per-company research state (keyed by application id).
+  researchCache = signal<Record<string, CompanyResearch>>({});
+  researchingCompany = signal<string | null>(null);
+  expandedResearchId = signal<string | null>(null);
+
+  // Count per status across the full (search-filtered) list, for the tab badges.
+  // The status filter itself is excluded so each tab shows its own total.
+  private searchFiltered = computed(() => {
+    const q = this.query().trim().toLowerCase();
+    if (!q) return this.applications();
+    return this.applications().filter(
+      (a) => a.title.toLowerCase().includes(q) || a.company.toLowerCase().includes(q),
+    );
+  });
+
+  statusCounts = computed<Record<string, number>>(() => {
+    const counts: Record<string, number> = { '': this.searchFiltered().length };
+    for (const tab of STATUS_TABS) {
+      if (tab.value === '') continue;
+      counts[tab.value] = 0;
+    }
+    for (const a of this.searchFiltered()) {
+      counts[a.status] = (counts[a.status] ?? 0) + 1;
+    }
+    return counts;
+  });
 
   visibleApplications = computed(() => {
-    let rows = this.applications();
-    const q = this.query().trim().toLowerCase();
-    if (q) {
-      rows = rows.filter(
-        (a) => a.title.toLowerCase().includes(q) || a.company.toLowerCase().includes(q),
-      );
-    }
+    let rows = this.searchFiltered();
     const status = this.statusFilter();
     if (status) rows = rows.filter((a) => a.status === status);
     const field = this.sort.field();
@@ -83,8 +142,12 @@ export class ApplicationsComponent implements OnInit {
     this.query.set((event.target as HTMLInputElement).value);
   }
 
-  onStatusFilterChange(event: Event): void {
-    this.statusFilter.set((event.target as HTMLSelectElement).value);
+  selectStatus(value: ApplicationStatus | ''): void {
+    this.statusFilter.set(value);
+  }
+
+  statusCount(value: ApplicationStatus | ''): number {
+    return this.statusCounts()[value] ?? 0;
   }
 
   ngOnInit(): void {
@@ -145,6 +208,33 @@ export class ApplicationsComponent implements OnInit {
     return formatScorePercent(score);
   }
 
+  // ----- inline status change (folded in from the Tracking page) ----------
+  // Applications share their id with the tracked-application row, so the
+  // tracking PATCH endpoint updates the same record.
+  updateStatus(app: ApplicationListItem, event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const newStatus = select.value as ApplicationStatus;
+    const body: UpdateApplicationRequest = { status: newStatus };
+    this.trackingService
+      .update(app.id, body)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updated) => {
+          this.applications.update((rows) =>
+            rows.map((r) =>
+              r.id === app.id
+                ? { ...r, status: updated.status, applied_at: updated.applied_at }
+                : r,
+            ),
+          );
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Failed to update status');
+          select.value = app.status;
+        },
+      });
+  }
+
   remove(app: ApplicationListItem, event: MouseEvent): void {
     event.stopPropagation();
     const label = `${app.title} · ${app.company}`;
@@ -169,5 +259,98 @@ export class ApplicationsComponent implements OnInit {
           this.deletingId.set(null);
         },
       });
+  }
+
+  // ----- evaluate-all + leaderboard ---------------------------------------
+  evaluateAll(): void {
+    const apps = this.applications();
+    if (apps.length === 0) return;
+    this.evaluating.set(true);
+    this.leaderboard.set([]);
+    const ids = apps.map((a) => a.id);
+    this.trackingService
+      .batchEvaluate(ids)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.leaderboard.set(res.results);
+          this.evaluating.set(false);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Batch evaluation failed');
+          this.evaluating.set(false);
+        },
+      });
+  }
+
+  toggleExpand(sourceId: string, event: Event): void {
+    event.stopPropagation();
+    this.expandedResultId.update((current) => (current === sourceId ? null : sourceId));
+  }
+
+  // Leaderboard rows for tracked applications carry the application id as
+  // source_id, so the card links straight to that application's detail page.
+  openLeaderboardResult(result: BatchResult): void {
+    if (result.source === 'tracked') {
+      this.router.navigate(['/dashboard/applications', result.source_id]);
+    }
+  }
+
+  dimensionLabel(dimension: string): string {
+    const labels: Record<string, string> = {
+      seniority_fit: 'Seniority Fit',
+      compensation: 'Compensation',
+      growth_potential: 'Growth Potential',
+      culture_fit: 'Culture Fit',
+      application_strength: 'Application Strength',
+      interview_readiness: 'Interview Readiness',
+    };
+    return labels[dimension] || dimension.replace(/_/g, ' ');
+  }
+
+  // ----- company research -------------------------------------------------
+  researchCompany(app: ApplicationListItem, event: Event): void {
+    event.stopPropagation();
+    this.researchingCompany.set(app.id);
+    this.researchService
+      .research({ company_name: app.company, job_description: app.notes || '' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.researchCache.update((cache) => ({ ...cache, [app.id]: res }));
+          this.researchingCompany.set(null);
+          this.expandedResearchId.set(app.id);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Research failed');
+          this.researchingCompany.set(null);
+        },
+      });
+  }
+
+  refreshResearch(app: ApplicationListItem): void {
+    this.researchingCompany.set(app.id);
+    this.researchService
+      .refresh({ company_name: app.company, job_description: app.notes || '' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.researchCache.update((cache) => ({ ...cache, [app.id]: res }));
+          this.researchingCompany.set(null);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Research refresh failed');
+          this.researchingCompany.set(null);
+        },
+      });
+  }
+
+  toggleResearch(appId: string, event: Event): void {
+    event.stopPropagation();
+    this.expandedResearchId.update((current) => (current === appId ? null : appId));
+  }
+
+  hasResearch(appId: string): boolean {
+    return appId in this.researchCache();
   }
 }

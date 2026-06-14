@@ -31,6 +31,8 @@ from hiresense.applications.domain.application_service import ApplicationService
 from hiresense.applications.domain.apply_service import ApplyService
 from hiresense.applications.domain.artifact_service import ArtifactService
 from hiresense.identity.api.dependencies import require_auth
+from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
+from hiresense.ingestion.domain.services import IngestionOrchestrator
 
 router = APIRouter(
     prefix="/applications",
@@ -66,30 +68,60 @@ async def create_application(
         )
     except ValueError as exc:
         msg = str(exc).lower()
-        status_code = 404 if "not found" in msg else 400
+        if "not found" in msg:
+            status_code = 404
+        elif "already tracked" in msg:
+            status_code = 409
+        else:
+            status_code = 400
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
 
 @router.get("", response_model=list[ApplicationListItemResponse])
 def list_applications(
     service: ApplicationService = Depends(get_application_service),
+    orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
 ) -> list[ApplicationListItemResponse]:
     aggregates = service.list()
-    return [
-        ApplicationListItemResponse(
-            id=a.id,
-            title=a.title,
-            company=a.company,
-            status=a.status,
-            url=a.url,
-            created_at=a.created_at,
-            has_match=a.match_count > 0,
-            has_optimization=a.optimization_count > 0,
-            has_prep=a.interview_prep_count > 0,
-            latest_match_score=a.latest_match.overall_score if a.latest_match else None,
-        )
-        for a in aggregates
-    ]
+    return [_to_list_item(a, orchestrator) for a in aggregates]
+
+
+def _to_list_item(
+    a: ApplicationAggregate,
+    orchestrator: IngestionOrchestrator,
+) -> ApplicationListItemResponse:
+    """Shape an aggregate into the list row, enriching pipeline fields
+    (location/salary/source/posted) from the linked ingested job when present."""
+    location: str | None = None
+    salary_range: str | None = None
+    source: str | None = None
+    posted_date = None
+    if a.job_id is not None:
+        job = orchestrator.get_job_by_id(str(a.job_id))
+        if job is not None:
+            location = job.location or None
+            salary_range = job.salary_range
+            source = job.source
+            posted_date = job.posted_date
+    return ApplicationListItemResponse(
+        id=a.id,
+        title=a.title,
+        company=a.company,
+        status=a.status,
+        url=a.url,
+        created_at=a.created_at,
+        has_match=a.match_count > 0,
+        has_optimization=a.optimization_count > 0,
+        has_prep=a.interview_prep_count > 0,
+        latest_match_score=a.latest_match.overall_score if a.latest_match else None,
+        job_id=a.job_id,
+        notes=a.notes,
+        applied_at=a.applied_at,
+        location=location,
+        salary_range=salary_range,
+        source=source,
+        posted_date=posted_date,
+    )
 
 
 @router.get("/{application_id}", response_model=ApplicationAggregate)

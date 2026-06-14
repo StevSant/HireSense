@@ -29,7 +29,6 @@ describe('HubTabsComponent', () => {
     expect(links.map((a) => a.textContent?.trim())).toEqual([
       'Applications',
       'Interview',
-      'Tracking',
       'Outreach',
     ]);
     expect(links[0].getAttribute('href')).toBe('/dashboard/applications');

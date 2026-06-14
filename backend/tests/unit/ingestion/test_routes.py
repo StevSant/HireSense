@@ -691,6 +691,98 @@ async def test_cold_cache_source_champions_rank_globally() -> None:
     assert champion_call[1] == ["gob-2", "gob-best", "hn-1", "hn-2"]
 
 
+# ---------------------------------------------------------------------------
+# get_job detail overlay: GET /ingestion/jobs/{id} must apply the cached Tier-1
+# LLM quick score (cache-only) so the detail header opens at the SAME value the
+# list showed, instead of flashing the lower persisted heuristic blend before
+# deep analysis arrives.
+# ---------------------------------------------------------------------------
+
+
+class _GetJobOrch:
+    def __init__(self, job: NormalizedJob) -> None:
+        self._job = job
+
+    def get_job_by_id(self, job_id):
+        return self._job if job_id == self._job.id else None
+
+
+class _DetailScanner:
+    def get_job_by_id(self, job_id):
+        return None
+
+
+def _make_get_job_app(job: NormalizedJob, quick_scoring):
+    from hiresense.ingestion.api.dependencies import get_quick_scoring
+    from hiresense.portfolio.api.dependencies import get_portfolio_enrichment
+
+    app = FastAPI()
+    app.dependency_overrides[get_ingestion_orchestrator] = lambda: _GetJobOrch(job)
+    app.dependency_overrides[get_portal_scanner] = lambda: _DetailScanner()
+    app.dependency_overrides[get_profile_service] = lambda: FakeProfileWithSkills()
+    app.dependency_overrides[get_portfolio_enrichment] = lambda: None
+    app.dependency_overrides[get_quick_scoring] = lambda: quick_scoring
+    app.dependency_overrides[require_auth] = lambda: "test-user"
+    app.include_router(router)
+    return app
+
+
+@pytest.mark.asyncio
+async def test_get_job_overlays_cached_quick_score() -> None:
+    # Persisted row carries the heuristic blend (0.30); the quick-score cache has
+    # an LLM score of 0.72 for it (what the list displayed).
+    job = NormalizedJob(
+        id="job-detail", title="Engineer", company="Co", description="d", skills=["python"],
+        source="remotive", source_type="api", language="en",
+        url="https://e.com/detail", match_score=0.30,
+    )
+
+    class _CachedQuick:
+        async def score_page(self, jobs, skills, summary, *, llm_on_miss=True):
+            from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
+            from hiresense.ingestion.domain.quick_match_verdict import QuickMatchVerdict
+
+            assert llm_on_miss is False  # detail load must never fire the LLM
+            return {
+                "job-detail": QuickMatchResult(
+                    job_id="job-detail", score=0.72, verdict=QuickMatchVerdict.STRONG
+                )
+            }
+
+    app = _make_get_job_app(job, _CachedQuick())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/ingestion/jobs/job-detail")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["match_score"] == 0.72  # opens at the list's value, not 0.30
+    assert body["llm_score"] == 0.72
+
+
+@pytest.mark.asyncio
+async def test_get_job_falls_back_to_heuristic_on_cache_miss() -> None:
+    # Cold cache (job never scored): the detail view keeps the heuristic blend
+    # and leaves llm_score unset rather than inventing a value.
+    job = NormalizedJob(
+        id="job-cold", title="Engineer", company="Co", description="d", skills=["python"],
+        source="remotive", source_type="api", language="en",
+        url="https://e.com/cold", match_score=0.30,
+    )
+
+    class _EmptyQuick:
+        async def score_page(self, jobs, skills, summary, *, llm_on_miss=True):
+            return {}
+
+    app = _make_get_job_app(job, _EmptyQuick())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/ingestion/jobs/job-cold")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["match_score"] == 0.30
+    assert body["llm_score"] is None
+
+
 @pytest.mark.asyncio
 async def test_requires_auth_without_token() -> None:
     """Router-level auth: requests with no bearer token are rejected."""

@@ -60,6 +60,16 @@ class ApplicationListItemResponse(BaseModel):
     has_optimization: bool
     has_prep: bool
     latest_match_score: float | None
+    # Pipeline-view enrichment (folded in from the former Tracking page). These
+    # are derived from the linked ingested job when available; they stay None for
+    # manually-tracked applications with no job link.
+    job_id: uuid.UUID | None = None
+    notes: str | None = None
+    applied_at: datetime | None = None
+    location: str | None = None
+    salary_range: str | None = None
+    source: str | None = None
+    posted_date: datetime | None = None
 
 
 class CoverLetterLibraryItem(BaseModel):

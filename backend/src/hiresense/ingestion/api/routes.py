@@ -465,10 +465,30 @@ async def get_job(
     job_id: str,
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
+    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
+    portfolio_enrichment: Annotated[
+        PortfolioEnrichmentService | None, Depends(get_portfolio_enrichment)
+    ],
+    quick_scoring: Annotated[QuickScoringService | None, Depends(get_quick_scoring)],
 ) -> NormalizedJob:
     job = orchestrator.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
+    # Overlay the cached Tier-1 LLM quick score so the detail header opens at the
+    # SAME value the list showed (the list applies `_apply_quick` to every page).
+    # Without this, get_job returned the raw persisted heuristic blend (llm_score
+    # is None), so the header flashed the lower heuristic % before deep analysis
+    # replaced it. Cache-only (`llm_on_miss=False`): no LLM call — deep analysis
+    # runs on this page anyway and refines the value further.
+    if quick_scoring is not None:
+        candidate_skills, candidate_summary = await _gather_profile(
+            profile_service, portfolio_enrichment
+        )
+        if candidate_skills or candidate_summary:
+            cached = await quick_scoring.score_page(
+                [job], candidate_skills, candidate_summary, llm_on_miss=False
+            )
+            job = _apply_quick(job, cached.get(job.id))
     return job
 
 

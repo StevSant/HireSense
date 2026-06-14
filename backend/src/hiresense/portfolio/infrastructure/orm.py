@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Index, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Index, Integer, String, UniqueConstraint, true
 from sqlalchemy.orm import Mapped, mapped_column
 
 from hiresense.infrastructure import JSONB_OR_JSON
@@ -25,6 +25,9 @@ class PortfolioProjectOrm(Base):
     demo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     position: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    include_in_matching: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default=true(), nullable=False
+    )
     tech: Mapped[list] = mapped_column(JSONB_OR_JSON, default=list)
     translations: Mapped[dict] = mapped_column(JSONB_OR_JSON, default=dict)
     synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

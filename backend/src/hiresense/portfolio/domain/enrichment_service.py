@@ -25,7 +25,7 @@ class PortfolioEnrichmentService:
         self._char_cap = char_cap
 
     async def enrichment(self) -> tuple[list[str], str]:
-        projects = await asyncio.to_thread(self._repository.list_all)
+        projects = await asyncio.to_thread(self._repository.list_for_matching)
         if not projects:
             return [], ""
         skills = sorted({tech for project in projects for tech in project.tech})

@@ -29,7 +29,7 @@ describe('PortfolioCardComponent', () => {
   function project(over: Record<string, unknown> = {}) {
     return {
       id: 'p1', source: 'supabase', source_key: 'x', url: null, demo_url: null,
-      pinned: false, position: null, tech: [],
+      pinned: false, position: null, include_in_matching: true, tech: [],
       translations: { en: { title: 'X', description: null } },
       ...over,
     };
@@ -94,6 +94,19 @@ describe('PortfolioCardComponent', () => {
     expect(el.querySelector('.project-grid')).toBeTruthy();
     expect(el.textContent ?? '').toContain('AI job hunting');
     expect(el.textContent ?? '').toContain('+2 more');
+  });
+
+  it('toggling "Counts toward matching" patches the project', () => {
+    fixture.detectChanges();
+    flushProjects([project({ id: 'p1', source_key: 'x', include_in_matching: true })], null);
+    const el = fixture.nativeElement as HTMLElement;
+    const checkbox = el.querySelector('.matching-toggle input') as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+    checkbox.click(); // unchecks and fires the change handler
+    const req = httpMock.expectOne(`${environment.apiUrl}/portfolio/projects/p1/matching`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ include_in_matching: false });
+    req.flush({ include_in_matching: false });
   });
 
   it('paginates with Prev/Next and shows the X–Y of N indicator', () => {

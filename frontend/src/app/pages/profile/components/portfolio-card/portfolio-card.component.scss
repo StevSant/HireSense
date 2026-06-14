@@ -143,6 +143,28 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   padding-top: 0.25rem;
 }
 
+.matching-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid $border;
+  font-size: 0.75rem;
+  color: $text-light;
+  cursor: pointer;
+  user-select: none;
+
+  input {
+    width: auto;
+    cursor: pointer;
+  }
+}
+
+.hint {
+  font-style: italic;
+}
+
 .pagination {
   display: flex;
   align-items: center;

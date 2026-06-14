@@ -164,13 +164,13 @@ class Settings(BaseSettings):
         "hn_hiring",
         "weworkremotely",
         "getonboard",
+        "linkedin",
         "arbeitnow",
         "themuse",
     ]
-    # NOTE: `linkedin` is intentionally NOT in the default set. Its adapter is a
-    # fragile guest-endpoint HTML scraper (ToS-risky, breaks on markup changes)
-    # and its on-site coverage is now superseded by arbeitnow/themuse/adzuna +
-    # the ATS portals. The adapter stays wired — add "linkedin" here to opt in.
+    # NOTE: `linkedin` is a fragile guest-endpoint HTML scraper (ToS-risky,
+    # breaks on markup changes and rate-limits aggressively). It's kept enabled
+    # by default for its on-site coverage; drop it here if it misbehaves.
 
     # Directory CSV-import file_path filters are confined to (path-traversal guard).
     csv_import_dir: str = "./csv_imports"

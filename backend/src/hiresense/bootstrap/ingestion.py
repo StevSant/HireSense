@@ -16,9 +16,12 @@ from hiresense.ingestion.adapters import (
     JobicyAdapter,
     LeverAdapter,
     LinkedInAdapter,
+    RecruiteeAdapter,
     RemoteOKAdapter,
     RemotiveAdapter,
+    SmartRecruitersAdapter,
     WeWorkRemotelyAdapter,
+    WorkableAdapter,
 )
 from hiresense.ingestion.api.provider import IngestionProvider
 from hiresense.ingestion.domain import (
@@ -40,9 +43,12 @@ from hiresense.ingestion.domain.normalizers import (
     JobicyNormalizer,
     LeverNormalizer,
     LinkedInNormalizer,
+    RecruiteeNormalizer,
     RemoteOKNormalizer,
     RemotiveNormalizer,
+    SmartRecruitersNormalizer,
     WeWorkRemotelyNormalizer,
+    WorkableNormalizer,
 )
 from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
 from hiresense.ingestion.infrastructure import JobMatchCacheRepository, JobsRepository
@@ -183,12 +189,30 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
             base_url=s.ashby_api_url,
             timeout=s.portal_scan_timeout,
         ),
+        "workable": WorkableAdapter(
+            http_client=http_client,
+            base_url=s.workable_api_url,
+            timeout=s.portal_scan_timeout,
+        ),
+        "smartrecruiters": SmartRecruitersAdapter(
+            http_client=http_client,
+            base_url=s.smartrecruiters_api_url,
+            timeout=s.portal_scan_timeout,
+        ),
+        "recruitee": RecruiteeAdapter(
+            http_client=http_client,
+            base_url=s.recruitee_api_url,
+            timeout=s.portal_scan_timeout,
+        ),
     }
 
     portal_normalizers = {
         "greenhouse": GreenhouseNormalizer(),
         "lever": LeverNormalizer(),
         "ashby": AshbyNormalizer(),
+        "workable": WorkableNormalizer(),
+        "smartrecruiters": SmartRecruitersNormalizer(),
+        "recruitee": RecruiteeNormalizer(),
     }
 
     portal_scanner = PortalScanner(

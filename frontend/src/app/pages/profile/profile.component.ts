@@ -54,6 +54,7 @@ export class ProfileComponent implements OnInit {
   error = signal('');
   showUploadForm = signal(false);
   uploadIntent = signal<'add' | 'replace'>('add');
+  editingPersonal = signal(false);
 
   profile = this.profileService.profile;
   profiles = this.profileService.profiles;

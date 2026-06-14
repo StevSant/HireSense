@@ -5,6 +5,7 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -49,6 +50,8 @@ export class ManualFieldsFormComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   profile = input.required<CandidateProfile>();
+  readonly saved = output<void>();
+  readonly cancelled = output<void>();
 
   form = signal<ManualFieldsFormState>({
     name: '',
@@ -87,6 +90,11 @@ export class ManualFieldsFormComponent {
     this.error.set('');
   }
 
+  cancel(): void {
+    this.reset();
+    this.cancelled.emit();
+  }
+
   save(): void {
     if (!this.isDirty() || this.saving()) return;
     const current = this.form();
@@ -107,6 +115,7 @@ export class ManualFieldsFormComponent {
         this.baseline.set(snap);
         this.savedFlash.set(true);
         setTimeout(() => this.savedFlash.set(false), 2200);
+        this.saved.emit();
       },
       error: (err) => {
         this.saving.set(false);

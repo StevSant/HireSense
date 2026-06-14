@@ -120,7 +120,7 @@
 
       @if (isApplied()) {
         <span class="applied-badge">
-          ✓ Applied @if (aggregate().applied_at) { · {{ aggregate().applied_at }} }
+          ✓ Applied @if (aggregate().applied_at; as appliedAt) { · {{ appliedAt | date: 'mediumDate' }} }
         </span>
       }
     </div>

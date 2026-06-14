@@ -19,6 +19,14 @@ from hiresense.applications.domain.aggregate import (
     MatchView,
 )
 from hiresense.identity.api.dependencies import require_auth
+from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
+
+
+class FakeOrchestrator:
+    """List enrichment looks up the linked ingested job; manual apps have none."""
+
+    def get_job_by_id(self, job_id: str):
+        return None
 
 
 def _make_aggregate(
@@ -169,6 +177,7 @@ def client(application_service: FakeApplicationService, artifact_service: FakeAr
     app.dependency_overrides[require_auth] = lambda: True
     app.dependency_overrides[get_application_service] = lambda: application_service
     app.dependency_overrides[get_artifact_service] = lambda: artifact_service
+    app.dependency_overrides[get_ingestion_orchestrator] = lambda: FakeOrchestrator()
     return TestClient(app)
 
 
@@ -196,6 +205,8 @@ def test_list_returns_artifact_flags(client: TestClient):
     assert len(rows) == 1
     row = rows[0]
     assert {"has_match", "has_optimization", "has_prep", "latest_match_score"} <= row.keys()
+    # Pipeline-view enrichment fields folded in from the former Tracking page.
+    assert {"job_id", "location", "salary_range", "source", "posted_date"} <= row.keys()
     assert row["has_match"] is False
 
 

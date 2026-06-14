@@ -40,7 +40,7 @@ class TrackingService:
         job_uuid = uuid_mod.UUID(job_id)
         existing = self._repo.get_by_job_id(job_uuid)
         if existing is not None:
-            raise ValueError(f"Job {job_id} already tracked")
+            raise ValueError("This job is already tracked")
         app = TrackedApplication(
             job_id=job_uuid,
             title=job.title,

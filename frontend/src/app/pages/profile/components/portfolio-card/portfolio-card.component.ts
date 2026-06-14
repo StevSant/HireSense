@@ -62,6 +62,26 @@ export class PortfolioCardComponent implements OnInit {
     return Math.max(0, project.tech.length - MAX_VISIBLE_TECH);
   }
 
+  toggleMatching(project: PortfolioProject, event: Event): void {
+    const value = (event.target as HTMLInputElement).checked;
+    this.setMatchingFlag(project.id, value); // optimistic
+    this.service
+      .setMatching(project.id, value)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        error: () => {
+          this.setMatchingFlag(project.id, !value); // revert
+          this.error.set('Could not update the matching setting');
+        },
+      });
+  }
+
+  private setMatchingFlag(id: string, value: boolean): void {
+    this.projects.update((list) =>
+      list.map((p) => (p.id === id ? { ...p, include_in_matching: value } : p)),
+    );
+  }
+
   prev(): void {
     if (!this.canPrev()) return;
     this.offset.set(Math.max(0, this.offset() - this.pageSize));

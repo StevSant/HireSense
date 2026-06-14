@@ -75,6 +75,28 @@ async def list_projects(
     return ProjectsResponse(projects=projects, total=total, last_synced_at=last)
 
 
+class MatchingUpdate(BaseModel):
+    include_in_matching: bool
+
+
+@router.patch("/projects/{project_id}/matching", status_code=200)
+async def set_project_matching(
+    project_id: str,
+    body: MatchingUpdate,
+    repository: Annotated[
+        PortfolioProjectsRepositoryPort | None, Depends(get_projects_repository)
+    ],
+) -> dict[str, bool]:
+    if repository is None:
+        raise HTTPException(status_code=404, detail="Portfolio not configured")
+    updated = await asyncio.to_thread(
+        repository.set_include_in_matching, project_id, body.include_in_matching
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"include_in_matching": body.include_in_matching}
+
+
 class EngagementResponse(BaseModel):
     configured: bool
     visits: list[PortfolioVisit]

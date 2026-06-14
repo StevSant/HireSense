@@ -11,6 +11,7 @@ export interface PortfolioProject {
   demo_url: string | null;
   pinned: boolean;
   position: number | null;
+  include_in_matching: boolean;
   tech: string[];
   translations: Record<string, PortfolioProjectText>;
 }

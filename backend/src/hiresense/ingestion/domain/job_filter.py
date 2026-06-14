@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import re
 from datetime import datetime, timedelta, timezone
 
 from pydantic import BaseModel
@@ -158,7 +159,18 @@ def filter_and_paginate(
 
     if params.strict_location and params.user_location:
         user_loc = params.user_location.strip().lower()
-        open_keywords = ("worldwide", "anywhere", "global", "remote")
+        # Genuinely-open remote keywords. NOTE: bare "remote" is deliberately
+        # NOT here — a posting can be "remote" yet restricted to a country
+        # ("Remote (US)"), so the word "remote" alone never implies worldwide.
+        open_keywords = ("worldwide", "anywhere", "global")
+        # Parenthetical qualifiers that describe a work-mode / employment-type
+        # rather than a geographic restriction. These must NOT exclude an
+        # otherwise-worldwide remote role (e.g. "100% Remote (Full-time)").
+        non_geo_qualifiers = (
+            "remote", "onsite", "on-site", "on site", "hybrid",
+            "full", "part", "contract", "freelance", "permanent",
+            "temporary", "intern",
+        )
 
         def _matches_country(job: NormalizedJob) -> bool:
             # Remote roles restricted to specific countries must honor that
@@ -179,9 +191,32 @@ def filter_and_paginate(
             loc = (job.location or "").lower()
             if not loc:
                 return True
+            # The user's own country named anywhere in the text → applyable.
+            if user_loc in loc:
+                return True
+            # Genuinely-open remote → applyable from anywhere.
             if any(kw in loc for kw in open_keywords):
                 return True
-            return user_loc in loc
+            # A geographic qualifier in parentheses restricts the role to that
+            # place, even when it's remote: boards write "Remote (US)",
+            # "REMOTE (US) or San Diego", "NYC or Remote (US)". The user's
+            # country wasn't matched above, so such a role isn't applyable.
+            # Qualifiers that are open keywords ("(Global)") or pure work-mode /
+            # employment tags ("(Full-time)", "(Remote)") are not restrictions.
+            for qualifier in re.findall(r"\(([^)]*)\)", loc):
+                q = qualifier.strip()
+                if not q:
+                    continue
+                if any(kw in q for kw in open_keywords):
+                    continue
+                if any(kw in q for kw in non_geo_qualifiers):
+                    continue
+                return False
+            # Bare "remote" with no geographic qualifier → treat as worldwide.
+            if "remote" in loc:
+                return True
+            # On-site / hybrid free text that names some other place.
+            return False
 
         filtered = [j for j in filtered if _matches_country(j)]
 

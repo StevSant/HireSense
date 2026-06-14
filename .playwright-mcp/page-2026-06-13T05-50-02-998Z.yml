@@ -1,0 +1,641 @@
+- generic [ref=e17]:
+  - complementary [ref=e18]:
+    - generic [ref=e19]:
+      - heading "HireSense" [level=2] [ref=e20]
+      - generic [ref=e21]: Career Intelligence
+    - navigation "Main navigation" [ref=e22]:
+      - link "Discover" [ref=e23] [cursor=pointer]:
+        - /url: /dashboard/ingestion
+        - img [ref=e25]
+        - generic [ref=e28]: Discover
+      - link "Pipeline" [ref=e29] [cursor=pointer]:
+        - /url: /dashboard/applications
+        - img [ref=e31]
+        - generic [ref=e34]: Pipeline
+      - link "Insights" [ref=e35] [cursor=pointer]:
+        - /url: /dashboard/analytics
+        - img [ref=e37]
+        - generic [ref=e38]: Insights
+      - link "Profile" [ref=e39] [cursor=pointer]:
+        - /url: /dashboard/profile
+        - img [ref=e41]
+        - generic [ref=e44]: Profile
+      - link "Admin" [ref=e45] [cursor=pointer]:
+        - /url: /dashboard/admin/llm-settings
+        - img [ref=e47]
+        - generic [ref=e50]: Admin
+    - button "Sign Out" [ref=e52] [cursor=pointer]
+  - main [ref=e53]:
+    - tablist "Section tabs" [ref=e55]:
+      - tab "Ingestion" [selected] [ref=e56] [cursor=pointer]
+      - tab "Matching" [ref=e57] [cursor=pointer]
+      - tab "Auto-Hunt" [ref=e58] [cursor=pointer]
+    - generic [ref=e60]:
+      - generic [ref=e61]:
+        - generic [ref=e62]:
+          - button "Job Boards" [ref=e63] [cursor=pointer]
+          - button "Company Portals" [ref=e64] [cursor=pointer]
+        - generic [ref=e65]:
+          - button "Tuning" [ref=e68] [cursor=pointer]:
+            - img [ref=e69]
+            - generic [ref=e70]: Tuning
+          - button "Fetch Jobs" [ref=e71] [cursor=pointer]
+      - generic [ref=e72]:
+        - generic [ref=e73]:
+          - generic [ref=e74]:
+            - generic [ref=e75]: Source
+            - combobox "Source" [ref=e76]:
+              - option "All sources" [selected]
+              - option "remotive"
+              - option "remoteok"
+              - option "jobicy"
+              - option "himalayas"
+              - option "hn_hiring"
+              - option "weworkremotely"
+              - option "getonboard"
+              - option "linkedin"
+          - generic [ref=e77]:
+            - generic [ref=e78]: Keyword
+            - textbox "Keyword" [ref=e79]:
+              - /placeholder: Search title, description...
+          - generic [ref=e80]:
+            - generic [ref=e81]: Job location
+            - textbox "Job location" [ref=e82]:
+              - /placeholder: e.g. Remote, USA...
+          - generic [ref=e83]:
+            - generic [ref=e84]: Skills
+            - textbox "Skills" [ref=e85]:
+              - /placeholder: Python, React...
+          - generic [ref=e86]:
+            - generic [ref=e87]: Date From
+            - textbox "Date From" [ref=e88]
+          - generic [ref=e89]:
+            - generic [ref=e90]: Date To
+            - textbox "Date To" [ref=e91]
+          - button "Clear all" [ref=e93] [cursor=pointer]
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - generic [ref=e96]: My country
+            - generic [ref=e97]:
+              - textbox "My country" [ref=e98]:
+                - /placeholder: e.g. Chile, USA, Spain
+                - text: Ecuador
+              - button "Use my timezone" [ref=e99] [cursor=pointer]
+          - generic [ref=e100] [cursor=pointer]:
+            - checkbox "Only show jobs I can apply to from my country" [ref=e101]
+            - generic [ref=e102]: Only show jobs I can apply to from my country
+        - generic [ref=e103]:
+          - generic [ref=e104]:
+            - generic [ref=e105]: Seniority
+            - generic [ref=e106]:
+              - generic [ref=e107] [cursor=pointer]:
+                - checkbox "intern"
+                - generic [ref=e108]: intern
+              - generic [ref=e109] [cursor=pointer]:
+                - checkbox "junior"
+                - generic [ref=e110]: junior
+              - generic [ref=e111] [cursor=pointer]:
+                - checkbox "mid"
+                - generic [ref=e112]: mid
+              - generic [ref=e113] [cursor=pointer]:
+                - checkbox "senior"
+                - generic [ref=e114]: senior
+              - generic [ref=e115] [cursor=pointer]:
+                - checkbox "lead"
+                - generic [ref=e116]: lead
+          - generic [ref=e117]:
+            - generic [ref=e118]: Max years experience
+            - spinbutton "Max years experience" [ref=e119]
+      - generic [ref=e120]:
+        - generic [ref=e121] [cursor=pointer]:
+          - checkbox "Show closed" [ref=e122]
+          - text: Show closed
+        - generic [ref=e123] [cursor=pointer]:
+          - checkbox "Show low-quality" [ref=e124]
+          - text: Show low-quality
+      - generic [ref=e125]:
+        - table [ref=e126]:
+          - rowgroup [ref=e136]:
+            - row "Match▼ Title↕ Company↕ Location↕ Salary Source↕ Posted↕ Actions" [ref=e137]:
+              - columnheader "Match▼" [ref=e138] [cursor=pointer]
+              - columnheader "Title↕" [ref=e139] [cursor=pointer]
+              - columnheader "Company↕" [ref=e140] [cursor=pointer]
+              - columnheader "Location↕" [ref=e141] [cursor=pointer]
+              - columnheader "Salary" [ref=e142]
+              - columnheader "Source↕" [ref=e143] [cursor=pointer]
+              - columnheader "Posted↕" [ref=e144] [cursor=pointer]
+              - columnheader "Actions" [ref=e145]
+          - rowgroup [ref=e146]:
+            - row "78% Backend Software Engineer DataAnnotation California, United States — linkedin May 24, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e147] [cursor=pointer]:
+              - cell "78%" [ref=e148]:
+                - generic "strong match" [ref=e149]: 78%
+              - cell "Backend Software Engineer" [ref=e150]
+              - cell "DataAnnotation" [ref=e151]:
+                - link "DataAnnotation" [ref=e153]:
+                  - /url: /dashboard/company/DataAnnotation
+              - cell "California, United States" [ref=e154]
+              - cell "—" [ref=e155]
+              - cell "linkedin" [ref=e156]:
+                - generic [ref=e157]: linkedin
+              - cell "May 24, 2026" [ref=e158]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e159]:
+                - link "View" [ref=e160]:
+                  - /url: https://www.linkedin.com/jobs/view/backend-software-engineer-at-dataannotation-4309803111
+                - generic [ref=e162]:
+                  - button "More relevant" [ref=e163]:
+                    - img [ref=e164]
+                  - button "Less relevant" [ref=e167]:
+                    - img [ref=e168]
+                  - button "Not interested" [ref=e171]:
+                    - img [ref=e172]
+                  - button "More like this" [ref=e175]:
+                    - img [ref=e176]
+                - button "Track" [ref=e179]
+            - row "78% Programador Back-end Python Guinea Mobile SAC (Cuy Móvil) Remote USD 900-1200/mo getonboard Feb 9, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e180] [cursor=pointer]:
+              - cell "78%" [ref=e181]:
+                - generic "strong match" [ref=e182]: 78%
+              - cell "Programador Back-end Python" [ref=e183]
+              - cell "Guinea Mobile SAC (Cuy Móvil)" [ref=e184]:
+                - link "Guinea Mobile SAC (Cuy Móvil)" [ref=e186]:
+                  - /url: /dashboard/company/Guinea%20Mobile%20SAC%20%28Cuy%20M%C3%B3vil%29
+              - cell "Remote" [ref=e187]
+              - cell "USD 900-1200/mo" [ref=e188]
+              - cell "getonboard" [ref=e189]:
+                - generic [ref=e190]: getonboard
+              - cell "Feb 9, 2026" [ref=e191]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e192]:
+                - link "View" [ref=e193]:
+                  - /url: https://www.getonbrd.com/jobs/programador-backend-phyton-guinea-mobile-sac-cuy-movil-remote
+                - generic [ref=e195]:
+                  - button "More relevant" [ref=e196]:
+                    - img [ref=e197]
+                  - button "Less relevant" [ref=e200]:
+                    - img [ref=e201]
+                  - button "Not interested" [ref=e204]:
+                    - img [ref=e205]
+                  - button "More like this" [ref=e208]:
+                    - img [ref=e209]
+                - button "Track" [ref=e212]
+            - row "75% Software Engineer - New Grad SeatGeek New York, NY — linkedin May 18, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e213] [cursor=pointer]:
+              - cell "75%" [ref=e214]:
+                - generic "strong match" [ref=e215]: 75%
+              - cell "Software Engineer - New Grad" [ref=e216]
+              - cell "SeatGeek" [ref=e217]:
+                - link "SeatGeek" [ref=e219]:
+                  - /url: /dashboard/company/SeatGeek
+              - cell "New York, NY" [ref=e220]
+              - cell "—" [ref=e221]
+              - cell "linkedin" [ref=e222]:
+                - generic [ref=e223]: linkedin
+              - cell "May 18, 2026" [ref=e224]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e225]:
+                - link "View" [ref=e226]:
+                  - /url: https://www.linkedin.com/jobs/view/software-engineer-new-grad-at-seatgeek-4405162929
+                - generic [ref=e228]:
+                  - button "More relevant" [ref=e229]:
+                    - img [ref=e230]
+                  - button "Less relevant" [ref=e233]:
+                    - img [ref=e234]
+                  - button "Not interested" [ref=e237]:
+                    - img [ref=e238]
+                  - button "More like this" [ref=e241]:
+                    - img [ref=e242]
+                - button "Track" [ref=e245]
+            - row "75% Software Engineer - New Grad SeatGeek New York, NY — linkedin May 18, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e246] [cursor=pointer]:
+              - cell "75%" [ref=e247]:
+                - generic "strong match" [ref=e248]: 75%
+              - cell "Software Engineer - New Grad" [ref=e249]
+              - cell "SeatGeek" [ref=e250]:
+                - link "SeatGeek" [ref=e252]:
+                  - /url: /dashboard/company/SeatGeek
+              - cell "New York, NY" [ref=e253]
+              - cell "—" [ref=e254]
+              - cell "linkedin" [ref=e255]:
+                - generic [ref=e256]: linkedin
+              - cell "May 18, 2026" [ref=e257]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e258]:
+                - link "View" [ref=e259]:
+                  - /url: https://www.linkedin.com/jobs/view/software-engineer-new-grad-at-seatgeek-4405162929
+                - generic [ref=e261]:
+                  - button "More relevant" [ref=e262]:
+                    - img [ref=e263]
+                  - button "Less relevant" [ref=e266]:
+                    - img [ref=e267]
+                  - button "Not interested" [ref=e270]:
+                    - img [ref=e271]
+                  - button "More like this" [ref=e274]:
+                    - img [ref=e275]
+                - button "Track" [ref=e278]
+            - row "74% Full Stack Engineer Kanary Remote (US) — hn_hiring Jun 1, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e279] [cursor=pointer]:
+              - cell "74%" [ref=e280]:
+                - generic "strong match" [ref=e281]: 74%
+              - cell "Full Stack Engineer" [ref=e282]
+              - cell "Kanary" [ref=e283]:
+                - link "Kanary" [ref=e285]:
+                  - /url: /dashboard/company/Kanary
+              - cell "Remote (US)" [ref=e286]
+              - cell "—" [ref=e287]
+              - cell "hn_hiring" [ref=e288]:
+                - generic [ref=e289]: hn_hiring
+              - cell "Jun 1, 2026" [ref=e290]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e291]:
+                - link "View" [ref=e292]:
+                  - /url: https://news.ycombinator.com/item?id=48358374
+                - generic [ref=e294]:
+                  - button "More relevant" [ref=e295]:
+                    - img [ref=e296]
+                  - button "Less relevant" [ref=e299]:
+                    - img [ref=e300]
+                  - button "Not interested" [ref=e303]:
+                    - img [ref=e304]
+                  - button "More like this" [ref=e307]:
+                    - img [ref=e308]
+                - button "Track" [ref=e311]
+            - row "74% AI Development Associate INDATA REMOTE (US) or San Diego $95,000–$115,000 hn_hiring May 1, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e312] [cursor=pointer]:
+              - cell "74%" [ref=e313]:
+                - generic "strong match" [ref=e314]: 74%
+              - cell "AI Development Associate" [ref=e315]
+              - cell "INDATA" [ref=e316]:
+                - link "INDATA" [ref=e318]:
+                  - /url: /dashboard/company/INDATA
+              - cell "REMOTE (US) or San Diego" [ref=e319]
+              - cell "$95,000–$115,000" [ref=e320]
+              - cell "hn_hiring" [ref=e321]:
+                - generic [ref=e322]: hn_hiring
+              - cell "May 1, 2026" [ref=e323]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e324]:
+                - link "View" [ref=e325]:
+                  - /url: https://news.ycombinator.com/item?id=47975598
+                - generic [ref=e327]:
+                  - button "More relevant" [ref=e328]:
+                    - img [ref=e329]
+                  - button "Less relevant" [ref=e332]:
+                    - img [ref=e333]
+                  - button "Not interested" [ref=e336]:
+                    - img [ref=e337]
+                  - button "More like this" [ref=e340]:
+                    - img [ref=e341]
+                - button "Track" [ref=e344]
+            - row "72% Back-end Engineer | Node.js · Python · GCP (Semi Senior) Continuum Remote USD 2400-3600/mo getonboard Mar 10, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e345] [cursor=pointer]:
+              - cell "72%" [ref=e346]:
+                - generic "strong match" [ref=e347]: 72%
+              - cell "Back-end Engineer | Node.js · Python · GCP (Semi Senior)" [ref=e348]
+              - cell "Continuum" [ref=e349]:
+                - link "Continuum" [ref=e351]:
+                  - /url: /dashboard/company/Continuum
+              - cell "Remote" [ref=e352]
+              - cell "USD 2400-3600/mo" [ref=e353]
+              - cell "getonboard" [ref=e354]:
+                - generic [ref=e355]: getonboard
+              - cell "Mar 10, 2026" [ref=e356]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e357]:
+                - link "View" [ref=e358]:
+                  - /url: https://www.getonbrd.com/jobs/backend-engineer-semi-senior-continuum-remote
+                - generic [ref=e360]:
+                  - button "More relevant" [ref=e361]:
+                    - img [ref=e362]
+                  - button "Less relevant" [ref=e365]:
+                    - img [ref=e366]
+                  - button "Not interested" [ref=e369]:
+                    - img [ref=e370]
+                  - button "More like this" [ref=e373]:
+                    - img [ref=e374]
+                - button "Track" [ref=e377]
+            - row "72% Desarrollador Full-Stack BC Tecnología Chile (Hybrid) — getonboard Nov 24, 2025 View More relevant Less relevant Not interested More like this Track" [ref=e378] [cursor=pointer]:
+              - cell "72%" [ref=e379]:
+                - generic "strong match" [ref=e380]: 72%
+              - cell "Desarrollador Full-Stack" [ref=e381]
+              - cell "BC Tecnología" [ref=e382]:
+                - link "BC Tecnología" [ref=e384]:
+                  - /url: /dashboard/company/BC%20Tecnolog%C3%ADa
+              - cell "Chile (Hybrid)" [ref=e385]
+              - cell "—" [ref=e386]
+              - cell "getonboard" [ref=e387]:
+                - generic [ref=e388]: getonboard
+              - cell "Nov 24, 2025" [ref=e389]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e390]:
+                - link "View" [ref=e391]:
+                  - /url: https://www.getonbrd.com/jobs/desarrollador-full-stack-bc-tecnologia-santiago-c8fc
+                - generic [ref=e393]:
+                  - button "More relevant" [ref=e394]:
+                    - img [ref=e395]
+                  - button "Less relevant" [ref=e398]:
+                    - img [ref=e399]
+                  - button "Not interested" [ref=e402]:
+                    - img [ref=e403]
+                  - button "More like this" [ref=e406]:
+                    - img [ref=e407]
+                - button "Track" [ref=e410]
+            - row "72% Junior Software Engineer Siyata.AI Texas, United States — linkedin Jun 3, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e411] [cursor=pointer]:
+              - cell "72%" [ref=e412]:
+                - generic "strong match" [ref=e413]: 72%
+              - cell "Junior Software Engineer" [ref=e414]
+              - cell "Siyata.AI" [ref=e415]:
+                - link "Siyata.AI" [ref=e417]:
+                  - /url: /dashboard/company/Siyata.AI
+              - cell "Texas, United States" [ref=e418]
+              - cell "—" [ref=e419]
+              - cell "linkedin" [ref=e420]:
+                - generic [ref=e421]: linkedin
+              - cell "Jun 3, 2026" [ref=e422]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e423]:
+                - link "View" [ref=e424]:
+                  - /url: https://www.linkedin.com/jobs/view/junior-software-engineer-at-siyata-ai-4420722011
+                - generic [ref=e426]:
+                  - button "More relevant" [ref=e427]:
+                    - img [ref=e428]
+                  - button "Less relevant" [ref=e431]:
+                    - img [ref=e432]
+                  - button "Not interested" [ref=e435]:
+                    - img [ref=e436]
+                  - button "More like this" [ref=e439]:
+                    - img [ref=e440]
+                - button "Track" [ref=e443]
+            - row [ref=e444] [cursor=pointer]:
+              - cell "72%" [ref=e445]:
+                - generic "strong match" [ref=e446]: 72%
+              - cell "Software Engineers" [ref=e447]
+              - cell "MixRank (YC S11) 🤝 1" [ref=e448]:
+                - link "MixRank (YC S11)" [ref=e450]:
+                  - /url: /dashboard/company/MixRank%20%28YC%20S11%29
+                - generic "1 LinkedIn connections at this company" [ref=e451]: 🤝 1
+              - cell [ref=e452]
+              - cell "—" [ref=e453]
+              - cell "hn_hiring" [ref=e454]:
+                - generic [ref=e455]: hn_hiring
+              - cell "May 3, 2026" [ref=e456]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e457]:
+                - link "View" [ref=e458]:
+                  - /url: https://news.ycombinator.com/item?id=47999750
+                - generic [ref=e460]:
+                  - button "More relevant" [ref=e461]:
+                    - img [ref=e462]
+                  - button "Less relevant" [ref=e465]:
+                    - img [ref=e466]
+                  - button "Not interested" [ref=e469]:
+                    - img [ref=e470]
+                  - button "More like this" [ref=e473]:
+                    - img [ref=e474]
+                - button "Track" [ref=e477]
+            - row "72% Full Stack Engineer Kanary Remote (US) — hn_hiring May 1, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e478] [cursor=pointer]:
+              - cell "72%" [ref=e479]:
+                - generic "strong match" [ref=e480]: 72%
+              - cell "Full Stack Engineer" [ref=e481]
+              - cell "Kanary" [ref=e482]:
+                - link "Kanary" [ref=e484]:
+                  - /url: /dashboard/company/Kanary
+              - cell "Remote (US)" [ref=e485]
+              - cell "—" [ref=e486]
+              - cell "hn_hiring" [ref=e487]:
+                - generic [ref=e488]: hn_hiring
+              - cell "May 1, 2026" [ref=e489]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e490]:
+                - link "View" [ref=e491]:
+                  - /url: https://news.ycombinator.com/item?id=47976070
+                - generic [ref=e493]:
+                  - button "More relevant" [ref=e494]:
+                    - img [ref=e495]
+                  - button "Less relevant" [ref=e498]:
+                    - img [ref=e499]
+                  - button "Not interested" [ref=e502]:
+                    - img [ref=e503]
+                  - button "More like this" [ref=e506]:
+                    - img [ref=e507]
+                - button "Track" [ref=e510]
+            - row "72% Software Engineer Deltek United States — linkedin May 10, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e511] [cursor=pointer]:
+              - cell "72%" [ref=e512]:
+                - generic "strong match" [ref=e513]: 72%
+              - cell "Software Engineer" [ref=e514]
+              - cell "Deltek" [ref=e515]:
+                - link "Deltek" [ref=e517]:
+                  - /url: /dashboard/company/Deltek
+              - cell "United States" [ref=e518]
+              - cell "—" [ref=e519]
+              - cell "linkedin" [ref=e520]:
+                - generic [ref=e521]: linkedin
+              - cell "May 10, 2026" [ref=e522]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e523]:
+                - link "View" [ref=e524]:
+                  - /url: https://www.linkedin.com/jobs/view/software-engineer-at-deltek-4424727709
+                - generic [ref=e526]:
+                  - button "More relevant" [ref=e527]:
+                    - img [ref=e528]
+                  - button "Less relevant" [ref=e531]:
+                    - img [ref=e532]
+                  - button "Not interested" [ref=e535]:
+                    - img [ref=e536]
+                  - button "More like this" [ref=e539]:
+                    - img [ref=e540]
+                - button "Track" [ref=e543]
+            - row "72% Founding Engineer Waypoint Learning (EdTech) NYC or Remote (US) — hn_hiring May 4, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e544] [cursor=pointer]:
+              - cell "72%" [ref=e545]:
+                - generic "strong match" [ref=e546]: 72%
+              - cell "Founding Engineer" [ref=e547]
+              - cell "Waypoint Learning (EdTech)" [ref=e548]:
+                - link "Waypoint Learning (EdTech)" [ref=e550]:
+                  - /url: /dashboard/company/Waypoint%20Learning%20%28EdTech%29
+              - cell "NYC or Remote (US)" [ref=e551]
+              - cell "—" [ref=e552]
+              - cell "hn_hiring" [ref=e553]:
+                - generic [ref=e554]: hn_hiring
+              - cell "May 4, 2026" [ref=e555]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e556]:
+                - link "View" [ref=e557]:
+                  - /url: https://news.ycombinator.com/item?id=48012401
+                - generic [ref=e559]:
+                  - button "More relevant" [ref=e560]:
+                    - img [ref=e561]
+                  - button "Less relevant" [ref=e564]:
+                    - img [ref=e565]
+                  - button "Not interested" [ref=e568]:
+                    - img [ref=e569]
+                  - button "More like this" [ref=e572]:
+                    - img [ref=e573]
+                - button "Track" [ref=e576]
+            - row "71% Entry Level Software Engineer Intern CORMAC United States — linkedin May 13, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e577] [cursor=pointer]:
+              - cell "71%" [ref=e578]:
+                - generic "strong match" [ref=e579]: 71%
+              - cell "Entry Level Software Engineer Intern" [ref=e580]
+              - cell "CORMAC" [ref=e581]:
+                - link "CORMAC" [ref=e583]:
+                  - /url: /dashboard/company/CORMAC
+              - cell "United States" [ref=e584]
+              - cell "—" [ref=e585]
+              - cell "linkedin" [ref=e586]:
+                - generic [ref=e587]: linkedin
+              - cell "May 13, 2026" [ref=e588]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e589]:
+                - link "View" [ref=e590]:
+                  - /url: https://www.linkedin.com/jobs/view/entry-level-software-engineer-intern-at-cormac-4424255638
+                - generic [ref=e592]:
+                  - button "More relevant" [ref=e593]:
+                    - img [ref=e594]
+                  - button "Less relevant" [ref=e597]:
+                    - img [ref=e598]
+                  - button "Not interested" [ref=e601]:
+                    - img [ref=e602]
+                  - button "More like this" [ref=e605]:
+                    - img [ref=e606]
+                - button "Track" [ref=e609]
+            - row "70% Backend/Fullstack Engineer Guac (YC S23) $150k-$250k base + equity hn_hiring Jun 1, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e610] [cursor=pointer]:
+              - cell "70%" [ref=e611]:
+                - generic "strong match" [ref=e612]: 70%
+              - cell "Backend/Fullstack Engineer" [ref=e613]
+              - cell "Guac (YC S23)" [ref=e614]:
+                - link "Guac (YC S23)" [ref=e616]:
+                  - /url: /dashboard/company/Guac%20%28YC%20S23%29
+              - cell [ref=e617]
+              - cell "$150k-$250k base + equity" [ref=e618]
+              - cell "hn_hiring" [ref=e619]:
+                - generic [ref=e620]: hn_hiring
+              - cell "Jun 1, 2026" [ref=e621]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e622]:
+                - link "View" [ref=e623]:
+                  - /url: https://news.ycombinator.com/item?id=48359699
+                - generic [ref=e625]:
+                  - button "More relevant" [ref=e626]:
+                    - img [ref=e627]
+                  - button "Less relevant" [ref=e630]:
+                    - img [ref=e631]
+                  - button "Not interested" [ref=e634]:
+                    - img [ref=e635]
+                  - button "More like this" [ref=e638]:
+                    - img [ref=e639]
+                - button "Track" [ref=e642]
+            - row "68% Backend Software Engineer Enveritas (YC S18, non-profit) Remote (Global) — hn_hiring Jun 2, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e643] [cursor=pointer]:
+              - cell "68%" [ref=e644]:
+                - generic "moderate match" [ref=e645]: 68%
+              - cell "Backend Software Engineer" [ref=e646]
+              - cell "Enveritas (YC S18, non-profit)" [ref=e647]:
+                - link "Enveritas (YC S18, non-profit)" [ref=e649]:
+                  - /url: /dashboard/company/Enveritas%20%28YC%20S18,%20non-profit%29
+              - cell "Remote (Global)" [ref=e650]
+              - cell "—" [ref=e651]
+              - cell "hn_hiring" [ref=e652]:
+                - generic [ref=e653]: hn_hiring
+              - cell "Jun 2, 2026" [ref=e654]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e655]:
+                - link "View" [ref=e656]:
+                  - /url: https://news.ycombinator.com/item?id=48372552
+                - generic [ref=e658]:
+                  - button "More relevant" [ref=e659]:
+                    - img [ref=e660]
+                  - button "Less relevant" [ref=e663]:
+                    - img [ref=e664]
+                  - button "Not interested" [ref=e667]:
+                    - img [ref=e668]
+                  - button "More like this" [ref=e671]:
+                    - img [ref=e672]
+                - button "Track" [ref=e675]
+            - row "68% Software Engineers (Python, Full-Stack) Lantern NYC (Onsite) — hn_hiring Jun 1, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e676] [cursor=pointer]:
+              - cell "68%" [ref=e677]:
+                - generic "moderate match" [ref=e678]: 68%
+              - cell "Software Engineers (Python, Full-Stack)" [ref=e679]
+              - cell "Lantern" [ref=e680]:
+                - link "Lantern" [ref=e682]:
+                  - /url: /dashboard/company/Lantern
+              - cell "NYC (Onsite)" [ref=e683]
+              - cell "—" [ref=e684]
+              - cell "hn_hiring" [ref=e685]:
+                - generic [ref=e686]: hn_hiring
+              - cell "Jun 1, 2026" [ref=e687]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e688]:
+                - link "View" [ref=e689]:
+                  - /url: https://news.ycombinator.com/item?id=48360904
+                - generic [ref=e691]:
+                  - button "More relevant" [ref=e692]:
+                    - img [ref=e693]
+                  - button "Less relevant" [ref=e696]:
+                    - img [ref=e697]
+                  - button "Not interested" [ref=e700]:
+                    - img [ref=e701]
+                  - button "More like this" [ref=e704]:
+                    - img [ref=e705]
+                - button "Track" [ref=e708]
+            - row "68% Backend Software Engineer Enveritas (YC S18, non-profit) Remote (Global) — hn_hiring May 1, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e709] [cursor=pointer]:
+              - cell "68%" [ref=e710]:
+                - generic "moderate match" [ref=e711]: 68%
+              - cell "Backend Software Engineer" [ref=e712]
+              - cell "Enveritas (YC S18, non-profit)" [ref=e713]:
+                - link "Enveritas (YC S18, non-profit)" [ref=e715]:
+                  - /url: /dashboard/company/Enveritas%20%28YC%20S18,%20non-profit%29
+              - cell "Remote (Global)" [ref=e716]
+              - cell "—" [ref=e717]
+              - cell "hn_hiring" [ref=e718]:
+                - generic [ref=e719]: hn_hiring
+              - cell "May 1, 2026" [ref=e720]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e721]:
+                - link "View" [ref=e722]:
+                  - /url: https://news.ycombinator.com/item?id=47982361
+                - generic [ref=e724]:
+                  - button "More relevant" [ref=e725]:
+                    - img [ref=e726]
+                  - button "Less relevant" [ref=e729]:
+                    - img [ref=e730]
+                  - button "Not interested" [ref=e733]:
+                    - img [ref=e734]
+                  - button "More like this" [ref=e737]:
+                    - img [ref=e738]
+                - button "Track" [ref=e741]
+            - row "68% Full-Stack Engineer, UX/UI Designer, Energy Modeling Engineer Maiven REMOTE (US) — hn_hiring May 4, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e742] [cursor=pointer]:
+              - cell "68%" [ref=e743]:
+                - generic "moderate match" [ref=e744]: 68%
+              - cell "Full-Stack Engineer, UX/UI Designer, Energy Modeling Engineer" [ref=e745]
+              - cell "Maiven" [ref=e746]:
+                - link "Maiven" [ref=e748]:
+                  - /url: /dashboard/company/Maiven
+              - cell "REMOTE (US)" [ref=e749]
+              - cell "—" [ref=e750]
+              - cell "hn_hiring" [ref=e751]:
+                - generic [ref=e752]: hn_hiring
+              - cell "May 4, 2026" [ref=e753]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e754]:
+                - link "View" [ref=e755]:
+                  - /url: https://news.ycombinator.com/item?id=48014057
+                - generic [ref=e757]:
+                  - button "More relevant" [ref=e758]:
+                    - img [ref=e759]
+                  - button "Less relevant" [ref=e762]:
+                    - img [ref=e763]
+                  - button "Not interested" [ref=e766]:
+                    - img [ref=e767]
+                  - button "More like this" [ref=e770]:
+                    - img [ref=e771]
+                - button "Track" [ref=e774]
+            - row "68% Founding Engineer (Full-Stack) DrSwarm REMOTE (US or LATAM; must overlap with US Pacific hours) — hn_hiring Jun 1, 2026 View More relevant Less relevant Not interested More like this Track" [ref=e775] [cursor=pointer]:
+              - cell "68%" [ref=e776]:
+                - generic "moderate match" [ref=e777]: 68%
+              - cell "Founding Engineer (Full-Stack)" [ref=e778]
+              - cell "DrSwarm" [ref=e779]:
+                - link "DrSwarm" [ref=e781]:
+                  - /url: /dashboard/company/DrSwarm
+              - cell "REMOTE (US or LATAM; must overlap with US Pacific hours)" [ref=e782]
+              - cell "—" [ref=e783]
+              - cell "hn_hiring" [ref=e784]:
+                - generic [ref=e785]: hn_hiring
+              - cell "Jun 1, 2026" [ref=e786]
+              - cell "View More relevant Less relevant Not interested More like this Track" [ref=e787]:
+                - link "View" [ref=e788]:
+                  - /url: https://news.ycombinator.com/item?id=48358793
+                - generic [ref=e790]:
+                  - button "More relevant" [ref=e791]:
+                    - img [ref=e792]
+                  - button "Less relevant" [ref=e795]:
+                    - img [ref=e796]
+                  - button "Not interested" [ref=e799]:
+                    - img [ref=e800]
+                  - button "More like this" [ref=e803]:
+                    - img [ref=e804]
+                - button "Track" [ref=e807]
+        - generic [ref=e809]:
+          - generic [ref=e810]: Showing 1–20 of 2,352 jobs
+          - generic [ref=e811]:
+            - generic [ref=e812]:
+              - text: "Rows per page:"
+              - combobox "Rows per page:" [ref=e813]:
+                - option "20" [selected]
+                - option "50"
+                - option "100"
+            - button "← Prev" [disabled] [ref=e814]
+            - generic [ref=e815]: Page 1 of 118
+            - button "Next →" [ref=e816] [cursor=pointer]

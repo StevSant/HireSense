@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { ApplicationsComponent } from './applications.component';
 import { ApplicationsService } from '../../core/services/applications.service';
@@ -22,19 +22,18 @@ function makeItem(over: Partial<ApplicationListItem> = {}): ApplicationListItem 
 }
 
 describe('ApplicationsComponent', () => {
-  function mount(opts: {
-    list?: () => unknown;
-    remove?: () => unknown;
-  } = {}) {
+  function mount(
+    opts: {
+      list?: () => unknown;
+      remove?: () => unknown;
+    } = {},
+  ) {
     const list = vi.fn(opts.list ?? (() => of([makeItem()])));
     const remove = vi.fn(opts.remove ?? (() => of(undefined)));
 
     TestBed.configureTestingModule({
       imports: [ApplicationsComponent],
-      providers: [
-        provideRouter([]),
-        { provide: ApplicationsService, useValue: { list, remove } },
-      ],
+      providers: [provideRouter([]), { provide: ApplicationsService, useValue: { list, remove } }],
     });
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const fixture = TestBed.createComponent(ApplicationsComponent);
@@ -128,6 +127,35 @@ describe('ApplicationsComponent', () => {
     expect(fixture.componentInstance.applications().length).toBe(1);
     expect(fixture.componentInstance.deletingId()).toBeNull();
   });
+
+  it('shows a dismissible notice and strips the flag when redirected with notFound', () => {
+    const navigate = vi.fn();
+    const route = {
+      snapshot: { queryParamMap: { has: (k: string) => k === 'notFound' } },
+    };
+    TestBed.configureTestingModule({
+      imports: [ApplicationsComponent],
+      providers: [
+        { provide: Router, useValue: { navigate } },
+        { provide: ActivatedRoute, useValue: route },
+        { provide: ApplicationsService, useValue: { list: () => of([]), remove: vi.fn() } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ApplicationsComponent);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.notice()).toContain('no longer exists');
+    expect(fixture.nativeElement.querySelector('.notice-banner')).not.toBeNull();
+    // The flag is stripped so a refresh doesn't re-show the notice.
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ queryParams: {}, replaceUrl: true }),
+    );
+
+    fixture.componentInstance.dismissNotice();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.notice-banner')).toBeNull();
+  });
 });
 
 describe('ApplicationsComponent sorting/filtering', () => {
@@ -136,7 +164,10 @@ describe('ApplicationsComponent sorting/filtering', () => {
       imports: [ApplicationsComponent],
       providers: [
         provideRouter([]),
-        { provide: ApplicationsService, useValue: { list: () => of(rows), remove: () => of(undefined) } },
+        {
+          provide: ApplicationsService,
+          useValue: { list: () => of(rows), remove: () => of(undefined) },
+        },
       ],
     });
     const fixture = TestBed.createComponent(ApplicationsComponent);

@@ -428,11 +428,15 @@ class Settings(BaseSettings):
     portfolio_supabase_url: str = ""
     portfolio_supabase_anon_key: str = ""
     # GitHub source adapter: public repos of this user become portfolio
-    # projects. Token is optional (rate limit 60 -> 5000 req/h; includes
-    # private repos when set).
+    # projects. Token is optional for public repos (raises the rate limit
+    # 60 -> 5000 req/h).
     portfolio_github_username: str = ""
     portfolio_github_token: str = ""
     portfolio_github_api_url: str = "https://api.github.com"
+    # When True the adapter reads the *token owner's* repos (GET /user/repos)
+    # including private ones, instead of a username's public repos. Requires a
+    # token with the `repo` scope; portfolio_github_username is then ignored.
+    portfolio_github_include_private: bool = False
     # Repos kept after sorting by stars + recent push. Bounds the per-repo
     # languages calls (one HTTP request per kept repo).
     portfolio_github_max_repos: int = 30

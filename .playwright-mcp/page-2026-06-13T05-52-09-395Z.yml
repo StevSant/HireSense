@@ -1,0 +1,23 @@
+- generic [ref=e4]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - heading "HireSense" [level=2] [ref=e7]
+      - generic [ref=e8]: Career Intelligence
+    - navigation "Main navigation" [ref=e9]:
+      - generic [ref=e10]:
+        - img [ref=e12]
+        - generic [ref=e15]: Discover
+      - generic [ref=e16]:
+        - img [ref=e18]
+        - generic [ref=e21]: Pipeline
+      - generic [ref=e22]:
+        - img [ref=e24]
+        - generic [ref=e25]: Insights
+      - generic [ref=e26]:
+        - img [ref=e28]
+        - generic [ref=e31]: Profile
+      - generic [ref=e32]:
+        - img [ref=e34]
+        - generic [ref=e37]: Admin
+    - button "Sign Out" [ref=e39] [cursor=pointer]
+  - main [ref=e40]

@@ -1,6 +1,6 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { ApplicationListItem } from './models/application-list-item.model';
@@ -17,18 +17,29 @@ type AppSortField = 'title' | 'company' | 'status' | 'match' | 'created';
 @Component({
   selector: 'app-applications',
   standalone: true,
-  imports: [DatePipe, TitleCasePipe, RouterLink, ApplicationCreateDialogComponent, SortableHeaderDirective, CompanyLinkComponent],
+  imports: [
+    DatePipe,
+    TitleCasePipe,
+    RouterLink,
+    ApplicationCreateDialogComponent,
+    SortableHeaderDirective,
+    CompanyLinkComponent,
+  ],
   templateUrl: './applications.component.html',
   styleUrl: './applications.component.scss',
 })
 export class ApplicationsComponent implements OnInit {
   private service = inject(ApplicationsService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
   applications = signal<ApplicationListItem[]>([]);
   loading = signal(false);
   error = signal('');
+  // Dismissible notice shown when the detail page bounced us here (e.g. a
+  // stale/deleted application id produced a 404).
+  notice = signal('');
   showCreateDialog = signal(false);
   deletingId = signal<string | null>(null);
 
@@ -55,11 +66,16 @@ export class ApplicationsComponent implements OnInit {
 
   private sortValue(a: ApplicationListItem, field: AppSortField): string | number | null {
     switch (field) {
-      case 'title': return a.title;
-      case 'company': return a.company;
-      case 'status': return a.status;
-      case 'match': return a.latest_match_score;
-      case 'created': return a.created_at;
+      case 'title':
+        return a.title;
+      case 'company':
+        return a.company;
+      case 'status':
+        return a.status;
+      case 'match':
+        return a.latest_match_score;
+      case 'created':
+        return a.created_at;
     }
   }
 
@@ -72,22 +88,40 @@ export class ApplicationsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    if (this.route.snapshot.queryParamMap.has('notFound')) {
+      this.notice.set(
+        'That application no longer exists — it may have been deleted, or the link is stale (the database was reset).',
+      );
+      // Strip the flag so a manual refresh doesn't re-show the notice.
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: {},
+        replaceUrl: true,
+      });
+    }
     this.load();
+  }
+
+  dismissNotice(): void {
+    this.notice.set('');
   }
 
   load(): void {
     this.loading.set(true);
     this.error.set('');
-    this.service.list().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (rows) => {
-        this.applications.set(rows);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Failed to load applications');
-        this.loading.set(false);
-      },
-    });
+    this.service
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (rows) => {
+          this.applications.set(rows);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Failed to load applications');
+          this.loading.set(false);
+        },
+      });
   }
 
   open(id: string): void {
@@ -114,19 +148,26 @@ export class ApplicationsComponent implements OnInit {
   remove(app: ApplicationListItem, event: MouseEvent): void {
     event.stopPropagation();
     const label = `${app.title} · ${app.company}`;
-    if (!confirm(`Delete "${label}"?\n\nThis removes the application and all its matches, optimizations, cover letters and interview prep. The original job in Ingestion is not affected.`)) {
+    if (
+      !confirm(
+        `Delete "${label}"?\n\nThis removes the application and all its matches, optimizations, cover letters and interview prep. The original job in Ingestion is not affected.`,
+      )
+    ) {
       return;
     }
     this.deletingId.set(app.id);
-    this.service.remove(app.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.applications.update((rows) => rows.filter((r) => r.id !== app.id));
-        this.deletingId.set(null);
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Failed to delete application');
-        this.deletingId.set(null);
-      },
-    });
+    this.service
+      .remove(app.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.applications.update((rows) => rows.filter((r) => r.id !== app.id));
+          this.deletingId.set(null);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Failed to delete application');
+          this.deletingId.set(null);
+        },
+      });
   }
 }

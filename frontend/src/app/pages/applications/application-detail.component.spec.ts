@@ -42,22 +42,27 @@ function makeAggregate(over: Partial<ApplicationAggregate> = {}): ApplicationAgg
 }
 
 describe('ApplicationDetailComponent', () => {
-  function mount(opts: {
-    id?: string | null;
-    tab?: string | null;
-    get?: () => unknown;
-    remove?: () => unknown;
-    navigate?: ReturnType<typeof vi.fn>;
-    optCompleted$?: Subject<string>;
-    clCompleted$?: Subject<string>;
-    engagement?: () => unknown;
-  } = {}) {
+  function mount(
+    opts: {
+      id?: string | null;
+      tab?: string | null;
+      get?: () => unknown;
+      remove?: () => unknown;
+      navigate?: ReturnType<typeof vi.fn>;
+      optCompleted$?: Subject<string>;
+      clCompleted$?: Subject<string>;
+      engagement?: () => unknown;
+    } = {},
+  ) {
     const get = vi.fn(opts.get ?? (() => of(makeAggregate())));
     const remove = vi.fn(opts.remove ?? (() => of(undefined)));
     const navigate = opts.navigate ?? vi.fn();
     const optCompleted$ = opts.optCompleted$ ?? new Subject<string>();
     const clCompleted$ = opts.clCompleted$ ?? new Subject<string>();
-    const engagement = vi.fn(opts.engagement ?? (() => of({ configured: false, visits: [] } as PortfolioEngagementResponse)));
+    const engagement = vi.fn(
+      opts.engagement ??
+        (() => of({ configured: false, visits: [] } as PortfolioEngagementResponse)),
+    );
 
     const route = {
       snapshot: {
@@ -87,7 +92,10 @@ describe('ApplicationDetailComponent', () => {
         { provide: ApplicationsService, useValue: { get, remove } },
         { provide: CvOptimizationRunnerService, useValue: optRunner },
         { provide: CoverLetterRunnerService, useValue: clRunner },
-        { provide: PortfolioService, useValue: { engagement, listProjects: vi.fn(), sync: vi.fn() } },
+        {
+          provide: PortfolioService,
+          useValue: { engagement, listProjects: vi.fn(), sync: vi.fn() },
+        },
       ],
     });
     const fixture = TestBed.createComponent(ApplicationDetailComponent);
@@ -100,7 +108,9 @@ describe('ApplicationDetailComponent', () => {
     expect(get).toHaveBeenCalledWith('app-1');
     expect(fixture.componentInstance.aggregate()?.id).toBe('app-1');
     expect(fixture.componentInstance.loading()).toBe(false);
-    expect(fixture.nativeElement.querySelector('h1').textContent).toContain('Senior Backend Engineer');
+    expect(fixture.nativeElement.querySelector('h1').textContent).toContain(
+      'Senior Backend Engineer',
+    );
   });
 
   it('defaults to the job tab and renders it', () => {
@@ -129,7 +139,11 @@ describe('ApplicationDetailComponent', () => {
     expect(fixture.nativeElement.querySelector('app-apply-tab')).not.toBeNull();
     expect(navigate).toHaveBeenCalledWith(
       [],
-      expect.objectContaining({ queryParams: { tab: 'apply' }, queryParamsHandling: 'merge', replaceUrl: true }),
+      expect.objectContaining({
+        queryParams: { tab: 'apply' },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      }),
     );
     expect(get).not.toHaveBeenCalled();
   });
@@ -146,6 +160,15 @@ describe('ApplicationDetailComponent', () => {
     expect(fixture.componentInstance.error()).toBe('no app');
     expect(fixture.componentInstance.loading()).toBe(false);
     expect(fixture.nativeElement.querySelector('.alert-error').textContent).toContain('no app');
+  });
+
+  it('redirects to the list with a notFound flag when the application 404s', () => {
+    const { fixture, navigate } = mount({ get: () => throwError(() => ({ status: 404 })) });
+    expect(navigate).toHaveBeenCalledWith(['/dashboard/applications'], {
+      queryParams: { notFound: '1' },
+    });
+    // No inline error is shown — the redirect handles it.
+    expect(fixture.componentInstance.error()).toBe('');
   });
 
   it('refetches the aggregate when a CV optimization run completes for this app', () => {
@@ -193,7 +216,9 @@ describe('ApplicationDetailComponent', () => {
 
   it('surfaces an error when delete fails', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
-    const { fixture } = mount({ remove: () => throwError(() => ({ error: { detail: 'cannot' } })) });
+    const { fixture } = mount({
+      remove: () => throwError(() => ({ error: { detail: 'cannot' } })),
+    });
     fixture.componentInstance.remove();
     expect(fixture.componentInstance.error()).toBe('cannot');
     expect(fixture.componentInstance.deleting()).toBe(false);
@@ -201,9 +226,14 @@ describe('ApplicationDetailComponent', () => {
 
   it('shows the portfolio visit chip when a matching visit exists', () => {
     const visit = {
-      ref: 'ref-1', application_id: 'app-1', first_seen: '2026-06-01T00:00:00Z',
-      last_seen: '2026-06-09T00:00:00Z', page_views: 3, cv_downloads: 0,
-      country: 'US', organization: 'Acme',
+      ref: 'ref-1',
+      application_id: 'app-1',
+      first_seen: '2026-06-01T00:00:00Z',
+      last_seen: '2026-06-09T00:00:00Z',
+      page_views: 3,
+      cv_downloads: 0,
+      country: 'US',
+      organization: 'Acme',
     };
     const { fixture } = mount({
       engagement: () => of({ configured: true, visits: [visit] } as PortfolioEngagementResponse),

@@ -297,6 +297,39 @@ def test_strict_location_remote_honors_country_restriction() -> None:
     assert {j.id for j in result.jobs} == {"2", "4", "5"}
 
 
+def test_strict_location_excludes_country_qualified_free_text_remote() -> None:
+    """Free-text remote roles qualified to a specific country ("Remote (US)")
+    are NOT worldwide — an out-of-country user can't apply, so they're hidden.
+    This is the hn_hiring / linkedin case: no structured countries list, the
+    restriction lives in the location text's parenthetical qualifier."""
+    jobs = [
+        _job(id="1", location="Remote (US)"),
+        _job(id="2", location="REMOTE (US) or San Diego"),
+        _job(id="3", location="NYC or Remote (US)"),
+        _job(id="4", location="Remote (United States)"),
+        # Genuinely worldwide remote → still shown.
+        _job(id="5", location="100% REMOTE (Global)"),
+        _job(id="6", location="Remote (Global)"),
+        _job(id="7", location="Remote"),
+        # Work-mode / employment qualifier is not a geographic restriction.
+        _job(id="8", location="100% Remote (Full-time)"),
+    ]
+    params = JobQueryParams(user_location="Ecuador", strict_location=True)
+    result = filter_and_paginate(jobs, params)
+    assert {j.id for j in result.jobs} == {"5", "6", "7", "8"}
+
+
+def test_strict_location_keeps_country_qualified_remote_for_local_user() -> None:
+    """A remote role qualified to the user's own country is applyable."""
+    jobs = [
+        _job(id="1", location="Remote (Ecuador)"),
+        _job(id="2", location="Remote (US)"),
+    ]
+    params = JobQueryParams(user_location="Ecuador", strict_location=True)
+    result = filter_and_paginate(jobs, params)
+    assert {j.id for j in result.jobs} == {"1"}
+
+
 def test_strict_location_hybrid_requires_country_match() -> None:
     jobs = [
         _job(id="1", remote_modality="hybrid", countries=["Chile"]),

@@ -335,6 +335,14 @@ class JobsRepository(SqlRepository):
         """
         if not updates:
             return
+        # Order rows by primary key so concurrent bulk updates acquire row
+        # locks in a single global order. The frontend fires several list_jobs
+        # requests at once (e.g. with/without user_location, per-source), each
+        # building its update list in a different sort/filter order over the
+        # same corpus. Without a deterministic lock order Postgres deadlocks:
+        # txn A locks row X then waits on Y while txn B holds Y and waits on X.
+        # Sorting by id turns that cycle into a plain wait.
+        ordered = sorted(updates, key=lambda su: su.job_id)
         with self._session_factory() as session:
             session.execute(
                 update(IngestedJob),
@@ -344,7 +352,7 @@ class JobsRepository(SqlRepository):
                         "match_score": su.match_score,
                         "semantic_score": su.semantic_score,
                     }
-                    for su in updates
+                    for su in ordered
                 ],
             )
             session.commit()
@@ -353,6 +361,9 @@ class JobsRepository(SqlRepository):
         """Persist quality classifications in a single executemany round-trip."""
         if not updates:
             return
+        # Same primary-key ordering as bulk_update_scores so concurrent batches
+        # touching the same rows can't deadlock (see bulk_update_scores).
+        ordered = sorted(updates, key=lambda qu: qu.job_id)
         with self._session_factory() as session:
             session.execute(
                 update(IngestedJob),
@@ -362,7 +373,7 @@ class JobsRepository(SqlRepository):
                         "quality": qu.quality,
                         "quality_reason": qu.quality_reason,
                     }
-                    for qu in updates
+                    for qu in ordered
                 ],
             )
             session.commit()

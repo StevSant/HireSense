@@ -25,6 +25,19 @@ def _make_job(title: str = "SWE", url: str | None = None) -> NormalizedJob:
     )
 
 
+def _seed_job(job_id: str) -> NormalizedJob:
+    """A job with an explicit primary-key id, for lock-order assertions."""
+    return NormalizedJob(
+        id=job_id,
+        title="SWE",
+        company="Acme",
+        description="desc",
+        source="test",
+        source_type="api",
+        url=f"https://x/{job_id}",
+    )
+
+
 class TestScoreUpdateValueType:
     def test_score_update_is_importable(self) -> None:
         """ScoreUpdate must be importable from the ports module."""
@@ -136,6 +149,81 @@ class TestInMemoryBulkUpdateScores:
         assert stored_b is not None
         assert stored_b.match_score == pytest.approx(0.99)
         assert stored_b.semantic_score == pytest.approx(0.88)
+
+
+class TestBulkUpdateScoresLockOrder:
+    """The SQL repository must issue per-row UPDATEs ordered by primary key so
+    that concurrent bulk updates over the same corpus acquire row locks in a
+    single global order — otherwise Postgres deadlocks (regression: two racing
+    list_jobs requests each persisting scores in a different sort order)."""
+
+    def _make_sql_repo(self):
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+
+        from hiresense.infrastructure.database import Base
+        from hiresense.ingestion.infrastructure.jobs_repository import JobsRepository
+        from hiresense.ingestion.infrastructure.models import IngestedJob  # noqa: F401
+
+        engine = create_engine("sqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        base_factory = sessionmaker(bind=engine, expire_on_commit=False)
+        captured: list[list[str]] = []
+
+        class _SpySession:
+            def __enter__(self_inner):
+                self_inner._s = base_factory()
+                return self_inner
+
+            def __exit__(self_inner, *exc):
+                self_inner._s.close()
+                return False
+
+            def execute(self_inner, stmt, params=None):
+                if isinstance(params, list):
+                    captured.append([p["id"] for p in params])
+                return self_inner._s.execute(stmt, params)
+
+            def __getattr__(self_inner, name):
+                return getattr(self_inner._s, name)
+
+        return JobsRepository(session_factory=_SpySession, bucket="boards"), captured
+
+    def test_bulk_update_scores_orders_by_job_id(self) -> None:
+        from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
+
+        repo, captured = self._make_sql_repo()
+        for jid in ("a", "b", "c"):
+            repo.upsert(_seed_job(jid))
+        captured.clear()  # ignore seeding writes; only inspect the bulk update
+
+        repo.bulk_update_scores([
+            ScoreUpdate(job_id="c", match_score=0.1, semantic_score=0.1),
+            ScoreUpdate(job_id="a", match_score=0.2, semantic_score=0.2),
+            ScoreUpdate(job_id="b", match_score=0.3, semantic_score=0.3),
+        ])
+        assert captured, "executemany was never issued"
+        assert captured[0] == ["a", "b", "c"], (
+            "bulk_update_scores must order rows by job_id to avoid deadlocks"
+        )
+
+    def test_bulk_update_quality_orders_by_job_id(self) -> None:
+        from hiresense.ingestion.ports.jobs_repository import QualityUpdate
+
+        repo, captured = self._make_sql_repo()
+        for jid in ("a", "m", "z"):
+            repo.upsert(_seed_job(jid))
+        captured.clear()
+
+        repo.bulk_update_quality([
+            QualityUpdate(job_id="z", quality="spam", quality_reason="x"),
+            QualityUpdate(job_id="m", quality="ok", quality_reason=None),
+            QualityUpdate(job_id="a", quality="low_quality", quality_reason="y"),
+        ])
+        assert captured, "executemany was never issued"
+        assert captured[0] == ["a", "m", "z"], (
+            "bulk_update_quality must order rows by job_id to avoid deadlocks"
+        )
 
 
 class TestJobsRepositoryPortHasBulkUpdateScores:

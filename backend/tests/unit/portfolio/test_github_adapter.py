@@ -118,3 +118,55 @@ async def test_max_repos_caps_languages_calls_and_token_header() -> None:
     language_calls = [u for u, _ in http.calls if u.endswith("/languages")]
     assert language_calls == ["https://api.github.com/repos/StevSant/hiresense/languages"]
     assert all(h.get("Authorization") == "Bearer tok" for _, h in http.calls)
+
+
+class _PaginatedHttp:
+    """Serves repo pages keyed by the ``page=`` query param; /languages -> {}."""
+
+    def __init__(self, pages_by_number):
+        self._pages = pages_by_number
+        self.repo_list_urls: list[str] = []
+
+    async def get(self, url, headers=None, params=None):
+        if "/languages" in url:
+            return _FakeResponse({})
+        self.repo_list_urls.append(url)
+        page = int(url.split("&page=")[1].split("&")[0])
+        return _FakeResponse(self._pages.get(page, []))
+
+
+@pytest.mark.asyncio
+async def test_include_private_uses_authenticated_endpoint() -> None:
+    from hiresense.portfolio.adapters import GitHubPortfolioAdapter
+
+    http = _PaginatedHttp({1: [_repo("secret")]})
+    adapter = GitHubPortfolioAdapter(
+        http_client=http, api_url="https://api.github.com", username="ignored",
+        token="tok", max_repos=30, include_private=True,
+    )
+    projects = await adapter.fetch_projects()
+
+    assert [p.source_key for p in projects] == ["StevSant/secret"]
+    # Hits /user/repos (authenticated owner) with visibility=all, never /users/<name>.
+    assert http.repo_list_urls[0].startswith(
+        "https://api.github.com/user/repos?visibility=all&affiliation=owner"
+    )
+    assert "/users/ignored" not in "".join(http.repo_list_urls)
+
+
+@pytest.mark.asyncio
+async def test_pagination_walks_until_short_page() -> None:
+    from hiresense.portfolio.adapters import GitHubPortfolioAdapter
+
+    full_page = [_repo(f"r{i}", pushed=f"2026-01-{i % 28 + 1:02d}T00:00:00Z")
+                 for i in range(100)]
+    http = _PaginatedHttp({1: full_page, 2: [_repo("last")]})
+    adapter = GitHubPortfolioAdapter(
+        http_client=http, api_url="https://api.github.com", username="StevSant",
+        token="", max_repos=200,
+    )
+    projects = await adapter.fetch_projects()
+
+    assert len(projects) == 101  # 100 from page 1 + 1 from page 2
+    pages = [int(u.split("&page=")[1].split("&")[0]) for u in http.repo_list_urls]
+    assert pages == [1, 2]  # stopped once page 2 returned a short page

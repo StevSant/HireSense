@@ -459,7 +459,11 @@ table {
 /* ---- Shared: Page layout ---- */
 .page {
   max-width: 1200px;
-  animation: pageIn 0.3s var(--ease) both;
+  // `backwards` (not `both`): play the entrance slide, but DON'T retain the
+  // final `transform: translateY(0)` afterwards. A lingering transform makes
+  // .page the containing block for `position: fixed`, which traps modal
+  // overlays inside the page box instead of covering the viewport.
+  animation: pageIn 0.3s var(--ease) backwards;
 }
 
 .page-header {

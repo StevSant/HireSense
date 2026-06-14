@@ -46,7 +46,15 @@ def build_portfolio(infra: SharedInfra) -> PortfolioBuild | None:
                 )
             )
         elif name == "github":
-            if not s.portfolio_github_username:
+            if s.portfolio_github_include_private:
+                if not s.portfolio_github_token:
+                    raise ValueError(
+                        "portfolio source 'github' has "
+                        "PORTFOLIO_GITHUB_INCLUDE_PRIVATE=true but "
+                        "PORTFOLIO_GITHUB_TOKEN is not set (a token with the "
+                        "`repo` scope is required to read private repos)"
+                    )
+            elif not s.portfolio_github_username:
                 raise ValueError(
                     "portfolio source 'github' is enabled but "
                     "PORTFOLIO_GITHUB_USERNAME is not set"
@@ -58,6 +66,7 @@ def build_portfolio(infra: SharedInfra) -> PortfolioBuild | None:
                     username=s.portfolio_github_username,
                     token=s.portfolio_github_token,
                     max_repos=s.portfolio_github_max_repos,
+                    include_private=s.portfolio_github_include_private,
                 )
             )
         else:

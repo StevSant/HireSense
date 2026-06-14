@@ -22,13 +22,20 @@ class _ReversedStr(str):
 
 
 class GitHubPortfolioAdapter:
-    """Reads a user's public GitHub repos as portfolio projects.
+    """Reads a user's GitHub repos as portfolio projects.
+
+    By default it lists ``username``'s **public** repos. With
+    ``include_private=True`` it instead lists the *token owner's* repos via
+    ``GET /user/repos`` (``visibility=all``), which includes private repos —
+    this requires a token with the ``repo`` scope and ignores ``username``.
 
     Forks and archived repos are excluded; repos are ranked by stars then
     most-recent push and capped at ``max_repos`` (each kept repo costs one
-    ``/languages`` request).  A token is optional — it raises the rate limit
-    and includes private repos.
+    ``/languages`` request).  Results are paginated, so users with more than
+    100 repos are fully covered before the cap is applied.
     """
+
+    _PER_PAGE = 100
 
     def __init__(
         self,
@@ -37,12 +44,14 @@ class GitHubPortfolioAdapter:
         username: str,
         token: str,
         max_repos: int,
+        include_private: bool = False,
     ) -> None:
         self._http = http_client
         self._api = api_url.rstrip("/")
         self._username = username
         self._token = token
         self._max_repos = max_repos
+        self._include_private = include_private
 
     def source_name(self) -> str:
         return "github"
@@ -58,10 +67,27 @@ class GitHubPortfolioAdapter:
         response.raise_for_status()
         return response.json()
 
+    def _repos_url(self, page: int) -> str:
+        common = f"per_page={self._PER_PAGE}&sort=pushed&page={page}"
+        if self._include_private:
+            # Authenticated endpoint: the token owner's repos, private included.
+            return f"{self._api}/user/repos?visibility=all&affiliation=owner&{common}"
+        # Public repos of a named user (no private repos, token or not).
+        return f"{self._api}/users/{self._username}/repos?type=owner&{common}"
+
+    async def _list_repos(self) -> list[Any]:
+        repos: list[Any] = []
+        page = 1
+        while True:
+            batch = await self._get(self._repos_url(page))
+            repos.extend(batch)
+            if len(batch) < self._PER_PAGE:
+                break
+            page += 1
+        return repos
+
     async def fetch_projects(self) -> list[PortfolioProject]:
-        repos = await self._get(
-            f"{self._api}/users/{self._username}/repos?per_page=100&type=owner&sort=pushed"
-        )
+        repos = await self._list_repos()
         kept = [r for r in repos if not r.get("fork") and not r.get("archived")]
         kept.sort(
             key=lambda r: (

@@ -1,0 +1,13 @@
+- generic [ref=e5]:
+  - heading "HireSense" [level=1] [ref=e6]
+  - paragraph [ref=e7]: AI-Powered Job Matching
+  - generic [ref=e8]:
+    - generic [ref=e9]:
+      - generic [ref=e10]: Username
+      - textbox "Username" [ref=e11]:
+        - /placeholder: Enter username
+    - generic [ref=e12]:
+      - generic [ref=e13]: Password
+      - textbox "Password" [ref=e14]:
+        - /placeholder: Enter password
+    - button "Sign In" [ref=e15] [cursor=pointer]

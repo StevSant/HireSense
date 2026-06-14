@@ -4,12 +4,26 @@
 }
 
 .tuning-toggle {
-  padding: 0.45rem 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  // Match .btn-primary's height: same 0.5rem vertical padding, minus the 1px
+  // border this button adds (btn-primary is borderless) so the two line up.
+  padding: calc(0.5rem - 1px) 0.9rem;
   border: 1px solid var(--border, #d0d0d0);
-  border-radius: 6px;
+  border-radius: var(--radius-md, 6px);
   background: var(--surface, #fff);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.tuning-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
 }
 
 .tuning-panel {

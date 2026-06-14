@@ -3,19 +3,26 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
+  // Stack from the top and let the BACKDROP scroll. With align-items:center a
+  // dialog taller than the viewport overflows equally top and bottom, leaving
+  // its header clipped above the screen and unreachable. flex-start + the
+  // overlay's own overflow-y keeps the whole dialog scrollable; `margin:auto`
+  // on the dialog still vertically centres it when it fits.
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
+  padding: 4vh 1rem;
   z-index: 100;
 }
 
 .dialog {
-  background: white;
+  background: var(--surface, #fff);
+  color: var(--text-primary, #111827);
   border-radius: 8px;
   padding: 1.5rem;
-  width: min(640px, 90vw);
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  width: min(640px, 100%);
+  margin: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
 .dialog-header {

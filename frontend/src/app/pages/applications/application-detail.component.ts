@@ -60,14 +60,19 @@ export class ApplicationDetailComponent implements OnInit {
       this.activeTab.set(tab);
     }
     this.load(id);
-    this.portfolioService.engagement().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (res) => {
-        if (!res.configured) return;
-        const match = res.visits.find((v) => v.application_id === id) ?? null;
-        this.portfolioVisit.set(match);
-      },
-      error: () => { /* accessory — swallow silently */ },
-    });
+    this.portfolioService
+      .engagement()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          if (!res.configured) return;
+          const match = res.visits.find((v) => v.application_id === id) ?? null;
+          this.portfolioVisit.set(match);
+        },
+        error: () => {
+          /* accessory — swallow silently */
+        },
+      });
 
     // Refetch the aggregate whenever a background CV optimization or cover
     // letter generation finishes — even if the user has switched tabs since
@@ -87,16 +92,29 @@ export class ApplicationDetailComponent implements OnInit {
   load(id: string): void {
     this.loading.set(true);
     this.error.set('');
-    this.service.get(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (agg) => {
-        this.aggregate.set(agg);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Failed to load application');
-        this.loading.set(false);
-      },
-    });
+    this.service
+      .get(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (agg) => {
+          this.aggregate.set(agg);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          // A 404 means the application no longer exists (e.g. deleted, or a
+          // stale URL after the dev DB was reseeded). Bounce back to the list
+          // with a notice rather than stranding the user on a broken detail
+          // page whose actions all fail.
+          if (err?.status === 404) {
+            this.router.navigate(['/dashboard/applications'], {
+              queryParams: { notFound: '1' },
+            });
+            return;
+          }
+          this.error.set(err?.error?.detail ?? 'Failed to load application');
+          this.loading.set(false);
+        },
+      });
   }
 
   setTab(tab: TabKey): void {
@@ -123,20 +141,27 @@ export class ApplicationDetailComponent implements OnInit {
     const agg = this.aggregate();
     if (!agg) return;
     const label = `${agg.title} · ${agg.company}`;
-    if (!confirm(`Delete "${label}"?\n\nThis removes the application and all its matches, optimizations, cover letters and interview prep. The original job in Ingestion is not affected.`)) {
+    if (
+      !confirm(
+        `Delete "${label}"?\n\nThis removes the application and all its matches, optimizations, cover letters and interview prep. The original job in Ingestion is not affected.`,
+      )
+    ) {
       return;
     }
     this.deleting.set(true);
     this.error.set('');
-    this.service.remove(agg.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.deleting.set(false);
-        this.router.navigate(['/dashboard/applications']);
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Failed to delete application');
-        this.deleting.set(false);
-      },
-    });
+    this.service
+      .remove(agg.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.deleting.set(false);
+          this.router.navigate(['/dashboard/applications']);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Failed to delete application');
+          this.deleting.set(false);
+        },
+      });
   }
 }

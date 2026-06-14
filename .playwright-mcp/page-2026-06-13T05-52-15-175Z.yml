@@ -1,0 +1,107 @@
+- generic [ref=e4]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - heading "HireSense" [level=2] [ref=e7]
+      - generic [ref=e8]: Career Intelligence
+    - navigation "Main navigation" [ref=e9]:
+      - link "Discover" [ref=e41] [cursor=pointer]:
+        - /url: /dashboard/ingestion
+        - img [ref=e12]
+        - generic [ref=e15]: Discover
+      - link "Pipeline" [ref=e42] [cursor=pointer]:
+        - /url: /dashboard/applications
+        - img [ref=e18]
+        - generic [ref=e21]: Pipeline
+      - link "Insights" [ref=e43] [cursor=pointer]:
+        - /url: /dashboard/analytics
+        - img [ref=e24]
+        - generic [ref=e25]: Insights
+      - link "Profile" [ref=e44] [cursor=pointer]:
+        - /url: /dashboard/profile
+        - img [ref=e28]
+        - generic [ref=e31]: Profile
+      - link "Admin" [ref=e45] [cursor=pointer]:
+        - /url: /dashboard/admin/llm-settings
+        - img [ref=e34]
+        - generic [ref=e37]: Admin
+    - button "Sign Out" [ref=e39] [cursor=pointer]
+  - main [ref=e40]:
+    - tablist "Section tabs" [ref=e47]:
+      - tab "Applications" [selected] [ref=e48] [cursor=pointer]
+      - tab "Interview" [ref=e49] [cursor=pointer]
+      - tab "Tracking" [ref=e50] [cursor=pointer]
+      - tab "Outreach" [ref=e51] [cursor=pointer]
+    - generic [ref=e53]:
+      - generic [ref=e54]:
+        - heading "Applications" [level=1] [ref=e55]
+        - generic [ref=e56]:
+          - searchbox "Search applications" [ref=e57]
+          - combobox "Filter by status" [ref=e58]:
+            - option "All statuses" [selected]
+            - option "Applied"
+            - option "Saved"
+          - button "+ New application" [active] [ref=e59] [cursor=pointer]
+      - table [ref=e61]:
+        - rowgroup [ref=e62]:
+          - row "Title↕ Company↕ Status↕ Match↕ Artifacts Created▼ Actions" [ref=e63]:
+            - columnheader "Title↕" [ref=e64] [cursor=pointer]
+            - columnheader "Company↕" [ref=e65] [cursor=pointer]
+            - columnheader "Status↕" [ref=e66] [cursor=pointer]
+            - columnheader "Match↕" [ref=e67] [cursor=pointer]
+            - columnheader "Artifacts" [ref=e68]
+            - columnheader "Created▼" [ref=e69] [cursor=pointer]
+            - columnheader "Actions" [ref=e70]
+        - rowgroup [ref=e71]:
+          - row "Desarrollador Multi Agente IA — Saved — M CV P Jun 8, 2026 Delete application" [ref=e72] [cursor=pointer]:
+            - cell "Desarrollador Multi Agente IA" [ref=e73]
+            - cell "—" [ref=e74]:
+              - generic [ref=e75]: —
+            - cell "Saved" [ref=e76]
+            - cell "—" [ref=e77]
+            - cell "M CV P" [ref=e78]:
+              - generic "Has match" [ref=e79]: M
+              - generic "Has CV optimization" [ref=e80]: CV
+              - generic "Has interview prep" [ref=e81]: P
+            - cell "Jun 8, 2026" [ref=e82]
+            - cell "Delete application" [ref=e83]:
+              - button "Delete application" [ref=e84]:
+                - img [ref=e85]
+          - row "Software Engineers MixRank (YC S11) Applied 53% M CV P May 30, 2026 Delete application" [ref=e89] [cursor=pointer]:
+            - cell "Software Engineers" [ref=e90]
+            - cell "MixRank (YC S11)" [ref=e91]:
+              - link "MixRank (YC S11)" [ref=e93]:
+                - /url: /dashboard/company/MixRank%20%28YC%20S11%29
+            - cell "Applied" [ref=e94]
+            - cell "53%" [ref=e95]
+            - cell "M CV P" [ref=e96]:
+              - generic "Has match" [ref=e97]: M
+              - generic "Has CV optimization" [ref=e98]: CV
+              - generic "Has interview prep" [ref=e99]: P
+            - cell "May 30, 2026" [ref=e100]
+            - cell "Delete application" [ref=e101]:
+              - button "Delete application" [ref=e102]:
+                - img [ref=e103]
+      - dialog "New application" [ref=e108]:
+        - generic [ref=e109]:
+          - heading "New application" [level=2] [ref=e110]
+          - button "Close dialog" [ref=e111] [cursor=pointer]: ✕
+        - paragraph [ref=e112]: Paste a job description below. Required skills will be extracted automatically.
+        - generic [ref=e113]:
+          - generic [ref=e114]: Title
+          - textbox "Title" [ref=e115]:
+            - /placeholder: e.g. Senior Backend Engineer
+        - generic [ref=e116]:
+          - generic [ref=e117]: Company
+          - textbox "Company" [ref=e118]:
+            - /placeholder: e.g. Acme Corp
+        - generic [ref=e119]:
+          - generic [ref=e120]: URL (optional)
+          - textbox "URL (optional)" [ref=e121]:
+            - /placeholder: https://...
+        - generic [ref=e122]:
+          - generic [ref=e123]: Job description
+          - textbox "Job description" [ref=e124]:
+            - /placeholder: Paste the full job description here...
+        - generic [ref=e125]:
+          - button "Cancel" [ref=e126] [cursor=pointer]
+          - button "Create application" [ref=e127] [cursor=pointer]

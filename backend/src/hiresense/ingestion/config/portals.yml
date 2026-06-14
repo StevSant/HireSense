@@ -79,3 +79,127 @@ portals:
     platform: ashby
     board_id: n8n
     categories: [workflow-automation]
+
+  # --- LATAM (verified board_ids) ---
+  - name: Nubank
+    platform: greenhouse
+    board_id: nubank
+    categories: [latam, fintech]
+
+  - name: Kavak
+    platform: lever
+    board_id: kavak
+    categories: [latam]
+
+  - name: dLocal
+    platform: lever
+    board_id: dlocal
+    categories: [latam, fintech]
+
+  # --- Fintech (verified board_ids) ---
+  - name: Stripe
+    platform: greenhouse
+    board_id: stripe
+    categories: [fintech, dev-platforms]
+
+  - name: Coinbase
+    platform: greenhouse
+    board_id: coinbase
+    categories: [fintech]
+
+  - name: Brex
+    platform: greenhouse
+    board_id: brex
+    categories: [fintech]
+
+  - name: Affirm
+    platform: greenhouse
+    board_id: affirm
+    categories: [fintech]
+
+  - name: Gusto
+    platform: greenhouse
+    board_id: gusto
+    categories: [fintech]
+
+  # --- Dev tools & data infra (verified board_ids) ---
+  - name: GitLab
+    platform: greenhouse
+    board_id: gitlab
+    categories: [dev-platforms]
+
+  - name: Cloudflare
+    platform: greenhouse
+    board_id: cloudflare
+    categories: [dev-platforms]
+
+  - name: Datadog
+    platform: greenhouse
+    board_id: datadog
+    categories: [data-infra]
+
+  - name: Databricks
+    platform: greenhouse
+    board_id: databricks
+    categories: [data-infra]
+
+  - name: Figma
+    platform: greenhouse
+    board_id: figma
+    categories: [dev-platforms]
+
+  - name: Samsara
+    platform: greenhouse
+    board_id: samsara
+    categories: [data-infra]
+
+  # --- General tech (verified board_ids) ---
+  - name: Discord
+    platform: greenhouse
+    board_id: discord
+    categories: [general]
+
+  - name: Dropbox
+    platform: greenhouse
+    board_id: dropbox
+    categories: [general]
+
+  - name: Instacart
+    platform: greenhouse
+    board_id: instacart
+    categories: [general]
+
+  - name: Reddit
+    platform: greenhouse
+    board_id: reddit
+    categories: [general]
+
+  - name: Asana
+    platform: greenhouse
+    board_id: asana
+    categories: [general]
+
+  # --- SmartRecruiters (verified board_id) ---
+  - name: Visa
+    platform: smartrecruiters
+    board_id: Visa
+    categories: [general, fintech]
+
+  # --- Recruitee (verified board_ids) ---
+  - name: Channable
+    platform: recruitee
+    board_id: channable
+    categories: [dev-platforms]
+
+  - name: bunq
+    platform: recruitee
+    board_id: bunq
+    categories: [fintech]
+
+  # --- Workable example (disabled: set board_id to a real account
+  # subdomain that exposes the public widget, then enable). ---
+  - name: Workable Example
+    platform: workable
+    board_id: your-workable-subdomain
+    enabled: false
+    categories: [general]

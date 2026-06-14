@@ -439,6 +439,8 @@ class Settings(BaseSettings):
     # Char cap for the "Portfolio projects" block appended to the matching
     # profile summary.
     portfolio_profile_char_cap: int = 1200
+    # Default page size for the paginated GET /portfolio/projects endpoint.
+    portfolio_projects_page_size: int = 12
     # Public portfolio site linked from generated artifacts. Empty disables
     # the tracked link (project citations still work).
     portfolio_public_url: str = ""

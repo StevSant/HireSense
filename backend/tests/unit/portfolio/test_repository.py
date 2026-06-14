@@ -49,6 +49,43 @@ def test_replace_source_only_touches_its_own_slice(repo) -> None:
     assert by_source == {("supabase", "c"), ("github", "r")}
 
 
+def _project_ordered(
+    key: str, *, pinned: bool = False, position: int | None = None
+) -> PortfolioProject:
+    return PortfolioProject(
+        id=f"id-{key}",
+        source="supabase",
+        source_key=key,
+        pinned=pinned,
+        position=position,
+        translations={"en": ProjectText(title=key.title())},
+    )
+
+
+def test_list_page_orders_pinned_first_then_position_then_source_key(repo) -> None:
+    repo.replace_source(
+        "supabase",
+        [
+            _project_ordered("zeta", position=5),
+            _project_ordered("alpha", pinned=True, position=9),
+            _project_ordered("beta", position=1),
+            _project_ordered("noposition"),  # position None -> last
+        ],
+    )
+    rows, total = repo.list_page(limit=10, offset=0)
+    assert total == 4
+    assert [p.source_key for p in rows] == ["alpha", "beta", "zeta", "noposition"]
+
+
+def test_list_page_slices_with_limit_and_offset(repo) -> None:
+    repo.replace_source(
+        "supabase", [_project_ordered(k, position=i) for i, k in enumerate("abcde")]
+    )
+    rows, total = repo.list_page(limit=2, offset=2)
+    assert total == 5
+    assert [p.source_key for p in rows] == ["c", "d"]
+
+
 def test_last_synced_at_none_then_set(repo) -> None:
     assert repo.last_synced_at() is None
     repo.replace_source("supabase", [_project("a")])

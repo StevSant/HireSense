@@ -55,6 +55,26 @@ class PortfolioProjectsRepository(SqlRepository):
     def list_all(self) -> list[PortfolioProject]:
         return self._select_all(select(PortfolioProjectOrm), _to_domain)
 
+    def list_page(self, limit: int, offset: int) -> tuple[list[PortfolioProject], int]:
+        stmt = (
+            select(PortfolioProjectOrm)
+            .order_by(
+                PortfolioProjectOrm.pinned.desc(),
+                # position NULLs last (False sorts before True), then ascending.
+                PortfolioProjectOrm.position.is_(None),
+                PortfolioProjectOrm.position.asc(),
+                PortfolioProjectOrm.source_key.asc(),
+            )
+            .limit(limit)
+            .offset(offset)
+        )
+        with self._session_factory() as session:
+            rows = [_to_domain(r) for r in session.scalars(stmt).all()]
+            total = session.scalar(
+                select(func.count()).select_from(PortfolioProjectOrm)
+            )
+        return rows, int(total or 0)
+
     def last_synced_at(self) -> datetime | None:
         with self._session_factory() as session:
             return session.scalar(select(func.max(PortfolioProjectOrm.synced_at)))

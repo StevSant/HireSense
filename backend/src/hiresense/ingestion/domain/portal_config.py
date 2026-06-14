@@ -9,7 +9,9 @@ from pydantic import BaseModel
 
 class PortalEntry(BaseModel):
     name: str
-    platform: Literal["greenhouse", "lever", "ashby"]
+    platform: Literal[
+        "greenhouse", "lever", "ashby", "workable", "smartrecruiters", "recruitee"
+    ]
     board_id: str
     categories: list[str] = []
     enabled: bool = True

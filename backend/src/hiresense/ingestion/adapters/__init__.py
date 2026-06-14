@@ -7,9 +7,12 @@ from hiresense.ingestion.adapters.hn_hiring import HNHiringAdapter
 from hiresense.ingestion.adapters.jobicy import JobicyAdapter
 from hiresense.ingestion.adapters.lever_adapter import LeverAdapter
 from hiresense.ingestion.adapters.linkedin import LinkedInAdapter
+from hiresense.ingestion.adapters.recruitee_adapter import RecruiteeAdapter
 from hiresense.ingestion.adapters.remoteok import RemoteOKAdapter
 from hiresense.ingestion.adapters.remotive import RemotiveAdapter
+from hiresense.ingestion.adapters.smartrecruiters_adapter import SmartRecruitersAdapter
 from hiresense.ingestion.adapters.weworkremotely import WeWorkRemotelyAdapter
+from hiresense.ingestion.adapters.workable_adapter import WorkableAdapter
 
 __all__ = [
     "AshbyAdapter",
@@ -21,7 +24,10 @@ __all__ = [
     "JobicyAdapter",
     "LeverAdapter",
     "LinkedInAdapter",
+    "RecruiteeAdapter",
     "RemoteOKAdapter",
     "RemotiveAdapter",
+    "SmartRecruitersAdapter",
     "WeWorkRemotelyAdapter",
+    "WorkableAdapter",
 ]

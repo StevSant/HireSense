@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+from hiresense.outreach.domain.email_message import EmailMessage
 from hiresense.outreach.domain.outreach_event import OutreachEvent
 from hiresense.outreach.domain.outreach_event_kind import OutreachEventKind
 from hiresense.outreach.domain.outreach_nudge import OutreachNudge
@@ -26,7 +28,9 @@ class OutreachService:
         max_chars: int,
         language: str,
         portfolio_citation: Any = None,
+        sender: Any = None,
     ) -> None:
+        self._sender = sender
         self._tracking = tracking_service
         self._profile = profile_service
         self._research = research_service
@@ -83,6 +87,36 @@ class OutreachService:
             OutreachEvent(
                 application_id=application_id, kind=kind, message=message,
                 contact_name=contact_name, channel=channel,
+            )
+        )
+
+    async def send(
+        self,
+        application_id: uuid.UUID,
+        *,
+        to: str,
+        subject: str,
+        message: str,
+        contact_name: str | None = None,
+        channel: str = "email",
+    ) -> OutreachEvent:
+        """Send an outreach email, then record it as a SENT event.
+
+        Raises ValueError if the application is missing and EmailUnavailableError
+        (from the sender) if SMTP isn't configured — nothing is recorded when the
+        send fails.
+        """
+        self._tracking.get(application_id)  # 404 if missing
+        await asyncio.to_thread(
+            self._sender.send, EmailMessage(to=to, subject=subject, body=message)
+        )
+        return self._repo.add(
+            OutreachEvent(
+                application_id=application_id,
+                kind=OutreachEventKind.SENT,
+                message=message,
+                contact_name=contact_name,
+                channel=channel,
             )
         )
 

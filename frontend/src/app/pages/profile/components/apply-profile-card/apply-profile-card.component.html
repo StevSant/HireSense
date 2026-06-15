@@ -1,0 +1,138 @@
+<div class="apply-profile-form">
+  <h3 class="apply-profile-title">Apply profile</h3>
+  <p class="apply-profile-hint">
+    Reusable answers Apply Assist drops into application forms. Stored once and
+    shared across your CV languages.
+  </p>
+
+  <div class="apply-field">
+    <label for="ap-preferred-name">Preferred name</label>
+    <input
+      id="ap-preferred-name"
+      type="text"
+      [ngModel]="form().preferred_name"
+      (ngModelChange)="set('preferred_name', $event)"
+    />
+  </div>
+
+  <div class="apply-field">
+    <label for="ap-work-auth">Work authorization</label>
+    <input
+      id="ap-work-auth"
+      type="text"
+      placeholder="e.g. EU work permit, US citizen"
+      [ngModel]="form().work_authorization"
+      (ngModelChange)="set('work_authorization', $event)"
+    />
+  </div>
+
+  <div class="apply-field">
+    <label for="ap-visa">Requires visa sponsorship?</label>
+    <select
+      id="ap-visa"
+      [ngModel]="form().requires_visa_sponsorship"
+      (ngModelChange)="set('requires_visa_sponsorship', $event)"
+    >
+      <option value="">Prefer not to say</option>
+      <option value="no">No</option>
+      <option value="yes">Yes</option>
+    </select>
+  </div>
+
+  <div class="apply-field">
+    <label for="ap-salary">Desired salary</label>
+    <input
+      id="ap-salary"
+      type="text"
+      placeholder="e.g. €70k, $120k"
+      [ngModel]="form().desired_salary"
+      (ngModelChange)="set('desired_salary', $event)"
+    />
+  </div>
+
+  <div class="apply-field">
+    <label for="ap-years">Years of experience</label>
+    <input
+      id="ap-years"
+      type="number"
+      min="0"
+      [ngModel]="form().years_of_experience"
+      (ngModelChange)="set('years_of_experience', $event)"
+    />
+  </div>
+
+  <div class="apply-field">
+    <label for="ap-relocate">Willing to relocate?</label>
+    <select
+      id="ap-relocate"
+      [ngModel]="form().willing_to_relocate"
+      (ngModelChange)="set('willing_to_relocate', $event)"
+    >
+      <option value="">Prefer not to say</option>
+      <option value="no">No</option>
+      <option value="yes">Yes</option>
+    </select>
+  </div>
+
+  <div class="apply-field">
+    <label for="ap-availability">Start availability</label>
+    <input
+      id="ap-availability"
+      type="text"
+      placeholder="e.g. Immediately, 2 weeks notice"
+      [ngModel]="form().start_availability"
+      (ngModelChange)="set('start_availability', $event)"
+    />
+  </div>
+
+  <div class="apply-screening">
+    <div class="apply-screening-head">
+      <h4>Reusable screening answers</h4>
+      <button type="button" class="link-button" (click)="addScreeningAnswer()">
+        + Add answer
+      </button>
+    </div>
+    @for (qa of form().screening_answers; track $index) {
+      <div class="apply-screening-row">
+        <input
+          type="text"
+          placeholder="Question"
+          [ngModel]="qa.question"
+          (ngModelChange)="updateScreeningAnswer($index, 'question', $event)"
+        />
+        <input
+          type="text"
+          placeholder="Answer"
+          [ngModel]="qa.answer"
+          (ngModelChange)="updateScreeningAnswer($index, 'answer', $event)"
+        />
+        <button
+          type="button"
+          class="link-button"
+          aria-label="Remove answer"
+          (click)="removeScreeningAnswer($index)"
+        >
+          ✕
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (error()) {
+    <p class="apply-error" role="alert">{{ error() }}</p>
+  }
+
+  <div class="apply-actions">
+    <button
+      type="button"
+      class="btn-primary"
+      [disabled]="!isDirty() || saving()"
+      (click)="save()"
+    >
+      {{ saving() ? 'Saving…' : 'Save apply profile' }}
+    </button>
+    @if (savedFlash()) {
+      <span class="apply-saved">✓ Saved</span>
+    }
+  </div>
+</div>

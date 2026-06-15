@@ -30,6 +30,8 @@ class ProfileOrm(Base):
     linkedin_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     github_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     portfolio_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    # One-per-person Apply Assist answer bank (ApplyProfile), stored as JSON.
+    apply_profile: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

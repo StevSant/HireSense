@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.profile.api.dependencies import get_profile_service
+from hiresense.profile.domain.apply_profile import ApplyProfile
 from hiresense.profile.domain.models import CandidateProfile
 
 router = APIRouter(prefix="/profile", tags=["profile"], dependencies=[Depends(require_auth)])
@@ -106,6 +107,32 @@ async def get_current_profile(
     if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile found")
     return profile
+
+
+@router.put("/apply-profile", response_model=CandidateProfile)
+async def set_apply_profile(
+    body: ApplyProfile,
+    service: Annotated[object, Depends(get_profile_service)],
+) -> CandidateProfile:
+    """Store the one-per-person Apply Assist answer bank. Requires an existing
+    profile (404 if the user hasn't created one yet)."""
+    updated = await service.set_apply_profile(body)
+    if updated is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile found")
+    return updated
+
+
+@router.get("/prefill")
+async def get_prefill(
+    service: Annotated[object, Depends(get_profile_service)],
+    language: str | None = None,
+) -> dict[str, object]:
+    """Canonical application-form field values for the current profile (the Apply
+    Assist autofill handoff bundle). 404 if the user has no profile yet."""
+    prefill = await service.get_prefill(language=language)
+    if prefill is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile found")
+    return prefill
 
 
 @router.get("/{profile_id}", response_model=CandidateProfile)

@@ -2,6 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ApplyProfile } from '../../pages/profile/models/apply-profile.model';
 import { CandidateProfile } from '../../pages/profile/models/candidate-profile.model';
 import { ProfileManualFieldsUpdate } from '../../pages/profile/models/profile-manual-fields-update.model';
 import { UploadCVRequest } from '../../pages/profile/models/upload-cv-request.model';
@@ -35,12 +36,14 @@ export class ProfileService {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('language', language);
-    return this.http.post<CandidateProfile>(`${environment.apiUrl}/profile/upload-file`, formData).pipe(
-      tap((profile) => {
-        this.profiles.update((all) => ({ ...all, [profile.language]: profile }));
-        this.activeLanguage.set(profile.language);
-      }),
-    );
+    return this.http
+      .post<CandidateProfile>(`${environment.apiUrl}/profile/upload-file`, formData)
+      .pipe(
+        tap((profile) => {
+          this.profiles.update((all) => ({ ...all, [profile.language]: profile }));
+          this.activeLanguage.set(profile.language);
+        }),
+      );
   }
 
   getCurrentProfile(): Observable<CandidateProfile> {
@@ -73,6 +76,16 @@ export class ProfileService {
   ): Observable<CandidateProfile> {
     return this.http
       .patch<CandidateProfile>(`${environment.apiUrl}/profile/${profileId}`, update)
+      .pipe(
+        tap((profile) => {
+          this.profiles.update((all) => ({ ...all, [profile.language]: profile }));
+        }),
+      );
+  }
+
+  setApplyProfile(applyProfile: ApplyProfile): Observable<CandidateProfile> {
+    return this.http
+      .put<CandidateProfile>(`${environment.apiUrl}/profile/apply-profile`, applyProfile)
       .pipe(
         tap((profile) => {
           this.profiles.update((all) => ({ ...all, [profile.language]: profile }));

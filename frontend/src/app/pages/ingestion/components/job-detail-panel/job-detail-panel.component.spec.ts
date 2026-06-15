@@ -42,7 +42,10 @@ describe('JobDetailPanelComponent', () => {
     navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   });
 
-  function mount(job: NormalizedJob = makeJob(), inputs: Partial<{ tracked: boolean; tracking: boolean }> = {}) {
+  function mount(
+    job: NormalizedJob = makeJob(),
+    inputs: Partial<{ tracked: boolean; tracking: boolean }> = {},
+  ) {
     const fixture = TestBed.createComponent(JobDetailPanelComponent);
     fixture.componentRef.setInput('job', job);
     if (inputs.tracked !== undefined) fixture.componentRef.setInput('tracked', inputs.tracked);
@@ -70,7 +73,9 @@ describe('JobDetailPanelComponent', () => {
     fixture.componentInstance.closed.subscribe(() => (closed = true));
 
     const optimizeBtn = Array.from(
-      fixture.nativeElement.querySelectorAll('button.btn-shortcut') as NodeListOf<HTMLButtonElement>,
+      fixture.nativeElement.querySelectorAll(
+        'button.btn-shortcut',
+      ) as NodeListOf<HTMLButtonElement>,
     ).find((b) => b.textContent?.includes('Optimize CV'))!;
     optimizeBtn.click();
 
@@ -137,6 +142,19 @@ describe('JobDetailPanelComponent', () => {
     ).find((a) => a.textContent?.includes('Full analysis'))!;
     expect(link.getAttribute('href')).toBe('/dashboard/job/job-1');
     expect(link.getAttribute('target')).toBe('_blank');
+  });
+
+  it('shows the "Applies directly" badge for an ATS-form job', () => {
+    const fixture = mount(makeJob({ application_method: 'ats_form', ats_type: 'greenhouse' }));
+    const badge = fixture.nativeElement.querySelector('.chip-direct-apply') as HTMLElement;
+    expect(badge).not.toBeNull();
+    expect(badge.textContent).toContain('Applies directly');
+    expect(badge.getAttribute('title')).toContain('greenhouse');
+  });
+
+  it('hides the "Applies directly" badge for a redirect job', () => {
+    const fixture = mount(makeJob({ application_method: 'redirect' }));
+    expect(fixture.nativeElement.querySelector('.chip-direct-apply')).toBeNull();
   });
 
   it('emits close when the overlay backdrop is clicked', () => {

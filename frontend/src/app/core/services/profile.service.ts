@@ -6,6 +6,7 @@ import { ApplyProfile } from '../../pages/profile/models/apply-profile.model';
 import { CandidateProfile } from '../../pages/profile/models/candidate-profile.model';
 import { ProfileManualFieldsUpdate } from '../../pages/profile/models/profile-manual-fields-update.model';
 import { UploadCVRequest } from '../../pages/profile/models/upload-cv-request.model';
+import { TranslateResponse } from '../../pages/profile/models/translate-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProfileService {
@@ -91,5 +92,25 @@ export class ProfileService {
           this.profiles.update((all) => ({ ...all, [profile.language]: profile }));
         }),
       );
+  }
+
+  translate(targetLanguage: string): Observable<TranslateResponse> {
+    return this.http
+      .post<TranslateResponse>(`${environment.apiUrl}/profile/translate`, {
+        target_language: targetLanguage,
+      })
+      .pipe(
+        tap((res) => {
+          this.profiles.update((all) => ({ ...all, [res.profile.language]: res.profile }));
+          this.activeLanguage.set(res.profile.language);
+        }),
+      );
+  }
+
+  downloadCvPdf(language: string): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/profile/cv.pdf`, {
+      params: { language },
+      responseType: 'blob',
+    });
   }
 }

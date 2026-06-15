@@ -3,14 +3,16 @@ from __future__ import annotations
 import logging
 import uuid
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+from hiresense.ports import LatexCompileError
 from hiresense.profile.domain.apply_prefill import build_prefill
 from hiresense.profile.domain.apply_profile import ApplyProfile
 from hiresense.profile.domain.latex_parser import LaTeXParser, ParsedCV
 from hiresense.profile.domain.models import CandidateProfile, CVSection
 from hiresense.profile.domain.profile_language_view import ProfileLanguageView
 from hiresense.profile.domain.skill_extractor import SkillExtractor
+from hiresense.profile.domain.translation_outcome import TranslationOutcome
 
 SUMMARY_MAX_CHARS = 2000
 
@@ -29,12 +31,16 @@ class ProfileService:
         repository: ProfileRepositoryPort | None = None,
         pdf_parser: PDFParser | None = None,
         cv_directory: str = "./cvs",
+        translator: Any | None = None,
+        latex_compiler: Any | None = None,
     ) -> None:
         self._parser = parser
         self._skill_extractor = skill_extractor
         self._repository = repository
         self._pdf_parser = pdf_parser
         self._cv_directory = Path(cv_directory)
+        self._translator = translator
+        self._latex_compiler = latex_compiler
         self._profiles: dict[str, CandidateProfile] = {}
 
     async def parse_and_create(self, tex_content: str, language: str = "en") -> CandidateProfile:
@@ -115,6 +121,86 @@ class ProfileService:
             self._profiles[profile.id] = profile
 
         return profile
+
+    async def translate_to(self, target_language: str) -> TranslationOutcome:
+        """Translate the latest other-language CV into `target_language`.
+
+        Stores the result as a new variant flagged machine_translated=True
+        (the repository's latest-per-language behavior makes it current).
+        Runs a one-shot compile sanity-check; on failure the variant is still
+        saved and the outcome carries pdf_ok=False + the error.
+        """
+        if self._translator is None:
+            raise RuntimeError("LLM not configured — cannot translate CV")
+        source = self._find_source_for_translation(target_language)
+        if source is None or not source.raw_tex:
+            raise ValueError("No CV found to translate — upload one first")
+
+        translated_tex = await self._translator.translate(
+            source.raw_tex, source.language, target_language
+        )
+
+        pdf_ok = True
+        compile_error: str | None = None
+        if self._latex_compiler is not None:
+            try:
+                await self._latex_compiler.compile_to_pdf(translated_tex)
+            except LatexCompileError as exc:
+                pdf_ok = False
+                compile_error = str(exc)
+
+        parsed = self._parser.parse(translated_tex)
+        skills = self._extract_skills_from_parsed(parsed)
+        cleaned_sections = self._parser.strip_section_content(parsed.sections)
+        sections = [CVSection(name=s.name, content=s.content) for s in cleaned_sections]
+
+        shared_links = self._inherit_shared_links()
+        profile = CandidateProfile(
+            id=str(uuid.uuid4()),
+            name=parsed.name or source.name,
+            email=parsed.email or source.email,
+            phone=parsed.phone or source.phone,
+            location=parsed.location or source.location,
+            sections=sections,
+            raw_tex=translated_tex,
+            language=target_language,
+            skills=skills,
+            machine_translated=True,
+            **shared_links,
+        )
+
+        if self._repository is not None:
+            self._repository.create(profile)
+        else:
+            self._profiles[profile.id] = profile
+
+        return TranslationOutcome(
+            profile=profile, pdf_ok=pdf_ok, compile_error=compile_error
+        )
+
+    async def compile_pdf(self, language: str) -> bytes:
+        """Compile the latest CV variant for `language` to PDF bytes."""
+        if self._latex_compiler is None:
+            raise ValueError("PDF compilation not available")
+        profile = self._get_latest_for_language_sync(language)
+        if profile is None or not profile.raw_tex:
+            raise ValueError(
+                f"No CV found for language '{language}' — upload one first"
+            )
+        return await self._latex_compiler.compile_to_pdf(profile.raw_tex)
+
+    def _find_source_for_translation(
+        self, target_language: str
+    ) -> CandidateProfile | None:
+        """Latest profile whose language differs from the target."""
+        if self._repository is not None:
+            candidates = self._repository.list_all()  # newest-first
+        else:
+            candidates = list(reversed(list(self._profiles.values())))
+        for profile in candidates:
+            if profile.language != target_language:
+                return profile
+        return None
 
     async def get_profile(self, profile_id: str) -> CandidateProfile | None:
         if self._repository is not None:

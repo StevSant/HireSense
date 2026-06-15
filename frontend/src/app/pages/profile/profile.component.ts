@@ -57,11 +57,14 @@ export class ProfileComponent implements OnInit {
   showUploadForm = signal(false);
   uploadIntent = signal<'add' | 'replace'>('add');
   editingPersonal = signal(false);
+  translating = signal(false);
+  translateWarning = signal('');
 
   profile = this.profileService.profile;
   profiles = this.profileService.profiles;
   activeLanguage = this.profileService.activeLanguage;
   uploadedLanguages = computed(() => Object.keys(this.profiles()));
+  otherLanguage = computed(() => (this.activeLanguage() === 'es' ? 'en' : 'es'));
 
   constructor() {}
 
@@ -190,6 +193,46 @@ export class ProfileComponent implements OnInit {
           this.error.set(err.error?.detail || 'Failed to parse CV');
           this.loading.set(false);
         },
+      });
+  }
+
+  translateToOther(): void {
+    const target = this.otherLanguage();
+    this.translating.set(true);
+    this.translateWarning.set('');
+    this.profileService
+      .translate(target)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.translating.set(false);
+          if (!res.pdf_ok) {
+            this.translateWarning.set(
+              'Translated, but the PDF did not compile — review the LaTeX.',
+            );
+          }
+        },
+        error: (err) => {
+          this.translateWarning.set(err.error?.detail || 'Translation failed');
+          this.translating.set(false);
+        },
+      });
+  }
+
+  downloadPdf(language: string): void {
+    this.profileService
+      .downloadCvPdf(language)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = `cv_${language}.pdf`;
+          anchor.click();
+          URL.revokeObjectURL(url);
+        },
+        error: (err) => this.error.set(err.error?.detail || 'Failed to download PDF'),
       });
   }
 

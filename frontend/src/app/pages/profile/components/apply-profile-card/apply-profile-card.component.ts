@@ -58,6 +58,7 @@ function snapshot(profile: CandidateProfile): ApplyProfileFormState {
   standalone: true,
   imports: [FormsModule],
   templateUrl: './apply-profile-card.component.html',
+  styleUrl: './apply-profile-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ApplyProfileCardComponent {

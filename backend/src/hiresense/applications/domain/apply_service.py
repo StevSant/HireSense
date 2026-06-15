@@ -10,9 +10,13 @@ import logging
 
 from hiresense.ports import LatexCompileError, LatexCompilerPort
 from hiresense.applications.domain.aggregate import CoverLetterView
+from hiresense.applications.domain.ats_field_map import build_autofill_plan
+from hiresense.applications.domain.autofill_plan_view import AutofillPlanView
 from hiresense.applications.domain.cover_letter_generator import CoverLetterGenerator
 from hiresense.applications.domain.models import ApplicationCoverLetter
 from hiresense.applications.ports import ApplicationRepositoryPort
+from hiresense.ingestion.domain import classify_application
+from hiresense.profile.domain import build_prefill
 from hiresense.tracking.domain.models import ApplicationStatus
 
 logger = logging.getLogger(__name__)
@@ -170,6 +174,22 @@ class ApplyService:
             zf.writestr(f"cv_{safe_company}.pdf", cv_pdf)
             zf.writestr(f"cover_letter_{safe_company}.pdf", letter_pdf)
         return buf.getvalue()
+
+    async def autofill_plan(self, application_id: uuid.UUID) -> AutofillPlanView:
+        """One-call Apply Assist handoff: classify how to apply to this
+        application's job and produce the per-field autofill plan from the
+        candidate's profile. Raises ValueError if the application is missing.
+        """
+        tracked = self._tracking.get(application_id)  # ValueError if missing
+        classification = classify_application(getattr(tracked, "url", None))
+        profile = await self._profiles.get_current_profile()
+        prefill = build_prefill(profile) if profile is not None else {}
+        return AutofillPlanView(
+            application_method=classification.application_method.value,
+            ats_type=classification.ats_type,
+            apply_url=classification.apply_url,
+            fills=build_autofill_plan(classification.ats_type, prefill),
+        )
 
     async def mark_applied(self, application_id: uuid.UUID) -> None:
         # Idempotent: set status=APPLIED, set applied_at if not already set.

@@ -1,0 +1,131 @@
+.apply-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.apply-profile-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.apply-profile-hint {
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text-muted, #6b7280);
+  line-height: 1.4;
+}
+
+.apply-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted, #6b7280);
+  }
+
+  input,
+  select {
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 8px;
+    background: var(--surface, #fff);
+    color: inherit;
+    font-size: 0.9rem;
+
+    &:focus {
+      outline: none;
+      border-color: var(--accent, #2563eb);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #2563eb) 25%, transparent);
+    }
+  }
+}
+
+.apply-screening {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border, #e5e7eb);
+
+  &-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    h4 {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+  }
+
+  &-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 0.4rem;
+    align-items: center;
+
+    input {
+      padding: 0.45rem 0.55rem;
+      border: 1px solid var(--border, #d1d5db);
+      border-radius: 8px;
+      background: var(--surface, #fff);
+      color: inherit;
+      font-size: 0.88rem;
+    }
+  }
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent, #2563eb);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.apply-error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--danger, #dc2626);
+}
+
+.apply-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+
+  .btn-primary {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent, #2563eb);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.apply-saved {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--success, #166534);
+}

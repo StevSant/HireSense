@@ -4,9 +4,11 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from hiresense.identity.api.dependencies import require_auth
+from hiresense.ports import LatexCompileError
 from hiresense.profile.api.dependencies import get_profile_service
 from hiresense.profile.domain.apply_profile import ApplyProfile
 from hiresense.profile.domain.models import CandidateProfile
@@ -41,6 +43,16 @@ def _validate_upload_content(ext: str, file_bytes: bytes) -> None:
 class UploadCVRequest(BaseModel):
     tex_content: str
     language: str = "en"
+
+
+class TranslateRequest(BaseModel):
+    target_language: Literal["en", "es"]
+
+
+class TranslateResponse(BaseModel):
+    profile: CandidateProfile
+    pdf_ok: bool
+    compile_error: str | None = None
 
 
 class ProfileManualFieldsRequest(BaseModel):
@@ -133,6 +145,51 @@ async def get_prefill(
     if prefill is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile found")
     return prefill
+
+
+@router.post("/translate", response_model=TranslateResponse)
+async def translate_cv(
+    body: TranslateRequest,
+    service: Annotated[object, Depends(get_profile_service)],
+) -> TranslateResponse:
+    try:
+        outcome = await service.translate_to(body.target_language)
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
+    return TranslateResponse(
+        profile=outcome.profile,
+        pdf_ok=outcome.pdf_ok,
+        compile_error=outcome.compile_error,
+    )
+
+
+@router.get("/cv.pdf")
+async def download_cv_pdf(
+    service: Annotated[object, Depends(get_profile_service)],
+    language: Literal["en", "es"] = "en",
+) -> StreamingResponse:
+    try:
+        pdf = await service.compile_pdf(language)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
+    except LatexCompileError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"LaTeX compile failed: {exc}",
+        ) from exc
+    return StreamingResponse(
+        iter([pdf]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="cv_{language}.pdf"'},
+    )
 
 
 @router.get("/{profile_id}", response_model=CandidateProfile)

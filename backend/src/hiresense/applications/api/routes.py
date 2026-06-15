@@ -29,6 +29,7 @@ from hiresense.applications.domain.aggregate import (
 )
 from hiresense.applications.domain.application_service import ApplicationService
 from hiresense.applications.domain.apply_service import ApplyService
+from hiresense.applications.domain.autofill_plan_view import AutofillPlanView
 from hiresense.applications.domain.artifact_service import ArtifactService
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
@@ -253,6 +254,17 @@ async def generate_cover_letter(
     except RuntimeError as exc:
         # LLM not configured
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.get("/{application_id}/autofill-plan", response_model=AutofillPlanView)
+async def autofill_plan(
+    application_id: uuid_mod.UUID,
+    service: ApplyService = Depends(get_apply_service),
+) -> AutofillPlanView:
+    try:
+        return await service.autofill_plan(application_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/{application_id}/cv.pdf")

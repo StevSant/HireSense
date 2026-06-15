@@ -8,6 +8,7 @@ from hiresense.applications.domain.aggregate import (
 from hiresense.applications.domain.application_service import ApplicationService
 from hiresense.applications.domain.artifact_service import ArtifactService
 from hiresense.applications.domain.ats_field_map import build_autofill_plan
+from hiresense.applications.domain.autofill_plan_view import AutofillPlanView
 from hiresense.applications.domain.field_fill import FieldFill
 from hiresense.applications.domain.models import (
     ApplicationCoverLetter,
@@ -28,6 +29,7 @@ __all__ = [
     "ApplicationMatch",
     "ApplicationService",
     "ArtifactService",
+    "AutofillPlanView",
     "FieldFill",
     "build_autofill_plan",
     "CvOptimizationView",

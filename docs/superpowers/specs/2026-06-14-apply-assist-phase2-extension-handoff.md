@@ -1,8 +1,18 @@
 # Apply Assist — Phase 2 browser-extension client (handoff spec)
 
 **Date:** 2026-06-14
-**Status:** ready to build (separate repo)
+**Status:** v1 shipped as an in-monorepo **userscript** (not a separate-repo extension)
 **Depends on:** Phases 0, 1, 2-backend (all shipped — see [[project-apply-assist]])
+
+> **Implemented 2026-06-14 as a userscript**, per the user's preference to avoid a
+> separate repo. Lives at `frontend/public/apply-assist.user.js` (served at
+> `/apply-assist.user.js`); the tested matching core is `frontend/src/app/apply-assist/field-matcher.ts`.
+> v1 calls `GET /profile/prefill` (no app-id needed) and uses an embedded label
+> map mirroring the backend, rather than the `/applications/{id}/autofill-plan`
+> endpoint. The MV3-extension design below remains the reference for a richer
+> future client. Known v1 limits: text/select fields only (file inputs are
+> manual), label-substring matching, token pasted once into the userscript
+> manager, `API_BASE` edited at the top of the script.
 
 ## Why this is a separate deliverable
 

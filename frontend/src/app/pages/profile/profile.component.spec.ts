@@ -42,6 +42,14 @@ describe('ProfileComponent', () => {
       getCurrentProfile: opts.getCurrentProfile ?? (() => of(makeProfile())),
       uploadFile: () => of(makeProfile()),
       uploadCV: () => of(makeProfile()),
+      translate: vi.fn(() =>
+        of({
+          profile: makeProfile({ id: 'p-es', language: 'es', machine_translated: true }),
+          pdf_ok: true,
+          compile_error: null,
+        }),
+      ),
+      downloadCvPdf: vi.fn(() => of(new Blob(['%PDF'], { type: 'application/pdf' }))),
     };
 
     TestBed.configureTestingModule({
@@ -181,5 +189,27 @@ describe('ProfileComponent', () => {
     expect(cmp.showUploadForm()).toBe(true);
     expect(cmp.uploadIntent()).toBe('add');
     expect(cmp.language()).toBe('es');
+  });
+
+  it('calls translate with the other language', () => {
+    const { fixture, profileService } = mount({ profiles: { en: makeProfile() } });
+    const cmp = fixture.componentInstance;
+
+    cmp.translateToOther();
+
+    expect(profileService.translate).toHaveBeenCalledWith('es');
+  });
+
+  it('downloads the PDF blob for a language', () => {
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {});
+    const { fixture, profileService } = mount({ profiles: { en: makeProfile() } });
+    const cmp = fixture.componentInstance;
+
+    cmp.downloadPdf('en');
+
+    expect(profileService.downloadCvPdf).toHaveBeenCalledWith('en');
+    clickSpy.mockRestore();
   });
 });

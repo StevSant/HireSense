@@ -245,6 +245,28 @@
         </div>
       }
 
+      @if (profile(); as p) {
+        <div class="cv-actions">
+          <button type="button" class="btn-secondary" (click)="downloadPdf(p.language)">
+            Download PDF ({{ p.language }})
+          </button>
+          <button
+            type="button"
+            class="btn-secondary"
+            [disabled]="translating()"
+            (click)="translateToOther()"
+          >
+            {{ translating() ? 'Translating...' : 'Translate to ' + otherLanguage() }}
+          </button>
+          @if (p.machine_translated) {
+            <span class="badge badge-translated">Machine-translated</span>
+          }
+        </div>
+        @if (translateWarning()) {
+          <div class="alert alert-error">{{ translateWarning() }}</div>
+        }
+      }
+
       @if (showUploadForm()) {
         <div class="inline-upload">
           <div class="inline-upload-header">

@@ -21,3 +21,10 @@ def test_unknown_returns_none() -> None:
 def test_all_feature_keys_matches_registry() -> None:
     keys = all_feature_keys()
     assert keys == tuple(f.key for f in FEATURE_REGISTRY)
+
+
+def test_cv_translator_feature_registered() -> None:
+    assert "cv_translator" in all_feature_keys()
+    feature = get_feature("cv_translator")
+    assert feature is not None
+    assert feature.name == "CV Translator"

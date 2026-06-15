@@ -86,6 +86,11 @@ FEATURE_REGISTRY: tuple[FeatureDescriptor, ...] = (
         description="Generates a tailored cover letter.",
     ),
     FeatureDescriptor(
+        key="cv_translator",
+        name="CV Translator",
+        description="Translates a CV's LaTeX into another language, preserving commands.",
+    ),
+    FeatureDescriptor(
         key="interview_prep",
         name="Interview Prep",
         description="Generates competencies, technical topics, negotiation points.",

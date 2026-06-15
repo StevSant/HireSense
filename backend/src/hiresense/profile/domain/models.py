@@ -27,3 +27,6 @@ class CandidateProfile(BaseModel):
     # One-per-person answer bank for application forms (Apply Assist). None until
     # the user fills it in; stored as a JSON column on the profile row.
     apply_profile: ApplyProfile | None = None
+    # True when this language variant was produced by the LLM CV translator
+    # rather than uploaded directly by the user.
+    machine_translated: bool = False

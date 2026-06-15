@@ -15,4 +15,5 @@ export interface CandidateProfile {
   github_url: string | null;
   portfolio_url: string | null;
   apply_profile?: ApplyProfile | null;
+  machine_translated?: boolean;
 }

@@ -122,3 +122,90 @@ async def test_requires_auth_without_token() -> None:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/profile/current")
     assert resp.status_code == 401
+
+
+from hiresense.profile.domain.translation_outcome import TranslationOutcome
+
+
+class TranslateFakeService:
+    async def translate_to(self, target_language: str) -> TranslationOutcome:
+        return TranslationOutcome(
+            profile=CandidateProfile(
+                id="p-translated",
+                name="Test User",
+                language=target_language,
+                raw_tex="\\documentclass{article}",
+                machine_translated=True,
+            ),
+            pdf_ok=True,
+            compile_error=None,
+        )
+
+    async def compile_pdf(self, language: str) -> bytes:
+        return b"%PDF-1.4 fake-bytes"
+
+
+def _translate_app(service: object) -> FastAPI:
+    app = FastAPI()
+    app.dependency_overrides[get_profile_service] = lambda: service
+    app.dependency_overrides[require_auth] = lambda: "test-user"
+    app.include_router(router)
+    return app
+
+
+@pytest.mark.asyncio
+async def test_translate_endpoint_ok() -> None:
+    app = _translate_app(TranslateFakeService())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/profile/translate", json={"target_language": "es"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["profile"]["language"] == "es"
+    assert data["profile"]["machine_translated"] is True
+    assert data["pdf_ok"] is True
+
+
+@pytest.mark.asyncio
+async def test_translate_endpoint_no_source_returns_400() -> None:
+    class NoSource:
+        async def translate_to(self, target_language: str):
+            raise ValueError("No CV found to translate — upload one first")
+
+    app = _translate_app(NoSource())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/profile/translate", json={"target_language": "es"})
+    assert resp.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_translate_endpoint_no_llm_returns_503() -> None:
+    class NoLLM:
+        async def translate_to(self, target_language: str):
+            raise RuntimeError("LLM not configured — cannot translate CV")
+
+    app = _translate_app(NoLLM())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/profile/translate", json={"target_language": "es"})
+    assert resp.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_download_cv_pdf_ok() -> None:
+    app = _translate_app(TranslateFakeService())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/profile/cv.pdf", params={"language": "es"})
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/pdf"
+    assert resp.content.startswith(b"%PDF")
+
+
+@pytest.mark.asyncio
+async def test_download_cv_pdf_missing_returns_400() -> None:
+    class NoCv:
+        async def compile_pdf(self, language: str) -> bytes:
+            raise ValueError("No CV found for language 'es' — upload one first")
+
+    app = _translate_app(NoCv())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/profile/cv.pdf", params={"language": "es"})
+    assert resp.status_code == 400

@@ -36,6 +36,7 @@ def _to_domain(row: ProfileOrm) -> CandidateProfile:
             if row.apply_profile
             else None
         ),
+        machine_translated=row.machine_translated,
     )
 
 
@@ -57,6 +58,7 @@ def _to_orm(profile: CandidateProfile, original_filename: str | None = None) -> 
         apply_profile=(
             profile.apply_profile.model_dump() if profile.apply_profile else None
         ),
+        machine_translated=profile.machine_translated,
     )
 
 

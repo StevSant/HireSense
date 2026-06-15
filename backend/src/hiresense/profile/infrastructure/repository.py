@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy import select
 
 from hiresense.infrastructure import SqlRepository
+from hiresense.profile.domain.apply_profile import ApplyProfile
 from hiresense.profile.domain.models import CandidateProfile, CVSection
 from hiresense.profile.infrastructure.orm import ProfileOrm
 
@@ -30,6 +31,11 @@ def _to_domain(row: ProfileOrm) -> CandidateProfile:
         linkedin_url=row.linkedin_url,
         github_url=row.github_url,
         portfolio_url=row.portfolio_url,
+        apply_profile=(
+            ApplyProfile.model_validate(row.apply_profile)
+            if row.apply_profile
+            else None
+        ),
     )
 
 
@@ -48,6 +54,9 @@ def _to_orm(profile: CandidateProfile, original_filename: str | None = None) -> 
         linkedin_url=profile.linkedin_url,
         github_url=profile.github_url,
         portfolio_url=profile.portfolio_url,
+        apply_profile=(
+            profile.apply_profile.model_dump() if profile.apply_profile else None
+        ),
     )
 
 

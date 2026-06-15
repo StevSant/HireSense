@@ -80,31 +80,37 @@ export class ApplyTabComponent {
   downloadLetter(): void {
     this.downloadingLetter.set(true);
     this.error.set('');
-    this.service.downloadCoverLetterPdf(this.aggregate().id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (blob) => {
-        this.triggerDownload(blob, `cover_letter_${this.safeCompany()}.pdf`);
-        this.downloadingLetter.set(false);
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Cover letter PDF download failed');
-        this.downloadingLetter.set(false);
-      },
-    });
+    this.service
+      .downloadCoverLetterPdf(this.aggregate().id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          this.triggerDownload(blob, `cover_letter_${this.safeCompany()}.pdf`);
+          this.downloadingLetter.set(false);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Cover letter PDF download failed');
+          this.downloadingLetter.set(false);
+        },
+      });
   }
 
   downloadBundle(): void {
     this.downloadingBundle.set(true);
     this.error.set('');
-    this.service.downloadBundle(this.aggregate().id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (blob) => {
-        this.triggerDownload(blob, `application_${this.safeCompany()}.zip`);
-        this.downloadingBundle.set(false);
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Bundle download failed');
-        this.downloadingBundle.set(false);
-      },
-    });
+    this.service
+      .downloadBundle(this.aggregate().id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          this.triggerDownload(blob, `application_${this.safeCompany()}.zip`);
+          this.downloadingBundle.set(false);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Bundle download failed');
+          this.downloadingBundle.set(false);
+        },
+      });
   }
 
   private triggerDownload(blob: Blob, filename: string): void {
@@ -131,16 +137,19 @@ export class ApplyTabComponent {
   markApplied(): void {
     this.marking.set(true);
     this.error.set('');
-    this.service.markApplied(this.aggregate().id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.marking.set(false);
-        this.changed.emit();
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Mark-applied failed');
-        this.marking.set(false);
-      },
-    });
+    this.service
+      .markApplied(this.aggregate().id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.marking.set(false);
+          this.changed.emit();
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Mark-applied failed');
+          this.marking.set(false);
+        },
+      });
   }
 
   onLangChange(ev: Event): void {

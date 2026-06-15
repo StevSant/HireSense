@@ -5,6 +5,8 @@ import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from hiresense.profile.domain.apply_prefill import build_prefill
+from hiresense.profile.domain.apply_profile import ApplyProfile
 from hiresense.profile.domain.latex_parser import LaTeXParser, ParsedCV
 from hiresense.profile.domain.models import CandidateProfile, CVSection
 from hiresense.profile.domain.profile_language_view import ProfileLanguageView
@@ -207,6 +209,42 @@ class ProfileService:
             current = self._profiles[profile_id]
             self._profiles[profile_id] = current.model_copy(update=per_language)
         return self._profiles[profile_id]
+
+    async def set_apply_profile(
+        self, apply_profile: ApplyProfile
+    ) -> CandidateProfile | None:
+        """Store the one-per-person Apply Assist answer bank.
+
+        Broadcast across every profile row (it doesn't vary by CV language, like
+        the LinkedIn/GitHub/portfolio links). Returns the current profile, or
+        None when no profile exists yet (the answer bank extends an existing CV
+        profile).
+        """
+        if self._repository is not None:
+            updated = self._repository.update_all(
+                {"apply_profile": apply_profile.model_dump()}
+            )
+            if updated == 0:
+                return None
+            return self._repository.get_latest()
+
+        # In-memory fallback (tests / legacy path)
+        if not self._profiles:
+            return None
+        for pid, p in list(self._profiles.items()):
+            self._profiles[pid] = p.model_copy(update={"apply_profile": apply_profile})
+        return next(reversed(self._profiles.values()))
+
+    async def get_prefill(
+        self, language: str | None = None
+    ) -> dict[str, object] | None:
+        """Canonical application-form field values for the current profile — the
+        candidate-side handoff bundle Apply Assist clients fetch. None if no
+        profile exists yet."""
+        profile = await self.get_current_profile(language=language)
+        if profile is None:
+            return None
+        return build_prefill(profile)
 
     async def list_profiles(self) -> list[CandidateProfile]:
         """Return the latest profile per language (deduplicated)."""

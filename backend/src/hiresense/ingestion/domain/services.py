@@ -9,6 +9,7 @@ from typing import Any
 
 from opentelemetry import trace
 
+from hiresense.ingestion.domain.application_classifier import classify_application
 from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
@@ -93,12 +94,19 @@ class IngestionOrchestrator:
                     normalized: list[NormalizedJob] = []
                     for raw in raw_jobs:
                         normalized_data = normalizer.normalize(raw)
+                        classification = classify_application(
+                            normalized_data.get("url"),
+                            platform=normalized_data.get("platform"),
+                        )
                         normalized.append(
                             NormalizedJob(
                                 id=str(uuid.uuid4()),
                                 source=source_name,
                                 source_type=source.source_type().value,
                                 source_id=raw.source_id,
+                                apply_url=classification.apply_url,
+                                application_method=classification.application_method,
+                                ats_type=classification.ats_type,
                                 **normalized_data,
                             )
                         )

@@ -1,3 +1,5 @@
+from hiresense.outreach.domain.email_message import EmailMessage
+from hiresense.outreach.domain.email_unavailable_error import EmailUnavailableError
 from hiresense.outreach.domain.message_generator import (
     OutreachMessageGenerator,
     OutreachUnavailableError,
@@ -10,6 +12,8 @@ from hiresense.outreach.domain.style_guide import DEFAULT_STYLE_GUIDE, load_styl
 
 __all__ = [
     "DEFAULT_STYLE_GUIDE",
+    "EmailMessage",
+    "EmailUnavailableError",
     "OutreachEvent",
     "OutreachEventKind",
     "OutreachMessageGenerator",

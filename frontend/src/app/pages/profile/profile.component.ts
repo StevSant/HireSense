@@ -12,6 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ProfileService } from '../../core/services/profile.service';
 import { CvSectionContentComponent } from './components/cv-section-content/cv-section-content.component';
+import { ApplyProfileCardComponent } from './components/apply-profile-card/apply-profile-card.component';
 import { ManualFieldsFormComponent } from './components/manual-fields-form/manual-fields-form.component';
 import { CoverLetterLibraryComponent } from './components/cover-letter-library/cover-letter-library.component';
 import { CoverLetterTemplatesComponent } from './components/cover-letter-templates/cover-letter-templates.component';
@@ -28,6 +29,7 @@ type ProfilePageTab = 'cv' | 'personal' | 'cover-letters' | 'account';
     FormsModule,
     RouterLink,
     CvSectionContentComponent,
+    ApplyProfileCardComponent,
     ManualFieldsFormComponent,
     CoverLetterLibraryComponent,
     CoverLetterTemplatesComponent,
@@ -64,16 +66,22 @@ export class ProfileComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
-    this.profileService.listProfiles().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => this.initialLoading.set(false),
-      error: () => {
-        // Fallback to single profile fetch
-        this.profileService.getCurrentProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-          next: () => this.initialLoading.set(false),
-          error: () => this.initialLoading.set(false),
-        });
-      },
-    });
+    this.profileService
+      .listProfiles()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.initialLoading.set(false),
+        error: () => {
+          // Fallback to single profile fetch
+          this.profileService
+            .getCurrentProfile()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: () => this.initialLoading.set(false),
+              error: () => this.initialLoading.set(false),
+            });
+        },
+      });
   }
 
   switchLanguage(lang: string): void {
@@ -146,17 +154,20 @@ export class ProfileComponent implements OnInit {
     if (!file) return;
     this.loading.set(true);
     this.error.set('');
-    this.profileService.uploadFile(file, this.language()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.loading.set(false);
-        this.showUploadForm.set(false);
-        this.selectedFile.set(null);
-      },
-      error: (err) => {
-        this.error.set(err.error?.detail || 'Failed to parse file');
-        this.loading.set(false);
-      },
-    });
+    this.profileService
+      .uploadFile(file, this.language())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.showUploadForm.set(false);
+          this.selectedFile.set(null);
+        },
+        error: (err) => {
+          this.error.set(err.error?.detail || 'Failed to parse file');
+          this.loading.set(false);
+        },
+      });
   }
 
   uploadLatex(): void {

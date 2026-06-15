@@ -6,6 +6,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from hiresense.ingestion.domain.application_method import ApplicationMethod
+
 
 class RawJobListing(BaseModel):
     source: str
@@ -27,6 +29,13 @@ class NormalizedJob(BaseModel):
     source_type: str
     language: str = "en"
     url: str
+    # How the candidate applies, derived once at ingestion (see classify_application).
+    # `apply_url` is a URL we're confident is a direct application form (set for
+    # ats_form; None for plain redirects). `ats_type` is the detected ATS
+    # (AtsPlatform value) when known. Defaults keep existing constructors valid.
+    apply_url: str | None = None
+    application_method: ApplicationMethod = ApplicationMethod.UNKNOWN
+    ats_type: str | None = None
     posted_date: datetime | None = None
     department: str | None = None
     platform: str | None = None

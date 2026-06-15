@@ -32,6 +32,14 @@ class IngestedJob(Base):
     salary_range: Mapped[str | None] = mapped_column(Text, nullable=True)
     language: Mapped[str] = mapped_column(String(10), default="en")
     url: Mapped[str] = mapped_column(String(2048), default="")
+    # Apply-method classification, derived once at ingestion (see
+    # classify_application). application_method defaults to "unknown" so
+    # pre-existing rows are never mislabelled as a direct apply.
+    apply_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    application_method: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="unknown", server_default="unknown"
+    )
+    ats_type: Mapped[str | None] = mapped_column(String(30), nullable=True)
     posted_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

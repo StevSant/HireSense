@@ -1,3 +1,4 @@
+import { ApplyProfile } from './apply-profile.model';
 import { CVSection } from './cv-section.model';
 
 export interface CandidateProfile {
@@ -13,4 +14,5 @@ export interface CandidateProfile {
   linkedin_url: string | null;
   github_url: string | null;
   portfolio_url: string | null;
+  apply_profile?: ApplyProfile | null;
 }

@@ -363,3 +363,35 @@ async def test_prune_evicts_pruned_vectors_from_index() -> None:
 
     assert repo.list_all() == []
     assert idx.removed == [[job.id]]
+
+
+def test_application_fields_round_trip_through_sql(repo):
+    from hiresense.ingestion.domain.application_method import ApplicationMethod
+
+    repo.upsert(
+        _job(
+            "ats",
+            url="https://boards.greenhouse.io/acme/jobs/1",
+            apply_url="https://boards.greenhouse.io/acme/jobs/1",
+            application_method=ApplicationMethod.ATS_FORM,
+            ats_type="greenhouse",
+        )
+    )
+
+    stored = repo.get_by_id("ats")
+    assert stored is not None
+    assert stored.application_method == ApplicationMethod.ATS_FORM
+    assert stored.ats_type == "greenhouse"
+    assert stored.apply_url == "https://boards.greenhouse.io/acme/jobs/1"
+
+
+def test_application_method_defaults_to_unknown(repo):
+    from hiresense.ingestion.domain.application_method import ApplicationMethod
+
+    repo.upsert(_job("plain", url="https://e.com/plain"))
+
+    stored = repo.get_by_id("plain")
+    assert stored is not None
+    assert stored.application_method == ApplicationMethod.UNKNOWN
+    assert stored.apply_url is None
+    assert stored.ats_type is None

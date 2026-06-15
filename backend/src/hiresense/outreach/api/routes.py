@@ -10,8 +10,14 @@ from hiresense.outreach.api.schemas import (
     GenerateRequest,
     GenerateResponse,
     RecordRequest,
+    SendRequest,
 )
-from hiresense.outreach.domain import OutreachEvent, OutreachNudge, OutreachService
+from hiresense.outreach.domain import (
+    EmailUnavailableError,
+    OutreachEvent,
+    OutreachNudge,
+    OutreachService,
+)
 from hiresense.outreach.domain.message_generator import OutreachUnavailableError
 
 router = APIRouter(prefix="/outreach", tags=["outreach"], dependencies=[Depends(require_auth)])
@@ -43,6 +49,27 @@ def record(
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/send", response_model=OutreachEvent, status_code=201)
+async def send(
+    body: SendRequest, service: OutreachService = Depends(get_outreach_service)
+) -> OutreachEvent:
+    try:
+        return await service.send(
+            body.application_id,
+            to=body.to,
+            subject=body.subject,
+            message=body.message,
+            contact_name=body.contact_name,
+            channel=body.channel,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except EmailUnavailableError as exc:
+        raise HTTPException(
+            status_code=503, detail="Outreach email sending is not configured"
+        ) from exc
 
 
 @router.get("/events", response_model=list[OutreachEvent])

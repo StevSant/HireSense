@@ -8,6 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from hiresense.ingestion.domain.application_classifier import classify_application
 from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
@@ -156,6 +157,9 @@ class PortalScanner:
             for raw in raw_jobs:
                 total_fetched += 1
                 normalized_data = normalizer.normalize(raw)
+                classification = classify_application(
+                    normalized_data.get("url"), platform=portal.platform
+                )
                 job = NormalizedJob(
                     id=str(uuid.uuid4()),
                     source=portal.name,
@@ -163,6 +167,9 @@ class PortalScanner:
                     source_id=raw.source_id,
                     platform=portal.platform,
                     categories=list(portal.categories),
+                    apply_url=classification.apply_url,
+                    application_method=classification.application_method,
+                    ats_type=classification.ats_type,
                     **normalized_data,
                 )
                 if filters.keyword:

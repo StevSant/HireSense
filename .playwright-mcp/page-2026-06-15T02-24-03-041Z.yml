@@ -1,0 +1,421 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - link "GitLab Logo" [ref=e5] [cursor=pointer]:
+        - /url: https://boards.greenhouse.io/gitlab
+        - img "GitLab Logo" [ref=e6]
+      - generic [ref=e7]:
+        - generic [ref=e9]:
+          - generic [ref=e10]:
+            - heading "AI Engineer" [level=1] [ref=e11]
+            - generic [ref=e12]:
+              - img [ref=e13]
+              - generic [ref=e15]: Remote, US
+          - button "Apply" [ref=e16] [cursor=pointer]
+        - generic [ref=e17]:
+          - generic [ref=e18]:
+            - paragraph [ref=e19]: GitLab is the intelligent orchestration platform for DevSecOps. GitLab enables organizations to increase developer productivity, improve operational efficiency, reduce security and compliance risk, and accelerate digital transformation. More than 50 million registered users and more than 50% of the Fortune 100* trust GitLab to ship better, more secure software faster.
+            - paragraph [ref=e20]:
+              - text: "The same principles built into our products are reflected in how our team works: we embrace AI as a core productivity multiplier, with all team members expected to incorporate AI into their daily workflows to drive efficiency, innovation, and impact. GitLab is where careers accelerate, innovation flourishes, and every voice is valued. Our high-performance culture is driven by our values and continuous knowledge exchange, enabling our team members to reach their full potential while collaborating with industry leaders to solve complex problems."
+              - link "Co-create the future with us" [ref=e21] [cursor=pointer]:
+                - /url: https://www.youtube.com/watch?v=OuZIb5zszQI
+              - text: as we build technology that transforms how the world develops software.
+            - paragraph [ref=e22]:
+              - text: "*"
+              - emphasis [ref=e23]: Fortune 500® is a registered trademark of Fortune Media IP Limited, used under license. Claim based on GitLab data. Fortune 100 refers to the top 20% ranked companies in the 2025 Fortune 500 list, published in June 2025. Fortune and Fortune Media IP Limited are not affiliated with, and do not endorse products or services of GitLab.
+          - generic [ref=e24]:
+            - heading "An overview of this role" [level=2] [ref=e25]:
+              - strong [ref=e26]: An overview of this role
+            - paragraph [ref=e27]: As an AI Engineer at GitLab, you'll help build the foundation for GitLab's transformation into an AI-first company. Reporting to the Director, Enterprise AI, you'll be a hands-on technical leader responsible for delivering internal AI-powered solutions that drive measurable business outcomes.
+            - paragraph [ref=e28]: "Building fast matters, but it's not enough on its own. This role starts with understanding the real problem: mapping how work moves across teams, tools, and handoffs, identifying the true constraint, and validating whether AI is the right solution before you begin development. From there, you'll take ownership from discovery through deployment, combining strong engineering skills with systems thinking and business understanding."
+            - paragraph [ref=e29]: Your initial focus will span Sales, Marketing, and Customer Support, where you will embed AI solutions into key systems and workflows. This role offers the opportunity to shape how GitLab team members work, improve flow across the organization, and help advance our mission in a remote, asynchronous, and values-driven environment.
+            - heading "What you'll do" [level=2] [ref=e30]:
+              - strong [ref=e31]: What you'll do
+            - list [ref=e32]:
+              - listitem [ref=e33]: Diagnose business problems before building solutions. Map workflows, identify constraints, and confirm whether AI is the right intervention. Be prepared to say "this doesn't need AI" when that's the honest answer.
+              - listitem [ref=e34]: Own AI initiatives end-to-end, from stakeholder discovery and technical design through implementation, deployment, and iteration.
+              - listitem [ref=e35]: Design, develop, and ship AI-powered solutions quickly, delivering working prototypes in days, not months, with a focus on practical outcomes and measurable business value.
+              - listitem [ref=e36]: Improve organizational flow by building solutions that reduce bottlenecks, shorten lead times, and increase throughput. Measure success using flow metrics alongside adoption and ROI.
+              - listitem [ref=e37]: Integrate AI capabilities into existing systems and workflows using APIs, orchestration tools, and modern AI platforms, including GitLab Duo Agent Platform, where appropriate. The right tool wins, whether that's custom code, a platform, or a well-crafted prompt.
+              - listitem [ref=e38]: "Be Customer Zero: leverage and showcase GitLab's AI offerings wherever possible, feeding real-world usage insights back to R&D."
+              - listitem [ref=e39]: Partner closely with stakeholders across functions to understand the real constraints. Ask the right questions, bridge technical and non-technical perspectives, and align on outcomes before jumping to solutions.
+              - listitem [ref=e40]: Define and track success through business metrics, flow metrics, and feedback loops that make performance visible and actionable.
+              - listitem [ref=e41]: Contribute to technical direction by evaluating tools, documenting patterns, and creating reusable foundations that help the team scale its impact.
+            - heading "What you'll bring" [level=2] [ref=e42]:
+              - strong [ref=e43]: What you'll bring
+            - list [ref=e44]:
+              - listitem [ref=e45]:
+                - strong [ref=e46]: A Technologist at Heart -
+                - text: Genuinely invested in technology, the foundational and the cutting-edge in equal measure. You're as energised by a well-designed API integration as you are by the latest foundation model release. You reach for the simplest solution that solves the problem well, rather than forcing new technology when proven approaches would do. AI is a powerful part of your toolkit, but it sits on top of solid engineering fundamentals, not in place of them.
+              - listitem [ref=e47]:
+                - strong [ref=e48]: Competent, Confident Coding Skills -
+                - text: You can build working solutions end-to-end, write clean and maintainable code, and debug effectively. Whether your skills were honed in a traditional engineering role, through building automations, or shipping side projects, what matters is that you can deliver production-quality work independently.
+              - listitem [ref=e49]:
+                - strong [ref=e50]: AI
+                - strong [ref=e51]: "& LLM"
+                - strong [ref=e52]: Technical Depth -
+                - text: "Strong proficiency in at least one modern scripting language (Python, JavaScript/TypeScript, or similar) and a solid understanding of REST APIs, GraphQL, and integration patterns. Deep, practical experience with modern AI technologies, specifically: Prompt engineering as a core discipline: designing effective system prompts, managing context windows, structuring multi-turn interactions, evaluating output quality, and iterating systematically on prompt design."
+              - listitem [ref=e53]:
+                - strong [ref=e54]: "Model selection and cost-performance trade-offs:"
+                - text: understanding when a smaller fine-tuned model outperforms a general-purpose large one, when RAG is the right architecture versus expanding the context window, and how to make principled decisions about capability versus cost.
+              - listitem [ref=e55]:
+                - strong [ref=e56]: "Agentic architecture patterns:"
+                - text: "tool use, multi-agent orchestration, human-in-the-loop designs, guardrails, evaluation frameworks, and production-grade reliability patterns.Practical fluency across the LLM ecosystem: hands-on experience with models from Anthropic, OpenAI, open-source alternatives, and the judgment to know which to reach for and when."
+              - listitem [ref=e57]:
+                - strong [ref=e58]: AI Safety & Risk Awareness -
+                - text: You think critically about how the solutions you build could be exploited, misused, or produce unintended consequences. You know how to design appropriate guardrails (input validation, output filtering, access controls, prompt injection defences, and data leakage prevention) and you treat these as first-class engineering concerns.
+              - listitem [ref=e59]:
+                - strong [ref=e60]: Systems Thinking & Diagnostic Rigour -
+                - text: The ability to look at a complex process and see the constraint. Comfortable mapping how work flows end-to-end, identifying bottlenecks, and tracing problems to root causes before proposing solutions. You instinctively ask "what's actually blocking flow here?" before asking "what model should I use?"
+              - listitem [ref=e61]:
+                - strong [ref=e62]: Business System Expertise -
+                - text: Familiarity with the landscape of enterprise business systems, CRM (Salesforce), marketing automation (Marketo), support platforms (Zendesk), integration and orchestration tools (Workato), AI platforms (Relevance AI), and enterprise search and knowledge tools (Glean). You don't need deep experience with all of these, but to understand what they do, how they fit together, and be willing to build with and across them. A strong understanding of enterprise data models and workflows is essential.
+              - listitem [ref=e63]:
+                - strong [ref=e64]: Broad Functional Understanding -
+                - text: Ability to have meaningful conversations with stakeholders across diverse domains and quickly understand their unique needs.
+              - listitem [ref=e65]:
+                - strong [ref=e66]: End-to-End Ownership -
+                - text: Track record of owning complex initiatives from discovery through delivery. Comfortable operating with ambiguity and driving to measurable outcomes independently.
+              - listitem [ref=e67]:
+                - strong [ref=e68]: Product Mindset -
+                - text: Ability to scope MVPs, prioritise ruthlessly, and deliver iteratively. In addition, consider adoption, user experience, and business outcomes.
+            - paragraph [ref=e69]
+            - paragraph [ref=e70]:
+              - strong [ref=e71]: Preferred requirements
+            - list [ref=e72]:
+              - listitem [ref=e73]: Experience with GitLab platform and CI/CD workflows
+              - listitem [ref=e74]: Background in consulting, solutions engineering, or customer-facing technical roles
+              - listitem [ref=e75]: Familiarity with value stream mapping, flow metrics, or Theory of Constraints thinking
+              - listitem [ref=e76]: Experience with low-code/no-code orchestration tools (n8n, Make, Workato) alongside custom development
+              - listitem [ref=e77]: Previous startup or high-growth company experience
+              - listitem [ref=e78]: Experience mentoring or leading technical projects with junior engineers
+            - heading "About the team" [level=2] [ref=e79]:
+              - strong [ref=e80]: About the team
+            - paragraph [ref=e81]: You will join the Enterprise Technology & AI team. We're the backbone of the organisation, driving transformation in how GitLab team members make decisions, operate at scale, and deliver results for our customers.
+            - paragraph [ref=e82]: We believe the best AI solutions start with understanding the system, not the technology. We value people who think in constraints and flow, who build with conviction, and who never stop learning. We work in an all-remote, asynchronous setting, guided by GitLab's values of collaboration, results, efficiency, diversity, inclusion and belonging, iteration, and transparency.
+          - generic [ref=e84]:
+            - paragraph [ref=e88]:
+              - emphasis [ref=e89]:
+                - text: The base salary range for this role’s listed level is currently for residents of the United States only. This range is intended to reflect the role's base salary rate in locations throughout the US. Grade level and salary ranges are determined through interviews and a review of education, experience, knowledge, skills, abilities of the applicant, equity with other team members, alignment with market data, and geographic location. The base salary range does not include any bonuses, equity, or benefits. See more information on our
+                - link "benefits" [ref=e90] [cursor=pointer]:
+                  - /url: https://about.gitlab.com/handbook/total-rewards/benefits/general-and-entity-benefits/
+                - text: and
+                - link "equity" [ref=e91] [cursor=pointer]:
+                  - /url: https://about.gitlab.com/handbook/stock-options/
+                - text: . Sales roles are also eligible for incentive pay targeted at up to 100% of the offered base salary.
+            - paragraph [ref=e92]: United States Salary Range
+            - paragraph [ref=e93]: $108,400 - $129,600 USD
+          - generic [ref=e94]:
+            - heading "How GitLab Supports Full-Time Employees" [level=4] [ref=e95]:
+              - strong [ref=e96]: How GitLab Supports Full-Time Employees
+            - list [ref=e97]:
+              - listitem [ref=e98]:
+                - link "Benefits to support your health, finances, and well-being" [ref=e99] [cursor=pointer]:
+                  - /url: https://about.gitlab.com/handbook/total-rewards/benefits/general-and-entity-benefits/
+              - listitem [ref=e100]:
+                - link "Flexible Paid Time Off" [ref=e101] [cursor=pointer]:
+                  - /url: https://handbook.gitlab.com/handbook/people-group/time-off-and-absence/time-off-types/#flexible-paid-time-off-pto
+              - listitem [ref=e102]:
+                - link "Team Member Resource Groups" [ref=e103] [cursor=pointer]:
+                  - /url: https://handbook.gitlab.com/handbook/company/culture/inclusion/tmrg-tmag/
+              - listitem [ref=e104]:
+                - link "Equity Compensation & Employee Stock Purchase Plan" [ref=e105] [cursor=pointer]:
+                  - /url: https://handbook.gitlab.com/handbook/total-rewards/stock-options/
+              - listitem [ref=e106]:
+                - link "Growth and Development Fund" [ref=e107] [cursor=pointer]:
+                  - /url: https://handbook.gitlab.com/handbook/people-group/learning-and-development/growth-and-development/
+              - listitem [ref=e108]:
+                - link "Parental Leave" [ref=e109] [cursor=pointer]:
+                  - /url: https://about.gitlab.com/handbook/total-rewards/benefits/general-and-entity-benefits/#parental-leave
+            - paragraph [ref=e110]:
+              - text: Please note that we welcome interest from candidates with varying levels of experience; many successful candidates do not meet every single requirement. Additionally, studies have shown that people from
+              - link "underrepresented groups" [ref=e111] [cursor=pointer]:
+                - /url: https://about.gitlab.com/company/culture/inclusion/#examples-of-select-underrepresented-groups
+              - text: are less likely to apply to a job unless they meet every single qualification. If you're excited about this role, please apply and allow our recruiters to assess your application.
+            - separator [ref=e112]
+            - paragraph [ref=e113]:
+              - strong [ref=e114]: "Country Hiring Guidelines:"
+              - text: GitLab hires new team members in countries around the world. All of our roles are remote, however some roles may carry specific location-based eligibility requirements. Our Talent Acquisition team can help answer any questions about location after starting the recruiting process.
+            - paragraph [ref=e115]:
+              - strong [ref=e116]: "Privacy Policy:"
+              - text: Please review our
+              - link "Recruitment Privacy Policy." [ref=e117] [cursor=pointer]:
+                - /url: https://handbook.gitlab.com/handbook/hiring/candidate-faq/recruitment-privacy-policy/
+              - text: Your privacy is important to us.
+            - paragraph [ref=e118]:
+              - text: GitLab is proud to be an equal opportunity workplace and is an affirmative action employer. GitLab’s policies and practices relating to recruitment, employment, career development and advancement, promotion, and retirement are based solely on merit, regardless of race, color, religion, ancestry, sex (including pregnancy, lactation, sexual orientation, gender identity, or gender expression), national origin, age, citizenship, marital status, mental or physical disability, genetic information (including family medical history), discharge status from the military, protected veteran status (which includes disabled veterans, recently separated veterans, active duty wartime or campaign badge veterans, and Armed Forces service medal veterans), or any other basis protected by law. GitLab will not tolerate discrimination or harassment based on any of these characteristics. See also
+              - link "GitLab’s EEO Policy" [ref=e119] [cursor=pointer]:
+                - /url: https://about.gitlab.com/handbook/people-policies/inc-usa/#equal-employment-opportunity-policy
+              - text: and
+              - link "EEO is the Law" [ref=e120] [cursor=pointer]:
+                - /url: https://about.gitlab.com/handbook/labor-and-employment-notices/#eeoc-us-equal-employment-opportunity-commission-notices
+              - text: . If you have a disability or special need that requires
+              - link "accommodation" [ref=e121] [cursor=pointer]:
+                - /url: https://about.gitlab.com/handbook/people-policies/inc-usa/#reasonable-accommodation
+              - text: ", please let us know during the"
+              - link "recruiting process" [ref=e122] [cursor=pointer]:
+                - /url: https://about.gitlab.com/handbook/hiring/interviewing/#adjustments-to-our-interview-process
+              - text: .
+      - separator [ref=e123]
+      - generic [ref=e124]:
+        - generic [ref=e126]:
+          - heading "Apply for this job" [level=2] [ref=e128]
+          - generic [ref=e129]:
+            - paragraph [ref=e131]: "*"
+            - paragraph [ref=e132]: indicates a required field
+        - generic [ref=e133]:
+          - generic [ref=e134]:
+            - generic [ref=e137]:
+              - generic [ref=e138]: First Name*
+              - textbox "First Name" [ref=e139]
+            - generic [ref=e142]:
+              - generic [ref=e143]: Last Name*
+              - textbox "Last Name" [ref=e144]
+            - generic [ref=e147]:
+              - generic [ref=e148]: Email*
+              - textbox "Email" [ref=e149]
+            - group "Phone" [ref=e151]:
+              - generic [ref=e152]: Phone
+              - generic [ref=e155]:
+                - generic [ref=e156]: Country
+                - generic [ref=e157]:
+                  - log [ref=e159]
+                  - generic [ref=e161]:
+                    - combobox "Country" [ref=e164]
+                    - button "Toggle flyout" [ref=e166] [cursor=pointer]:
+                      - img [ref=e167]
+              - generic [ref=e171]:
+                - generic [ref=e172]: Phone
+                - textbox "Phone" [ref=e173]
+            - group "Resume/CV*" [ref=e175]:
+              - generic [ref=e176]: Resume/CV*
+              - generic [ref=e178]:
+                - generic [ref=e180]:
+                  - button "Attach" [ref=e181] [cursor=pointer]
+                  - generic [ref=e182]: Attach
+                  - button "Attach" [ref=e183]
+                - generic [ref=e185]:
+                  - button "Enter manually" [ref=e186] [cursor=pointer]
+                  - generic [ref=e187]: Enter manually
+                - paragraph [ref=e188]: "Accepted file types: pdf, doc, docx, txt, rtf"
+            - group "Cover Letter" [ref=e190]:
+              - generic [ref=e191]: Cover Letter
+              - generic [ref=e193]:
+                - generic [ref=e195]:
+                  - button "Attach" [ref=e196] [cursor=pointer]
+                  - generic [ref=e197]: Attach
+                  - button "Attach" [ref=e198]
+                - generic [ref=e200]:
+                  - button "Enter manually" [ref=e201] [cursor=pointer]
+                  - generic [ref=e202]: Enter manually
+                - paragraph [ref=e203]: "Accepted file types: pdf, doc, docx, txt, rtf"
+          - generic [ref=e204]:
+            - separator [ref=e205]
+            - generic [ref=e208]:
+              - generic [ref=e209]: LinkedIn Profile
+              - textbox "LinkedIn Profile" [ref=e210]
+            - generic [ref=e213]:
+              - generic [ref=e214]: What is your current country of residence?*
+              - generic [ref=e215]:
+                - log [ref=e217]
+                - generic [ref=e219]:
+                  - generic [ref=e220]:
+                    - generic [ref=e221]: Select...
+                    - combobox "What is your current country of residence?" [ref=e223]
+                  - button "Toggle flyout" [ref=e225] [cursor=pointer]:
+                    - img [ref=e226]
+                - textbox
+            - generic [ref=e230]:
+              - generic [ref=e231]: Please choose the country in which you are located.
+              - generic [ref=e232]:
+                - log [ref=e234]
+                - generic [ref=e236]:
+                  - generic [ref=e237]:
+                    - generic [ref=e238]: Select...
+                    - combobox "Please choose the country in which you are located." [ref=e240]
+                  - button "Toggle flyout" [ref=e242] [cursor=pointer]:
+                    - img [ref=e243]
+            - generic [ref=e245]:
+              - generic [ref=e247]:
+                - generic [ref=e248]: Where are you currently based?*
+                - generic [ref=e249]:
+                  - log [ref=e251]
+                  - generic [ref=e253]:
+                    - generic [ref=e254]:
+                      - generic [ref=e255]: Select...
+                      - combobox "Where are you currently based?" [ref=e257]
+                    - button "Toggle flyout" [ref=e259] [cursor=pointer]:
+                      - img [ref=e260]
+                  - textbox
+              - paragraph [ref=e264]:
+                - text: 1. United States of America
+                - text: 2. Canada
+                - text: 3. Located Elsewhere
+            - generic [ref=e267]:
+              - generic [ref=e268]: What's the name you'd prefer us to use throughout the interview process?
+              - textbox "What's the name you'd prefer us to use throughout the interview process?" [ref=e269]
+            - generic [ref=e272]:
+              - generic [ref=e273]: Do you have strong proficiency in at least one modern scripting language (Python, JavaScript/TypeScript, or similar) and a solid understanding of REST APIs, GraphQL, and integration patterns? *
+              - generic [ref=e274]:
+                - log [ref=e276]
+                - generic [ref=e278]:
+                  - generic [ref=e279]:
+                    - generic [ref=e280]: Select...
+                    - combobox "Do you have strong proficiency in at least one modern scripting language (Python, JavaScript/TypeScript, or similar) and a solid understanding of REST APIs, GraphQL, and integration patterns?" [ref=e282]
+                  - button "Toggle flyout" [ref=e284] [cursor=pointer]:
+                    - img [ref=e285]
+                - textbox
+            - generic [ref=e289]:
+              - generic [ref=e290]: Do you have practical fluency across the LLM ecosystem? hands-on experience with models from Anthropic, OpenAI, open-source alternatives, and the judgment to know which to reach for and when?*
+              - generic [ref=e291]:
+                - log [ref=e293]
+                - generic [ref=e295]:
+                  - generic [ref=e296]:
+                    - generic [ref=e297]: Select...
+                    - combobox "Do you have practical fluency across the LLM ecosystem? hands-on experience with models from Anthropic, OpenAI, open-source alternatives, and the judgment to know which to reach for and when?" [ref=e299]
+                  - button "Toggle flyout" [ref=e301] [cursor=pointer]:
+                    - img [ref=e302]
+                - textbox
+            - generic [ref=e306]:
+              - generic [ref=e307]: Are you subject to any employment agreements and/or post-employment restrictions with your current employer or a past employer?*
+              - generic [ref=e308]:
+                - log [ref=e310]
+                - generic [ref=e312]:
+                  - generic [ref=e313]:
+                    - generic [ref=e314]: Select...
+                    - combobox "Are you subject to any employment agreements and/or post-employment restrictions with your current employer or a past employer?" [ref=e316]
+                  - button "Toggle flyout" [ref=e318] [cursor=pointer]:
+                    - img [ref=e319]
+                - textbox
+            - generic [ref=e323]:
+              - generic [ref=e324]: It is important to us to create an accessible and inclusive interview experience. Please let us know if there are any adjustments we can make to assist you during the hiring and interview process.
+              - textbox "It is important to us to create an accessible and inclusive interview experience. Please let us know if there are any adjustments we can make to assist you during the hiring and interview process." [ref=e325]
+            - generic [ref=e328]:
+              - generic [ref=e329]: Will you now or in the future require sponsorship for a visa to remain in your current location?*
+              - generic [ref=e330]:
+                - log [ref=e332]
+                - generic [ref=e334]:
+                  - generic [ref=e335]:
+                    - generic [ref=e336]: Select...
+                    - combobox "Will you now or in the future require sponsorship for a visa to remain in your current location?" [ref=e338]
+                  - button "Toggle flyout" [ref=e340] [cursor=pointer]:
+                    - img [ref=e341]
+                - textbox
+            - generic [ref=e345]:
+              - generic [ref=e346]: Have you previously worked at or consulted for GitLab?*
+              - generic [ref=e347]:
+                - log [ref=e349]
+                - generic [ref=e351]:
+                  - generic [ref=e352]:
+                    - generic [ref=e353]: Select...
+                    - combobox "Have you previously worked at or consulted for GitLab?" [ref=e355]
+                  - button "Toggle flyout" [ref=e357] [cursor=pointer]:
+                    - img [ref=e358]
+                - textbox
+          - generic [ref=e360]:
+            - separator [ref=e361]
+            - generic [ref=e362]:
+              - heading "Voluntary Self-Identification" [level=2] [ref=e363]
+              - paragraph [ref=e364]: For government reporting purposes, we ask candidates to respond to the below self-identification survey. Completion of the form is entirely voluntary. Whatever your decision, it will not be considered in the hiring process or thereafter. Any information that you do provide will be recorded and maintained in a confidential file.
+              - paragraph [ref=e365]: As set forth in GitLab’s Equal Employment Opportunity policy, we do not discriminate on the basis of any protected group status under any applicable law.
+            - generic [ref=e368]:
+              - generic [ref=e369]: Gender
+              - generic [ref=e370]:
+                - log [ref=e372]
+                - generic [ref=e374]:
+                  - generic [ref=e375]:
+                    - generic [ref=e376]: Select...
+                    - combobox "Gender" [ref=e378]
+                  - button "Toggle flyout" [ref=e380] [cursor=pointer]:
+                    - img [ref=e381]
+            - generic [ref=e383]:
+              - generic [ref=e385]:
+                - generic [ref=e386]: Are you Hispanic/Latino?
+                - generic [ref=e387]:
+                  - log [ref=e389]
+                  - generic [ref=e391]:
+                    - generic [ref=e392]:
+                      - generic [ref=e393]: Select...
+                      - combobox "Are you Hispanic/Latino?" [ref=e395]
+                    - button "Toggle flyout" [ref=e397] [cursor=pointer]:
+                      - img [ref=e398]
+              - link "Race & Ethnicity Definitions" [ref=e400] [cursor=pointer]:
+                - /url: https://job-boards.cdn.greenhouse.io/docs/2023/RaceEthnicityDefinitions.pdf
+            - generic [ref=e401]:
+              - paragraph [ref=e402]: "If you believe you belong to any of the categories of protected veterans listed below, please indicate by making the appropriate selection. As a government contractor subject to the Vietnam Era Veterans Readjustment Assistance Act (VEVRAA), we request this information in order to measure the effectiveness of the outreach and positive recruitment efforts we undertake pursuant to VEVRAA. Classification of protected categories is as follows:"
+              - paragraph [ref=e403]: "A \"disabled veteran\" is one of the following: a veteran of the U.S. military, ground, naval or air service who is entitled to compensation (or who but for the receipt of military retired pay would be entitled to compensation) under laws administered by the Secretary of Veterans Affairs; or a person who was discharged or released from active duty because of a service-connected disability."
+              - paragraph [ref=e404]: A "recently separated veteran" means any veteran during the three-year period beginning on the date of such veteran's discharge or release from active duty in the U.S. military, ground, naval, or air service.
+              - paragraph [ref=e405]: An "active duty wartime or campaign badge veteran" means a veteran who served on active duty in the U.S. military, ground, naval or air service during a war, or in a campaign or expedition for which a campaign badge has been authorized under the laws administered by the Department of Defense.
+              - paragraph [ref=e406]: An "Armed forces service medal veteran" means a veteran who, while serving on active duty in the U.S. military, ground, naval or air service, participated in a United States military operation for which an Armed Forces service medal was awarded pursuant to Executive Order 12985.
+            - generic [ref=e409]:
+              - generic [ref=e410]: Veteran Status
+              - generic [ref=e411]:
+                - log [ref=e413]
+                - generic [ref=e415]:
+                  - generic [ref=e416]:
+                    - generic [ref=e417]: Select...
+                    - combobox "Veteran Status" [ref=e419]
+                  - button "Toggle flyout" [ref=e421] [cursor=pointer]:
+                    - img [ref=e422]
+            - separator [ref=e424]
+            - generic [ref=e425]:
+              - heading "Voluntary Self-Identification of Disability" [level=2] [ref=e426]
+              - generic [ref=e427]:
+                - generic [ref=e428]:
+                  - generic [ref=e429]: Form CC-305
+                  - generic [ref=e430]: Page 1 of 1
+                - generic [ref=e431]:
+                  - generic [ref=e432]: OMB Control Number 1250-0005
+                  - generic [ref=e433]: Expires 04/30/2026
+              - strong [ref=e434]: Why are you being asked to complete this form?
+              - paragraph [ref=e435]: We are a federal contractor or subcontractor. The law requires us to provide equal employment opportunity to qualified people with disabilities. We have a goal of having at least 7% of our workers as people with disabilities. The law says we must measure our progress towards this goal. To do this, we must ask applicants and employees if they have a disability or have ever had one. People can become disabled, so we need to ask this question at least every five years.
+              - paragraph [ref=e436]:
+                - text: Completing this form is voluntary, and we hope that you will choose to do so. Your answer is confidential. No one who makes hiring decisions will see it. Your decision to complete the form and your answer will not harm you in any way. If you want to learn more about the law or this form, visit the U.S. Department of Labor’s Office of Federal Contract Compliance Programs (OFCCP) website at
+                - link "www.dol.gov/ofccp" [ref=e437] [cursor=pointer]:
+                  - /url: https://www.dol.gov/ofccp
+                - text: .
+              - strong [ref=e438]: How do you know if you have a disability?
+              - paragraph [ref=e439]:
+                - text: A disability is a condition that substantially limits one or more of your “major life activities.” If you have or have ever had such a condition, you are a person with a disability.
+                - strong [ref=e440]: "Disabilities include, but are not limited to:"
+              - list [ref=e441]:
+                - listitem [ref=e442]: Alcohol or other substance use disorder (not currently using drugs illegally)
+                - listitem [ref=e443]: Autoimmune disorder, for example, lupus, fibromyalgia, rheumatoid arthritis, HIV/AIDS
+                - listitem [ref=e444]: Blind or low vision
+                - listitem [ref=e445]: Cancer (past or present)
+                - listitem [ref=e446]: Cardiovascular or heart disease
+                - listitem [ref=e447]: Celiac disease
+                - listitem [ref=e448]: Cerebral palsy
+                - listitem [ref=e449]: Deaf or serious difficulty hearing
+                - listitem [ref=e450]: Diabetes
+                - listitem [ref=e451]: Disfigurement, for example, disfigurement caused by burns, wounds, accidents, or congenital disorders
+                - listitem [ref=e452]: Epilepsy or other seizure disorder
+                - listitem [ref=e453]: Gastrointestinal disorders, for example, Crohn's Disease, irritable bowel syndrome
+                - listitem [ref=e454]: Intellectual or developmental disability
+                - listitem [ref=e455]: Mental health conditions, for example, depression, bipolar disorder, anxiety disorder, schizophrenia, PTSD
+                - listitem [ref=e456]: Missing limbs or partially missing limbs
+                - listitem [ref=e457]: Mobility impairment, benefiting from the use of a wheelchair, scooter, walker, leg brace(s) and/or other supports
+                - listitem [ref=e458]: Nervous system condition, for example, migraine headaches, Parkinson’s disease, multiple sclerosis (MS)
+                - listitem [ref=e459]: Neurodivergence, for example, attention-deficit/hyperactivity disorder (ADHD), autism spectrum disorder, dyslexia, dyspraxia, other learning disabilities
+                - listitem [ref=e460]: Partial or complete paralysis (any cause)
+                - listitem [ref=e461]: Pulmonary or respiratory conditions, for example, tuberculosis, asthma, emphysema
+                - listitem [ref=e462]: Short stature (dwarfism)
+                - listitem [ref=e463]: Traumatic brain injury
+            - generic [ref=e466]:
+              - generic [ref=e467]: Disability Status
+              - generic [ref=e468]:
+                - log [ref=e470]
+                - generic [ref=e472]:
+                  - generic [ref=e473]:
+                    - generic [ref=e474]: Select...
+                    - combobox "Disability Status" [ref=e476]
+                  - button "Toggle flyout" [ref=e478] [cursor=pointer]:
+                    - img [ref=e479]
+            - paragraph [ref=e482]: "PUBLIC BURDEN STATEMENT: According to the Paperwork Reduction Act of 1995 no persons are required to respond to a collection of information unless such collection displays a valid OMB control number. This survey should take about 5 minutes to complete."
+          - button "Submit application" [ref=e484] [cursor=pointer]
+  - contentinfo [ref=e485]:
+    - generic [ref=e486]:
+      - paragraph [ref=e487]: Powered by
+      - link "Greenhouse logo" [ref=e488] [cursor=pointer]:
+        - /url: https://www.greenhouse.com
+        - img "Greenhouse logo" [ref=e489]

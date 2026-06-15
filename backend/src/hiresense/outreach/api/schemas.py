@@ -25,10 +25,20 @@ class RecordRequest(BaseModel):
     channel: str | None = None
 
 
+class SendRequest(BaseModel):
+    application_id: uuid.UUID
+    to: str
+    subject: str
+    message: str
+    contact_name: str | None = None
+    channel: str = "email"
+
+
 __all__ = [
     "GenerateRequest",
     "GenerateResponse",
     "OutreachEvent",
     "OutreachNudge",
     "RecordRequest",
+    "SendRequest",
 ]

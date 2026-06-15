@@ -420,6 +420,15 @@ class Settings(BaseSettings):
     outreach_max_chars: int = 500
     # Intended cron cadence for the follow-up nudge sweep — INFORMATIONAL ONLY.
     outreach_followup_schedule: str = "0 10 * * *"
+    # SMTP for actually sending outreach email (POST /outreach/send). Leave
+    # smtp_host / outreach_from_email blank to disable sending (the endpoint then
+    # returns 503); generation and manual recording still work without SMTP.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_use_tls: bool = True
+    outreach_from_email: str = ""
 
     # Match scoring (LLM model routing). The job list shows an LLM-gated quick
     # score (cheap model, batched per visible page); the detail panel can run a

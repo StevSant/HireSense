@@ -14,6 +14,14 @@ export interface NormalizedJob {
   categories: string[];
   department: string | null;
   url: string;
+  // How the candidate applies, classified at ingestion. 'ats_form' means url is
+  // a direct ATS application form (Greenhouse/Lever/Ashby/…) we can hand off to;
+  // 'redirect' is an aggregator landing page; 'unknown' has no usable URL.
+  application_method?: 'ats_form' | 'redirect' | 'unknown';
+  // Detected ATS platform when application_method is 'ats_form', else null.
+  ats_type?: string | null;
+  // A URL we're confident is a direct application form (set for ats_form).
+  apply_url?: string | null;
   posted_date: string | null;
   // Displayed match %. Mirrors llm_score when the LLM quick scorer has run,
   // else the heuristic skill+semantic blend.

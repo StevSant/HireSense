@@ -1,3 +1,7 @@
+from hiresense.ingestion.domain.application_classification import ApplicationClassification
+from hiresense.ingestion.domain.application_classifier import classify_application
+from hiresense.ingestion.domain.application_method import ApplicationMethod
+from hiresense.ingestion.domain.ats_platform import AtsPlatform
 from hiresense.ingestion.domain.closed_listing_classifier import Verdict, classify_listing
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
@@ -18,6 +22,9 @@ from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 
 __all__ = [
+    "ApplicationClassification",
+    "ApplicationMethod",
+    "AtsPlatform",
     "IngestionOrchestrator",
     "JobEmbeddingIndexer",
     "JobRevalidationService",
@@ -34,6 +41,7 @@ __all__ = [
     "QuickMatchResult",
     "QuickMatchVerdict",
     "Verdict",
+    "classify_application",
     "classify_listing",
     "content_hash",
     "filter_and_paginate",

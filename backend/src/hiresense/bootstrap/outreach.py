@@ -6,7 +6,7 @@ from typing import Any
 from hiresense.bootstrap.shared_infra import SharedInfra
 from hiresense.outreach.api.provider import OutreachProvider
 from hiresense.outreach.domain import OutreachMessageGenerator, OutreachService
-from hiresense.outreach.infrastructure import OutreachRepository
+from hiresense.outreach.infrastructure import OutreachRepository, SmtpEmailSender
 
 
 @dataclass(frozen=True)
@@ -25,6 +25,14 @@ def build_outreach(
     portfolio_citation: Any = None,
 ) -> OutreachBuild:
     s = infra.settings
+    sender = SmtpEmailSender(
+        host=s.smtp_host,
+        port=s.smtp_port,
+        username=s.smtp_username,
+        password=s.smtp_password,
+        from_email=s.outreach_from_email,
+        use_tls=s.smtp_use_tls,
+    )
     service = OutreachService(
         tracking_service=tracking_service,
         profile_service=profile_service,
@@ -36,5 +44,6 @@ def build_outreach(
         max_chars=s.outreach_max_chars,
         language=s.default_language,
         portfolio_citation=portfolio_citation,
+        sender=sender,
     )
     return OutreachBuild(provider=OutreachProvider(outreach_service=service), service=service)

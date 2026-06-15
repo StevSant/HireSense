@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from hiresense.profile.domain.apply_profile import ApplyProfile
+
 
 class CVSection(BaseModel):
     name: str
@@ -22,3 +24,6 @@ class CandidateProfile(BaseModel):
     linkedin_url: str | None = None
     github_url: str | None = None
     portfolio_url: str | None = None
+    # One-per-person answer bank for application forms (Apply Assist). None until
+    # the user fills it in; stored as a JSON column on the profile row.
+    apply_profile: ApplyProfile | None = None

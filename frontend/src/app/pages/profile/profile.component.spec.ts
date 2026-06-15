@@ -27,11 +27,13 @@ function makeProfile(over: Partial<Record<string, unknown>> = {}) {
 }
 
 describe('ProfileComponent', () => {
-  function mount(opts: {
-    profiles?: Record<string, unknown>;
-    listProfiles?: () => unknown;
-    getCurrentProfile?: () => unknown;
-  } = {}) {
+  function mount(
+    opts: {
+      profiles?: Record<string, unknown>;
+      listProfiles?: () => unknown;
+      getCurrentProfile?: () => unknown;
+    } = {},
+  ) {
     const profiles = signal<Record<string, unknown>>(opts.profiles ?? {});
     const activeLanguage = signal('en');
     const profileService = {
@@ -59,7 +61,10 @@ describe('ProfileComponent', () => {
         { provide: ProfileService, useValue: profileService },
         { provide: ApplicationsService, useValue: { listCoverLetters: () => of([]) } },
         { provide: CoverLetterTemplatesService, useValue: { list: () => of([]) } },
-        { provide: AuthService, useValue: { me: () => of({ username: 'ada-user', role: 'admin' }), logout: () => {} } },
+        {
+          provide: AuthService,
+          useValue: { me: () => of({ username: 'ada-user', role: 'admin' }), logout: () => {} },
+        },
       ],
     });
     const fixture = TestBed.createComponent(ProfileComponent);
@@ -116,7 +121,10 @@ describe('ProfileComponent', () => {
         { provide: ProfileService, useValue: profileService },
         { provide: ApplicationsService, useValue: { listCoverLetters: () => of([]) } },
         { provide: CoverLetterTemplatesService, useValue: { list: () => of([]) } },
-        { provide: AuthService, useValue: { me: () => of({ username: 'x', role: 'user' }), logout: () => {} } },
+        {
+          provide: AuthService,
+          useValue: { me: () => of({ username: 'x', role: 'user' }), logout: () => {} },
+        },
       ],
     });
     const fixture = TestBed.createComponent(ProfileComponent);
@@ -166,7 +174,9 @@ describe('ProfileComponent', () => {
     expect(el.querySelector('app-manual-fields-form')).toBeNull();
 
     // clicking Edit reveals the form and hides the read-only grid
-    const editBtn = [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Edit')!;
+    const editBtn = [...el.querySelectorAll('button')].find(
+      (b) => b.textContent?.trim() === 'Edit',
+    )!;
     editBtn.click();
     fixture.detectChanges();
     expect(cmp.editingPersonal()).toBe(true);
@@ -201,9 +211,7 @@ describe('ProfileComponent', () => {
   });
 
   it('downloads the PDF blob for a language', () => {
-    const clickSpy = vi
-      .spyOn(HTMLAnchorElement.prototype, 'click')
-      .mockImplementation(() => {});
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
     const { fixture, profileService } = mount({ profiles: { en: makeProfile() } });
     const cmp = fixture.componentInstance;
 

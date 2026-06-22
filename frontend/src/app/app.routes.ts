@@ -102,6 +102,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/admin/scheduler/scheduler.component').then((m) => m.SchedulerComponent),
       },
+      {
+        path: 'admin/notifications',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./pages/admin/notifications/notifications.component').then(
+            (m) => m.NotificationsComponent,
+          ),
+      },
       { path: 'account', redirectTo: 'profile', pathMatch: 'full' },
     ],
   },

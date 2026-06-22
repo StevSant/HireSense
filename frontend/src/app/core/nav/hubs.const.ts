@@ -49,6 +49,7 @@ export const HUBS: readonly Hub[] = [
       { label: 'LLM Settings', path: '/dashboard/admin/llm-settings' },
       { label: 'LLM Usage', path: '/dashboard/admin/usage' },
       { label: 'Scheduler', path: '/dashboard/admin/scheduler' },
+      { label: 'Notifications', path: '/dashboard/admin/notifications' },
     ],
   },
 ];

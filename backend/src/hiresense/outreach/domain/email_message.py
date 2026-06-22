@@ -1,11 +1,3 @@
-from __future__ import annotations
+from hiresense.kernel import EmailMessage
 
-from pydantic import BaseModel
-
-
-class EmailMessage(BaseModel):
-    """A plain-text outreach email to send via an EmailSenderPort."""
-
-    to: str
-    subject: str
-    body: str
+__all__ = ["EmailMessage"]

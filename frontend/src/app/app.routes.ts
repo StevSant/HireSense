@@ -96,6 +96,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/admin/admin-usage.component').then((m) => m.AdminUsageComponent),
       },
+      {
+        path: 'admin/scheduler',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./pages/admin/scheduler/scheduler.component').then((m) => m.SchedulerComponent),
+      },
       { path: 'account', redirectTo: 'profile', pathMatch: 'full' },
     ],
   },

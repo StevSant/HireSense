@@ -35,7 +35,11 @@ class InboxProcessingService:
         self._notifier = notifier
 
     async def run(self) -> int:
-        emails = await asyncio.to_thread(self._reader.fetch_unseen)
+        try:
+            emails = await asyncio.to_thread(self._reader.fetch_unseen)
+        except Exception:  # noqa: BLE001 - inbox read is best-effort; a scan must never raise
+            logger.exception("inbox: fetch_unseen failed")
+            return 0
         new_count = 0
         for email in emails:
             signal = await self._process(email)

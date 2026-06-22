@@ -33,6 +33,10 @@ class _Repo:
         return any(s.message_id == message_id for s in self.signals)
 
 
+class _FailingReader:
+    def fetch_unseen(self): raise OSError("connection refused")
+
+
 class _Classifier:
     def __init__(self, result): self._result = result
     async def classify(self, email): return self._result
@@ -97,6 +101,15 @@ async def test_run_notifies_when_new_signals():
                                          company="Acme", role="Dev", confidence=0.9)
     await _service(_Reader([_email()]), _Repo(), classification, notifier=notifier).run()
     assert notifier.calls == [1]
+
+
+@pytest.mark.asyncio
+async def test_run_returns_zero_when_reader_raises():
+    classification = EmailClassification(job_related=True, kind=EmailSignalKind.REJECTION,
+                                         company="Acme", role="Dev", confidence=0.9)
+    svc = _service(_FailingReader(), _Repo(), classification)
+    count = await svc.run()
+    assert count == 0
 
 
 @pytest.mark.asyncio

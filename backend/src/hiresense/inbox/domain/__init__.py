@@ -1,3 +1,4 @@
+from hiresense.inbox.domain.application_matcher import ApplicationMatcher
 from hiresense.inbox.domain.classification import EmailClassification
 from hiresense.inbox.domain.detected_signal import DetectedSignal
 from hiresense.inbox.domain.email_classifier import EmailClassifier
@@ -6,6 +7,7 @@ from hiresense.inbox.domain.inbound_email import InboundEmail
 from hiresense.inbox.domain.signal_state import SignalState
 
 __all__ = [
+    "ApplicationMatcher",
     "DetectedSignal",
     "EmailClassification",
     "EmailClassifier",

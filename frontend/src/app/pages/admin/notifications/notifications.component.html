@@ -1,0 +1,18 @@
+<section class="notifications">
+  <h1>Notifications</h1>
+  @if (status(); as s) {
+    <p>
+      Status:
+      <strong>{{ s.enabled ? 'Enabled' : 'Disabled (set NOTIFICATION_EMAIL)' }}</strong>
+    </p>
+    @if (s.recipient_masked) {
+      <p>Recipient: <code>{{ s.recipient_masked }}</code></p>
+    }
+  }
+  <button type="button" (click)="sendTest()" [disabled]="busy() || !(status()?.enabled)">
+    Send test email
+  </button>
+  @if (testResult()) {
+    <p class="result">{{ testResult() }}</p>
+  }
+</section>

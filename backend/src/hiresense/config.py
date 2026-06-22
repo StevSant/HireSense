@@ -438,6 +438,22 @@ class Settings(BaseSettings):
     # From address for notification email. Falls back to smtp_username when blank.
     notification_from_email: str = ""
 
+    # --- Inbox scanning (Autopilot Phase 3: inbound email -> tracking signals) ---
+    # IMAP inbox to scan for recruiter emails. BLANK imap_host disables scanning
+    # (the manual POST /tracking/ingest-email endpoint still works). Use an
+    # app-specific password, not the account password.
+    imap_host: str = ""
+    imap_port: int = 993
+    imap_username: str = ""
+    imap_password: str = ""
+    imap_folder: str = "INBOX"
+    imap_use_ssl: bool = True
+    # Cron cadence for the scheduler 'inbox_scan' job (read by the scheduler).
+    inbox_scan_schedule: str = "0 */2 * * *"
+    # Classifications below this confidence get no proposed status (cannot be
+    # one-click-applied; still listed for manual handling).
+    inbox_signal_match_min_confidence: float = 0.5
+
     # --- Scheduler (in-app cadence driver; Autopilot Phase 1) ---
     # Master switch. MUST be true on exactly one process (the app self-drives
     # ingestion/revalidation/autohunt/outreach-followups on the cron strings

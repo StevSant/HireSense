@@ -5,7 +5,6 @@ import pytest
 
 from hiresense.inbox.domain import (
     ApplicationMatcher,
-    DetectedSignal,
     EmailClassification,
     EmailSignalKind,
     InboundEmail,
@@ -44,7 +43,9 @@ class _Classifier:
 
 class _Notifier:
     def __init__(self): self.calls = []
-    async def notify_inbox_signals(self, count): self.calls.append(count); return True
+    async def notify_inbox_signals(self, count):
+        self.calls.append(count)
+        return True
 
 
 def _email(mid="m1"):

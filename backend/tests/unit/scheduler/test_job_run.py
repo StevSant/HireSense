@@ -18,3 +18,5 @@ def test_job_run_roundtrips_status_and_duration():
     assert run.status is JobStatus.SUCCESS
     assert run.items_affected == 5
     assert run.duration_seconds == 2.0
+    assert run.started_at == started
+    assert run.finished_at == finished

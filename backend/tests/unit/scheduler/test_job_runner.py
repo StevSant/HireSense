@@ -84,6 +84,7 @@ async def test_disabled_job_is_skipped_without_running():
     runner = _runner(_defn(run), toggle_repo=_ToggleRepo(enabled=False))
     result = await runner.run("job")
     assert result.status is JobStatus.SKIPPED
+    assert result.duration_seconds == 0.0
     assert ran["called"] is False
 
 
@@ -104,3 +105,14 @@ async def test_unexpected_error_is_recorded_as_failure_and_swallowed():
     result = await _runner(_defn(run)).run("job")
     assert result.status is JobStatus.FAILURE
     assert "boom" in (result.detail or "")
+
+
+@pytest.mark.asyncio
+async def test_unknown_job_name_records_failure_not_raises():
+    async def run():
+        return []
+
+    runner = _runner(_defn(run))
+    result = await runner.run("does_not_exist")
+    assert result.status is JobStatus.FAILURE
+    assert "does_not_exist" in (result.detail or "")

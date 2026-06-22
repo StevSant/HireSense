@@ -23,6 +23,7 @@ from hiresense.bootstrap import (
     build_interview,
     build_matching,
     build_network,
+    build_notifications,
     build_optimization,
     build_outreach,
     build_portfolio,
@@ -44,6 +45,7 @@ from hiresense.matching.api import router as matching_router
 from hiresense.optimization.api import router as optimization_router
 from hiresense.outreach.api import router as outreach_router
 from hiresense.network.api import router as network_router
+from hiresense.notifications.api import router as notifications_router
 from hiresense.portfolio.api import router as portfolio_router
 from hiresense.preference.api import router as preference_router
 from hiresense.profile.api import router as profile_router
@@ -244,6 +246,11 @@ def create_app() -> FastAPI:
     app.state.outreach = outreach.provider
     app.include_router(outreach_router)
 
+    # --- Notifications (Autopilot Phase 2: digest + failure-alert email) ---
+    notifications = build_notifications(settings)
+    app.state.notifications = notifications.provider
+    app.include_router(notifications_router)
+
     # --- Scheduler (Autopilot Phase 1: self-drive the recurring pipeline) ---
     scheduler_build = build_scheduler(
         settings=settings,
@@ -252,6 +259,7 @@ def create_app() -> FastAPI:
         revalidation_service=ingestion.revalidation_service,
         autohunt_service=autohunt.service,
         outreach_service=outreach.provider.get_outreach_service(),
+        notification_service=notifications.service,
     )
     app.state.scheduler = scheduler_build.provider
     app.state.scheduler_runner = scheduler_build.runner

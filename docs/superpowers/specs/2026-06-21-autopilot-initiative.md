@@ -46,4 +46,5 @@ Each phase ships independently and de-risks the next.
 ## Links
 
 - Phase 1 design: [`2026-06-21-scheduler-foundation-design.md`](./2026-06-21-scheduler-foundation-design.md) — **shipped to main 2026-06-21**
-- Phase 2 design: [`2026-06-21-notifications-delivery-design.md`](./2026-06-21-notifications-delivery-design.md)
+- Phase 2 design: [`2026-06-21-notifications-delivery-design.md`](./2026-06-21-notifications-delivery-design.md) — **shipped to main 2026-06-21**
+- Phase 3 design: [`2026-06-21-inbound-email-tracking-design.md`](./2026-06-21-inbound-email-tracking-design.md)

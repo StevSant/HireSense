@@ -35,6 +35,7 @@ from hiresense.ingestion.domain import (
     PortalScanner,
     load_portals_config,
 )
+from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
 from hiresense.ingestion.domain.normalizers import (
     AdzunaNormalizer,
@@ -68,6 +69,7 @@ class IngestionBuild:
     orchestrator: IngestionOrchestrator
     boards_jobs_repo: Any
     pre_ranker: Any
+    revalidation_service: Any
 
 
 def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, preference_query: Any = None) -> IngestionBuild:
@@ -184,13 +186,26 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
     # URL-probe revalidation sweep for the boards bucket. Snapshot sources
     # (portals) get disappearance-based closure during ingestion, so the sweep
     # only targets feed/search sources whose listings stay live after closing.
-    # hn_hiring is excluded (frozen HN comment URLs never 404 / carry markers);
-    # csv has no live URL to probe.
+    # hn_hiring is excluded: HN "Who's Hiring" comment permalinks have no
+    # reliable per-URL closure signal — a live comment and HN's rate-limit page
+    # BOTH render "Sorry." (the rate-limit one as HTTP 429), so a marker would
+    # either be throttled into UNKNOWN or false-close a live item whose page
+    # text/replies contain "sorry". HN staleness is age-based (max_age_days)
+    # instead. csv has no live URL to probe.
     revalidation_sources = [
         name
         for name in s.enabled_job_sources
         if name not in ("hn_hiring", "csv")
     ]
+    # LinkedIn closure lives on its guest API, not the public /jobs/view URL the
+    # user clicks (that returns a login wall server-side). Probe the same guest
+    # endpoint the adapter scrapes; it returns 200 + "No longer accepting
+    # applications" (a global marker) when closed, or 404 when removed.
+    def _linkedin_probe_url(job: NormalizedJob) -> str:
+        if job.source_id:
+            return f"{s.linkedin_jobs_url}/jobPosting/{job.source_id}"
+        return job.url
+
     revalidation_service = JobRevalidationService(
         http_client=http_client,
         repository=boards_jobs_repo,
@@ -200,6 +215,7 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
         batch=s.job_revalidation_batch,
         concurrency=s.job_revalidation_concurrency,
         delay=s.job_revalidation_delay,
+        probe_url_builders={"linkedin": _linkedin_probe_url},
     )
 
     # Resolve the portals config relative to the hiresense package root (not
@@ -321,4 +337,5 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
         orchestrator=ingestion_orchestrator,
         boards_jobs_repo=boards_jobs_repo,
         pre_ranker=pre_ranker,
+        revalidation_service=revalidation_service,
     )

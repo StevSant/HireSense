@@ -1,5 +1,5 @@
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from httpx import ASGITransport, AsyncClient
 
 from hiresense.identity.api.dependencies import require_admin, require_auth
@@ -16,11 +16,18 @@ class _Sender:
         self.sent.append(message)
 
 
-def _build_app(to_email: str):
+def _deny_admin():
+    raise HTTPException(status_code=403, detail="admin required")
+
+
+def _build_app(to_email: str, *, admin_ok: bool = True):
     service = NotificationService(sender=_Sender(), to_email=to_email)
     app = FastAPI()
     app.dependency_overrides[require_auth] = lambda: "u"
-    app.dependency_overrides[require_admin] = lambda: {"role": "admin"}
+    if admin_ok:
+        app.dependency_overrides[require_admin] = lambda: {"role": "admin"}
+    else:
+        app.dependency_overrides[require_admin] = _deny_admin
     app.dependency_overrides[get_notification_service] = lambda: service
     app.include_router(notifications_router)
     return app
@@ -52,3 +59,11 @@ async def test_test_endpoint_503_when_disabled():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as client:
         resp = await client.post("/notifications/test")
     assert resp.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_test_endpoint_403_for_non_admin():
+    app = _build_app("alice@example.com", admin_ok=False)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as client:
+        resp = await client.post("/notifications/test")
+    assert resp.status_code == 403

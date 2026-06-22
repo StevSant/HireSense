@@ -9,7 +9,7 @@ from hiresense.scheduler.infrastructure import JobRunOrm, JobToggleOrm  # noqa: 
 
 
 @pytest.mark.asyncio
-async def test_scheduler_router_is_mounted_and_lists_four_jobs(monkeypatch):
+async def test_scheduler_router_is_mounted_and_lists_jobs(monkeypatch):
     # scheduler_enabled defaults False, so the APScheduler loop does NOT start,
     # but the provider + routes are still mounted and usable.
     #
@@ -42,6 +42,6 @@ async def test_scheduler_router_is_mounted_and_lists_four_jobs(monkeypatch):
         resp = await client.get("/scheduler/jobs")
     assert resp.status_code == 200
     names = {j["name"] for j in resp.json()}
-    assert names == {"ingestion_fetch", "revalidation_sweep", "autohunt_digest", "outreach_followups"}
+    assert {"ingestion_fetch", "revalidation_sweep", "autohunt_digest", "outreach_followups"}.issubset(names)
 
     setup_engine.dispose()

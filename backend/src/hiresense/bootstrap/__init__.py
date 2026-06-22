@@ -6,6 +6,7 @@ module depends on). Adding a module means adding one builder file here and one
 call in ``hiresense.main.create_app`` — no edits to unrelated wiring.
 """
 from hiresense.bootstrap.admin import AdminBuild, build_admin
+from hiresense.bootstrap.inbox import InboxBuild, build_inbox
 from hiresense.bootstrap.scheduler import SchedulerBuild, build_scheduler
 from hiresense.bootstrap.analytics import AnalyticsBuild, build_analytics
 from hiresense.bootstrap.applications import build_applications
@@ -32,6 +33,7 @@ __all__ = [
     "AdminBuild",
     "AnalyticsBuild",
     "AutoHuntBuild",
+    "InboxBuild",
     "IngestionBuild",
     "SchedulerBuild",
     "InterviewBuild",
@@ -48,6 +50,7 @@ __all__ = [
     "TrackingBuild",
     "build_admin",
     "build_analytics",
+    "build_inbox",
     "build_applications",
     "build_autohunt",
     "build_cover_letter_templates",

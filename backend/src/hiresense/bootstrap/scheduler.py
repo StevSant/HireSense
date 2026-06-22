@@ -52,6 +52,7 @@ def build_scheduler(
     autohunt_service: Any,
     outreach_service: Any,
     notification_service: Any = None,
+    inbox_processing_service: Any = None,
 ) -> SchedulerBuild:
     definitions = [
         JobDefinition(
@@ -84,6 +85,16 @@ def build_scheduler(
             count_items=len,
         ),
     ]
+    if inbox_processing_service is not None:
+        definitions.append(
+            JobDefinition(
+                name="inbox_scan",
+                run=inbox_processing_service.run,
+                cron=settings.inbox_scan_schedule,
+                interval_hours=None,
+                count_items=lambda n: n if isinstance(n, int) else None,
+            )
+        )
     run_repo = JobRunRepositoryImpl(
         session_factory=sync_session_factory,
         retention_days=settings.scheduler_run_retention_days,

@@ -37,10 +37,20 @@ class JobRunner:
         self._clock = clock or _utcnow
 
     async def run(self, name: str) -> JobRun:
-        defn = self._defs[name]
+        defn = self._defs.get(name)
+        if defn is None:
+            # Never raise on an unknown job name: record a FAILURE instead so
+            # the scheduler/run-now endpoint stay alive.
+            now = self._clock()
+            return self._record(
+                name, now, now, JobStatus.FAILURE, f"unknown job: {name}", None
+            )
+
         started = self._clock()
 
         if not self._toggle_repo.is_enabled(name, default=defn.default_enabled):
+            # finished_at == started_at is intentional: the job never ran, so
+            # the recorded duration is 0.0.
             return self._record(name, started, started, JobStatus.SKIPPED, "disabled", None)
 
         try:

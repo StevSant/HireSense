@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 
 import httpx
@@ -28,6 +29,7 @@ from hiresense.bootstrap import (
     build_preference,
     build_profile,
     build_research,
+    build_scheduler,
     build_shared_infra,
     build_tracking,
 )
@@ -46,6 +48,7 @@ from hiresense.portfolio.api import router as portfolio_router
 from hiresense.preference.api import router as preference_router
 from hiresense.profile.api import router as profile_router
 from hiresense.research.api import router as research_router
+from hiresense.scheduler.api import router as scheduler_router
 from hiresense.tracking.api import router as tracking_router
 
 
@@ -55,7 +58,21 @@ def create_app() -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        # Start the in-app scheduler only when explicitly enabled (exactly one
+        # process should set SCHEDULER_ENABLED). A startup failure is logged but
+        # must not stop the app from serving requests.
+        runner = getattr(app.state, "scheduler_runner", None)
+        if settings.scheduler_enabled and runner is not None:
+            try:
+                runner.start()
+            except Exception:  # noqa: BLE001 - scheduler must not block boot
+                logging.getLogger(__name__).exception("Scheduler failed to start")
         yield
+        if settings.scheduler_enabled and runner is not None:
+            try:
+                runner.shutdown()
+            except Exception:  # noqa: BLE001 - teardown must not raise
+                pass
         # Drain in-flight event handlers before tearing infrastructure down so
         # events published late in a request aren't silently dropped.
         event_bus = getattr(app.state, "event_bus", None)
@@ -226,6 +243,19 @@ def create_app() -> FastAPI:
     )
     app.state.outreach = outreach.provider
     app.include_router(outreach_router)
+
+    # --- Scheduler (Autopilot Phase 1: self-drive the recurring pipeline) ---
+    scheduler_build = build_scheduler(
+        settings=settings,
+        sync_session_factory=infra.sync_session_factory,
+        ingestion_orchestrator=ingestion.orchestrator,
+        revalidation_service=ingestion.revalidation_service,
+        autohunt_service=autohunt.service,
+        outreach_service=outreach.provider.get_outreach_service(),
+    )
+    app.state.scheduler = scheduler_build.provider
+    app.state.scheduler_runner = scheduler_build.runner
+    app.include_router(scheduler_router)
 
     # --- Health check ---
     @app.get("/health")

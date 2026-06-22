@@ -1,5 +1,6 @@
 import pytest
 
+from hiresense.ingestion.domain import IngestionCooldownError
 from hiresense.scheduler.domain import JobDefinition, JobRunner, JobStatus
 
 
@@ -83,4 +84,26 @@ async def test_success_does_not_notify():
     notifier = _Notifier()
     result = await _runner(_defn(run), notifier).run("job")
     assert result.status is JobStatus.SUCCESS
+    assert notifier.calls == []
+
+
+@pytest.mark.asyncio
+async def test_cooldown_skip_does_not_notify():
+    async def run():
+        raise IngestionCooldownError(retry_after=60)
+
+    notifier = _Notifier()
+    result = await _runner(_defn(run), notifier).run("job")
+    assert result.status is JobStatus.SKIPPED
+    assert notifier.calls == []
+
+
+@pytest.mark.asyncio
+async def test_unknown_job_does_not_notify():
+    async def run():
+        return [1]
+
+    notifier = _Notifier()
+    result = await _runner(_defn(run), notifier).run("does_not_exist")
+    assert result.status is JobStatus.FAILURE
     assert notifier.calls == []

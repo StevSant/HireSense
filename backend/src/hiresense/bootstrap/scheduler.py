@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any
 
@@ -10,6 +11,8 @@ from hiresense.scheduler.infrastructure import (
     JobRunRepositoryImpl,
     JobToggleRepositoryImpl,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -29,7 +32,12 @@ def _autohunt_job(autohunt_service: Any, notification_service: Any):
     async def _run():
         digest = await autohunt_service.run()
         if notification_service is not None and getattr(digest, "job_count", 0) > 0:
-            await notification_service.notify_new_matches(digest)
+            # Best-effort: a notifier error must never flip a SUCCESSFUL autohunt
+            # into a recorded FAILURE (which would fire a false failure-alert).
+            try:
+                await notification_service.notify_new_matches(digest)
+            except Exception:  # noqa: BLE001 - digest notification is best-effort
+                logger.exception("Autohunt digest notification failed")
         return digest
 
     return _run

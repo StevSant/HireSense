@@ -8,7 +8,7 @@ from hiresense.ingestion.domain import IngestionCooldownError
 from hiresense.scheduler.domain.job_definition import JobDefinition
 from hiresense.scheduler.domain.job_run import JobRun
 from hiresense.scheduler.domain.job_status import JobStatus
-from hiresense.scheduler.domain.ports import JobRunRepository, JobToggleRepository
+from hiresense.scheduler.domain.ports import JobFailureNotifier, JobRunRepository, JobToggleRepository
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +30,13 @@ class JobRunner:
         run_repo: JobRunRepository,
         toggle_repo: JobToggleRepository,
         clock: Callable[[], datetime] | None = None,
+        failure_notifier: JobFailureNotifier | None = None,
     ) -> None:
         self._defs = {d.name: d for d in definitions}
         self._run_repo = run_repo
         self._toggle_repo = toggle_repo
         self._clock = clock or _utcnow
+        self._failure_notifier = failure_notifier
 
     async def run(self, name: str) -> JobRun:
         defn = self._defs.get(name)
@@ -59,11 +61,21 @@ class JobRunner:
             return self._record(name, started, self._clock(), JobStatus.SKIPPED, str(exc), None)
         except Exception as exc:  # noqa: BLE001 - scheduler must never crash
             logger.exception("Scheduled job %r failed", name)
-            return self._record(name, started, self._clock(), JobStatus.FAILURE, str(exc), None)
+            run = self._record(name, started, self._clock(), JobStatus.FAILURE, str(exc), None)
+            await self._notify_failure(name, str(exc))
+            return run
 
         finished = self._clock()
         count = self._count(defn, result)
         return self._record(name, started, finished, JobStatus.SUCCESS, None, count)
+
+    async def _notify_failure(self, name: str, detail: str) -> None:
+        if self._failure_notifier is None:
+            return
+        try:
+            await self._failure_notifier.notify_job_failure(name, detail)
+        except Exception:  # noqa: BLE001 - notification is best-effort
+            logger.exception("Failure notification for job %r failed", name)
 
     def _count(self, defn: JobDefinition, result: Any) -> int | None:
         try:

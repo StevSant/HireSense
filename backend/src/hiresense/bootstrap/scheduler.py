@@ -22,6 +22,19 @@ def _digest_count(result: Any) -> int | None:
     return getattr(result, "job_count", None)
 
 
+def _autohunt_job(autohunt_service: Any, notification_service: Any):
+    """The autohunt job: run, and on new matches (job_count > 0) fire a digest
+    notification. Returns the Digest unchanged so count_items still works."""
+
+    async def _run():
+        digest = await autohunt_service.run()
+        if notification_service is not None and getattr(digest, "job_count", 0) > 0:
+            await notification_service.notify_new_matches(digest)
+        return digest
+
+    return _run
+
+
 def build_scheduler(
     *,
     settings: Any,
@@ -30,6 +43,7 @@ def build_scheduler(
     revalidation_service: Any,
     autohunt_service: Any,
     outreach_service: Any,
+    notification_service: Any = None,
 ) -> SchedulerBuild:
     definitions = [
         JobDefinition(
@@ -48,7 +62,7 @@ def build_scheduler(
         ),
         JobDefinition(
             name="autohunt_digest",
-            run=autohunt_service.run,
+            run=_autohunt_job(autohunt_service, notification_service),
             cron=settings.autohunt_schedule,
             interval_hours=None,
             count_items=_digest_count,
@@ -67,7 +81,12 @@ def build_scheduler(
         retention_days=settings.scheduler_run_retention_days,
     )
     toggle_repo = JobToggleRepositoryImpl(session_factory=sync_session_factory)
-    job_runner = JobRunner(definitions=definitions, run_repo=run_repo, toggle_repo=toggle_repo)
+    job_runner = JobRunner(
+        definitions=definitions,
+        run_repo=run_repo,
+        toggle_repo=toggle_repo,
+        failure_notifier=notification_service,
+    )
     runner = ApschedulerRunner(job_runner=job_runner, definitions=definitions)
     provider = SchedulerProvider(
         definitions=definitions, runner=runner, run_repo=run_repo, toggle_repo=toggle_repo

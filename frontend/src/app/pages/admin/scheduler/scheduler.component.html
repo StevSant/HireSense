@@ -1,0 +1,33 @@
+<section class="scheduler">
+  <h1>Scheduler</h1>
+  <table>
+    <thead>
+      <tr><th>Job</th><th>Cadence</th><th>Enabled</th><th>Last run</th><th>Next run</th><th></th></tr>
+    </thead>
+    <tbody>
+      @for (job of jobs(); track job.name) {
+        <tr>
+          <td>{{ job.name }}</td>
+          <td><code>{{ job.cron }}</code></td>
+          <td>
+            <button type="button" (click)="toggle(job)" [disabled]="busy() === job.name">
+              {{ job.enabled ? 'On' : 'Off' }}
+            </button>
+          </td>
+          <td>
+            @if (job.last_run) {
+              <span class="status status--{{ job.last_run.status }}">{{ job.last_run.status }}</span>
+              <small>{{ job.last_run.finished_at | date: 'short' }}</small>
+            } @else {
+              <small>—</small>
+            }
+          </td>
+          <td>{{ job.next_run_at ? (job.next_run_at | date: 'short') : '—' }}</td>
+          <td>
+            <button type="button" (click)="runNow(job)" [disabled]="busy() === job.name">Run now</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</section>

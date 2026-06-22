@@ -430,6 +430,14 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = True
     outreach_from_email: str = ""
 
+    # --- Notifications (Autopilot Phase 2: digest + failure-alert email) ---
+    # Recipient for scheduler digest/failure emails. BLANK disables notifications
+    # (sends become no-ops; POST /notifications/test returns 503). Reuses the
+    # smtp_* credentials above.
+    notification_email: str = ""
+    # From address for notification email. Falls back to smtp_username when blank.
+    notification_from_email: str = ""
+
     # --- Scheduler (in-app cadence driver; Autopilot Phase 1) ---
     # Master switch. MUST be true on exactly one process (the app self-drives
     # ingestion/revalidation/autohunt/outreach-followups on the cron strings

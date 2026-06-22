@@ -430,6 +430,15 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = True
     outreach_from_email: str = ""
 
+    # --- Scheduler (in-app cadence driver; Autopilot Phase 1) ---
+    # Master switch. MUST be true on exactly one process (the app self-drives
+    # ingestion/revalidation/autohunt/outreach-followups on the cron strings
+    # already defined above). Default OFF so `uv run app --reload` in dev does
+    # not double-fire; docker-compose sets it true for the `app` service.
+    scheduler_enabled: bool = False
+    # Prune scheduler_job_runs rows older than this (inline on each insert).
+    scheduler_run_retention_days: int = 30
+
     # Match scoring (LLM model routing). The job list shows an LLM-gated quick
     # score (cheap model, batched per visible page); the detail panel can run a
     # deeper single-job analysis (advanced model). These are the out-of-the-box

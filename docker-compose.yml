@@ -48,6 +48,8 @@ services:
       DATABASE_URL: postgresql+asyncpg://hiresense:hiresense@db:5432/hiresense
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4317
       LOG_FORMAT: json
+      # Self-drive the recurring pipeline in the containerized deployment.
+      SCHEDULER_ENABLED: "true"
     depends_on:
       db:
         condition: service_healthy

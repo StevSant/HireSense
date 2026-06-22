@@ -68,6 +68,8 @@ async def confirm_signal(
         signal.matched_application_id, ApplicationStatus(signal.proposed_status)
     )
     updated = repo.set_state(signal_id, SignalState.APPLIED)
+    if updated is None:  # signal vanished between get and set_state
+        raise HTTPException(status_code=404, detail="Signal not found")
     return updated
 
 

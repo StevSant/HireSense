@@ -7,6 +7,7 @@ from typing import Any
 from hiresense.kernel import EmailMessage
 from hiresense.notifications.domain.digest_email import render_digest_email
 from hiresense.notifications.domain.inbox_signals_email import render_inbox_signals_email
+from hiresense.notifications.domain.pipeline_drafts_email import render_pipeline_drafts_email
 from hiresense.notifications.domain.job_failure_email import render_job_failure_email
 from hiresense.ports import EmailUnavailableError
 
@@ -47,6 +48,10 @@ class NotificationService:
 
     async def notify_inbox_signals(self, count: int) -> bool:
         subject, body = render_inbox_signals_email(count)
+        return await self._safe_send(subject, body)
+
+    async def notify_pipeline_drafts(self, count: int) -> bool:
+        subject, body = render_pipeline_drafts_email(count)
         return await self._safe_send(subject, body)
 
     async def send_test(self) -> None:

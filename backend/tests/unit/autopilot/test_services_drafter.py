@@ -41,10 +41,13 @@ class _ArtifactSvc:
 
 
 class _ApplySvc:
+    # Mirrors the real ApplyService default so passing tone=None would be caught.
     def __init__(self):
         self.calls = []
-    async def generate_cover_letter(self, application_id, cv_language="", tone=None):
+        self.received_tone = "UNSET"
+    async def generate_cover_letter(self, application_id, cv_language="", tone="professional"):
         self.calls.append("cover")
+        self.received_tone = tone
 
 
 def _drafter(app_svc, artifact_svc, apply_svc):
@@ -63,6 +66,9 @@ async def test_full_success_is_drafted():
     assert app_id is not None
     assert art.calls == ["match", "optimize"]
     assert apply.calls == ["cover"]
+    # The drafter must NOT pass tone=None (it would override the service default
+    # and fail the non-nullable cover-letter tone field on a real DB).
+    assert apply.received_tone == "professional"
 
 
 @pytest.mark.asyncio

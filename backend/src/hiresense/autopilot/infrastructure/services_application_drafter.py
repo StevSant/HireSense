@@ -44,8 +44,10 @@ class ServicesApplicationDrafter:
             await self._artifacts.generate_optimization(
                 application_id, cv_language=self._cv_language, match_id=match.id
             )
+            # Let ApplyService apply its own tone default ("professional");
+            # passing tone=None would override it and fail the non-nullable field.
             await self._apply.generate_cover_letter(
-                application_id, cv_language=self._cv_language, tone=None
+                application_id, cv_language=self._cv_language
             )
         except Exception as exc:  # noqa: BLE001
             logger.exception("autopilot: artifact generation failed for job %r", job_id)

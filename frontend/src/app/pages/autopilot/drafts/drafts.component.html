@@ -1,0 +1,18 @@
+<section class="drafts">
+  <h1>Autopilot drafts</h1>
+  @if (drafts().length === 0) {
+    <p>No drafts yet.</p>
+  }
+  @for (d of drafts(); track d.id) {
+    <div class="draft">
+      <div class="meta">
+        <strong>{{ d.job_title || d.job_id }}</strong>
+        <small>{{ d.company }}</small>
+      </div>
+      <span class="status status--{{ d.status }}">{{ d.status }}</span>
+      @if (d.application_id) {
+        <a [routerLink]="['/dashboard/applications', d.application_id]">Review</a>
+      }
+    </div>
+  }
+</section>

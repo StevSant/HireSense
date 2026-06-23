@@ -25,6 +25,16 @@ export class IngestionService {
     return this.http.post<FetchResponse>(`${environment.apiUrl}/ingestion/fetch`, {});
   }
 
+  // "Check closed": probe the given (visible) jobs synchronously for an
+  // immediate result, while the server also kicks off a full-corpus background
+  // sweep for the rest. `closed_ids` are the jobs closed in the sync pass.
+  revalidate(jobIds: string[]): Observable<{ started: boolean; closed: number; closed_ids: string[] }> {
+    return this.http.post<{ started: boolean; closed: number; closed_ids: string[] }>(
+      `${environment.apiUrl}/ingestion/revalidate`,
+      { job_ids: jobIds },
+    );
+  }
+
   queryJobs(
     tab: 'boards' | 'portals',
     page: number,

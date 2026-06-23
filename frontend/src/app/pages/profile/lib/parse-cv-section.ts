@@ -36,7 +36,14 @@ export function parseCvSection(content: string): CvSectionBlock[] {
     const trimmedEntry = entry.trim();
     if (!trimmedEntry) continue;
     const paragraphs = trimmedEntry.split(BLOCK_SEPARATOR);
-    let positionInEntry = 0;
+    // The first short single-line block of each sub-entry is its bold heading;
+    // a sub-entry begins at the entry start AND again right after a bullet list
+    // (the previous project's bullets). Relying on the list boundary — not just
+    // the blank-line entry separator — keeps every project title bold even when
+    // a CV translation collapses the spacing between projects, which would
+    // otherwise merge them into one entry and render all but the first title as
+    // an italic role line.
+    let expectHeading = true;
 
     for (const para of paragraphs) {
       const trimmed = para.trim();
@@ -49,14 +56,14 @@ export function parseCvSection(content: string): CvSectionBlock[] {
           kind: 'list',
           items: lines.map((l) => normaliseDashes(l.replace(BULLET_PATTERN, ''))),
         });
-        positionInEntry++;
+        expectHeading = true; // bullets end a project — the next line is a new heading
         continue;
       }
 
       const definitions = lines.map(parseDefinition);
       if (definitions.every((d): d is { term: string; description: string } => d !== null)) {
         blocks.push({ kind: 'definitions', entries: definitions });
-        positionInEntry++;
+        expectHeading = false;
         continue;
       }
 
@@ -64,17 +71,17 @@ export function parseCvSection(content: string): CvSectionBlock[] {
         const single = normaliseDashes(lines[0]);
         if (single.length > PARAGRAPH_MIN_LENGTH) {
           blocks.push({ kind: 'paragraph', text: single });
-        } else if (positionInEntry === 0) {
+        } else if (expectHeading) {
           blocks.push({ kind: 'heading', text: single });
         } else {
           blocks.push({ kind: 'role', text: single });
         }
-        positionInEntry++;
+        expectHeading = false;
         continue;
       }
 
       blocks.push({ kind: 'paragraph', text: lines.map(normaliseDashes).join(' ') });
-      positionInEntry++;
+      expectHeading = false;
     }
   }
 

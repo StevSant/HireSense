@@ -162,6 +162,42 @@ async def test_fetch_jobs_endpoint() -> None:
 
 
 @pytest.mark.asyncio
+async def test_fetch_jobs_triggers_revalidation_sweep_in_background() -> None:
+    """A user-initiated fetch also kicks off the URL-probe sweep (after the
+    response is sent) so dead listings get closed without the external cron."""
+    from hiresense.ingestion.api.dependencies import get_revalidation_service
+
+    class FakeRevalidation:
+        def __init__(self) -> None:
+            self.swept = 0
+
+        async def sweep(self) -> list[str]:
+            self.swept += 1
+            return []
+
+    app, _, _ = _make_app()
+    reval = FakeRevalidation()
+    app.dependency_overrides[get_revalidation_service] = lambda: reval
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/ingestion/fetch")
+
+    assert resp.status_code == 200
+    # BackgroundTasks run after the response is delivered (within the ASGI call).
+    assert reval.swept == 1
+
+
+@pytest.mark.asyncio
+async def test_fetch_jobs_without_revalidation_service_still_succeeds() -> None:
+    # Bare app: get_revalidation_service resolves to None — fetch must not error.
+    app, fake_orch, _ = _make_app()
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/ingestion/fetch")
+    assert resp.status_code == 200
+    assert fake_orch.called
+
+
+@pytest.mark.asyncio
 async def test_list_jobs_strict_location_filters_non_matching() -> None:
     chile_job = NormalizedJob(
         id="job-chile",
@@ -181,7 +217,9 @@ async def test_list_jobs_strict_location_filters_non_matching() -> None:
         company="Co",
         description="Job",
         skills=[],
-        location="USA only",
+        # Explicit parenthetical geo-lock — the only thing the "jobs I can apply
+        # to" filter hides for free-text sources now (a bare "USA only" passes).
+        location="Remote (USA)",
         source="remotive",
         source_type="api",
         language="en",
@@ -304,11 +342,16 @@ async def test_revalidate_endpoint_returns_closed_count() -> None:
     from hiresense.ingestion.api.dependencies import get_revalidation_service
 
     class FakeRevalidation:
+        def __init__(self) -> None:
+            self.swept = 0
+
         async def sweep(self):
+            self.swept += 1
             return ["x", "y", "z"]
 
     app = FastAPI()
-    app.dependency_overrides[get_revalidation_service] = lambda: FakeRevalidation()
+    reval = FakeRevalidation()
+    app.dependency_overrides[get_revalidation_service] = lambda: reval
     app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
 
@@ -316,7 +359,71 @@ async def test_revalidate_endpoint_returns_closed_count() -> None:
         resp = await client.post("/ingestion/revalidate")
 
     assert resp.status_code == 200
-    assert resp.json() == {"closed": 3}
+    # Synchronous (cron) mode: waits and reports the closed ids.
+    assert resp.json() == {"started": True, "closed": 3, "closed_ids": ["x", "y", "z"]}
+    assert reval.swept == 1
+
+
+@pytest.mark.asyncio
+async def test_revalidate_endpoint_background_schedules_sweep() -> None:
+    from hiresense.ingestion.api.dependencies import get_revalidation_service
+
+    class FakeRevalidation:
+        def __init__(self) -> None:
+            self.swept = 0
+
+        async def sweep(self):
+            self.swept += 1
+            return ["x", "y", "z"]
+
+    app = FastAPI()
+    reval = FakeRevalidation()
+    app.dependency_overrides[get_revalidation_service] = lambda: reval
+    app.dependency_overrides[require_auth] = lambda: "test-user"
+    app.include_router(router)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/ingestion/revalidate?background=true")
+
+    assert resp.status_code == 200
+    # Background mode returns immediately with no counts; the sweep still runs
+    # (BackgroundTasks execute after the response within the ASGI call).
+    assert resp.json() == {"started": True, "closed": 0, "closed_ids": []}
+    assert reval.swept == 1
+
+
+@pytest.mark.asyncio
+async def test_revalidate_endpoint_with_job_ids_probes_now_and_schedules_sweep() -> None:
+    from hiresense.ingestion.api.dependencies import get_revalidation_service
+
+    class FakeRevalidation:
+        def __init__(self) -> None:
+            self.swept = 0
+            self.probed_ids: list[str] | None = None
+
+        async def revalidate_ids(self, job_ids):
+            self.probed_ids = list(job_ids)
+            return ["a"]  # one of the visible jobs was closed
+
+        async def sweep(self):
+            self.swept += 1
+            return []
+
+    app = FastAPI()
+    reval = FakeRevalidation()
+    app.dependency_overrides[get_revalidation_service] = lambda: reval
+    app.dependency_overrides[require_auth] = lambda: "test-user"
+    app.include_router(router)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/ingestion/revalidate", json={"job_ids": ["a", "b", "c"]})
+
+    assert resp.status_code == 200
+    # Immediate result for the visible jobs...
+    assert resp.json() == {"started": True, "closed": 1, "closed_ids": ["a"]}
+    assert reval.probed_ids == ["a", "b", "c"]
+    # ...plus a full background sweep for everything else.
+    assert reval.swept == 1
 
 
 @pytest.mark.asyncio

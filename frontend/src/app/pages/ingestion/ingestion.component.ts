@@ -15,8 +15,8 @@ import { JobFiltersComponent } from './components/job-filters/job-filters.compon
 import { JobDetailPanelComponent } from './components/job-detail-panel/job-detail-panel.component';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
+import { of, Subject, timer } from 'rxjs';
+import { catchError, debounceTime, map, switchMap, take } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { FeedbackControlsComponent } from './components/feedback-controls/feedback-controls.component';
 import { PreferenceTuningComponent } from './components/preference-tuning/preference-tuning.component';
@@ -75,6 +75,11 @@ export class IngestionComponent implements OnInit {
   // sources via "Fetch Jobs". A plain page load reads already-stored jobs and
   // must not imply we're hitting the job boards.
   fetching = signal(false);
+  // True only while the "Check closed" trigger request is in flight (the sweep
+  // itself then runs in the background on the server).
+  revalidating = signal(false);
+  // Info banner shown while a background closure sweep is running.
+  revalidateNotice = signal('');
   error = signal('');
 
   // Per-job tracking feedback: the id of the job currently being tracked, so
@@ -102,6 +107,14 @@ export class IngestionComponent implements OnInit {
   // Coalesces rapid feedback into one re-rank refetch.
   private feedbackRefetch$ = new Subject<void>();
 
+  // Every job-list request is funneled through this subject and run via
+  // switchMap so a newer request CANCELS the in-flight one (#race). Without it,
+  // the initial empty-filter load in ngOnInit and the localStorage-restored
+  // location filter emitted by <app-job-filters> raced — two uncancelled
+  // requests whose last-to-resolve won, so the same page rendered differently
+  // on navigation vs refresh. The payload is the `rescore` flag for that call.
+  private loadJobs$ = new Subject<boolean>();
+
   // Sort — clickable column headers, default Match descending.
   sort = createSortState<'match' | 'title' | 'company' | 'location' | 'source' | 'posted'>(
     'match',
@@ -118,6 +131,43 @@ export class IngestionComponent implements OnInit {
   includeLowQuality = signal(false);
 
   ngOnInit(): void {
+    // switchMap: a newer request unsubscribes (aborts) the previous in-flight
+    // one, so only the latest filter/sort/page state is ever applied to the
+    // signals below. catchError keeps the outer stream alive across failures.
+    this.loadJobs$
+      .pipe(
+        switchMap((rescore) => {
+          const filtersWithSort = { ...this.filters(), sort: this.sort.token() as JobFilters['sort'] };
+          return this.ingestionService
+            .queryJobs(
+              this.activeTab(),
+              this.page(),
+              this.pageSize(),
+              filtersWithSort,
+              this.includeClosed(),
+              rescore,
+              this.includeLowQuality(),
+            )
+            .pipe(
+              map((res) => ({ ok: true as const, res })),
+              catchError((err) => of({ ok: false as const, err })),
+            );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((outcome) => {
+        this.loading.set(false);
+        if (outcome.ok) {
+          this.dimmedJobIds.set(new Set<string>());
+          this.jobs.set(outcome.res.jobs);
+          this.total.set(outcome.res.total);
+          this.totalPages.set(outcome.res.total_pages);
+          this.connectionsByJob.set(outcome.res.connections_by_job ?? {});
+        } else {
+          this.error.set(outcome.err.error?.detail || 'Failed to load jobs');
+        }
+      });
+
     this.feedbackRefetch$
       .pipe(debounceTime(environment.feedbackRefetchDebounceMs), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.loadJobs());
@@ -154,32 +204,7 @@ export class IngestionComponent implements OnInit {
   loadJobs(rescore = true): void {
     this.loading.set(true);
     this.error.set('');
-    const filtersWithSort = { ...this.filters(), sort: this.sort.token() as JobFilters['sort'] };
-    this.ingestionService
-      .queryJobs(
-        this.activeTab(),
-        this.page(),
-        this.pageSize(),
-        filtersWithSort,
-        this.includeClosed(),
-        rescore,
-        this.includeLowQuality(),
-      )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.dimmedJobIds.set(new Set<string>());
-          this.jobs.set(res.jobs);
-          this.total.set(res.total);
-          this.totalPages.set(res.total_pages);
-          this.connectionsByJob.set(res.connections_by_job ?? {});
-          this.loading.set(false);
-        },
-        error: (err) => {
-          this.error.set(err.error?.detail || 'Failed to load jobs');
-          this.loading.set(false);
-        },
-      });
+    this.loadJobs$.next(rescore);
   }
 
   fetchJobs(): void {
@@ -195,6 +220,37 @@ export class IngestionComponent implements OnInit {
         this.error.set(err.error?.detail || 'Failed to fetch jobs');
         this.fetching.set(false);
         this.loading.set(false);
+      },
+    });
+  }
+
+  // Manual closure check: probe the jobs currently on screen synchronously (so
+  // a listing you're looking at is closed right away), while the server also
+  // sweeps the rest of the corpus in the background. We reload on the immediate
+  // result, then poll for a couple of minutes to surface background closures.
+  revalidate(): void {
+    if (this.revalidating()) return;
+    this.revalidating.set(true);
+    this.error.set('');
+    this.revalidateNotice.set('');
+    const visibleIds = this.jobs().map((j) => j.id);
+    this.ingestionService.revalidate(visibleIds).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (res) => {
+        this.revalidating.set(false);
+        this.loadJobs(false); // reflect the immediate (visible-page) closures
+        this.revalidateNotice.set(
+          `Closed ${res.closed} job(s) on this page. Still scanning the rest of your jobs for closed listings in the background — more may drop off shortly.`,
+        );
+        timer(15000, 15000)
+          .pipe(take(8), takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: () => this.loadJobs(false),
+            complete: () => this.revalidateNotice.set(''),
+          });
+      },
+      error: (err) => {
+        this.revalidating.set(false);
+        this.error.set(err.error?.detail || 'Failed to check for closed jobs');
       },
     });
   }

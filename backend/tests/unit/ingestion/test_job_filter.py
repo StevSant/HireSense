@@ -227,14 +227,20 @@ def test_strict_location_includes_user_country_substring() -> None:
     assert result.total == 3
 
 
-def test_strict_location_excludes_non_matching() -> None:
+def test_strict_location_keeps_bare_free_text_foreign_location() -> None:
+    """Bare free-text foreign locations (no explicit parenthetical geo-lock) are
+    applyable: sources like linkedin/hn_hiring accept international applications
+    even when the listing names a foreign place. Only an explicit "(Country)"
+    qualifier — or a structured countries list — hides such a job."""
     jobs = [
-        _job(id="1", location="USA only"),
-        _job(id="2", location="Europe"),
+        _job(id="1", location="United States"),
+        _job(id="2", location="New York, NY"),
+        _job(id="3", location="USA only"),
+        _job(id="4", location="Remote (US)"),  # explicit geo-lock → hidden
     ]
-    params = JobQueryParams(user_location="Chile", strict_location=True)
+    params = JobQueryParams(user_location="Ecuador", strict_location=True)
     result = filter_and_paginate(jobs, params)
-    assert result.total == 0
+    assert {j.id for j in result.jobs} == {"1", "2", "3"}
 
 
 def test_low_quality_hidden_by_default_and_revealed_by_toggle() -> None:
@@ -284,7 +290,7 @@ def test_strict_location_remote_honors_country_restriction() -> None:
     honored — e.g. getonbrd 'remote_local' surfaces as "Remote (Chile)" with
     countries=["Chile"], and must be hidden for a user outside that list."""
     jobs = [
-        _job(id="1", location="USA only"),  # free-text, not worldwide, no match
+        _job(id="1", location="USA only"),  # bare free-text, no parenthetical lock
         _job(id="2", location="Remote"),  # free-text worldwide remote → passes
         _job(id="3", remote_modality="remote", countries=["Argentina"]),  # remote, AR-only
         _job(id="4", remote_modality="remote", countries=["Chile"]),  # remote, CL-only
@@ -292,9 +298,11 @@ def test_strict_location_remote_honors_country_restriction() -> None:
     ]
     params = JobQueryParams(user_location="Chile", strict_location=True)
     result = filter_and_paginate(jobs, params)
-    # AR-only remote (id=3) is now excluded for a Chile user; worldwide remote
-    # (2, 5) and Chile-restricted remote (4) pass.
-    assert {j.id for j in result.jobs} == {"2", "4", "5"}
+    # AR-only remote (id=3) is excluded for a Chile user — a structured countries
+    # list is an explicit geo-lock. The bare free-text "USA only" (id=1) now
+    # passes (no parenthetical qualifier), alongside worldwide remote (2, 5) and
+    # Chile-restricted remote (4).
+    assert {j.id for j in result.jobs} == {"1", "2", "4", "5"}
 
 
 def test_strict_location_excludes_country_qualified_free_text_remote() -> None:
@@ -353,7 +361,10 @@ def test_strict_location_case_insensitive() -> None:
 
 
 def test_strict_location_trims_user_location() -> None:
-    jobs = [_job(id="1", location="Chile"), _job(id="2", location="USA")]
+    # id=2 uses an explicit parenthetical geo-lock so it stays excluded under the
+    # "only hide explicit geo-locks" rule; id=1 matches only once the padded
+    # user_location is trimmed to "chile".
+    jobs = [_job(id="1", location="Chile"), _job(id="2", location="Remote (USA)")]
     params = JobQueryParams(user_location="  Chile  ", strict_location=True)
     result = filter_and_paginate(jobs, params)
     assert result.total == 1

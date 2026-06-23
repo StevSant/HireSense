@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -115,6 +115,8 @@ class FetchResponse(BaseModel):
 @router.post("/fetch", response_model=FetchResponse, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def fetch_jobs(
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
+    revalidation: Annotated[JobRevalidationService | None, Depends(get_revalidation_service)],
+    background_tasks: BackgroundTasks,
 ) -> FetchResponse | JSONResponse:
     try:
         jobs = await orchestrator.run()
@@ -124,6 +126,13 @@ async def fetch_jobs(
             content={"detail": str(exc), "retry_after": exc.retry_after},
             headers={"Retry-After": str(exc.retry_after)},
         )
+    # User-initiated fetch also kicks off a bounded URL-probe revalidation sweep
+    # so dead feed/search listings (incl. hn_hiring "Sorry." pages) get closed
+    # without depending solely on the external cron. Runs AFTER the response is
+    # sent (BackgroundTasks) since the sweep is throttled and can take a while;
+    # this is request-scoped work, not app self-scheduling.
+    if revalidation is not None:
+        background_tasks.add_task(revalidation.sweep)
     return FetchResponse(count=len(jobs), jobs=jobs)
 
 
@@ -135,23 +144,58 @@ async def scan_portals(
     return await scanner.scan(filters)
 
 
+class RevalidationRequest(BaseModel):
+    # The jobs currently on screen. When present, they're probed synchronously
+    # for an immediate result, and a full-corpus sweep is also kicked off in the
+    # background for everything else.
+    job_ids: list[str] | None = None
+
+
 class RevalidationResponse(BaseModel):
-    closed: int
+    # `started` is True whenever a sweep was triggered. `closed`/`closed_ids`
+    # report the SYNCHRONOUS portion (the targeted job_ids, or a synchronous
+    # full run); a backgrounded full sweep continues after the response and its
+    # closures surface on subsequent list reloads.
+    started: bool = True
+    closed: int = 0
+    closed_ids: list[str] = []
 
 
 @router.post("/revalidate", response_model=RevalidationResponse)
 async def revalidate_jobs(
     service: Annotated[JobRevalidationService | None, Depends(get_revalidation_service)],
+    background_tasks: BackgroundTasks,
+    body: RevalidationRequest | None = None,
+    background: bool = False,
 ) -> RevalidationResponse:
-    """Trigger one URL-probe revalidation sweep (intended for an external cron).
+    """Probe open feed/search jobs across all platforms and close the dead ones
+    (gone / "no longer accepting applications").
 
-    Closes feed/search jobs whose listing is gone or marked closed. Snapshot
-    sources (portals) rely on disappearance detection during ingestion instead.
+    - With `job_ids` (the UI's "Check closed" button): probe those jobs NOW and
+      return their closures immediately, AND kick off a full-corpus background
+      sweep for the rest.
+    - With `background=true` and no ids: schedule only the full background sweep.
+    - Otherwise (external cron): run the full sweep synchronously and report the
+      closed count.
+
+    Snapshot sources (portals) rely on disappearance detection during ingestion
+    instead.
     """
     if service is None:
         raise HTTPException(status_code=503, detail="Revalidation is not configured")
+    if body is not None and body.job_ids is not None:
+        # Button path — probe the visible jobs now (empty list = nothing to probe)
+        # and sweep the rest in the background. Keyed on presence, not truthiness,
+        # so an empty visible page still backgrounds instead of blocking on a
+        # synchronous full sweep.
+        closed = await service.revalidate_ids(body.job_ids)
+        background_tasks.add_task(service.sweep)
+        return RevalidationResponse(started=True, closed=len(closed), closed_ids=closed)
+    if background:
+        background_tasks.add_task(service.sweep)
+        return RevalidationResponse(started=True)
     closed = await service.sweep()
-    return RevalidationResponse(closed=len(closed))
+    return RevalidationResponse(started=True, closed=len(closed), closed_ids=closed)
 
 
 @router.get("/jobs", response_model=PaginatedResult, dependencies=[Depends(enforce_expensive_rate_limit)])

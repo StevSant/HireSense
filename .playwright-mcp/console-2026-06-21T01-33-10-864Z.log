@@ -1,0 +1,2 @@
+[     216ms] [LOG] Angular is running in development mode. @ http://localhost:4200/@fs/C:/Users/Bryan/OneDrive/Desktop/Bryan/Dev/Personal/HireSense/frontend/.angular/cache/21.2.5/frontend/vite/deps/chunk-OIWNOYOE.js?v=038a0166:11104
+[     399ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:4200/login:0

@@ -454,6 +454,15 @@ class Settings(BaseSettings):
     # one-click-applied; still listed for manual handling).
     inbox_signal_match_min_confidence: float = 0.5
 
+    # --- Autopilot pipeline (Phase 4: auto-draft applications for top matches) ---
+    # Gates the autopilot_pipeline scheduler job entirely. Default OFF (auto-drafting
+    # CVs/cover letters is LLM-heavy — opt in deliberately).
+    autopilot_pipeline_enabled: bool = False
+    # Max digest entries to draft per run (bounds LLM spend).
+    autopilot_pipeline_top_n: int = 3
+    # Cron for the autopilot_pipeline job (after autohunt's 0 9 * * * so a digest exists).
+    autopilot_pipeline_schedule: str = "0 10 * * *"
+
     # --- Scheduler (in-app cadence driver; Autopilot Phase 1) ---
     # Master switch. MUST be true on exactly one process (the app self-drives
     # ingestion/revalidation/autohunt/outreach-followups on the cron strings

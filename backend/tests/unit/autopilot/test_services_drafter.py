@@ -7,11 +7,13 @@ from hiresense.autopilot.infrastructure import ServicesApplicationDrafter
 
 
 class _Agg:
-    def __init__(self): self.id = uuid.uuid4()
+    def __init__(self):
+        self.id = uuid.uuid4()
 
 
 class _Match:
-    def __init__(self): self.id = uuid.uuid4()
+    def __init__(self):
+        self.id = uuid.uuid4()
 
 
 class _AppSvc:
@@ -19,7 +21,8 @@ class _AppSvc:
         self._agg = agg or _Agg()
         self._raise = raise_exc
     async def create_from_ingested(self, job_id):
-        if self._raise: raise self._raise
+        if self._raise:
+            raise self._raise
         return self._agg
 
 
@@ -28,14 +31,18 @@ class _ArtifactSvc:
         self.calls = []
         self._opt_raise = opt_raise
     async def generate_match(self, application_id, cv_language=""):
-        self.calls.append("match"); return _Match()
+        self.calls.append("match")
+        return _Match()
+
     async def generate_optimization(self, application_id, cv_language="", match_id=None):
         self.calls.append("optimize")
-        if self._opt_raise: raise self._opt_raise
+        if self._opt_raise:
+            raise self._opt_raise
 
 
 class _ApplySvc:
-    def __init__(self): self.calls = []
+    def __init__(self):
+        self.calls = []
     async def generate_cover_letter(self, application_id, cv_language="", tone=None):
         self.calls.append("cover")
 
@@ -49,7 +56,8 @@ def _drafter(app_svc, artifact_svc, apply_svc):
 
 @pytest.mark.asyncio
 async def test_full_success_is_drafted():
-    art = _ArtifactSvc(); apply = _ApplySvc()
+    art = _ArtifactSvc()
+    apply = _ApplySvc()
     app_id, status, detail = await _drafter(_AppSvc(), art, apply).draft("j1")
     assert status is DraftStatus.DRAFTED
     assert app_id is not None

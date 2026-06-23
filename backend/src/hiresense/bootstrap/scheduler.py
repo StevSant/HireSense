@@ -53,6 +53,7 @@ def build_scheduler(
     outreach_service: Any,
     notification_service: Any = None,
     inbox_processing_service: Any = None,
+    autopilot_pipeline_service: Any = None,
 ) -> SchedulerBuild:
     definitions = [
         JobDefinition(
@@ -93,6 +94,16 @@ def build_scheduler(
                 cron=settings.inbox_scan_schedule,
                 interval_hours=None,
                 count_items=lambda n: n if isinstance(n, int) else None,
+            )
+        )
+    if autopilot_pipeline_service is not None:
+        definitions.append(
+            JobDefinition(
+                name="autopilot_pipeline",
+                run=autopilot_pipeline_service.run,
+                cron=settings.autopilot_pipeline_schedule,
+                interval_hours=None,
+                count_items=lambda r: getattr(r, "created", None),
             )
         )
     run_repo = JobRunRepositoryImpl(

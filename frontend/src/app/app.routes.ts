@@ -110,6 +110,11 @@ export const routes: Routes = [
             (m) => m.NotificationsComponent,
           ),
       },
+      {
+        path: 'autopilot/drafts',
+        loadComponent: () =>
+          import('./pages/autopilot/drafts/drafts.component').then((m) => m.DraftsComponent),
+      },
       { path: 'account', redirectTo: 'profile', pathMatch: 'full' },
     ],
   },

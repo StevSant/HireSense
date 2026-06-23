@@ -1,0 +1,20 @@
+.drafts {
+  padding: 1rem;
+
+  .draft {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border, #e2e2e2);
+  }
+
+  .status {
+    text-transform: capitalize;
+    font-weight: 600;
+    &--drafted { color: var(--success, #2e7d32); }
+    &--partial { color: var(--warn, #ef6c00); }
+    &--failed { color: var(--danger, #c62828); }
+  }
+}

@@ -19,6 +19,7 @@ export const HUBS: readonly Hub[] = [
       { label: 'Ingestion', path: '/dashboard/ingestion' },
       { label: 'Matching', path: '/dashboard/matching' },
       { label: 'Auto-Hunt', path: '/dashboard/autohunt' },
+      { label: 'Autopilot drafts', path: '/dashboard/autopilot/drafts' },
     ],
   },
   {

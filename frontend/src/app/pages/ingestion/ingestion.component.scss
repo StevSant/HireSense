@@ -136,6 +136,9 @@
 table {
   width: 100%;
   table-layout: fixed;
+  /* Scroll floor: below this the .table-container scrolls horizontally; above
+     it the table fits. Kept low (flexible text columns ellipsis-truncate) so
+     ~1280px laptops never trigger a scrollbar. */
   min-width: 900px;
   th, td { padding: 0.625rem 0.75rem; font-size: 0.8125rem; }
   th { font-size: 0.6875rem; white-space: nowrap; }
@@ -146,7 +149,10 @@ table {
 .col-salary { width: 130px; }
 .col-source { width: 110px; }
 .col-posted { width: 110px; }
-.col-actions { width: 140px; }
+/* Wide enough for the full action row (View + 3 feedback buttons + Track, incl.
+   the transient "Tracking…" label) so it doesn't spill past the column and
+   force the table card to scroll sideways. */
+.col-actions { width: 230px; }
 
 .salary-cell {
   color: var(--text-secondary);

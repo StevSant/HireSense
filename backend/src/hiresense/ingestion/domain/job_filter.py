@@ -203,6 +203,14 @@ def filter_and_paginate(
             # country wasn't matched above, so such a role isn't applyable.
             # Qualifiers that are open keywords ("(Global)") or pure work-mode /
             # employment tags ("(Full-time)", "(Remote)") are not restrictions.
+            #
+            # An explicit parenthetical geo-lock is the ONLY thing that hides a
+            # free-text-location job. A bare location string ("United States",
+            # "New York, NY") is NOT treated as a hard restriction: sources like
+            # linkedin/hn_hiring let you submit an application internationally
+            # even when the listing names a foreign city, so the "jobs I can
+            # apply to" filter keeps them. Structured remote/country data (the
+            # branches above) is still authoritative — that's the explicit lock.
             for qualifier in re.findall(r"\(([^)]*)\)", loc):
                 q = qualifier.strip()
                 if not q:
@@ -212,11 +220,9 @@ def filter_and_paginate(
                 if any(kw in q for kw in non_geo_qualifiers):
                     continue
                 return False
-            # Bare "remote" with no geographic qualifier → treat as worldwide.
-            if "remote" in loc:
-                return True
-            # On-site / hybrid free text that names some other place.
-            return False
+            # No explicit parenthetical geo-lock → applyable (bare "remote",
+            # bare foreign city, etc. all pass for unstructured sources).
+            return True
 
         filtered = [j for j in filtered if _matches_country(j)]
 

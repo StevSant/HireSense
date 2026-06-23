@@ -20,6 +20,14 @@
     <div class="tab-actions">
       <app-preference-tuning />
       @if (activeTab() === 'boards') {
+        <button
+          (click)="revalidate()"
+          [disabled]="revalidating() || loading()"
+          class="btn-secondary"
+          title="Check every job across all platforms and hide ones that have closed (runs in the background)"
+        >
+          @if (revalidating()) { Starting... } @else { Check closed }
+        </button>
         <button (click)="fetchJobs()" [disabled]="loading()" class="btn-primary">
           @if (loading()) { Fetching... } @else { Fetch Jobs }
         </button>
@@ -33,6 +41,10 @@
 
   @if (error()) {
     <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (revalidateNotice()) {
+    <div class="alert alert-info">{{ revalidateNotice() }}</div>
   }
 
   <!-- Scan filters (portals tab only) -->

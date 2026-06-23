@@ -171,6 +171,12 @@ $mobile-breakpoint: 768px;
 
 .content {
   flex: 1;
+  /* A flex item defaults to min-width: auto, which refuses to shrink below its
+     content's intrinsic width — so a wide child (e.g. a data table) pushes the
+     whole column past the viewport and the PAGE scrolls sideways. min-width: 0
+     lets the column shrink to the viewport; wide tables then scroll inside
+     their own .table-container (overflow-x: auto) instead of the page body. */
+  min-width: 0;
   padding: 2rem 2.5rem;
   background: var(--bg-root);
   overflow-y: auto;

@@ -7,6 +7,7 @@ import { ProfileService } from '../../core/services/profile.service';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { CoverLetterTemplatesService } from '../../core/services/cover-letter-templates.service';
 import { AuthService } from '../../core/services/auth.service';
+import { TranslateResponse } from './models/translate-response.model';
 
 function makeProfile(over: Partial<Record<string, unknown>> = {}) {
   return {
@@ -49,7 +50,7 @@ describe('ProfileComponent', () => {
           profile: makeProfile({ id: 'p-es', language: 'es', machine_translated: true }),
           pdf_ok: true,
           compile_error: null,
-        }),
+        } as unknown as TranslateResponse),
       ),
       downloadCvPdf: vi.fn(() => of(new Blob(['%PDF'], { type: 'application/pdf' }))),
     };
@@ -208,6 +209,23 @@ describe('ProfileComponent', () => {
     cmp.translateToOther();
 
     expect(profileService.translate).toHaveBeenCalledWith('es');
+  });
+
+  it('surfaces the compiler error when the translated PDF does not compile', () => {
+    const { fixture, profileService } = mount({ profiles: { en: makeProfile() } });
+    const cmp = fixture.componentInstance;
+    profileService.translate = vi.fn(() =>
+      of({
+        profile: makeProfile({ id: 'p-es', language: 'es', machine_translated: true }),
+        pdf_ok: false,
+        compile_error: 'xelatex exited with code 1\nMissing \\begin{document}.',
+      } as unknown as TranslateResponse),
+    );
+
+    cmp.translateToOther();
+
+    expect(cmp.translateWarning()).not.toBe('');
+    expect(cmp.translateCompileError()).toContain('Missing \\begin{document}');
   });
 
   it('downloads the PDF blob for a language', () => {

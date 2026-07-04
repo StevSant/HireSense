@@ -2,13 +2,19 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import tempfile
 import textwrap
 from pathlib import Path
 
+from opentelemetry import trace
+
+from hiresense.observability import get_tracer
 from hiresense.ports.latex_compiler_port import LatexCompileError
 
 logger = logging.getLogger(__name__)
+
+_tracer = get_tracer("hiresense.latex")
 
 
 class LatexCompiler:
@@ -25,7 +31,18 @@ class LatexCompiler:
 
     async def compile_to_pdf(self, tex_source: str) -> bytes:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, self._compile_sync, tex_source)
+        # Wrap every compile in a span + log so failures are never swallowed
+        # silently. Callers that handle LatexCompileError (e.g. the translation
+        # sanity-check, or the optimized→original CV fallback) still surface the
+        # failure in traces/logs even though the request itself succeeds.
+        with _tracer.start_as_current_span("latex.compile") as span:
+            try:
+                return await loop.run_in_executor(None, self._compile_sync, tex_source)
+            except LatexCompileError as exc:
+                span.set_status(trace.Status(trace.StatusCode.ERROR))
+                span.record_exception(exc)
+                logger.warning("LaTeX compilation failed: %s", exc)
+                raise
 
     def _compile_sync(self, tex_source: str) -> bytes:
         # Sanitize the source:
@@ -133,6 +150,88 @@ class LatexCompiler:
         {_latex_escape(candidate_name)}
         \end{{document}}
         """).strip()
+
+    def render_cv_tex(
+        self,
+        *,
+        name: str,
+        email: str | None,
+        phone: str | None,
+        location: str | None,
+        sections: list[tuple[str, str]],
+    ) -> str:
+        """Wrap structured, plain-text CV content in a compilable LaTeX template.
+
+        Used for CVs ingested from non-LaTeX sources (e.g. PDF uploads): the
+        extracted text has no preamble, so feeding it straight to xelatex fails
+        with "Missing \\begin{document}". Every heading/body is LaTeX-escaped so
+        arbitrary extracted text can never break compilation.
+        """
+        contact_bits = [_latex_escape(bit) for bit in (location, phone, email) if bit]
+        contact = " \\textbullet{} ".join(contact_bits)
+
+        header = (
+            f"\\begin{{center}}{{\\LARGE \\textbf{{{_latex_escape(name or 'Curriculum Vitae')}}}}}"
+            "\\end{center}"
+        )
+        if contact:
+            header += f"\n\\begin{{center}}\\small {contact}\\end{{center}}"
+
+        body_parts: list[str] = []
+        for heading, content in sections:
+            rendered = _render_cv_section_body(content)
+            if not rendered:
+                continue
+            body_parts.append(f"\\section*{{{_latex_escape(heading)}}}\n{rendered}")
+        body = "\n\n".join(body_parts)
+
+        return (
+            _CV_PREAMBLE
+            + "\n\\begin{document}\n\n"
+            + header
+            + "\n\n"
+            + body
+            + "\n\n\\end{document}\n"
+        )
+
+
+_CV_PREAMBLE = textwrap.dedent(
+    r"""
+    \documentclass[11pt]{article}
+    \usepackage[a4paper, margin=1in]{geometry}
+    \usepackage{parskip}
+    \usepackage{enumitem}
+    \usepackage{hyperref}
+    \pagestyle{empty}
+    """
+).strip()
+
+
+def _render_cv_section_body(content: str) -> str:
+    """Turn a plain-text section body into safe, compilable LaTeX.
+
+    Blank lines split paragraphs. A multi-line paragraph whose every line looks
+    like a bullet ("-", "*", "•") becomes an itemize; otherwise wrapped lines are
+    joined into a single paragraph. Everything is escaped so no extracted text
+    can break the document.
+    """
+    paragraphs = re.split(r"\n\s*\n", (content or "").strip())
+    rendered: list[str] = []
+    for para in paragraphs:
+        lines = [ln.strip() for ln in para.splitlines() if ln.strip()]
+        if not lines:
+            continue
+        is_bullets = len(lines) > 1 and all(
+            ln.lstrip().startswith(("-", "*", "•")) for ln in lines
+        )
+        if is_bullets:
+            items = "\n".join(
+                rf"\item {_latex_escape(ln.lstrip('-*• ').strip())}" for ln in lines
+            )
+            rendered.append("\\begin{itemize}\n" + items + "\n\\end{itemize}")
+        else:
+            rendered.append(_latex_escape(" ".join(lines)))
+    return "\n\n".join(rendered)
 
 
 def _latex_escape(text: str) -> str:

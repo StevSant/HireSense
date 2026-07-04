@@ -22,3 +22,13 @@ class LatexCompilerPort(Protocol):
         company: str,
         date_str: str,
     ) -> str: ...
+
+    def render_cv_tex(
+        self,
+        *,
+        name: str,
+        email: str | None,
+        phone: str | None,
+        location: str | None,
+        sections: list[tuple[str, str]],
+    ) -> str: ...

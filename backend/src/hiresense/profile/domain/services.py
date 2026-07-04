@@ -86,10 +86,16 @@ class ProfileService:
                 raise ValueError(msg)
             parsed = await self._pdf_parser.parse(file_bytes)
             skills = self._extract_skills_from_parsed(parsed)
+            # PDF extraction yields plain text; wrap it in a real LaTeX document
+            # so the CV can be compiled/translated. Without this the stored
+            # raw_tex has no preamble and xelatex fails with "Missing
+            # \begin{document}".
+            raw_tex = self._render_parsed_to_tex(parsed)
         elif ext == ".tex":
             content = file_bytes.decode("utf-8", errors="replace")
             parsed = self._parser.parse(content)
             skills = self._extract_skills_from_parsed(parsed)
+            raw_tex = content
         else:
             msg = f"Unsupported file type: {ext}"
             raise ValueError(msg)
@@ -109,7 +115,7 @@ class ProfileService:
             phone=parsed.phone,
             location=parsed.location,
             sections=sections,
-            raw_tex=parsed.raw_tex,
+            raw_tex=raw_tex,
             language=language,
             skills=skills,
             **shared_links,
@@ -121,6 +127,24 @@ class ProfileService:
             self._profiles[profile.id] = profile
 
         return profile
+
+    def _render_parsed_to_tex(self, parsed: ParsedCV) -> str:
+        """Render structured (plain-text) CV content into compilable LaTeX.
+
+        Falls back to the raw extracted text when no LaTeX compiler is wired
+        (compilation simply won't be available in that configuration).
+        """
+        if self._latex_compiler is None or not hasattr(
+            self._latex_compiler, "render_cv_tex"
+        ):
+            return parsed.raw_tex
+        return self._latex_compiler.render_cv_tex(
+            name=parsed.name,
+            email=parsed.email,
+            phone=parsed.phone,
+            location=parsed.location,
+            sections=[(s.name, s.content) for s in parsed.sections],
+        )
 
     async def translate_to(self, target_language: str) -> TranslationOutcome:
         """Translate the latest other-language CV into `target_language`.

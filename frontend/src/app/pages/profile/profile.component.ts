@@ -59,6 +59,7 @@ export class ProfileComponent implements OnInit {
   editingPersonal = signal(false);
   translating = signal(false);
   translateWarning = signal('');
+  translateCompileError = signal('');
 
   profile = this.profileService.profile;
   profiles = this.profileService.profiles;
@@ -200,6 +201,7 @@ export class ProfileComponent implements OnInit {
     const target = this.otherLanguage();
     this.translating.set(true);
     this.translateWarning.set('');
+    this.translateCompileError.set('');
     this.profileService
       .translate(target)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -210,6 +212,7 @@ export class ProfileComponent implements OnInit {
             this.translateWarning.set(
               'Translated, but the PDF did not compile — review the LaTeX.',
             );
+            this.translateCompileError.set(res.compile_error ?? '');
           }
         },
         error: (err) => {

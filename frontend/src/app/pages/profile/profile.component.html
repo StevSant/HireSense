@@ -263,7 +263,15 @@
           }
         </div>
         @if (translateWarning()) {
-          <div class="alert alert-error">{{ translateWarning() }}</div>
+          <div class="alert alert-error">
+            {{ translateWarning() }}
+            @if (translateCompileError()) {
+              <details class="compile-error-details">
+                <summary>Show compiler error</summary>
+                <pre class="compile-error-log">{{ translateCompileError() }}</pre>
+              </details>
+            }
+          </div>
         }
       }
 

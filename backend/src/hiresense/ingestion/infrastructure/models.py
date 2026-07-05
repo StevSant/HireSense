@@ -43,6 +43,12 @@ class IngestedJob(Base):
     posted_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Source-declared expiry (e.g. Himalayas' expiryDate). The revalidation
+    # sweep closes open jobs whose expiry_date has passed — the closure path for
+    # sources whose public pages block URL probes. Nullable: most sources omit it.
+    expiry_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     department: Mapped[str | None] = mapped_column(Text, nullable=True)
     skills: Mapped[list] = mapped_column(JSON, default=list)
     categories: Mapped[list] = mapped_column(JSON, default=list)

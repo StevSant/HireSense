@@ -235,6 +235,15 @@ class Settings(BaseSettings):
     # Concurrent URL probes + per-request delay (seconds) for politeness.
     job_revalidation_concurrency: int = 2
     job_revalidation_delay: float = 1.0
+    # User-Agent sent on revalidation probes. The shared httpx client defaults to
+    # `python-httpx/...`, which some listing hosts (e.g. weworkremotely) reject
+    # with 403 — turning a live/closed signal into UNKNOWN. A realistic browser
+    # UA gets those pages to respond. (Hosts with JS/fingerprint challenges, e.g.
+    # himalayas, stay blocked regardless — those use expiry-based closure.)
+    job_revalidation_user_agent: str = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+    )
     # Lowercased substring phrases that mark a 200-OK listing page as actually
     # closed (the listing stays live but says "no longer accepting", etc.).
     job_closed_markers: list[str] = [

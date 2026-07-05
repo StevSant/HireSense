@@ -37,6 +37,10 @@ class NormalizedJob(BaseModel):
     application_method: ApplicationMethod = ApplicationMethod.UNKNOWN
     ats_type: str | None = None
     posted_date: datetime | None = None
+    # When the source declares an expiry (e.g. Himalayas' `expiryDate`), the job
+    # is closed once now > expiry_date — a lifecycle signal for sources whose
+    # public pages can't be URL-probed. None means "no declared expiry".
+    expiry_date: datetime | None = None
     department: str | None = None
     platform: str | None = None
     categories: list[str] = Field(default_factory=list)

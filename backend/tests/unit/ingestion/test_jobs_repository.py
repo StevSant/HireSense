@@ -334,6 +334,37 @@ def test_find_open_stale_in_memory_parity():
     assert len(mem.find_open_stale(["remotive"], 5)) == 1
 
 
+def test_close_expired_closes_only_past_expiry(repo):
+    now = datetime(2026, 7, 4, tzinfo=timezone.utc)
+    repo.upsert(_job("exp", source_id="n1", url="https://e.com/1",
+                     expiry_date=now - timedelta(days=1)))
+    repo.upsert(_job("live", source_id="n2", url="https://e.com/2",
+                     expiry_date=now + timedelta(days=1)))
+    repo.upsert(_job("noexp", source_id="n3", url="https://e.com/3"))  # expiry None
+
+    closed = repo.close_expired(now)
+
+    assert closed == ["exp"]
+    statuses = {j.source_id: j.status for j in repo.list_all()}
+    assert statuses["n1"] == "closed"   # past expiry → closed
+    assert statuses["n2"] == "open"     # future expiry → open
+    assert statuses["n3"] == "open"     # no expiry → open
+
+
+def test_close_expired_in_memory_parity():
+    now = datetime(2026, 7, 4, tzinfo=timezone.utc)
+    mem = InMemoryJobsRepository()
+    mem.upsert(_job("exp", source_id="n1", url="https://e.com/1",
+                    expiry_date=now - timedelta(days=1)))
+    mem.upsert(_job("live", source_id="n2", url="https://e.com/2",
+                    expiry_date=now + timedelta(days=1)))
+
+    assert mem.close_expired(now) == ["exp"]
+    statuses = {j.source_id: j.status for j in mem.list_all()}
+    assert statuses["n1"] == "closed"
+    assert statuses["n2"] == "open"
+
+
 @pytest.mark.asyncio
 async def test_prune_evicts_pruned_vectors_from_index() -> None:
     """#19 item 2: age-pruned jobs are removed from the vector store too."""

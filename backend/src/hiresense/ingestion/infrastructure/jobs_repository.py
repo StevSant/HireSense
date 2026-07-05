@@ -38,6 +38,7 @@ def _to_orm(job: NormalizedJob, bucket: str) -> IngestedJob:
         application_method=job.application_method.value,
         ats_type=job.ats_type,
         posted_date=job.posted_date,
+        expiry_date=job.expiry_date,
         department=job.department,
         skills=list(job.skills),
         categories=list(job.categories),
@@ -69,6 +70,7 @@ def _to_domain(row: IngestedJob) -> NormalizedJob:
         application_method=row.application_method,
         ats_type=row.ats_type,
         posted_date=row.posted_date,
+        expiry_date=row.expiry_date,
         department=row.department,
         platform=row.platform,
         categories=list(row.categories or []),
@@ -207,6 +209,29 @@ class JobsRepository(SqlRepository):
                 row.status = "closed"
                 row.closed_at = now
             session.commit()
+
+    def close_expired(self, now: datetime) -> list[str]:
+        """Close every open job whose source-declared expiry_date has passed.
+
+        The closure path for sources whose public pages block URL probes (e.g.
+        Himalayas): expiry_date is captured at ingest, and this closes the job
+        once now overtakes it. Returns the ids closed so the caller can evict
+        their vector-store entries."""
+        with self._session_factory() as session:
+            rows = session.scalars(
+                select(IngestedJob).where(
+                    IngestedJob.bucket == self._bucket,
+                    IngestedJob.status == "open",
+                    IngestedJob.expiry_date.is_not(None),
+                    IngestedJob.expiry_date < now,
+                )
+            ).all()
+            closed = [row.id for row in rows]
+            for row in rows:
+                row.status = "closed"
+                row.closed_at = now
+            session.commit()
+        return closed
 
     def bump_missed_and_close(
         self, source: str, seen_identity_keys: set[str], threshold: int

@@ -94,6 +94,19 @@ class InMemoryJobsRepository:
             if job is not None:
                 self._jobs[jid] = job.model_copy(update={"status": "closed"})
 
+    def close_expired(self, now: datetime) -> list[str]:
+        closed: list[str] = []
+        for jid, job in list(self._jobs.items()):
+            if job.status != "open" or job.expiry_date is None:
+                continue
+            expiry = job.expiry_date
+            if expiry.tzinfo is None:
+                expiry = expiry.replace(tzinfo=timezone.utc)
+            if expiry < now:
+                self._jobs[jid] = job.model_copy(update={"status": "closed"})
+                closed.append(jid)
+        return closed
+
     def bump_missed_and_close(
         self, source: str, seen_identity_keys: set[str], threshold: int
     ) -> list[str]:

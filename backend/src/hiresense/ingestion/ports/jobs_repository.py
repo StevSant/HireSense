@@ -70,6 +70,13 @@ class JobsRepositoryPort(Protocol):
         """Mark the given rows closed (status=closed, closed_at=now)."""
         ...
 
+    def close_expired(self, now: datetime) -> list[str]:
+        """Close open jobs whose source-declared expiry_date has passed
+        (status=closed, closed_at=now). Returns ids closed so the caller can
+        evict their vector-store entries. The closure path for sources whose
+        public pages block URL probes (e.g. Himalayas)."""
+        ...
+
     def bump_missed_and_close(
         self, source: str, seen_identity_keys: set[str], threshold: int
     ) -> list[str]:

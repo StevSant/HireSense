@@ -55,7 +55,16 @@ npm test -- --filter "test name"         # single test by name
 docker compose up --build    # db :5432, app :8000, frontend :4200, Grafana :3000
 ```
 
-Backend config lives in `backend/.env` (copy from `backend/.env.example`). Every configurable value goes through `src/hiresense/config.py` + `.env` — never hardcode URLs, keys, or thresholds; new settings must also be added to `.env.example` with a comment.
+Backend config lives in `backend/.env` (copy from `backend/.env.example`). Every configurable value goes through the `src/hiresense/config/` package + `.env` — never hardcode URLs, keys, or thresholds; new settings must also be added to `.env.example` with a comment.
+
+#### Runtime modes (`APP_MODE`)
+
+`APP_MODE` (in `config/mode.py`, default `local`) sets a bundle of defaults; any individual env var overrides its mode default.
+
+- **`local`** — blank `LLM_API_KEY` → heuristic-only matching (LLM features return a not-configured state); blank auth secrets → an ephemeral per-boot dev secret + default creds with a loud startup warning. `DATABASE_URL` (Postgres) is still required — there is no SQLite fallback (pgvector ANN needs Postgres).
+- **`production`** — strict: missing `DATABASE_URL` / `LLM_API_KEY` / auth trio fail at startup with one aggregated error. `docker-compose.yml` sets `APP_MODE=production`.
+
+Config is a package: per-concern `BaseSettings` groups under `config/groups/` composed into one flat `Settings` in `config/settings.py` (flat `settings.otel_enabled` access preserved). Add a new field to the matching group file — `Settings` inherits every group's fields, so nothing extra needs re-exporting.
 
 ### Concurrent sessions / worktrees
 

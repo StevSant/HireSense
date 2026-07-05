@@ -43,6 +43,8 @@ services:
       - "${APP_PORT:-8000}:8000"
     env_file: ./backend/.env
     environment:
+      # Compose is a real deployment: fail loudly on missing config.
+      APP_MODE: production
       # In-network overrides: .env is host-oriented (localhost); inside the
       # compose network the app must address services by name.
       DATABASE_URL: postgresql+asyncpg://hiresense:hiresense@db:5432/hiresense

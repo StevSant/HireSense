@@ -23,6 +23,9 @@ Thumbs.db
 *.pdf
 cvs/compiled/
 cvs/optimized/
+# User-uploaded CVs are runtime data — never commit them (keep the dir via .gitkeep)
+cvs/originals/*
+!cvs/originals/.gitkeep
 
 # Docker
 docker-compose.override.yml

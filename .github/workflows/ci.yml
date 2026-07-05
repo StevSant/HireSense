@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   backend:
-    name: backend (lint · tests · alembic · pgvector)
+    name: backend (format · lint · tests · alembic · pgvector · build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -54,6 +54,9 @@ jobs:
           uv python install 3.13
           uv sync --frozen
 
+      - name: Format check (ruff format)
+        run: uv run ruff format --check .
+
       - name: Lint (ruff)
         run: uv run ruff check .
 
@@ -69,8 +72,21 @@ jobs:
       - name: pgvector ANN tests (live Postgres)
         run: uv run python -m pytest -m pgvector -q
 
+      - name: Build package (wheel + sdist)
+        run: uv build
+
+      - name: Verify package metadata (twine check)
+        run: uvx twine check dist/*
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist
+          path: backend/dist/*
+          if-no-files-found: error
+
   frontend:
-    name: frontend (typecheck · a11y lint · tests)
+    name: frontend (format · typecheck · a11y lint · tests · build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -88,6 +104,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Format check (prettier)
+        run: npm run format:check
+
       - name: Typecheck (app)
         run: npx tsc --noEmit -p tsconfig.app.json
 
@@ -101,3 +120,13 @@ jobs:
         run: npx ng test --watch=false
         env:
           CI: "true"
+
+      - name: Build (production)
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/**
+          if-no-files-found: error

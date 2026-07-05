@@ -8,6 +8,19 @@ from hiresense.ingestion.domain.models import RawJobListing
 
 
 class HimalayasNormalizer:
+    @staticmethod
+    def _parse_ts(value: Any) -> datetime | None:
+        """Himalayas timestamps arrive as unix seconds (int/float) or, rarely,
+        an ISO string. Return a tz-aware UTC datetime, or None if unparseable."""
+        if not value:
+            return None
+        try:
+            if isinstance(value, (int, float)):
+                return datetime.fromtimestamp(value, tz=timezone.utc)
+            return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except (ValueError, TypeError, OSError):
+            return None
+
     def normalize(self, raw: RawJobListing) -> dict[str, Any]:
         d = raw.raw_data
         min_salary = d.get("minSalary")
@@ -18,16 +31,11 @@ class HimalayasNormalizer:
             if min_salary and max_salary
             else None
         )
-        posted_date = None
-        pub_ts = d.get("pubDate")
-        if pub_ts:
-            try:
-                if isinstance(pub_ts, (int, float)):
-                    posted_date = datetime.fromtimestamp(pub_ts, tz=timezone.utc)
-                else:
-                    posted_date = datetime.fromisoformat(str(pub_ts).replace("Z", "+00:00"))
-            except (ValueError, TypeError, OSError):
-                pass
+        posted_date = self._parse_ts(d.get("pubDate"))
+        # Himalayas' API declares a per-job expiry; captured here so the
+        # revalidation sweep can close the listing on expiry (its public page
+        # blocks URL probes with a 403).
+        expiry_date = self._parse_ts(d.get("expiryDate"))
         categories = d.get("categories", []) + d.get("parentCategories", [])
         locations = d.get("locationRestrictions", [])
         location = ", ".join(locations) if locations else "Worldwide"
@@ -41,4 +49,5 @@ class HimalayasNormalizer:
             "url": d.get("applicationLink", ""),
             "language": "en",
             "posted_date": posted_date,
+            "expiry_date": expiry_date,
         }

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
+from datetime import datetime, timezone
 from typing import Any
 
 from hiresense.ingestion.domain.closed_listing_classifier import Verdict, classify_listing
@@ -39,6 +40,8 @@ class JobRevalidationService:
         concurrency: int,
         delay: float,
         probe_url_builders: dict[str, Callable[[Any], str]] | None = None,
+        user_agent: str | None = None,
+        clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._http = http_client
         self._repo = repository
@@ -46,9 +49,22 @@ class JobRevalidationService:
         self._sources = sources
         self._markers = markers
         self._probe_url_builders = probe_url_builders or {}
+        # A browser-like header set: the shared client's default python-httpx UA
+        # is 403'd by some listing hosts, which would mask a real closure signal
+        # as UNKNOWN. Only sent when a UA is configured.
+        self._probe_headers: dict[str, str] = (
+            {
+                "User-Agent": user_agent,
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+            }
+            if user_agent
+            else {}
+        )
         self._batch = batch
         self._sem = asyncio.Semaphore(max(1, concurrency))
         self._delay = delay
+        self._clock = clock or (lambda: datetime.now(timezone.utc))
         # Guards against overlapping sweeps (fetch + the manual button can both
         # trigger one); a second trigger while one runs is a no-op.
         self._sweeping = False
@@ -74,6 +90,10 @@ class JobRevalidationService:
         closed: list[str] = []
         checked: set[str] = set()
         try:
+            # Expiry-based closure first: sources whose public pages block URL
+            # probes (e.g. Himalayas) carry a source-declared expiry_date instead.
+            # DB-side and cheap — no HTTP.
+            closed.extend(await self._close_expired())
             while True:
                 jobs = await asyncio.to_thread(
                     self._repo.find_open_stale, self._sources, self._batch
@@ -94,6 +114,16 @@ class JobRevalidationService:
             return closed
         finally:
             self._sweeping = False
+
+    async def _close_expired(self) -> list[str]:
+        """Close open jobs past their source-declared expiry and evict them from
+        the index. Returns the closed ids."""
+        expired = await asyncio.to_thread(self._repo.close_expired, self._clock())
+        if expired:
+            if self._indexer is not None:
+                await self._indexer.remove(expired)
+            logger.info("Revalidation: closed %d expired listing(s)", len(expired))
+        return expired
 
     async def revalidate_ids(self, job_ids: list[str]) -> list[str]:
         """Probe a specific set of jobs NOW and close the dead ones.
@@ -134,7 +164,9 @@ class JobRevalidationService:
         probe_url = self._probe_url(job)
         async with self._sem:
             try:
-                resp = await self._http.get(probe_url, follow_redirects=True)
+                resp = await self._http.get(
+                    probe_url, follow_redirects=True, headers=self._probe_headers
+                )
             except Exception as exc:
                 # Transient transport failures must never close a job, but a
                 # silently swallowed probe makes sweeps undebuggable — log it.

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
@@ -18,9 +20,11 @@ class _Client:
         self._by_url = by_url
         self._raise = raise_urls or set()
         self.requested: list[str] = []
+        self.headers_seen: list[dict[str, str]] = []
 
     async def get(self, url: str, **kwargs) -> _Resp:
         self.requested.append(url)
+        self.headers_seen.append(kwargs.get("headers") or {})
         if url in self._raise:
             raise RuntimeError("timeout")
         return self._by_url[url]
@@ -190,6 +194,77 @@ async def test_revalidate_ids_probes_only_requested_probeable_open_jobs() -> Non
     assert statuses["hn"] == "open"  # non-probeable source skipped
     assert hn.url not in client.requested
     assert untouched.url not in client.requested  # not requested → not probed
+
+
+@pytest.mark.asyncio
+async def test_probe_forwards_configured_user_agent_header() -> None:
+    """Some listing hosts 403 the default python-httpx UA, masking a real
+    signal as UNKNOWN. A configured UA must be sent on every probe."""
+    repo, a, b = _seed()
+    client = _Client({a.url: _Resp(200, "ok"), b.url: _Resp(200, "ok")})
+    svc = JobRevalidationService(
+        http_client=client, repository=repo, indexer=None,
+        sources=["remotive"], markers=[], batch=10, concurrency=2, delay=0.0,
+        user_agent="TestUA/1.0",
+    )
+
+    await svc.sweep()
+
+    assert client.headers_seen  # jobs were probed
+    assert all(h.get("User-Agent") == "TestUA/1.0" for h in client.headers_seen)
+    assert all("Accept" in h for h in client.headers_seen)
+
+
+@pytest.mark.asyncio
+async def test_probe_sends_no_headers_without_configured_user_agent() -> None:
+    """Absent a configured UA, probes stay header-free (backward compatible)."""
+    repo, a, b = _seed()
+    client = _Client({a.url: _Resp(200, "ok"), b.url: _Resp(200, "ok")})
+    svc = JobRevalidationService(
+        http_client=client, repository=repo, indexer=None,
+        sources=["remotive"], markers=[], batch=10, concurrency=2, delay=0.0,
+    )
+
+    await svc.sweep()
+
+    assert client.headers_seen
+    assert all(h == {} for h in client.headers_seen)
+
+
+@pytest.mark.asyncio
+async def test_sweep_closes_expired_jobs_without_probing() -> None:
+    """Sources whose pages block probes (himalayas) carry a source-declared
+    expiry_date. The sweep closes them DB-side — no HTTP — even though they are
+    NOT in the probeable `sources` set, and evicts them from the index."""
+    now = datetime(2026, 7, 4, tzinfo=timezone.utc)
+    repo = InMemoryJobsRepository()
+    expired = NormalizedJob(
+        id="exp", title="E", company="C", description="D", source="himalayas",
+        source_type="api", url="https://himalayas.app/x", source_id="exp",
+        expiry_date=now - timedelta(days=1),
+    )
+    live = NormalizedJob(
+        id="live", title="E", company="C", description="D", source="himalayas",
+        source_type="api", url="https://himalayas.app/y", source_id="live",
+        expiry_date=now + timedelta(days=1),
+    )
+    repo.upsert(expired)
+    repo.upsert(live)
+    client = _Client({})  # himalayas not probeable → no probe responses needed
+    indexer = _Indexer()
+    svc = JobRevalidationService(
+        http_client=client, repository=repo, indexer=indexer,
+        sources=["remotive"], markers=[], batch=10, concurrency=2, delay=0.0,
+        clock=lambda: now,
+    )
+
+    closed = await svc.sweep()
+
+    assert closed == ["exp"]
+    statuses = {j.id: j.status for j in repo.list_all()}
+    assert statuses["exp"] == "closed" and statuses["live"] == "open"
+    assert indexer.removed == [["exp"]]  # evicted from the vector index
+    assert client.requested == []  # expiry closure is DB-side, no HTTP probe
 
 
 @pytest.mark.asyncio

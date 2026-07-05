@@ -108,19 +108,13 @@ class PreferenceService:
         self._recompute()
         return signal
 
-    async def record_signal(
-        self, job_id: uuid_mod.UUID, kind: FeedbackKind
-    ) -> FeedbackSignal:
-        return await self._record(
-            job_id, kind, FeedbackSource.EXPLICIT, capture_dimensions=False
-        )
+    async def record_signal(self, job_id: uuid_mod.UUID, kind: FeedbackKind) -> FeedbackSignal:
+        return await self._record(job_id, kind, FeedbackSource.EXPLICIT, capture_dimensions=False)
 
     async def record_implicit_signal(
         self, job_id: uuid_mod.UUID, kind: FeedbackKind
     ) -> FeedbackSignal:
-        return await self._record(
-            job_id, kind, FeedbackSource.IMPLICIT, capture_dimensions=True
-        )
+        return await self._record(job_id, kind, FeedbackSource.IMPLICIT, capture_dimensions=True)
 
     def query_vector(self, baseline: list[float]) -> list[float]:
         if not self._enabled:
@@ -177,9 +171,7 @@ class PreferenceService:
         delta = model.delta_vector if model is not None else None
         overrides = dict(model.weight_overrides) if model is not None else {}
         signals = self._repo.list_signals()
-        explanation = build_explanation(
-            signals, delta_vector=delta, weight_overrides=overrides
-        )
+        explanation = build_explanation(signals, delta_vector=delta, weight_overrides=overrides)
         if self._explanation_enabled and self._llm is not None:
             summary = await self._build_summary(signals, explanation)
             if summary:
@@ -241,9 +233,7 @@ class PreferenceService:
             # overrides if any exist (an outcome signal whose job is unindexed
             # contributes to nudging via its dimension scores, not its vector).
             if overrides:
-                self._repo.save_model(
-                    PreferenceModel(delta_vector=[], weight_overrides=overrides)
-                )
+                self._repo.save_model(PreferenceModel(delta_vector=[], weight_overrides=overrides))
             return
         # Dimension is taken from the first signal's embedding. If the embedding
         # model's width ever changes mid-corpus, compute_delta skips off-width
@@ -253,9 +243,7 @@ class PreferenceService:
         now = datetime.now(timezone.utc)
         contributions = [self._to_contribution(s, now) for s in signals]
         delta = self._calc.compute_delta(contributions, dim=dim)
-        self._repo.save_model(
-            PreferenceModel(delta_vector=delta, weight_overrides=overrides)
-        )
+        self._repo.save_model(PreferenceModel(delta_vector=delta, weight_overrides=overrides))
 
     def _compute_overrides(self, signals: list[FeedbackSignal]) -> dict[str, int]:
         # Nudging needs a calculator. Each signal contributes only via the

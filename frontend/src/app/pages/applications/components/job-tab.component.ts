@@ -1,4 +1,13 @@
-import { Component, DestroyRef, OnChanges, computed, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  OnChanges,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ApplicationsService } from '../../../core/services/applications.service';
@@ -68,17 +77,20 @@ export class JobTabComponent implements OnChanges {
   regenerate(): void {
     this.regenerating.set(true);
     this.error.set('');
-    this.service.regenerateSkills(this.aggregate().id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (agg) => {
-        this.skills.set(agg.job_snapshot?.required_skills ?? []);
-        this.regenerating.set(false);
-        this.changed.emit();
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Regenerate failed');
-        this.regenerating.set(false);
-      },
-    });
+    this.service
+      .regenerateSkills(this.aggregate().id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (agg) => {
+          this.skills.set(agg.job_snapshot?.required_skills ?? []);
+          this.regenerating.set(false);
+          this.changed.emit();
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Regenerate failed');
+          this.regenerating.set(false);
+        },
+      });
   }
 
   addSkill(skill: string): void {

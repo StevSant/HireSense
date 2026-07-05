@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.profile.api.routes import router, get_profile_service
 from hiresense.profile.domain.models import CandidateProfile, CVSection
+from hiresense.profile.domain.translation_outcome import TranslationOutcome
 
 
 class FakeProfileService:
@@ -122,9 +123,6 @@ async def test_requires_auth_without_token() -> None:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/profile/current")
     assert resp.status_code == 401
-
-
-from hiresense.profile.domain.translation_outcome import TranslationOutcome
 
 
 class TranslateFakeService:

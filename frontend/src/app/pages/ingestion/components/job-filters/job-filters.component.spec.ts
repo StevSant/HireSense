@@ -30,7 +30,9 @@ describe('JobFiltersComponent', () => {
     let emitted: JobFilters | null = null;
     fixture.componentInstance.filtersChange.subscribe((f) => (emitted = f));
 
-    const select = fixture.nativeElement.querySelector('select.filter-control') as HTMLSelectElement;
+    const select = fixture.nativeElement.querySelector(
+      'select.filter-control',
+    ) as HTMLSelectElement;
     select.value = 'remotive';
     select.dispatchEvent(new Event('change'));
 
@@ -42,7 +44,9 @@ describe('JobFiltersComponent', () => {
     let emitted: JobFilters | null = null;
     fixture.componentInstance.filtersChange.subscribe((f) => (emitted = f));
 
-    const select = fixture.nativeElement.querySelector('select.filter-control') as HTMLSelectElement;
+    const select = fixture.nativeElement.querySelector(
+      'select.filter-control',
+    ) as HTMLSelectElement;
     select.value = 'remotive';
     select.dispatchEvent(new Event('change'));
 
@@ -54,7 +58,9 @@ describe('JobFiltersComponent', () => {
     let emitted: JobFilters | null = null;
     fixture.componentInstance.filtersChange.subscribe((f) => (emitted = f));
 
-    const select = fixture.nativeElement.querySelector('select.filter-control') as HTMLSelectElement;
+    const select = fixture.nativeElement.querySelector(
+      'select.filter-control',
+    ) as HTMLSelectElement;
     select.value = '';
     select.dispatchEvent(new Event('change'));
 
@@ -68,7 +74,9 @@ describe('JobFiltersComponent', () => {
       let emitted: JobFilters | null = null;
       fixture.componentInstance.filtersChange.subscribe((f) => (emitted = f));
 
-      const input = fixture.nativeElement.querySelectorAll('input[type="text"]')[0] as HTMLInputElement;
+      const input = fixture.nativeElement.querySelectorAll(
+        'input[type="text"]',
+      )[0] as HTMLInputElement;
       input.value = '  react  ';
       input.dispatchEvent(new Event('input'));
 

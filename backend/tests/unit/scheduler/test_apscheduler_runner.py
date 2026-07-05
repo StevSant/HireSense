@@ -18,10 +18,10 @@ def _defs():
         return []
 
     return [
-        JobDefinition(name="cron_job", run=noop, cron="0 9 * * *",
-                      interval_hours=None, count_items=len),
-        JobDefinition(name="interval_job", run=noop, cron=None,
-                      interval_hours=24, count_items=len),
+        JobDefinition(
+            name="cron_job", run=noop, cron="0 9 * * *", interval_hours=None, count_items=len
+        ),
+        JobDefinition(name="interval_job", run=noop, cron=None, interval_hours=24, count_items=len),
     ]
 
 

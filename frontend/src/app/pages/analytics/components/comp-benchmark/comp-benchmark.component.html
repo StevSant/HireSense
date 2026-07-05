@@ -8,17 +8,32 @@
   @if (comp().ask_min_annual !== null) {
     <p class="comp-ask">
       Suggested ask:
-      <strong>{{ comp().currency }} {{ fmt(comp().ask_min_annual) }}–{{ fmt(comp().ask_max_annual) }}</strong>
+      <strong
+        >{{ comp().currency }} {{ fmt(comp().ask_min_annual) }}–{{
+          fmt(comp().ask_max_annual)
+        }}</strong
+      >
       <span class="comp-sub">/ year — aim between the market median and the top quartile.</span>
     </p>
   }
 
   @if (comp().your_median_annual !== null) {
-    <div class="comp-insight" [class.below]="(pipelineDelta() ?? 0) < 0" [class.above]="(pipelineDelta() ?? 0) > 0">
+    <div
+      class="comp-insight"
+      [class.below]="(pipelineDelta() ?? 0) < 0"
+      [class.above]="(pipelineDelta() ?? 0) > 0"
+    >
       <span class="comp-insight-label">Your pipeline vs market</span>
       <p class="comp-insight-body">
         The jobs you're tracking pay a median of
-        <strong>{{ comp().currency }} {{ fmt(comp().your_median_annual) }}</strong>@if (deltaLabel(); as dl) { — <span class="comp-delta">{{ dl }}</span> your profile's market median ({{ comp().currency }} {{ fmt(comp().median_annual) }})}.
+        <strong>{{ comp().currency }} {{ fmt(comp().your_median_annual) }}</strong>
+        @if (deltaLabel(); as dl) {
+          — <span class="comp-delta">{{ dl }}</span> your profile's market median ({{
+            comp().currency
+          }}
+          {{ fmt(comp().median_annual) }})
+        }
+        .
       </p>
       <p class="comp-insight-note">{{ sampleNote() }}</p>
     </div>

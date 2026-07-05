@@ -4,6 +4,7 @@ Revision ID: 006
 Revises: 005
 Create Date: 2026-05-24
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -33,7 +34,9 @@ def upgrade() -> None:
         ),
         sa.Column("body", sa.Text(), nullable=False),
         sa.Column("tone", sa.String(20), nullable=False, server_default="professional"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
     op.create_index(
         "ix_application_cover_letters_app_created",
@@ -43,5 +46,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_application_cover_letters_app_created", table_name="application_cover_letters")
+    op.drop_index(
+        "ix_application_cover_letters_app_created", table_name="application_cover_letters"
+    )
     op.drop_table("application_cover_letters")

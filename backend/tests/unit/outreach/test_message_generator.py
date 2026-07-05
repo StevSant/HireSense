@@ -24,10 +24,17 @@ def _gen(llm):
 async def test_generates_stripped_body_with_style_and_research():
     llm = _FakeLLM()
     out = await _gen(llm).generate(
-        company="Acme", title="Backend Engineer", job_description="Build APIs",
-        candidate_name="Bryan", candidate_summary="FastAPI dev", candidate_skills=["python"],
-        company_research="Culture: remote-first", contact_name="Sam", style_guide="BE CONCISE",
-        channel="linkedin", max_chars=500,
+        company="Acme",
+        title="Backend Engineer",
+        job_description="Build APIs",
+        candidate_name="Bryan",
+        candidate_summary="FastAPI dev",
+        candidate_skills=["python"],
+        company_research="Culture: remote-first",
+        contact_name="Sam",
+        style_guide="BE CONCISE",
+        channel="linkedin",
+        max_chars=500,
     )
     assert out == "Hi Sam, ..."
     prompt, system = llm.calls[0]
@@ -39,9 +46,17 @@ async def test_generates_stripped_body_with_style_and_research():
 async def test_omits_research_when_none():
     llm = _FakeLLM()
     await _gen(llm).generate(
-        company="Acme", title="BE", job_description="x", candidate_name="Bryan",
-        candidate_summary="s", candidate_skills=[], company_research=None,
-        contact_name=None, style_guide="SG", channel=None, max_chars=500,
+        company="Acme",
+        title="BE",
+        job_description="x",
+        candidate_name="Bryan",
+        candidate_summary="s",
+        candidate_skills=[],
+        company_research=None,
+        contact_name=None,
+        style_guide="SG",
+        channel=None,
+        max_chars=500,
     )
     prompt, _ = llm.calls[0]
     assert "Company research" not in prompt  # the research block is omitted
@@ -51,7 +66,15 @@ async def test_omits_research_when_none():
 async def test_raises_when_no_llm():
     with pytest.raises(OutreachUnavailableError):
         await _gen(None).generate(
-            company="Acme", title="BE", job_description="x", candidate_name="B",
-            candidate_summary="s", candidate_skills=[], company_research=None,
-            contact_name=None, style_guide="SG", channel=None, max_chars=500,
+            company="Acme",
+            title="BE",
+            job_description="x",
+            candidate_name="B",
+            candidate_summary="s",
+            candidate_skills=[],
+            company_research=None,
+            contact_name=None,
+            style_guide="SG",
+            channel=None,
+            max_chars=500,
         )

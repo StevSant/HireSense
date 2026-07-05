@@ -86,7 +86,13 @@ describe('ApplyTabComponent', () => {
     const { fixture } = mount(
       makeAggregate({
         status: 'applied',
-        latest_cover_letter: { id: 'cl', match_id: null, body: 'Dear hiring', tone: 'professional', created_at: null },
+        latest_cover_letter: {
+          id: 'cl',
+          match_id: null,
+          body: 'Dear hiring',
+          tone: 'professional',
+          created_at: null,
+        },
         latest_optimization: {
           id: 'opt',
           match_id: null,

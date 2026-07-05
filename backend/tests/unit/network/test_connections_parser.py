@@ -7,13 +7,11 @@ from hiresense.network.domain import ConnectionsParseError, parse_connections
 
 _HEADER = "First Name,Last Name,URL,Email Address,Company,Position,Connected On"
 _ROWS = (
-    'Jordan,Lee,https://www.linkedin.com/in/jlee,,Acme Inc.,Engineering Manager,01 Feb 2025\n'
-    'Sam,Diaz,,sam@x.dev,Globant S.A.,Recruiter,15 Mar 2024\n'
-    ',,,,,,\n'  # fully empty row is skipped
+    "Jordan,Lee,https://www.linkedin.com/in/jlee,,Acme Inc.,Engineering Manager,01 Feb 2025\n"
+    "Sam,Diaz,,sam@x.dev,Globant S.A.,Recruiter,15 Mar 2024\n"
+    ",,,,,,\n"  # fully empty row is skipped
 )
-_PREAMBLE = (
-    '"Notes:\nWhen exporting your connection data, you may notice missing emails."\n\n'
-)
+_PREAMBLE = '"Notes:\nWhen exporting your connection data, you may notice missing emails."\n\n'
 
 
 def _csv_bytes(*, preamble: bool) -> bytes:
@@ -56,9 +54,7 @@ def test_csv_without_header_raises() -> None:
 
 
 def test_zip_member_decompression_ceiling(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "hiresense.network.domain.connections_parser._MAX_MEMBER_BYTES", 64
-    )
+    monkeypatch.setattr("hiresense.network.domain.connections_parser._MAX_MEMBER_BYTES", 64)
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("Connections.csv", _HEADER + "\n" + "a,b,,,c,d,e\n" * 100)

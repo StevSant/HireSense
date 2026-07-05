@@ -49,9 +49,7 @@ def update_template(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     if updated is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Template not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
     return updated
 
 
@@ -61,6 +59,4 @@ def delete_template(
     service: CoverLetterTemplateService = Depends(get_template_service),
 ) -> None:
     if not service.delete(template_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Template not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")

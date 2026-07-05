@@ -3,7 +3,11 @@ from hiresense.portfolio.domain import PortfolioProject, ProjectText, RelevantPr
 
 def _project(key, *, tech=None, title=None, pinned=False, position=None):
     return PortfolioProject(
-        id=key, source="supabase", source_key=key, pinned=pinned, position=position,
+        id=key,
+        source="supabase",
+        source_key=key,
+        pinned=pinned,
+        position=position,
         tech=tech or [],
         translations={"en": ProjectText(title=title or key, description="d")},
     )
@@ -35,7 +39,8 @@ def test_title_tokens_count_and_pinned_breaks_ties() -> None:
     assert [p.source_key for p in picked] == ["a", "b"]  # equal score -> pinned first
 
     titled = selector.select(
-        job_skills=[], job_text="building a kafka pipeline",
+        job_skills=[],
+        job_text="building a kafka pipeline",
         projects=[_project("k", title="kafka-dashboard"), _project("x", title="todo-app")],
         top_n=2,
     )

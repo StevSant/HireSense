@@ -17,9 +17,7 @@ class LangChainLLMAdapter:
     values so usage can be attributed to the right provider/model.
     """
 
-    def __init__(
-        self, model: BaseChatModel, *, provider: str = "", model_name: str = ""
-    ) -> None:
+    def __init__(self, model: BaseChatModel, *, provider: str = "", model_name: str = "") -> None:
         self._model = model
         self._provider = provider
         self._model_name = model_name
@@ -28,9 +26,7 @@ class LangChainLLMAdapter:
         result = await self.generate(prompt, system=system, model=model)
         return result.content
 
-    async def generate(
-        self, prompt: str, *, system: str = "", model: str = ""
-    ) -> LLMResult:
+    async def generate(self, prompt: str, *, system: str = "", model: str = "") -> LLMResult:
         messages = self._messages(prompt, system)
         target = self._model.bind(model=model) if model else self._model
         response = await target.ainvoke(messages)

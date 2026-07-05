@@ -12,6 +12,7 @@ onto each outcome signal at record time), and verifies:
   composite;
 - POST /preference/reset clears both the taste delta and the weight overrides.
 """
+
 from __future__ import annotations
 
 import uuid as uuid_mod
@@ -129,9 +130,7 @@ async def test_weight_nudge_flow() -> None:
     service.attach_dimension_scorer(_FakeDimScorer())
 
     # A matching orchestrator sharing the same preference port (as in the app).
-    orchestrator = MatchingOrchestrator(
-        llm=None, event_bus=_FakeEventBus(), preference=service
-    )
+    orchestrator = MatchingOrchestrator(llm=None, event_bus=_FakeEventBus(), preference=service)
 
     app = _build_app(service)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

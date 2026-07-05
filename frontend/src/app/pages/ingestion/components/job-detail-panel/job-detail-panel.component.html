@@ -15,17 +15,24 @@
           @if (job().application_method === 'ats_form') {
             <span
               class="chip chip-direct-apply"
-              [title]="job().ats_type ? ('Direct application form (' + job().ats_type + ')') : 'Direct application form'"
-            >✅ Applies directly</span>
+              [title]="
+                job().ats_type
+                  ? 'Direct application form (' + job().ats_type + ')'
+                  : 'Direct application form'
+              "
+              >✅ Applies directly</span
+            >
           }
           @if (job().location) {
             <span class="chip" [title]="job().location">📍 {{ job().location }}</span>
           }
           @if (job().posted_date) {
-            <span class="chip">📅 {{ job().posted_date | date:'mediumDate' }}</span>
+            <span class="chip">📅 {{ job().posted_date | date: 'mediumDate' }}</span>
           }
           @if (compensationHighlight()) {
-            <span class="chip chip-comp" [title]="compensationHighlight()!">💰 {{ compensationHighlight() }}</span>
+            <span class="chip chip-comp" [title]="compensationHighlight()!"
+              >💰 {{ compensationHighlight() }}</span
+            >
           }
           @if (job().department) {
             <span class="chip">🏷 {{ job().department }}</span>
@@ -50,7 +57,8 @@
                 class="verdict-chip"
                 [style.color]="scoreColor(pillScore())"
                 [style.border-color]="scoreColor(pillScore())"
-              >{{ job().verdict }} fit</span>
+                >{{ job().verdict }} fit</span
+              >
             }
           </div>
         } @else {
@@ -89,7 +97,12 @@
 
       <!-- Full analysis lives on the dedicated job page (opens in a new tab) -->
       <div class="panel-section">
-        <a class="deep-toggle" [routerLink]="['/dashboard/job', job().id]" target="_blank" rel="noopener">
+        <a
+          class="deep-toggle"
+          [routerLink]="['/dashboard/job', job().id]"
+          target="_blank"
+          rel="noopener"
+        >
           <span class="section-label">Full analysis</span>
           <span class="deep-toggle-action">View pros, cons &amp; breakdown ↗</span>
         </a>

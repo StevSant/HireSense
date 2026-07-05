@@ -51,7 +51,7 @@ def test_portfolio_citation_settings_defaults(monkeypatch: pytest.MonkeyPatch) -
     portfolio_relevant_projects_top_n: int = 2
 ```
 
-- [ ] **Step 4:** test file green. **Step 5:** `.env.example` gains the three vars (commented, `PORTFOLIO_PUBLIC_URL=` empty placeholder); local `backend/.env` gains them with `PORTFOLIO_PUBLIC_URL=https://stevsant.vercel.app`, others default.
+- [ ] **Step 4:** test file green. **Step 5:** `.env.example` gains the three vars (commented, `PORTFOLIO_PUBLIC_URL=` empty placeholder); local `backend/.env` gains them with `PORTFOLIO_PUBLIC_URL=https://your-portfolio.example.com`, others default.
 - [ ] **Step 6: commit** — `feat(portfolio): citation settings`.
 
 ---
@@ -460,7 +460,7 @@ IMPORTANT: first READ `cover_letter_generator.py` and the existing tests to matc
 ### Task 6: Verification + smoke + stacked PR
 
 - [ ] **Step 1:** `uv run python -m pytest -q` (expect ~930+ passed, 0 failed) + `uv run ruff check .`. Frontend untouched.
-- [ ] **Step 2: smoke** (compose db up; real `.env`): start app on a free port, login. Pick/create a tracked application with a job snapshot (use existing data if present: `GET /tracking` to find an application id). Generate a cover letter (`POST /applications/{id}/cover-letter` with `{"cv_language": "en", "tone": "professional"}`) → response body should mention a real project (e.g. mesaYA/HireSense-adjacent) AND contain `https://stevsant.vercel.app/?ref=hiresense-<id>` when relevant; if the corpus has no relevant project the section is absent — that's correct behavior, note which case occurred. Same for `POST /outreach/generate`.
+- [ ] **Step 2: smoke** (compose db up; real `.env`): start app on a free port, login. Pick/create a tracked application with a job snapshot (use existing data if present: `GET /tracking` to find an application id). Generate a cover letter (`POST /applications/{id}/cover-letter` with `{"cv_language": "en", "tone": "professional"}`) → response body should mention a real project (e.g. mesaYA/HireSense-adjacent) AND contain `https://your-portfolio.example.com/?ref=hiresense-<id>` when relevant; if the corpus has no relevant project the section is absent — that's correct behavior, note which case occurred. Same for `POST /outreach/generate`.
 - [ ] **Step 3:** push `feat/portfolio-citation`; `gh auth switch --user StevSant`; `gh pr create --base feat/portfolio-github --title "feat(portfolio): cite relevant projects in artifacts (Phase 3)"` with summary (selector + citation service, optional wiring, ref-link format, smoke evidence, note: structured citation display deferred — the letter body shows citations). Claude Code footer.
 
 ## Self-review notes (applied)

@@ -9,7 +9,9 @@ from hiresense.scheduler.infrastructure import JobRunOrm, JobToggleOrm  # noqa: 
 
 
 def _factory():
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)
 
@@ -24,27 +26,36 @@ class _Settings:
 
 
 class _Noop:
-    async def run(self): return []
-    async def sweep(self): return []
+    async def run(self):
+        return []
+
+    async def sweep(self):
+        return []
 
 
 class _Auto:
-    async def run(self): return type("D", (), {"job_count": 0})()
+    async def run(self):
+        return type("D", (), {"job_count": 0})()
 
 
 class _Out:
-    def due_followups(self): return []
+    def due_followups(self):
+        return []
 
 
 class _Pipeline:
-    async def run(self): return type("R", (), {"created": 5})()
+    async def run(self):
+        return type("R", (), {"created": 5})()
 
 
 def _build(pipeline):
     return build_scheduler(
-        settings=_Settings(), sync_session_factory=_factory(),
-        ingestion_orchestrator=_Noop(), revalidation_service=_Noop(),
-        autohunt_service=_Auto(), outreach_service=_Out(),
+        settings=_Settings(),
+        sync_session_factory=_factory(),
+        ingestion_orchestrator=_Noop(),
+        revalidation_service=_Noop(),
+        autohunt_service=_Auto(),
+        outreach_service=_Out(),
         autopilot_pipeline_service=pipeline,
     )
 

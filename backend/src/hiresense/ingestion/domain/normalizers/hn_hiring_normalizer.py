@@ -140,14 +140,26 @@ _URL_PATTERN = re.compile(r"^https?://", re.I)
 # strings that some HN postings drop straight after the company name.
 _EMPLOYMENT_TYPE_NORMALISED = frozenset(
     {
-        "full time", "full-time", "fulltime",
-        "part time", "part-time", "parttime",
-        "contract", "contractor",
-        "freelance", "freelancer",
-        "permanent", "temporary",
+        "full time",
+        "full-time",
+        "fulltime",
+        "part time",
+        "part-time",
+        "parttime",
+        "contract",
+        "contractor",
+        "freelance",
+        "freelancer",
+        "permanent",
+        "temporary",
         "internship",
-        "remote", "onsite", "on-site", "hybrid",
-        "multiple roles", "multiple positions", "various roles",
+        "remote",
+        "onsite",
+        "on-site",
+        "hybrid",
+        "multiple roles",
+        "multiple positions",
+        "various roles",
     }
 )
 
@@ -226,7 +238,8 @@ def _parse_hn_comment(html: str) -> dict[str, str | None]:
         # title — those continue through to _classify_extra.
         fallback_idx: int | None = next(
             (
-                i for i, p in enumerate(remaining)
+                i
+                for i, p in enumerate(remaining)
                 if not _looks_like_url(p) and not _is_pure_employment_marker(p)
             ),
             None,

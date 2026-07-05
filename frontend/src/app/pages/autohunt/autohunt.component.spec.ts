@@ -12,7 +12,13 @@ function makeDigest(over: Partial<Digest> = {}): Digest {
     cutoff_at: '2026-06-06T00:00:00Z',
     job_count: 2,
     entries: [
-      { job_id: 'job-1', title: 'Backend Engineer', company: 'Acme', url: 'https://x/1', score: 0.87 },
+      {
+        job_id: 'job-1',
+        title: 'Backend Engineer',
+        company: 'Acme',
+        url: 'https://x/1',
+        score: 0.87,
+      },
       { job_id: 'job-2', title: 'Platform Engineer', company: 'Globex', url: null, score: 0.71 },
     ],
     ...over,
@@ -30,10 +36,7 @@ describe('AutohuntComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [AutohuntComponent],
-      providers: [
-        provideRouter([]),
-        { provide: AutohuntService, useValue: autohunt },
-      ],
+      providers: [provideRouter([]), { provide: AutohuntService, useValue: autohunt }],
     });
     const fixture = TestBed.createComponent(AutohuntComponent);
     fixture.detectChanges();

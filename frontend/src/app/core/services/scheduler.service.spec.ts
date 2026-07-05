@@ -22,7 +22,15 @@ describe('SchedulerService', () => {
     service.listJobs().subscribe((r) => (result = r));
     const req = httpMock.expectOne('/api/scheduler/jobs');
     expect(req.request.method).toBe('GET');
-    req.flush([{ name: 'ingestion_fetch', cron: '0 */6 * * *', enabled: true, last_run: null, next_run_at: null }]);
+    req.flush([
+      {
+        name: 'ingestion_fetch',
+        cron: '0 */6 * * *',
+        enabled: true,
+        last_run: null,
+        next_run_at: null,
+      },
+    ]);
     expect((result as unknown[]).length).toBe(1);
   });
 
@@ -31,7 +39,13 @@ describe('SchedulerService', () => {
     const req = httpMock.expectOne('/api/scheduler/jobs/ingestion_fetch/toggle');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ enabled: false });
-    req.flush({ name: 'ingestion_fetch', cron: '0 */6 * * *', enabled: false, last_run: null, next_run_at: null });
+    req.flush({
+      name: 'ingestion_fetch',
+      cron: '0 */6 * * *',
+      enabled: false,
+      last_run: null,
+      next_run_at: null,
+    });
   });
 
   it('runs a job now', () => {

@@ -9,7 +9,9 @@ from hiresense.scheduler.infrastructure import JobRunOrm, JobToggleOrm  # noqa: 
 
 
 def _factory():
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)
 
@@ -52,7 +54,12 @@ def test_build_scheduler_registers_all_four_jobs():
         outreach_service=_Outreach(),
     )
     names = {v.name for v in build.provider.list_jobs()}
-    assert names == {"ingestion_fetch", "revalidation_sweep", "autohunt_digest", "outreach_followups"}
+    assert names == {
+        "ingestion_fetch",
+        "revalidation_sweep",
+        "autohunt_digest",
+        "outreach_followups",
+    }
 
 
 @pytest.mark.asyncio

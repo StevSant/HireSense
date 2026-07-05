@@ -5,13 +5,9 @@ from typing import AsyncIterator, Protocol
 
 
 class LLMPort(Protocol):
-    async def complete(
-        self, prompt: str, *, system: str = "", model: str = ""
-    ) -> str: ...
+    async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str: ...
 
-    async def stream(
-        self, prompt: str, *, system: str = ""
-    ) -> AsyncIterator[str]: ...
+    async def stream(self, prompt: str, *, system: str = "") -> AsyncIterator[str]: ...
 
 
 @dataclass(frozen=True)
@@ -34,13 +30,9 @@ class MeteredLLMPort(Protocol):
     `LLMPort.complete() -> str` contract that domain code depends on.
     """
 
-    async def generate(
-        self, prompt: str, *, system: str = "", model: str = ""
-    ) -> LLMResult: ...
+    async def generate(self, prompt: str, *, system: str = "", model: str = "") -> LLMResult: ...
 
-    async def stream(
-        self, prompt: str, *, system: str = ""
-    ) -> AsyncIterator[str]: ...
+    async def stream(self, prompt: str, *, system: str = "") -> AsyncIterator[str]: ...
 
 
 class LLMInvocationError(RuntimeError):

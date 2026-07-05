@@ -10,7 +10,12 @@ import { RouterLink } from '@angular/router';
   standalone: true,
   imports: [RouterLink],
   template: `@if (name()) {
-      <a class="company-link" [routerLink]="['/dashboard/company', name()]" (click)="$event.stopPropagation()">{{ name() }}</a>
+      <a
+        class="company-link"
+        [routerLink]="['/dashboard/company', name()]"
+        (click)="$event.stopPropagation()"
+        >{{ name() }}</a
+      >
     } @else {
       <span class="company-link-empty">—</span>
     }`,
@@ -24,7 +29,9 @@ import { RouterLink } from '@angular/router';
       color: var(--accent);
       text-decoration: underline;
     }
-    .company-link-empty { color: var(--text-muted); }
+    .company-link-empty {
+      color: var(--text-muted);
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

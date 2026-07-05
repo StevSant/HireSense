@@ -134,9 +134,7 @@ describe('AdminLLMSettingsComponent', () => {
 
   describe('load error', () => {
     it('sets the error message and clears loading when getSettings fails', () => {
-      getSettings.mockReturnValue(
-        throwError(() => ({ error: { detail: 'boom' } })),
-      );
+      getSettings.mockReturnValue(throwError(() => ({ error: { detail: 'boom' } })));
       const fixture = mount();
       const c = fixture.componentInstance;
       expect(c.error()).toBe('boom');
@@ -223,9 +221,7 @@ describe('AdminLLMSettingsComponent', () => {
 
     it('reports a save error from the service detail', () => {
       vi.spyOn(window, 'confirm').mockReturnValue(true);
-      updateSettings.mockReturnValue(
-        throwError(() => ({ error: { detail: 'rejected' } })),
-      );
+      updateSettings.mockReturnValue(throwError(() => ({ error: { detail: 'rejected' } })));
       const fixture = mount();
       const c = fixture.componentInstance;
       c.onModelChange('gpt-4o');
@@ -295,9 +291,7 @@ describe('AdminLLMSettingsComponent', () => {
     });
 
     it('surfaces an override save error and keeps the draft open', () => {
-      upsertOverride.mockReturnValue(
-        throwError(() => ({ error: { detail: 'bad override' } })),
-      );
+      upsertOverride.mockReturnValue(throwError(() => ({ error: { detail: 'bad override' } })));
       const fixture = mount();
       const c = fixture.componentInstance;
 

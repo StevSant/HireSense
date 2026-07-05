@@ -36,9 +36,7 @@ class WeightNudgeCalculator:
         self._clamp = abs(clamp)
         self._scale = scale
 
-    def compute_overrides(
-        self, observations: list[OutcomeObservation]
-    ) -> dict[str, int]:
+    def compute_overrides(self, observations: list[OutcomeObservation]) -> dict[str, int]:
         # Cold-start gate: count distinct outcome signals. Observations are
         # per-(signal, dimension); a single signal contributes one observation
         # per dimension, so gate on the max per-dimension observation count

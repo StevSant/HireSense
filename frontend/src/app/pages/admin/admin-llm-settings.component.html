@@ -2,9 +2,8 @@
   <header class="page-header">
     <h1>LLM Settings</h1>
     <p class="subtitle">
-      Configure the global provider, model and API key. Per-feature overrides let you route
-      cheap, high-volume features to a small model while keeping the expensive features on the
-      flagship.
+      Configure the global provider, model and API key. Per-feature overrides let you route cheap,
+      high-volume features to a small model while keeping the expensive features on the flagship.
     </p>
   </header>
 
@@ -15,9 +14,13 @@
       <h2>Global config</h2>
       @if (current(); as cfg) {
         <div class="current-state">
-          <div><span class="muted">Source:</span> <strong>{{ cfg.source }}</strong></div>
+          <div>
+            <span class="muted">Source:</span> <strong>{{ cfg.source }}</strong>
+          </div>
           @if (cfg.has_stored_key) {
-            <div><span class="muted">Stored key:</span> <code>{{ cfg.api_key_mask }}</code></div>
+            <div>
+              <span class="muted">Stored key:</span> <code>{{ cfg.api_key_mask }}</code>
+            </div>
           } @else {
             <div class="warning">
               No API key stored in DB &mdash; falling back to <code>LLM_API_KEY</code> from .env.
@@ -35,9 +38,7 @@
       <div class="form-grid">
         <label>
           <span>Provider</span>
-          <select
-            [ngModel]="formProvider()"
-            (ngModelChange)="onProviderChange($event)">
+          <select [ngModel]="formProvider()" (ngModelChange)="onProviderChange($event)">
             @for (p of providers; track p) {
               <option [value]="p">{{ p }}</option>
             }
@@ -91,24 +92,28 @@
               [ngModel]="param.value"
               (ngModelChange)="setExtraValue($index, $event)"
             />
-            <button class="btn-icon" (click)="removeExtra($index)" type="button" aria-label="Remove">×</button>
+            <button
+              class="btn-icon"
+              (click)="removeExtra($index)"
+              type="button"
+              aria-label="Remove"
+            >
+              ×
+            </button>
           </div>
         }
       </div>
 
       <div class="actions">
-        <button
-          class="btn"
-          (click)="test()"
-          [disabled]="testing() || saving()"
-          type="button">
+        <button class="btn" (click)="test()" [disabled]="testing() || saving()" type="button">
           {{ testing() ? 'Testing…' : 'Test connection' }}
         </button>
         <button
           class="btn btn-primary"
           (click)="save()"
           [disabled]="saving() || testing()"
-          type="button">
+          type="button"
+        >
           {{ saving() ? 'Saving…' : 'Save' }}
         </button>
       </div>
@@ -116,9 +121,11 @@
       @if (testResult(); as t) {
         <div class="test-result" [class.success]="t.success" [class.failure]="!t.success">
           @if (t.success) {
-            <strong>✓ Test passed</strong> ({{ t.latency_ms | number:'1.0-0' }} ms)
+            <strong>✓ Test passed</strong> ({{ t.latency_ms | number: '1.0-0' }} ms)
             @if (t.response_preview) {
-              <div class="preview">Response: <code>{{ t.response_preview }}</code></div>
+              <div class="preview">
+                Response: <code>{{ t.response_preview }}</code>
+              </div>
             }
           } @else {
             <strong>✗ Test failed</strong>
@@ -139,8 +146,8 @@
     <section class="card">
       <h2>Per-feature overrides</h2>
       <p class="muted small">
-        Each feature inherits the global config by default. Override the provider and/or model
-        to route that feature elsewhere (e.g. Haiku for CV parsing, Sonnet for scoring).
+        Each feature inherits the global config by default. Override the provider and/or model to
+        route that feature elsewhere (e.g. Haiku for CV parsing, Sonnet for scoring).
       </p>
 
       <table class="overrides-table">
@@ -180,7 +187,9 @@
               <td class="right">
                 <button class="btn-link" (click)="startEdit(feature)" type="button">Edit</button>
                 @if (feature.source === 'override') {
-                  <button class="btn-link danger" (click)="resetOverride(feature)" type="button">Reset</button>
+                  <button class="btn-link danger" (click)="resetOverride(feature)" type="button">
+                    Reset
+                  </button>
                 }
               </td>
             </tr>
@@ -212,9 +221,7 @@
               Inherit provider from global
             </label>
             @if (!draft.inherit_provider) {
-              <select
-                [ngModel]="draft.provider"
-                (ngModelChange)="setOverrideProvider($event)">
+              <select [ngModel]="draft.provider" (ngModelChange)="setOverrideProvider($event)">
                 <option value="" disabled>Pick a provider</option>
                 @for (p of providers; track p) {
                   <option [value]="p">{{ p }}</option>
@@ -258,7 +265,14 @@
                     [ngModel]="param.value"
                     (ngModelChange)="setOverrideExtraValue($index, $event)"
                   />
-                  <button class="btn-icon" (click)="removeOverrideExtra($index)" type="button" aria-label="Remove">×</button>
+                  <button
+                    class="btn-icon"
+                    (click)="removeOverrideExtra($index)"
+                    type="button"
+                    aria-label="Remove"
+                  >
+                    ×
+                  </button>
                 </div>
               }
             </div>
@@ -266,7 +280,7 @@
             @if (overrideTestResult(); as t) {
               <div class="test-result" [class.success]="t.success" [class.failure]="!t.success">
                 @if (t.success) {
-                  <strong>✓ Test passed</strong> ({{ t.latency_ms | number:'1.0-0' }} ms)
+                  <strong>✓ Test passed</strong> ({{ t.latency_ms | number: '1.0-0' }} ms)
                 } @else {
                   <strong>✗ Test failed</strong>
                   <div class="preview">{{ t.error }}</div>
@@ -283,7 +297,8 @@
               class="btn"
               (click)="testOverride()"
               [disabled]="overrideTesting()"
-              type="button">
+              type="button"
+            >
               {{ overrideTesting() ? 'Testing…' : 'Test' }}
             </button>
             <button class="btn btn-primary" (click)="saveOverride()" type="button">Save</button>

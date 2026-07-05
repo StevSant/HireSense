@@ -28,8 +28,15 @@ describe('PortfolioCardComponent', () => {
 
   function project(over: Record<string, unknown> = {}) {
     return {
-      id: 'p1', source: 'supabase', source_key: 'x', url: null, demo_url: null,
-      pinned: false, position: null, include_in_matching: true, tech: [],
+      id: 'p1',
+      source: 'supabase',
+      source_key: 'x',
+      url: null,
+      demo_url: null,
+      pinned: false,
+      position: null,
+      include_in_matching: true,
+      tech: [],
       translations: { en: { title: 'X', description: null } },
       ...over,
     };
@@ -40,8 +47,14 @@ describe('PortfolioCardComponent', () => {
     flushProjects(
       [
         {
-          id: 'p1', source: 'supabase', source_key: 'hiresense', url: 'https://x', demo_url: null,
-          pinned: true, position: 1, tech: ['python', 'angular'],
+          id: 'p1',
+          source: 'supabase',
+          source_key: 'hiresense',
+          url: 'https://x',
+          demo_url: null,
+          pinned: true,
+          position: 1,
+          tech: ['python', 'angular'],
           translations: { en: { title: 'HireSense', description: 'AI job hunting' } },
         },
       ],
@@ -69,14 +82,20 @@ describe('PortfolioCardComponent', () => {
     flushProjects(
       [
         {
-          id: 'p1', source: 'supabase', source_key: 'x', url: null, demo_url: null,
-          pinned: false, position: null, tech: [],
+          id: 'p1',
+          source: 'supabase',
+          source_key: 'x',
+          url: null,
+          demo_url: null,
+          pinned: false,
+          position: null,
+          tech: [],
           translations: { en: { title: 'X', description: null } },
         },
       ],
       '2026-06-09T00:00:00Z',
     );
-    expect(((fixture.nativeElement as HTMLElement).textContent ?? '')).toContain('X');
+    expect((fixture.nativeElement as HTMLElement).textContent ?? '').toContain('X');
   });
 
   it('renders a card grid with description snippet and caps tech chips with +N more', () => {
@@ -118,8 +137,16 @@ describe('PortfolioCardComponent', () => {
     expect(next.disabled).toBe(false);
     next.click();
     httpMock
-      .expectOne((req) => req.url === `${environment.apiUrl}/portfolio/projects` && req.params.get('offset') === '12')
-      .flush({ projects: [project({ id: 'b', source_key: 'b' })], total: 30, last_synced_at: null });
+      .expectOne(
+        (req) =>
+          req.url === `${environment.apiUrl}/portfolio/projects` &&
+          req.params.get('offset') === '12',
+      )
+      .flush({
+        projects: [project({ id: 'b', source_key: 'b' })],
+        total: 30,
+        last_synced_at: null,
+      });
     fixture.detectChanges();
     expect(el.querySelector('.page-indicator')?.textContent).toContain('13–13 of 30');
   });

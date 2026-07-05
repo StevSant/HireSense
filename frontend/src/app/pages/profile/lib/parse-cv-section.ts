@@ -48,7 +48,10 @@ export function parseCvSection(content: string): CvSectionBlock[] {
     for (const para of paragraphs) {
       const trimmed = para.trim();
       if (!trimmed) continue;
-      const lines = trimmed.split('\n').map((l) => l.trim()).filter(Boolean);
+      const lines = trimmed
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean);
       if (!lines.length) continue;
 
       if (lines.every((l) => BULLET_PATTERN.test(l))) {

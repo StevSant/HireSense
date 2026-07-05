@@ -83,7 +83,8 @@ class LatexCompiler:
                 self._compiler,
                 "-interaction=nonstopmode",
                 "-halt-on-error",
-                "-output-directory", str(working_dir),
+                "-output-directory",
+                str(working_dir),
                 str(source),
             ],
             cwd=working_dir,
@@ -221,13 +222,9 @@ def _render_cv_section_body(content: str) -> str:
         lines = [ln.strip() for ln in para.splitlines() if ln.strip()]
         if not lines:
             continue
-        is_bullets = len(lines) > 1 and all(
-            ln.lstrip().startswith(("-", "*", "•")) for ln in lines
-        )
+        is_bullets = len(lines) > 1 and all(ln.lstrip().startswith(("-", "*", "•")) for ln in lines)
         if is_bullets:
-            items = "\n".join(
-                rf"\item {_latex_escape(ln.lstrip('-*• ').strip())}" for ln in lines
-            )
+            items = "\n".join(rf"\item {_latex_escape(ln.lstrip('-*• ').strip())}" for ln in lines)
             rendered.append("\\begin{itemize}\n" + items + "\n\\end{itemize}")
         else:
             rendered.append(_latex_escape(" ".join(lines)))

@@ -61,13 +61,21 @@ def test_create_and_get_snapshot(repo, tracked_app):
 def test_create_and_get_latest_match(repo, tracked_app):
     m1 = ApplicationMatch(
         application_id=tracked_app.id,
-        overall_score=0.5, semantic_score=0.5, skill_score=0.5,
-        experience_score=0.5, language_score=0.5, cv_language="en",
+        overall_score=0.5,
+        semantic_score=0.5,
+        skill_score=0.5,
+        experience_score=0.5,
+        language_score=0.5,
+        cv_language="en",
     )
     m2 = ApplicationMatch(
         application_id=tracked_app.id,
-        overall_score=0.8, semantic_score=0.8, skill_score=0.8,
-        experience_score=0.8, language_score=0.8, cv_language="en",
+        overall_score=0.8,
+        semantic_score=0.8,
+        skill_score=0.8,
+        experience_score=0.8,
+        language_score=0.8,
+        cv_language="en",
     )
     repo.create_match(m1)
     repo.create_match(m2)

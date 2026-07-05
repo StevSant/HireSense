@@ -1,4 +1,13 @@
-import { Component, DestroyRef, computed, effect, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ApplicationsService } from '../../../core/services/applications.service';
@@ -191,42 +200,48 @@ export class CvTabComponent {
   downloadPdf(): void {
     this.downloadingPdf.set(true);
     this.downloadError.set('');
-    this.service.downloadCvPdf(this.aggregate().id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `cv_${this.optimization()?.cv_language ?? 'en'}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-        this.downloadingPdf.set(false);
-      },
-      error: (err) => {
-        this.downloadError.set(err?.error?.detail ?? 'PDF download failed');
-        this.downloadingPdf.set(false);
-      },
-    });
+    this.service
+      .downloadCvPdf(this.aggregate().id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `cv_${this.optimization()?.cv_language ?? 'en'}.pdf`;
+          a.click();
+          URL.revokeObjectURL(url);
+          this.downloadingPdf.set(false);
+        },
+        error: (err) => {
+          this.downloadError.set(err?.error?.detail ?? 'PDF download failed');
+          this.downloadingPdf.set(false);
+        },
+      });
   }
 
   /** Compile and download the untouched profile CV — no optimization needed. */
   downloadOriginalPdf(): void {
     this.downloadingOriginal.set(true);
     this.downloadError.set('');
-    this.service.downloadOriginalCvPdf(this.aggregate().id, this.cvLanguage()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `cv_original_${this.cvLanguage()}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-        this.downloadingOriginal.set(false);
-      },
-      error: (err) => {
-        this.downloadError.set(err?.error?.detail ?? 'Original CV PDF download failed');
-        this.downloadingOriginal.set(false);
-      },
-    });
+    this.service
+      .downloadOriginalCvPdf(this.aggregate().id, this.cvLanguage())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `cv_original_${this.cvLanguage()}.pdf`;
+          a.click();
+          URL.revokeObjectURL(url);
+          this.downloadingOriginal.set(false);
+        },
+        error: (err) => {
+          this.downloadError.set(err?.error?.detail ?? 'Original CV PDF download failed');
+          this.downloadingOriginal.set(false);
+        },
+      });
   }
 
   onLangChange(ev: Event): void {

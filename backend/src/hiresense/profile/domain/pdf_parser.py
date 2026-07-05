@@ -48,7 +48,9 @@ class PDFParser:
         raw_text = self.extract_text(file_bytes)
 
         if self._llm is None:
-            logger.warning("No LLM configured — returning raw PDF text without structured extraction")
+            logger.warning(
+                "No LLM configured — returning raw PDF text without structured extraction"
+            )
             return ParsedCV(name="", raw_tex=raw_text)
 
         prompt = f"Extract structured information from this CV:\n\n{raw_text}"

@@ -24,15 +24,18 @@ export class InterviewTabComponent {
   run(): void {
     this.running.set(true);
     this.error.set('');
-    this.service.generateInterviewPrep(this.aggregate().id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.running.set(false);
-        this.changed.emit();
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Prep generation failed');
-        this.running.set(false);
-      },
-    });
+    this.service
+      .generateInterviewPrep(this.aggregate().id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.running.set(false);
+          this.changed.emit();
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Prep generation failed');
+          this.running.set(false);
+        },
+      });
   }
 }

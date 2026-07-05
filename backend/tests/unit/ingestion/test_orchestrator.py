@@ -117,6 +117,7 @@ async def test_orchestrator_classifies_and_persists_quality() -> None:
 
 # --- Lifecycle: change detection + disappearance closure (Task 11) ---
 
+
 def _raw(sid: str, *, title: str = "Engineer", salary: str = "") -> RawJobListing:
     return RawJobListing(
         source="snap",
@@ -184,9 +185,7 @@ def _orch(source, indexer, **kw):
 
 @pytest.mark.asyncio
 async def test_closes_job_missing_from_snapshot_source_after_threshold() -> None:
-    source = ScriptedSource(
-        [[_raw("1"), _raw("2")], [_raw("1")], [_raw("1")]], snapshot=True
-    )
+    source = ScriptedSource([[_raw("1"), _raw("2")], [_raw("1")], [_raw("1")]], snapshot=True)
     indexer = FakeIndexer()
     orch = _orch(source, indexer)  # default threshold 2
 
@@ -220,9 +219,7 @@ async def test_non_snapshot_source_never_closes() -> None:
 
 @pytest.mark.asyncio
 async def test_changed_job_is_reindexed_with_same_id() -> None:
-    source = ScriptedSource(
-        [[_raw("1", salary="")], [_raw("1", salary="$200k")]], snapshot=True
-    )
+    source = ScriptedSource([[_raw("1", salary="")], [_raw("1", salary="$200k")]], snapshot=True)
     indexer = FakeIndexer()
     orch = _orch(source, indexer)
 
@@ -239,6 +236,7 @@ async def test_changed_job_is_reindexed_with_same_id() -> None:
 
 
 # --- Issue #44: orphan-vector cleanup on prune (end-to-end through the port) ---
+
 
 class _SpyVectorStore:
     """Records VectorStorePort.delete calls so the prune path can be verified
@@ -298,8 +296,8 @@ async def test_prune_deletes_embedding_from_vector_store() -> None:
 
     await orch._prune_expired()
 
-    assert repo.list_all() == []          # relational row gone
-    assert store.deletes == [[job.id]]    # and its vector evicted, no orphan left
+    assert repo.list_all() == []  # relational row gone
+    assert store.deletes == [[job.id]]  # and its vector evicted, no orphan left
 
 
 @pytest.mark.asyncio

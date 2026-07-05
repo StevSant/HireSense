@@ -14,12 +14,17 @@ class FakeOrchestrator:
             job_title=job.get("title", "Unknown"),
             company=job.get("company", "Unknown"),
             dimensions=[
-                DimensionResult(dimension="seniority_fit", score=0.8, rationale="Good fit", weight=10),
-                DimensionResult(dimension="compensation", score=0.7, rationale="Competitive", weight=10),
+                DimensionResult(
+                    dimension="seniority_fit", score=0.8, rationale="Good fit", weight=10
+                ),
+                DimensionResult(
+                    dimension="compensation", score=0.7, rationale="Competitive", weight=10
+                ),
             ],
         )
 
-    async def analyze(self, **kwargs): pass
+    async def analyze(self, **kwargs):
+        pass
 
 
 def _make_app():
@@ -32,7 +37,10 @@ def _make_app():
 
 def test_evaluate_endpoint_returns_result():
     client = TestClient(_make_app())
-    response = client.post("/matching/evaluate", json={"job_title": "Backend Engineer", "company": "Anthropic", "description": "Build APIs"})
+    response = client.post(
+        "/matching/evaluate",
+        json={"job_title": "Backend Engineer", "company": "Anthropic", "description": "Build APIs"},
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["composite_score"] == 0.75

@@ -17,7 +17,10 @@ class _FakeRepo:
 
 def _project(key: str, tech: list[str], include_in_matching: bool = True) -> PortfolioProject:
     return PortfolioProject(
-        id=key, source="supabase", source_key=key, tech=tech,
+        id=key,
+        source="supabase",
+        source_key=key,
+        tech=tech,
         include_in_matching=include_in_matching,
         translations={"en": ProjectText(title=key.title(), description="d")},
     )

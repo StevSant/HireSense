@@ -9,6 +9,7 @@ Revision ID: 024
 Revises: 023
 Create Date: 2026-06-08
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -24,9 +25,7 @@ def upgrade() -> None:
         "ALTER TABLE ingested_jobs "
         "ADD COLUMN IF NOT EXISTS quality VARCHAR(20) NOT NULL DEFAULT 'ok'"
     )
-    op.execute(
-        "ALTER TABLE ingested_jobs ADD COLUMN IF NOT EXISTS quality_reason TEXT"
-    )
+    op.execute("ALTER TABLE ingested_jobs ADD COLUMN IF NOT EXISTS quality_reason TEXT")
 
 
 def downgrade() -> None:

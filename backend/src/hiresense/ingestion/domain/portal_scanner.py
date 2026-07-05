@@ -113,9 +113,7 @@ class PortalScanner:
             logger.exception("Job pruning failed")
             return
         if removed_ids:
-            logger.info(
-                "Pruned %d portal jobs older than %s", len(removed_ids), cutoff.isoformat()
-            )
+            logger.info("Pruned %d portal jobs older than %s", len(removed_ids), cutoff.isoformat())
             if self._indexer is not None:
                 try:
                     await self._indexer.remove(removed_ids)  # evict orphan vectors

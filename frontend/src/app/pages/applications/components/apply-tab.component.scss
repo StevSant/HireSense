@@ -56,7 +56,9 @@
   gap: 6px;
   font-size: 0.9em;
 
-  label { color: #6b7280; }
+  label {
+    color: #6b7280;
+  }
 }
 
 .letter-preview {
@@ -143,4 +145,6 @@
   font-weight: 500;
 }
 
-.muted { color: #9ca3af; }
+.muted {
+  color: #9ca3af;
+}

@@ -69,9 +69,7 @@ def build_shared_infra(settings: Settings, http_client: httpx.AsyncClient) -> Sh
     if settings.vector_store_provider == "pgvector":
         from hiresense.adapters.vector_store import PgVectorStore
 
-        vector_store = PgVectorStore(
-            sync_session_factory, dim=settings.embedding_dim
-        )
+        vector_store = PgVectorStore(sync_session_factory, dim=settings.embedding_dim)
 
     return SharedInfra(
         settings=settings,

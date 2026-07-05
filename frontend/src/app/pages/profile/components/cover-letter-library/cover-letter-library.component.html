@@ -2,7 +2,8 @@
   <div>
     <h3>Library</h3>
     <p class="library-hint">
-      Every cover letter you've generated, across all applications. Search and copy — no need to dig through each job.
+      Every cover letter you've generated, across all applications. Search and copy — no need to dig
+      through each job.
     </p>
   </div>
   <div class="library-controls">
@@ -14,7 +15,12 @@
       (ngModelChange)="query.set($event)"
       aria-label="Search cover letters"
     />
-    <select class="search-input" [value]="sort.token()" (change)="onSortSelect($event)" aria-label="Sort cover letters">
+    <select
+      class="search-input"
+      [value]="sort.token()"
+      (change)="onSortSelect($event)"
+      aria-label="Sort cover letters"
+    >
       <option value="created_desc">Newest first</option>
       <option value="created_asc">Oldest first</option>
       <option value="company_asc">Company A–Z</option>
@@ -29,7 +35,8 @@
   <div class="library-error">{{ error() }}</div>
 } @else if (letters().length === 0) {
   <div class="library-empty">
-    No cover letters yet. Open an application and use the <strong>Apply</strong> tab to generate one.
+    No cover letters yet. Open an application and use the <strong>Apply</strong> tab to generate
+    one.
   </div>
 } @else if (filtered().length === 0) {
   <div class="library-empty">No matches for “{{ query() }}”.</div>
@@ -56,17 +63,14 @@
           <div class="letter-body">
             <pre class="letter-text">{{ letter.body }}</pre>
             <div class="letter-actions">
-              <button
-                type="button"
-                class="btn-copy"
-                (click)="copy(letter, $event)"
-              >
-                @if (copiedId() === letter.id) { Copied! } @else { Copy text }
+              <button type="button" class="btn-copy" (click)="copy(letter, $event)">
+                @if (copiedId() === letter.id) {
+                  Copied!
+                } @else {
+                  Copy text
+                }
               </button>
-              <a
-                class="btn-link"
-                [routerLink]="['/dashboard/applications', letter.application_id]"
-              >
+              <a class="btn-link" [routerLink]="['/dashboard/applications', letter.application_id]">
                 Open application →
               </a>
             </div>

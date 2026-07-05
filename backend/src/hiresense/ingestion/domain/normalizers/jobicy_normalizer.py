@@ -14,9 +14,7 @@ class JobicyNormalizer:
         salary_max = d.get("annualSalaryMax") or d.get("salaryMax")
         currency = d.get("salaryCurrency", "USD")
         salary_range = (
-            f"{currency} {salary_min}-{salary_max}"
-            if salary_min and salary_max
-            else None
+            f"{currency} {salary_min}-{salary_max}" if salary_min and salary_max else None
         )
         posted_date = None
         pub_date = d.get("pubDate")

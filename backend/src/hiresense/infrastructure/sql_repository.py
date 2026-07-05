@@ -35,16 +35,12 @@ class SqlRepository:
             row = session.get(orm_cls, pk)
             return map_row(row) if row is not None else None
 
-    def _select_one(
-        self, stmt: Select[Any], map_row: Callable[[Any], DomainT]
-    ) -> DomainT | None:
+    def _select_one(self, stmt: Select[Any], map_row: Callable[[Any], DomainT]) -> DomainT | None:
         with self._session_factory() as session:
             row = session.scalars(stmt).first()
             return map_row(row) if row is not None else None
 
-    def _select_all(
-        self, stmt: Select[Any], map_row: Callable[[Any], DomainT]
-    ) -> list[DomainT]:
+    def _select_all(self, stmt: Select[Any], map_row: Callable[[Any], DomainT]) -> list[DomainT]:
         with self._session_factory() as session:
             return [map_row(r) for r in session.scalars(stmt).all()]
 

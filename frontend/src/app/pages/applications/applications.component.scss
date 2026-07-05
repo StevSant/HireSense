@@ -5,13 +5,16 @@
   margin-bottom: 1.5rem;
 }
 
-.table-container { overflow-x: auto; }
+.table-container {
+  overflow-x: auto;
+}
 
 .apps-table {
   width: 100%;
   border-collapse: collapse;
 
-  th, td {
+  th,
+  td {
     padding: 0.6rem 0.75rem;
     border-bottom: 1px solid #e5e7eb;
     text-align: left;
@@ -42,11 +45,27 @@
   background: #e5e7eb;
   color: #374151;
 
-  &.status-applied { background: #dbeafe; color: #1e40af; }
-  &.status-interviewing { background: #fef3c7; color: #92400e; }
-  &.status-offered { background: #d1fae5; color: #065f46; }
-  &.status-accepted { background: #d1fae5; color: #065f46; font-weight: 600; }
-  &.status-rejected { background: #fee2e2; color: #991b1b; }
+  &.status-applied {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  &.status-interviewing {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  &.status-offered {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  &.status-accepted {
+    background: #d1fae5;
+    color: #065f46;
+    font-weight: 600;
+  }
+  &.status-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+  }
 }
 
 .score-pill {
@@ -73,7 +92,9 @@
   }
 }
 
-.muted { color: #9ca3af; }
+.muted {
+  color: #9ca3af;
+}
 
 .empty-state {
   padding: 3rem;
@@ -82,8 +103,13 @@
   border-radius: 8px;
   color: #6b7280;
 
-  a { color: #2563eb; text-decoration: none; }
-  a:hover { text-decoration: underline; }
+  a {
+    color: #2563eb;
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
 }
 
 .alert-error {
@@ -113,7 +139,11 @@
   color: #9ca3af;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s, color 0.15s, background 0.15s, border-color 0.15s;
+  transition:
+    opacity 0.15s,
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s;
 
   &:hover {
     color: #dc2626;
@@ -186,7 +216,10 @@
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
 
   &:hover {
     border-color: #d1d5db;
@@ -229,14 +262,40 @@
   cursor: pointer;
   transition: opacity 0.15s;
 
-  &.status-saved        { background: #f4f4f5; color: #52525b; border-color: #e4e4e7; }
-  &.status-applied      { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-  &.status-interviewing { background: #fffbeb; color: #b45309; border-color: #fde68a; }
-  &.status-offered      { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
-  &.status-accepted     { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-  &.status-rejected     { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+  &.status-saved {
+    background: #f4f4f5;
+    color: #52525b;
+    border-color: #e4e4e7;
+  }
+  &.status-applied {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+  }
+  &.status-interviewing {
+    background: #fffbeb;
+    color: #b45309;
+    border-color: #fde68a;
+  }
+  &.status-offered {
+    background: #f0fdf4;
+    color: #15803d;
+    border-color: #bbf7d0;
+  }
+  &.status-accepted {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+  }
+  &.status-rejected {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+  }
 
-  &:hover { opacity: 0.85; }
+  &:hover {
+    opacity: 0.85;
+  }
 }
 
 .source-badge {
@@ -270,10 +329,18 @@
   color: #374151;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 
-  &:hover { background: #f9fafb; border-color: #d1d5db; }
-  &:disabled { cursor: wait; opacity: 0.6; }
+  &:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+  }
+  &:disabled {
+    cursor: wait;
+    opacity: 0.6;
+  }
 }
 
 .btn-sm {
@@ -293,8 +360,15 @@
   border-radius: 10px;
   background: #f9fafb;
 
-  .loading-text h3 { font-size: 0.95rem; margin: 0 0 0.2rem; }
-  .loading-text p { font-size: 0.83rem; color: #6b7280; margin: 0; }
+  .loading-text h3 {
+    font-size: 0.95rem;
+    margin: 0 0 0.2rem;
+  }
+  .loading-text p {
+    font-size: 0.83rem;
+    color: #6b7280;
+    margin: 0;
+  }
 }
 
 .spinner {
@@ -307,10 +381,16 @@
   flex: 0 0 auto;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* --- Research panel --- */
-.research-row td { padding: 0 !important; }
+.research-row td {
+  padding: 0 !important;
+}
 
 .research-panel {
   padding: 1.25rem 1.5rem;
@@ -326,7 +406,11 @@
   margin-bottom: 1rem;
 }
 
-.research-item { display: flex; flex-direction: column; gap: 0.25rem; }
+.research-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
 
 .research-label {
   font-size: 0.6875rem;
@@ -347,7 +431,10 @@
   width: fit-content;
 }
 
-.research-value { font-size: 0.875rem; color: #374151; }
+.research-value {
+  font-size: 0.875rem;
+  color: #374151;
+}
 
 .research-section {
   margin-bottom: 0.75rem;
@@ -361,12 +448,20 @@
     letter-spacing: 0.04em;
   }
 
-  p { font-size: 0.875rem; color: #374151; line-height: 1.6; }
+  p {
+    font-size: 0.875rem;
+    color: #374151;
+    line-height: 1.6;
+  }
 }
 
 .research-red-flags {
-  h4 { color: #b91c1c; }
-  p { color: #b91c1c; }
+  h4 {
+    color: #b91c1c;
+  }
+  p {
+    color: #b91c1c;
+  }
 }
 
 .research-footer {
@@ -378,7 +473,10 @@
   border-top: 1px solid #e5e7eb;
 }
 
-.research-updated { font-size: 0.75rem; color: #6b7280; }
+.research-updated {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
 
 /* --- Leaderboard (restyled, clean & modern) --- */
 .leaderboard {
@@ -405,9 +503,14 @@
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 0.9rem 1.1rem;
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
 
-  &.clickable { cursor: pointer; }
+  &.clickable {
+    cursor: pointer;
+  }
 
   &.clickable:hover {
     border-color: #d1d5db;
@@ -445,9 +548,18 @@
   font-size: 0.85rem;
   font-weight: 700;
 
-  &[data-rank='1'] { background: #fef9c3; color: #a16207; }
-  &[data-rank='2'] { background: #f1f5f9; color: #475569; }
-  &[data-rank='3'] { background: #ffedd5; color: #c2410c; }
+  &[data-rank='1'] {
+    background: #fef9c3;
+    color: #a16207;
+  }
+  &[data-rank='2'] {
+    background: #f1f5f9;
+    color: #475569;
+  }
+  &[data-rank='3'] {
+    background: #ffedd5;
+    color: #c2410c;
+  }
 }
 
 .leaderboard-info {
@@ -467,7 +579,10 @@
   white-space: nowrap;
 }
 
-.leaderboard-company { font-size: 0.8125rem; color: #6b7280; }
+.leaderboard-company {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
 
 .leaderboard-score-block {
   display: flex;
@@ -482,7 +597,11 @@
   font-weight: 700;
   line-height: 1;
 
-  .pct { font-size: 0.75rem; font-weight: 600; margin-left: 1px; }
+  .pct {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 1px;
+  }
 }
 
 .leaderboard-meter {
@@ -500,7 +619,11 @@
   transition: width 0.4s ease;
 }
 
-.leaderboard-failed { color: #9ca3af; font-size: 0.875rem; font-weight: 600; }
+.leaderboard-failed {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
 
 .leaderboard-toggle {
   flex: 0 0 auto;
@@ -514,12 +637,23 @@
   background: transparent;
   color: #9ca3af;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
 
-  &:hover { background: #f3f4f6; color: #4b5563; border-color: #e5e7eb; }
+  &:hover {
+    background: #f3f4f6;
+    color: #4b5563;
+    border-color: #e5e7eb;
+  }
 
-  svg { transition: transform 0.2s ease; }
-  svg.flipped { transform: rotate(180deg); }
+  svg {
+    transition: transform 0.2s ease;
+  }
+  svg.flipped {
+    transform: rotate(180deg);
+  }
 }
 
 .leaderboard-dimensions {
@@ -533,7 +667,11 @@
   cursor: default;
 }
 
-.dim-row { display: flex; align-items: center; gap: 0.75rem; }
+.dim-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
 
 .dim-name {
   font-size: 0.8125rem;
@@ -565,6 +703,12 @@
 }
 
 @keyframes panelIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

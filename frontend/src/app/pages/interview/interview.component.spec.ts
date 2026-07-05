@@ -36,11 +36,13 @@ function makePrep(over: Partial<Record<string, unknown>> = {}) {
 }
 
 describe('InterviewComponent', () => {
-  function mount(opts: {
-    listStories?: () => unknown;
-    interview?: Partial<Record<string, unknown>>;
-    jobId?: string | null;
-  } = {}) {
+  function mount(
+    opts: {
+      listStories?: () => unknown;
+      interview?: Partial<Record<string, unknown>>;
+      jobId?: string | null;
+    } = {},
+  ) {
     const interview = {
       listStories: opts.listStories ?? (() => of([makeStory()])),
       createStory: () => of(makeStory({ id: 's-new' })),
@@ -51,7 +53,7 @@ describe('InterviewComponent', () => {
     const ingestion = { getJob: () => of({ title: 'X', company: 'Y', description: 'Z' }) };
     const route = {
       snapshot: {
-        queryParamMap: { get: (key: string) => (key === 'job_id' ? opts.jobId ?? null : null) },
+        queryParamMap: { get: (key: string) => (key === 'job_id' ? (opts.jobId ?? null) : null) },
       },
     };
 
@@ -153,7 +155,10 @@ describe('InterviewComponent story sorting/filtering', () => {
       imports: [InterviewComponent],
       providers: [
         { provide: InterviewService, useValue: interview },
-        { provide: IngestionService, useValue: { getJob: () => of({ title: '', company: '', description: '' }) } },
+        {
+          provide: IngestionService,
+          useValue: { getJob: () => of({ title: '', company: '', description: '' }) },
+        },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } },
         { provide: ApplicationsService, useValue: { list: () => of([]) } },
         { provide: Router, useValue: { navigate: () => {} } },

@@ -27,9 +27,7 @@ class HimalayasNormalizer:
         max_salary = d.get("maxSalary")
         currency = d.get("currency", "USD")
         salary_range = (
-            f"{currency} {min_salary}-{max_salary}"
-            if min_salary and max_salary
-            else None
+            f"{currency} {min_salary}-{max_salary}" if min_salary and max_salary else None
         )
         posted_date = self._parse_ts(d.get("pubDate"))
         # Himalayas' API declares a per-job expiry; captured here so the

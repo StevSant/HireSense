@@ -40,9 +40,7 @@ class LaTeXParser:
         match = re.search(r"\\LARGE\s*\\textbf\{([^}]+)\}", tex)
         if match:
             return match.group(1).strip()
-        match = re.search(
-            r"\\begin\{center\}.*?\\textbf\{([^}]+)\}", tex, re.DOTALL
-        )
+        match = re.search(r"\\begin\{center\}.*?\\textbf\{([^}]+)\}", tex, re.DOTALL)
         return match.group(1).strip() if match else ""
 
     def _extract_email(self, tex: str) -> str | None:
@@ -121,7 +119,11 @@ class LaTeXParser:
 
         # Remove spacing/layout commands
         text = re.sub(r"\\[vh]space\{[^}]*\}", "", text)
-        text = re.sub(r"\\(?:small|large|Large|LARGE|huge|Huge|normalsize|footnotesize|scriptsize|tiny)\b", "", text)
+        text = re.sub(
+            r"\\(?:small|large|Large|LARGE|huge|Huge|normalsize|footnotesize|scriptsize|tiny)\b",
+            "",
+            text,
+        )
         text = re.sub(r"\\(?:hrule|hline|noindent|newpage|clearpage|pagebreak)\b", "", text)
         text = re.sub(r"\\(?:hfill|vfill)\b", "", text)
 

@@ -58,7 +58,9 @@ class DetectedSignalRepositoryImpl(SqlRepository):
 
     def exists_message_id(self, message_id: str) -> bool:
         with self._session_factory() as session:
-            stmt = select(DetectedSignalOrm.id).where(
-                DetectedSignalOrm.message_id == message_id
-            ).limit(1)
+            stmt = (
+                select(DetectedSignalOrm.id)
+                .where(DetectedSignalOrm.message_id == message_id)
+                .limit(1)
+            )
             return session.scalars(stmt).first() is not None

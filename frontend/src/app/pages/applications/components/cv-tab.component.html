@@ -1,7 +1,12 @@
 <div class="cv-tab">
   <div class="controls">
     <label for="cv-tab-language">CV language:</label>
-    <select id="cv-tab-language" [value]="cvLanguage()" (change)="onLangChange($event)" [disabled]="running()">
+    <select
+      id="cv-tab-language"
+      [value]="cvLanguage()"
+      (change)="onLangChange($event)"
+      [disabled]="running()"
+    >
       <option value="en">English</option>
       <option value="es">Spanish</option>
     </select>
@@ -16,11 +21,19 @@
     </button>
     @if (optimization()) {
       <button class="btn-secondary" (click)="copyTex()">
-        @if (copyFlash()) { Copied! } @else { Copy .tex }
+        @if (copyFlash()) {
+          Copied!
+        } @else {
+          Copy .tex
+        }
       </button>
       <button class="btn-secondary" (click)="downloadTex()">Download .tex</button>
       <button class="btn-secondary" (click)="downloadPdf()" [disabled]="downloadingPdf()">
-        @if (downloadingPdf()) { Downloading… } @else { Download tailored .pdf }
+        @if (downloadingPdf()) {
+          Downloading…
+        } @else {
+          Download tailored .pdf
+        }
       </button>
     }
     <button
@@ -29,7 +42,11 @@
       [disabled]="downloadingOriginal()"
       title="Compile and download your profile CV without any optimization"
     >
-      @if (downloadingOriginal()) { Compiling… } @else { Download original .pdf }
+      @if (downloadingOriginal()) {
+        Compiling…
+      } @else {
+        Download original .pdf
+      }
     </button>
   </div>
 
@@ -39,7 +56,9 @@
     </div>
   }
   @if (!hasMatch()) {
-    <div class="alert">Run a match first — optimization uses the missing-skills list from the latest match.</div>
+    <div class="alert">
+      Run a match first — optimization uses the missing-skills list from the latest match.
+    </div>
   }
   @if (runnerError()) {
     <div class="alert alert-error">{{ runnerError() }}</div>
@@ -51,7 +70,11 @@
   <section class="pdf-preview">
     <div class="preview-header">
       <button class="btn-secondary" (click)="togglePreviewVisible()">
-        @if (previewVisible()) { Hide PDF preview } @else { Show PDF preview }
+        @if (previewVisible()) {
+          Hide PDF preview
+        } @else {
+          Show PDF preview
+        }
       </button>
       @if (previewVisible()) {
         <div class="view-toggle" role="tablist" aria-label="CV PDF preview source">
@@ -101,18 +124,10 @@
     }
 
     <div class="view-toggle" role="tablist" aria-label="Optimization view">
-      <button
-        role="tab"
-        [class.active]="viewMode() === 'changes'"
-        (click)="setViewMode('changes')"
-      >
+      <button role="tab" [class.active]="viewMode() === 'changes'" (click)="setViewMode('changes')">
         Changes ({{ opt.changes.length }})
       </button>
-      <button
-        role="tab"
-        [class.active]="viewMode() === 'full'"
-        (click)="setViewMode('full')"
-      >
+      <button role="tab" [class.active]="viewMode() === 'full'" (click)="setViewMode('full')">
         Full optimized CV
       </button>
     </div>

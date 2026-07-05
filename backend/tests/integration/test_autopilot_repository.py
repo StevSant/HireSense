@@ -10,15 +10,25 @@ from hiresense.infrastructure.database import Base
 
 
 def _factory():
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)
 
 
 def test_add_list_exists():
     repo = DraftRepositoryImpl(session_factory=_factory())
-    repo.add(AutopilotDraft(job_id="j1", application_id=uuid.uuid4(), job_title="Dev",
-                            company="Acme", status=DraftStatus.DRAFTED, detail=None))
+    repo.add(
+        AutopilotDraft(
+            job_id="j1",
+            application_id=uuid.uuid4(),
+            job_title="Dev",
+            company="Acme",
+            status=DraftStatus.DRAFTED,
+            detail=None,
+        )
+    )
     assert repo.exists_for_job("j1") is True
     assert repo.exists_for_job("nope") is False
     items = repo.list(limit=10)

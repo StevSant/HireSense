@@ -32,7 +32,9 @@ class LLMTestRunner:
             response = await chat_model.ainvoke([HumanMessage(content=self._PING_PROMPT)])
         except Exception as exc:
             latency_ms = (time.perf_counter() - t0) * 1000.0
-            return TestResult(success=False, latency_ms=latency_ms, response_preview="", error=str(exc)[:500])
+            return TestResult(
+                success=False, latency_ms=latency_ms, response_preview="", error=str(exc)[:500]
+            )
         latency_ms = (time.perf_counter() - t0) * 1000.0
         content = str(getattr(response, "content", "") or "")[:200]
         return TestResult(success=True, latency_ms=latency_ms, response_preview=content, error=None)

@@ -13,9 +13,17 @@ class CompensationScorer(BaseLLMScorer):
     def _build_prompt(self, job: Any, profile: Any | None = None) -> str:
         title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
         company = job.get("company", "") if isinstance(job, dict) else getattr(job, "company", "")
-        location = job.get("location", "") if isinstance(job, dict) else getattr(job, "location", "")
-        salary_range = job.get("salary_range", "") if isinstance(job, dict) else getattr(job, "salary_range", "")
-        description = job.get("description", "") if isinstance(job, dict) else getattr(job, "description", "")
+        location = (
+            job.get("location", "") if isinstance(job, dict) else getattr(job, "location", "")
+        )
+        salary_range = (
+            job.get("salary_range", "")
+            if isinstance(job, dict)
+            else getattr(job, "salary_range", "")
+        )
+        description = (
+            job.get("description", "") if isinstance(job, dict) else getattr(job, "description", "")
+        )
 
         salary_display = salary_range if salary_range else "Not specified"
 

@@ -10,6 +10,7 @@ Revision ID: 021
 Revises: 020
 Create Date: 2026-06-07
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -21,9 +22,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute(
-        "ALTER TABLE feedback_signals ADD COLUMN IF NOT EXISTS dimension_scores JSONB"
-    )
+    op.execute("ALTER TABLE feedback_signals ADD COLUMN IF NOT EXISTS dimension_scores JSONB")
 
 
 def downgrade() -> None:

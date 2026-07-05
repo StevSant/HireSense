@@ -9,6 +9,7 @@ from hiresense.kernel.value_objects import SourceType
 # Fakes
 # ---------------------------------------------------------------------------
 
+
 class FakeResponse:
     def __init__(self, data: dict) -> None:
         self._data = data
@@ -67,6 +68,7 @@ SEEKING_FREELANCER_POST = _comment(
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def _adapter(children: list[dict]) -> HNHiringAdapter:
     client = FakeHNClient(thread_id="48012147", children=children)

@@ -115,12 +115,20 @@ def test_list_stories() -> None:
     repo = FakeRepository()
     svc = make_service(repo=repo)
     svc.add_story(
-        title="A", competency=Competency.LEADERSHIP,
-        situation="s", task="t", action="a", result="r",
+        title="A",
+        competency=Competency.LEADERSHIP,
+        situation="s",
+        task="t",
+        action="a",
+        result="r",
     )
     svc.add_story(
-        title="B", competency=Competency.TECHNICAL,
-        situation="s", task="t", action="a", result="r",
+        title="B",
+        competency=Competency.TECHNICAL,
+        situation="s",
+        task="t",
+        action="a",
+        result="r",
     )
 
     stories = svc.list()
@@ -132,12 +140,20 @@ def test_list_stories_filter_by_competency() -> None:
     repo = FakeRepository()
     svc = make_service(repo=repo)
     svc.add_story(
-        title="A", competency=Competency.LEADERSHIP,
-        situation="s", task="t", action="a", result="r",
+        title="A",
+        competency=Competency.LEADERSHIP,
+        situation="s",
+        task="t",
+        action="a",
+        result="r",
     )
     svc.add_story(
-        title="B", competency=Competency.TECHNICAL,
-        situation="s", task="t", action="a", result="r",
+        title="B",
+        competency=Competency.TECHNICAL,
+        situation="s",
+        task="t",
+        action="a",
+        result="r",
     )
 
     results = svc.list(competency=Competency.TECHNICAL)
@@ -152,7 +168,10 @@ def test_update_story() -> None:
     story = svc.add_story(
         title="Original",
         competency=Competency.COMMUNICATION,
-        situation="s", task="t", action="a", result="r",
+        situation="s",
+        task="t",
+        action="a",
+        result="r",
     )
 
     updated = svc.update(story.id, title="Updated", reflection="Learned a lot")
@@ -173,7 +192,10 @@ def test_remove_story() -> None:
     story = svc.add_story(
         title="To be removed",
         competency=Competency.INITIATIVE,
-        situation="s", task="t", action="a", result="r",
+        situation="s",
+        task="t",
+        action="a",
+        result="r",
     )
 
     svc.remove(story.id)

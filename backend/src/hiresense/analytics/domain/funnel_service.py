@@ -100,13 +100,18 @@ class FunnelService:
                     median_days = round(statistics.median(gaps), 2)
             stages_out.append(
                 FunnelStage(
-                    stage=s, reached=reached[s], conversion_from_prev=conv,
-                    median_days_in_stage=median_days, current=current[s],
+                    stage=s,
+                    reached=reached[s],
+                    conversion_from_prev=conv,
+                    median_days_in_stage=median_days,
+                    current=current[s],
                 )
             )
         return FunnelMetrics(
-            stages=stages_out, rejected=rejected,
-            current_rejected=current_rejected, total_applications=len(by_app),
+            stages=stages_out,
+            rejected=rejected,
+            current_rejected=current_rejected,
+            total_applications=len(by_app),
             by_source=self._by_source(),
         )
 
@@ -119,9 +124,7 @@ class FunnelService:
         try:
             apps = self._applications.list()
         except Exception:
-            logger.exception(
-                "funnel: applications lookup failed — omitting by-source outcomes"
-            )
+            logger.exception("funnel: applications lookup failed — omitting by-source outcomes")
             return []
         job_ids = [str(a.job_id) for a in apps if getattr(a, "job_id", None)]
         if not job_ids:
@@ -139,7 +142,9 @@ class FunnelService:
                 reached[row.source] += 1
         outcomes = [
             SourceOutcome(
-                source=src, applications=n, reached_interview=reached[src],
+                source=src,
+                applications=n,
+                reached_interview=reached[src],
                 interview_rate=round(reached[src] / n, 4) if n else 0.0,
             )
             for src, n in totals.items()

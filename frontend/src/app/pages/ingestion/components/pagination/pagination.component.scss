@@ -38,7 +38,9 @@
   color: var(--text-secondary);
   font-size: 0.8125rem;
   cursor: pointer;
-  transition: border-color var(--duration) var(--ease), color var(--duration) var(--ease);
+  transition:
+    border-color var(--duration) var(--ease),
+    color var(--duration) var(--ease);
 
   &:hover:not(:disabled) {
     border-color: var(--accent);

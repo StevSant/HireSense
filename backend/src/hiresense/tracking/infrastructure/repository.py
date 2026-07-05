@@ -28,9 +28,7 @@ class TrackingRepository(SqlRepository):
         return self._get_by_pk(TrackedApplicationOrm, id, _to_domain)
 
     def get_by_job_id(self, job_id: uuid.UUID) -> TrackedApplication | None:
-        stmt = select(TrackedApplicationOrm).where(
-            TrackedApplicationOrm.job_id == job_id
-        )
+        stmt = select(TrackedApplicationOrm).where(TrackedApplicationOrm.job_id == job_id)
         return self._select_one(stmt, _to_domain)
 
     def list_all(self, status: ApplicationStatus | None = None) -> list[TrackedApplication]:
@@ -59,11 +57,7 @@ class TrackingRepository(SqlRepository):
 
     def save(self, application: TrackedApplication) -> TrackedApplication:
         with self._session_factory() as session:
-            row = (
-                session.get(TrackedApplicationOrm, application.id)
-                if application.id
-                else None
-            )
+            row = session.get(TrackedApplicationOrm, application.id) if application.id else None
             if row is None:
                 row = TrackedApplicationOrm(
                     **{field: getattr(application, field) for field in _CONTENT_FIELDS}
@@ -84,11 +78,7 @@ class TrackingRepository(SqlRepository):
         to_status: str,
     ) -> TrackedApplication:
         with self._session_factory() as session:
-            row = (
-                session.get(TrackedApplicationOrm, application.id)
-                if application.id
-                else None
-            )
+            row = session.get(TrackedApplicationOrm, application.id) if application.id else None
             if row is None:
                 # Defensive mirror of save() for an unpersisted app. Not the
                 # seeding path: the sole caller (update_status) always passes a
@@ -116,9 +106,7 @@ class TrackingRepository(SqlRepository):
         return self._delete_by_pk(TrackedApplicationOrm, id)
 
     def list_history(self) -> list[StatusTransition]:
-        stmt = select(ApplicationStatusHistoryOrm).order_by(
-            ApplicationStatusHistoryOrm.changed_at
-        )
+        stmt = select(ApplicationStatusHistoryOrm).order_by(ApplicationStatusHistoryOrm.changed_at)
         return self._select_all(stmt, _history_to_domain)
 
     def history_for(self, application_id: uuid.UUID) -> list[StatusTransition]:

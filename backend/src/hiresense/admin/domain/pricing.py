@@ -44,7 +44,6 @@ def estimate_cost_usd(
         pricing = DEFAULT_PRICING.get((provider, "*"))
     if pricing is None:
         return 0.0
-    return (
-        (input_tokens / 1_000_000.0) * pricing.input_per_1m
-        + (output_tokens / 1_000_000.0) * pricing.output_per_1m
-    )
+    return (input_tokens / 1_000_000.0) * pricing.input_per_1m + (
+        output_tokens / 1_000_000.0
+    ) * pricing.output_per_1m

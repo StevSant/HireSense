@@ -17,19 +17,28 @@ export class FunnelChartComponent {
   metrics = input.required<FunnelMetrics>();
 
   // Bar width relative to the first stage's reached count (the widest).
-  maxReached = computed(() => Math.max(MIN_REACHED, ...this.metrics().stages.map((s) => s.reached)));
+  maxReached = computed(() =>
+    Math.max(MIN_REACHED, ...this.metrics().stages.map((s) => s.reached)),
+  );
 
   // Names the steepest consecutive drop-off — the stage where the pipeline leaks most.
   insight = computed<string | null>(() => {
     const m = this.metrics();
     if (m.total_applications === 0 || m.stages.length < 2) return null;
-    let worst: { from: string; to: string; reached: number; prev: number; conv: number } | null = null;
+    let worst: { from: string; to: string; reached: number; prev: number; conv: number } | null =
+      null;
     for (let i = 1; i < m.stages.length; i++) {
       const s = m.stages[i];
       const prev = m.stages[i - 1];
       if (prev.reached > 0 && s.conversion_from_prev !== null) {
         if (worst === null || s.conversion_from_prev < worst.conv) {
-          worst = { from: prev.stage, to: s.stage, reached: s.reached, prev: prev.reached, conv: s.conversion_from_prev };
+          worst = {
+            from: prev.stage,
+            to: s.stage,
+            reached: s.reached,
+            prev: prev.reached,
+            conv: s.conversion_from_prev,
+          };
         }
       }
     }

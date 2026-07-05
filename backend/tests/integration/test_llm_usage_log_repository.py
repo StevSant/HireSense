@@ -20,24 +20,26 @@ def _factory():
 def _seed(factory, n: int):
     base = datetime(2026, 1, 1, tzinfo=timezone.utc)
     with factory() as s:
-        s.add_all([
-            LLMUsageLog(
-                feature_key="match_quick_scorer",
-                provider="anthropic",
-                model="claude-haiku-4-5",
-                input_tokens=i,
-                output_tokens=i,
-                total_tokens=2 * i,
-                cost_usd=0.0,
-                latency_ms=1.0,
-                success=True,
-                error=None,
-                user_id=None,
-                # Distinct, increasing timestamps so "newest-first" is well-defined.
-                created_at=base + timedelta(minutes=i),
-            )
-            for i in range(20)
-        ])
+        s.add_all(
+            [
+                LLMUsageLog(
+                    feature_key="match_quick_scorer",
+                    provider="anthropic",
+                    model="claude-haiku-4-5",
+                    input_tokens=i,
+                    output_tokens=i,
+                    total_tokens=2 * i,
+                    cost_usd=0.0,
+                    latency_ms=1.0,
+                    success=True,
+                    error=None,
+                    user_id=None,
+                    # Distinct, increasing timestamps so "newest-first" is well-defined.
+                    created_at=base + timedelta(minutes=i),
+                )
+                for i in range(20)
+            ]
+        )
         s.commit()
 
 

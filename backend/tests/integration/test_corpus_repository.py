@@ -10,27 +10,58 @@ from hiresense.analytics.infrastructure import CorpusAnalyticsRepository
 
 
 def _factory():
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)
 
 
 def _seed(factory):
     with factory() as s:
-        s.add_all([
-            IngestedJob(id="1", bucket="boards", source="x", source_type="board",
-                        title="A", skills=["Python", "React"], remote_modality="remote",
-                        salary_range="$100k-$120k", status="open", identity_key="k1",
-                        posted_date=datetime(2026, 5, 1, tzinfo=timezone.utc)),
-            IngestedJob(id="2", bucket="boards", source="x", source_type="board",
-                        title="B", skills=["python", "go"], remote_modality="on_site",
-                        salary_range="competitive", status="open", identity_key="k2",
-                        posted_date=datetime(2026, 5, 8, tzinfo=timezone.utc)),
-            IngestedJob(id="3", bucket="boards", source="x", source_type="board",
-                        title="C", skills=["rust"], remote_modality="remote",
-                        salary_range=None, status="closed", identity_key="k3",
-                        posted_date=datetime(2026, 5, 8, tzinfo=timezone.utc)),
-        ])
+        s.add_all(
+            [
+                IngestedJob(
+                    id="1",
+                    bucket="boards",
+                    source="x",
+                    source_type="board",
+                    title="A",
+                    skills=["Python", "React"],
+                    remote_modality="remote",
+                    salary_range="$100k-$120k",
+                    status="open",
+                    identity_key="k1",
+                    posted_date=datetime(2026, 5, 1, tzinfo=timezone.utc),
+                ),
+                IngestedJob(
+                    id="2",
+                    bucket="boards",
+                    source="x",
+                    source_type="board",
+                    title="B",
+                    skills=["python", "go"],
+                    remote_modality="on_site",
+                    salary_range="competitive",
+                    status="open",
+                    identity_key="k2",
+                    posted_date=datetime(2026, 5, 8, tzinfo=timezone.utc),
+                ),
+                IngestedJob(
+                    id="3",
+                    bucket="boards",
+                    source="x",
+                    source_type="board",
+                    title="C",
+                    skills=["rust"],
+                    remote_modality="remote",
+                    salary_range=None,
+                    status="closed",
+                    identity_key="k3",
+                    posted_date=datetime(2026, 5, 8, tzinfo=timezone.utc),
+                ),
+            ]
+        )
         s.commit()
 
 
@@ -71,13 +102,24 @@ def test_salary_strings_for_ids():
 
 def _seed_many(factory, n: int):
     with factory() as s:
-        s.add_all([
-            IngestedJob(id=str(i), bucket="boards", source="x", source_type="board",
-                        title=f"J{i}", skills=["Python"], remote_modality="remote",
-                        salary_range="$100k-$120k", status="open", identity_key=f"k{i}",
-                        posted_date=datetime(2026, 5, 1, tzinfo=timezone.utc))
-            for i in range(n)
-        ])
+        s.add_all(
+            [
+                IngestedJob(
+                    id=str(i),
+                    bucket="boards",
+                    source="x",
+                    source_type="board",
+                    title=f"J{i}",
+                    skills=["Python"],
+                    remote_modality="remote",
+                    salary_range="$100k-$120k",
+                    status="open",
+                    identity_key=f"k{i}",
+                    posted_date=datetime(2026, 5, 1, tzinfo=timezone.utc),
+                )
+                for i in range(n)
+            ]
+        )
         s.commit()
 
 

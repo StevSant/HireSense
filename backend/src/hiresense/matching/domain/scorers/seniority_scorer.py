@@ -12,7 +12,9 @@ class SeniorityScorer(BaseLLMScorer):
 
     def _build_prompt(self, job: Any, profile: Any | None = None) -> str:
         title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
-        description = job.get("description", "") if isinstance(job, dict) else getattr(job, "description", "")
+        description = (
+            job.get("description", "") if isinstance(job, dict) else getattr(job, "description", "")
+        )
         company = job.get("company", "") if isinstance(job, dict) else getattr(job, "company", "")
 
         profile_context = ""
@@ -23,10 +25,7 @@ class SeniorityScorer(BaseLLMScorer):
                 if hasattr(section, "name") and "experience" in section.name.lower():
                     experience = section.content[:500]
                     break
-            profile_context = (
-                f"\nCandidate Skills: {skills}\n"
-                f"Candidate Experience: {experience}\n"
-            )
+            profile_context = f"\nCandidate Skills: {skills}\nCandidate Experience: {experience}\n"
 
         return (
             "Analyze this job posting for seniority level. Rate how well it fits "

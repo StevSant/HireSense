@@ -159,9 +159,7 @@ async def translate_cv(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
         ) from exc
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return TranslateResponse(
         profile=outcome.profile,
         pdf_ok=outcome.pdf_ok,
@@ -177,9 +175,7 @@ async def download_cv_pdf(
     try:
         pdf = await service.compile_pdf(language)
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except LatexCompileError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -209,9 +205,7 @@ async def update_manual_fields(
     body: ProfileManualFieldsRequest,
     service: Annotated[object, Depends(get_profile_service)],
 ) -> CandidateProfile:
-    updated = await service.update_manual_fields(
-        profile_id, body.model_dump(exclude_unset=True)
-    )
+    updated = await service.update_manual_fields(profile_id, body.model_dump(exclude_unset=True))
     if updated is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
     return updated

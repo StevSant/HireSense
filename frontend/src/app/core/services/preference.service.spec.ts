@@ -31,8 +31,12 @@ describe('PreferenceService', () => {
     const req = httpMock.expectOne(`${environment.apiUrl}/preference/explain`);
     expect(req.request.method).toBe('GET');
     req.flush({
-      active: false, total_signals: 0, positive_count: 0,
-      negative_count: 0, counts_by_kind: {}, drift_magnitude: 0,
+      active: false,
+      total_signals: 0,
+      positive_count: 0,
+      negative_count: 0,
+      counts_by_kind: {},
+      drift_magnitude: 0,
     });
   });
 

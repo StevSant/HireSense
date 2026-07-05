@@ -35,9 +35,7 @@ def test_long_description_part_not_appended_to_location() -> None:
         "Full-Time MixRank processes petabytes of data every month and we are "
         "a fully-remote company with a global footprint in over 20 countries"
     )
-    out = n.normalize(
-        _raw(f"MixRank | Software Engineers | 100% Remote (Global) | {long_blurb}")
-    )
+    out = n.normalize(_raw(f"MixRank | Software Engineers | 100% Remote (Global) | {long_blurb}"))
     assert out["company"] == "MixRank"
     assert out["title"] == "Software Engineers"
     assert "100% Remote (Global)" in out["location"]
@@ -76,9 +74,7 @@ def test_role_token_wins_when_ambiguous() -> None:
 
 def test_description_kept_below_header() -> None:
     n = HNHiringNormalizer()
-    out = n.normalize(
-        _raw("Acme | Designer | Remote\nWe build cool things.\nApply via email.")
-    )
+    out = n.normalize(_raw("Acme | Designer | Remote\nWe build cool things.\nApply via email."))
     assert "We build cool things." in out["description"]
     assert "Apply via email." in out["description"]
 

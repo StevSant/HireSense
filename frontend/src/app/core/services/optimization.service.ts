@@ -20,6 +20,9 @@ export class OptimizationService {
   constructor(private http: HttpClient) {}
 
   optimize(payload: OptimizeRequest): Observable<OptimizationResult> {
-    return this.http.post<OptimizationResult>(`${environment.apiUrl}/optimization/optimize`, payload);
+    return this.http.post<OptimizationResult>(
+      `${environment.apiUrl}/optimization/optimize`,
+      payload,
+    );
   }
 }

@@ -53,9 +53,7 @@ class DigestRepository(SqlRepository):
 
     def prune_older_than(self, cutoff: datetime) -> int:
         with self._session_factory() as session:
-            ids = session.scalars(
-                select(DigestOrm.id).where(DigestOrm.created_at < cutoff)
-            ).all()
+            ids = session.scalars(select(DigestOrm.id).where(DigestOrm.created_at < cutoff)).all()
             if ids:
                 session.execute(delete(DigestOrm).where(DigestOrm.id.in_(ids)))
                 session.commit()

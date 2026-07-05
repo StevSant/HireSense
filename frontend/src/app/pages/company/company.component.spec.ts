@@ -10,11 +10,27 @@ import { PreferenceService } from '../../core/services/preference.service';
 
 function job(over: Record<string, unknown> = {}) {
   return {
-    id: '1', title: 'Backend Engineer', company: 'Acme', description: '', skills: [],
-    location: 'Remote', salary_range: null, source: 'remotive', source_type: 'api',
-    platform: null, categories: [], department: null, url: 'https://e.com/1',
-    posted_date: null, match_score: 0.82, llm_score: null, verdict: null,
-    reasons: [], dealbreakers: [], status: 'open', ...over,
+    id: '1',
+    title: 'Backend Engineer',
+    company: 'Acme',
+    description: '',
+    skills: [],
+    location: 'Remote',
+    salary_range: null,
+    source: 'remotive',
+    source_type: 'api',
+    platform: null,
+    categories: [],
+    department: null,
+    url: 'https://e.com/1',
+    posted_date: null,
+    match_score: 0.82,
+    llm_score: null,
+    verdict: null,
+    reasons: [],
+    dealbreakers: [],
+    status: 'open',
+    ...over,
   };
 }
 
@@ -27,10 +43,16 @@ function mount(service: Record<string, unknown>, name = 'Acme') {
     imports: [CompanyComponent],
     providers: [
       provideRouter([]),
-      { provide: IngestionService, useValue: { trackedJobIds: signal(new Set<string>()), markTracked: () => {}, ...service } },
+      {
+        provide: IngestionService,
+        useValue: { trackedJobIds: signal(new Set<string>()), markTracked: () => {}, ...service },
+      },
       { provide: ApplicationsService, useValue: { createFromJob: () => of({ id: 'app-1' }) } },
       { provide: PreferenceService, useValue: { submitFeedback: () => of({}) } },
-      { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ name }) } } },
+      {
+        provide: ActivatedRoute,
+        useValue: { snapshot: { paramMap: convertToParamMap({ name }) } },
+      },
     ],
   });
   const fixture = TestBed.createComponent(CompanyComponent);
@@ -85,13 +107,22 @@ describe('CompanyComponent', () => {
   it('re-sorts rows client-side when a column header is clicked', () => {
     const service = {
       queryJobs: (tab: string) =>
-        of(page(tab === 'boards'
-          ? [job({ id: 'a', title: 'Zebra', llm_score: 0.9 }), job({ id: 'b', title: 'Alpha', llm_score: 0.4 })]
-          : [])),
+        of(
+          page(
+            tab === 'boards'
+              ? [
+                  job({ id: 'a', title: 'Zebra', llm_score: 0.9 }),
+                  job({ id: 'b', title: 'Alpha', llm_score: 0.4 }),
+                ]
+              : [],
+          ),
+        ),
     };
     const fixture = mount(service);
     // Default sort is match desc → Zebra (0.9) first.
-    let titles = [...fixture.nativeElement.querySelectorAll('td.title')].map((e: Element) => e.textContent?.trim());
+    let titles = [...fixture.nativeElement.querySelectorAll('td.title')].map((e: Element) =>
+      e.textContent?.trim(),
+    );
     expect(titles[0]).toContain('Zebra');
 
     // Click the Title header → ascending alpha → Alpha first.
@@ -100,7 +131,9 @@ describe('CompanyComponent', () => {
     ) as HTMLElement;
     titleHeader.click();
     fixture.detectChanges();
-    titles = [...fixture.nativeElement.querySelectorAll('td.title')].map((e: Element) => e.textContent?.trim());
+    titles = [...fixture.nativeElement.querySelectorAll('td.title')].map((e: Element) =>
+      e.textContent?.trim(),
+    );
     expect(titles[0]).toContain('Alpha');
   });
 

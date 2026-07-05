@@ -75,22 +75,44 @@ class UsageAggregator:
         days: int | None = 90,
     ) -> str:
         rows = self.recent_calls(
-            limit=10000, offset=0, provider=provider, model=model,
-            feature_key=feature_key, days=days,
+            limit=10000,
+            offset=0,
+            provider=provider,
+            model=model,
+            feature_key=feature_key,
+            days=days,
         )
         buf = io.StringIO()
         writer = csv.writer(buf)
-        writer.writerow([
-            "created_at", "feature_key", "provider", "model",
-            "input_tokens", "output_tokens", "total_tokens",
-            "cost_usd", "latency_ms", "success", "error",
-        ])
+        writer.writerow(
+            [
+                "created_at",
+                "feature_key",
+                "provider",
+                "model",
+                "input_tokens",
+                "output_tokens",
+                "total_tokens",
+                "cost_usd",
+                "latency_ms",
+                "success",
+                "error",
+            ]
+        )
         for r in rows:
-            writer.writerow([
-                r.created_at.isoformat() if r.created_at else "",
-                r.feature_key, r.provider, r.model,
-                r.input_tokens, r.output_tokens, r.total_tokens,
-                f"{r.cost_usd:.6f}", f"{r.latency_ms:.2f}",
-                r.success, r.error or "",
-            ])
+            writer.writerow(
+                [
+                    r.created_at.isoformat() if r.created_at else "",
+                    r.feature_key,
+                    r.provider,
+                    r.model,
+                    r.input_tokens,
+                    r.output_tokens,
+                    r.total_tokens,
+                    f"{r.cost_usd:.6f}",
+                    f"{r.latency_ms:.2f}",
+                    r.success,
+                    r.error or "",
+                ]
+            )
         return buf.getvalue()

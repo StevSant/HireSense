@@ -27,7 +27,9 @@ async def test_embed_delegates_to_sentence_transformer() -> None:
 
 @pytest.mark.asyncio
 async def test_embed_lazy_loads_model() -> None:
-    with patch("hiresense.adapters.embedding.sentence_transformer_adapter.SentenceTransformer") as mock_cls:
+    with patch(
+        "hiresense.adapters.embedding.sentence_transformer_adapter.SentenceTransformer"
+    ) as mock_cls:
         mock_instance = MagicMock()
         mock_instance.encode.return_value = [[0.1]]
         mock_cls.return_value = mock_instance
@@ -48,6 +50,7 @@ async def test_embed_converts_numpy_to_list() -> None:
     fake_model = MagicMock()
     # sentence-transformers returns numpy arrays; simulate with objects that have .tolist()
     import numpy as np
+
     fake_model.encode.return_value = np.array([[0.1, 0.2], [0.3, 0.4]])
     adapter._model = fake_model
 

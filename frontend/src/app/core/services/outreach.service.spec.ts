@@ -46,9 +46,7 @@ describe('OutreachService', () => {
 
   it('listEvents GETs /outreach/events with the application_id param', () => {
     service.listEvents('app-1').subscribe();
-    const req = httpMock.expectOne(
-      `${environment.apiUrl}/outreach/events?application_id=app-1`,
-    );
+    const req = httpMock.expectOne(`${environment.apiUrl}/outreach/events?application_id=app-1`);
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('application_id')).toBe('app-1');
     req.flush([]);

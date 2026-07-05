@@ -1,4 +1,5 @@
 """Integration: GET /ingestion/jobs?company= narrows to one company."""
+
 from __future__ import annotations
 
 import pytest
@@ -41,12 +42,24 @@ class _FakeSource:
 
     async def fetch_jobs(self, filters=None) -> list[RawJobListing]:  # noqa: ARG002
         return [
-            RawJobListing(source="remotive", source_id="101",
-                          raw_data={"title": "Backend Engineer", "company": "Acme",
-                                    "url": "https://e.com/101"}),
-            RawJobListing(source="remotive", source_id="102",
-                          raw_data={"title": "Frontend Engineer", "company": "Beta",
-                                    "url": "https://e.com/102"}),
+            RawJobListing(
+                source="remotive",
+                source_id="101",
+                raw_data={
+                    "title": "Backend Engineer",
+                    "company": "Acme",
+                    "url": "https://e.com/101",
+                },
+            ),
+            RawJobListing(
+                source="remotive",
+                source_id="102",
+                raw_data={
+                    "title": "Frontend Engineer",
+                    "company": "Beta",
+                    "url": "https://e.com/102",
+                },
+            ),
         ]
 
 

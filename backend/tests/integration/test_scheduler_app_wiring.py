@@ -38,10 +38,18 @@ async def test_scheduler_router_is_mounted_and_lists_jobs(monkeypatch):
     app = create_app()
     app.dependency_overrides[require_auth] = lambda: "u"
     transport = ASGITransport(app=app)
-    async with app.router.lifespan_context(app), AsyncClient(transport=transport, base_url="http://t") as client:
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=transport, base_url="http://t") as client,
+    ):
         resp = await client.get("/scheduler/jobs")
     assert resp.status_code == 200
     names = {j["name"] for j in resp.json()}
-    assert {"ingestion_fetch", "revalidation_sweep", "autohunt_digest", "outreach_followups"}.issubset(names)
+    assert {
+        "ingestion_fetch",
+        "revalidation_sweep",
+        "autohunt_digest",
+        "outreach_followups",
+    }.issubset(names)
 
     setup_engine.dispose()

@@ -84,8 +84,13 @@ def test_normalized_job_deduplication_key() -> None:
 
 def test_normalized_job_lifecycle_field_defaults() -> None:
     job = NormalizedJob(
-        id="1", title="T", company="C", description="D",
-        source="remotive", source_type="api", url="https://e.com/1",
+        id="1",
+        title="T",
+        company="C",
+        description="D",
+        source="remotive",
+        source_type="api",
+        url="https://e.com/1",
     )
     assert job.source_id is None
     assert job.status == "open"

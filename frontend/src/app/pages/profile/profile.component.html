@@ -56,448 +56,587 @@
   </div>
 
   @if (pageTab() === 'cv') {
-  <section class="tab-panel" id="panel-cv" role="tabpanel" aria-labelledby="tab-cv">
-  @if (initialLoading()) {
-    <div class="loading-state">
-      <div class="loading-spinner"></div>
-      <p>Loading profile...</p>
-    </div>
-  } @else if (!profile()) {
-    <div class="upload-card">
-      <div class="tab-bar">
-        <button
-          class="tab"
-          [class.active]="uploadMode() === 'upload'"
-          (click)="uploadMode.set('upload')"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
-          Upload File
-        </button>
-        <button
-          class="tab"
-          [class.active]="uploadMode() === 'paste'"
-          (click)="uploadMode.set('paste')"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-          </svg>
-          Paste LaTeX
-        </button>
-      </div>
-
-      <div class="tab-content">
-        <div class="language-selector">
-          <label for="language">CV Language</label>
-          <select id="language" [ngModel]="language()" (ngModelChange)="language.set($event)" name="language">
-            <option value="en">English</option>
-            <option value="es">Spanish</option>
-          </select>
+    <section class="tab-panel" id="panel-cv" role="tabpanel" aria-labelledby="tab-cv">
+      @if (initialLoading()) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading profile...</p>
         </div>
-
-        @if (uploadMode() === 'upload') {
-          <div
-            class="dropzone"
-            [class.drag-over]="dragOver()"
-            [class.has-file]="selectedFile()"
-            (dragover)="onDragOver($event)"
-            (dragleave)="onDragLeave($event)"
-            (drop)="onDrop($event)"
-          >
-            @if (!selectedFile()) {
-              <div class="dropzone-content">
-                <div class="dropzone-icon">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="12" y1="18" x2="12" y2="12"/>
-                    <line x1="9" y1="15" x2="12" y2="12"/>
-                    <line x1="15" y1="15" x2="12" y2="12"/>
-                  </svg>
-                </div>
-                <p class="dropzone-title">Drop your CV here</p>
-                <p class="dropzone-hint">or <label for="file-input" class="browse-link">browse files</label></p>
-                <p class="dropzone-formats">PDF or LaTeX (.tex)</p>
-                <input
-                  id="file-input"
-                  type="file"
-                  accept=".pdf,.tex"
-                  (change)="onFileSelected($event)"
-                  hidden
-                />
-              </div>
-            } @else {
-              <div class="file-preview">
-                <div class="file-icon">
-                  @if (selectedFile()!.name.endsWith('.pdf')) {
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                      <path d="M9 15h6"/>
-                      <path d="M9 11h6"/>
-                    </svg>
-                  } @else {
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                      <path d="M10 12l-2 4h8l-2-4"/>
-                    </svg>
-                  }
-                </div>
-                <div class="file-details">
-                  <span class="file-name">{{ selectedFile()!.name }}</span>
-                  <span class="file-size">{{ formatFileSize(selectedFile()!.size) }}</span>
-                </div>
-                <button class="file-remove" (click)="removeFile()" title="Remove file">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                </button>
-              </div>
-            }
-          </div>
-
-          @if (error()) {
-            <div class="alert alert-error">{{ error() }}</div>
-          }
-
-          <button
-            (click)="uploadFile()"
-            [disabled]="loading() || !selectedFile()"
-            class="btn-primary"
-          >
-            @if (loading()) {
-              <span class="btn-spinner"></span>
-              Parsing...
-            } @else {
-              Upload & Parse
-            }
-          </button>
-        } @else {
-          <div class="form-group">
-            <label for="tex">Paste your .tex content</label>
-            <textarea
-              id="tex"
-              [ngModel]="texContent()"
-              (ngModelChange)="texContent.set($event)"
-              name="tex"
-              rows="14"
-              placeholder="Paste your LaTeX CV content here..."
-              class="tex-input"
-            ></textarea>
-          </div>
-
-          @if (error()) {
-            <div class="alert alert-error">{{ error() }}</div>
-          }
-
-          <button
-            (click)="uploadLatex()"
-            [disabled]="loading() || !texContent().trim()"
-            class="btn-primary"
-          >
-            @if (loading()) {
-              <span class="btn-spinner"></span>
-              Parsing...
-            } @else {
-              Upload & Parse
-            }
-          </button>
-        }
-      </div>
-    </div>
-  } @else {
-    <div class="profile-view">
-      <div class="profile-header">
-        <div class="profile-identity">
-          <div class="avatar">{{ profile()!.name.charAt(0).toUpperCase() }}</div>
-          <div>
-            <h2>{{ profile()!.name }}</h2>
-            @if (profile()!.location) {
-              <span class="profile-location">{{ profile()!.location }}</span>
-            }
-          </div>
-        </div>
-        <div class="profile-header-actions">
-          <button (click)="replaceCv()" class="btn-secondary">Replace CV</button>
-          <button (click)="addAnotherLanguage()" class="btn-secondary">+ Add Language</button>
-        </div>
-      </div>
-
-      @if (uploadedLanguages().length > 1) {
-        <div class="language-tabs" role="tablist" aria-label="CV language">
-          <span class="language-tabs-label">Viewing</span>
-          @for (lang of uploadedLanguages(); track lang) {
+      } @else if (!profile()) {
+        <div class="upload-card">
+          <div class="tab-bar">
             <button
-              role="tab"
-              class="lang-tab"
-              [class.active]="activeLanguage() === lang"
-              (click)="switchLanguage(lang)"
+              class="tab"
+              [class.active]="uploadMode() === 'upload'"
+              (click)="uploadMode.set('upload')"
             >
-              {{ lang === 'es' ? 'Espanol' : 'English' }}
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              Upload File
             </button>
-          }
-        </div>
-      }
+            <button
+              class="tab"
+              [class.active]="uploadMode() === 'paste'"
+              (click)="uploadMode.set('paste')"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
+                />
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+              </svg>
+              Paste LaTeX
+            </button>
+          </div>
 
-      @if (profile(); as p) {
-        <div class="cv-actions">
-          <button type="button" class="btn-secondary" (click)="downloadPdf(p.language)">
-            Download PDF ({{ p.language }})
-          </button>
-          <button
-            type="button"
-            class="btn-secondary"
-            [disabled]="translating()"
-            (click)="translateToOther()"
-          >
-            {{ translating() ? 'Translating...' : 'Translate to ' + otherLanguage() }}
-          </button>
-          @if (p.machine_translated) {
-            <span class="badge badge-translated">Machine-translated</span>
-          }
-        </div>
-        @if (translateWarning()) {
-          <div class="alert alert-error">
-            {{ translateWarning() }}
-            @if (translateCompileError()) {
-              <details class="compile-error-details">
-                <summary>Show compiler error</summary>
-                <pre class="compile-error-log">{{ translateCompileError() }}</pre>
-              </details>
-            }
-          </div>
-        }
-      }
+          <div class="tab-content">
+            <div class="language-selector">
+              <label for="language">CV Language</label>
+              <select
+                id="language"
+                [ngModel]="language()"
+                (ngModelChange)="language.set($event)"
+                name="language"
+              >
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+              </select>
+            </div>
 
-      @if (showUploadForm()) {
-        <div class="inline-upload">
-          <div class="inline-upload-header">
-            <h3>{{ uploadIntent() === 'replace' ? 'Replace' : 'Upload' }} {{ language() === 'es' ? 'Spanish' : 'English' }} CV</h3>
-            <button (click)="cancelUpload()" class="btn-secondary btn-sm">Cancel</button>
-          </div>
-          <div class="language-selector">
-            <label for="upload-language">CV Language</label>
-            <select id="upload-language" [ngModel]="language()" (ngModelChange)="language.set($event)" name="language">
-              <option value="en">English</option>
-              <option value="es">Spanish</option>
-            </select>
-          </div>
-          <div
-            class="dropzone"
-            [class.drag-over]="dragOver()"
-            [class.has-file]="selectedFile()"
-            (dragover)="onDragOver($event)"
-            (dragleave)="onDragLeave($event)"
-            (drop)="onDrop($event)"
-          >
-            @if (!selectedFile()) {
-              <div class="dropzone-content">
-                <p class="dropzone-title">Drop your CV here</p>
-                <p class="dropzone-hint">or <label for="inline-file-input" class="browse-link">browse files</label></p>
-                <p class="dropzone-formats">PDF or LaTeX (.tex)</p>
-                <input id="inline-file-input" type="file" accept=".pdf,.tex" (change)="onFileSelected($event)" hidden />
+            @if (uploadMode() === 'upload') {
+              <div
+                class="dropzone"
+                [class.drag-over]="dragOver()"
+                [class.has-file]="selectedFile()"
+                (dragover)="onDragOver($event)"
+                (dragleave)="onDragLeave($event)"
+                (drop)="onDrop($event)"
+              >
+                @if (!selectedFile()) {
+                  <div class="dropzone-content">
+                    <div class="dropzone-icon">
+                      <svg
+                        width="48"
+                        height="48"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="12" y1="18" x2="12" y2="12" />
+                        <line x1="9" y1="15" x2="12" y2="12" />
+                        <line x1="15" y1="15" x2="12" y2="12" />
+                      </svg>
+                    </div>
+                    <p class="dropzone-title">Drop your CV here</p>
+                    <p class="dropzone-hint">
+                      or <label for="file-input" class="browse-link">browse files</label>
+                    </p>
+                    <p class="dropzone-formats">PDF or LaTeX (.tex)</p>
+                    <input
+                      id="file-input"
+                      type="file"
+                      accept=".pdf,.tex"
+                      (change)="onFileSelected($event)"
+                      hidden
+                    />
+                  </div>
+                } @else {
+                  <div class="file-preview">
+                    <div class="file-icon">
+                      @if (selectedFile()!.name.endsWith('.pdf')) {
+                        <svg
+                          width="32"
+                          height="32"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.5"
+                        >
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                          <path d="M9 15h6" />
+                          <path d="M9 11h6" />
+                        </svg>
+                      } @else {
+                        <svg
+                          width="32"
+                          height="32"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.5"
+                        >
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                          <path d="M10 12l-2 4h8l-2-4" />
+                        </svg>
+                      }
+                    </div>
+                    <div class="file-details">
+                      <span class="file-name">{{ selectedFile()!.name }}</span>
+                      <span class="file-size">{{ formatFileSize(selectedFile()!.size) }}</span>
+                    </div>
+                    <button class="file-remove" (click)="removeFile()" title="Remove file">
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+                }
               </div>
+
+              @if (error()) {
+                <div class="alert alert-error">{{ error() }}</div>
+              }
+
+              <button
+                (click)="uploadFile()"
+                [disabled]="loading() || !selectedFile()"
+                class="btn-primary"
+              >
+                @if (loading()) {
+                  <span class="btn-spinner"></span>
+                  Parsing...
+                } @else {
+                  Upload & Parse
+                }
+              </button>
             } @else {
-              <div class="file-preview">
-                <div class="file-details">
-                  <span class="file-name">{{ selectedFile()!.name }}</span>
-                  <span class="file-size">{{ formatFileSize(selectedFile()!.size) }}</span>
-                </div>
-                <button class="file-remove" (click)="removeFile()" title="Remove file">x</button>
+              <div class="form-group">
+                <label for="tex">Paste your .tex content</label>
+                <textarea
+                  id="tex"
+                  [ngModel]="texContent()"
+                  (ngModelChange)="texContent.set($event)"
+                  name="tex"
+                  rows="14"
+                  placeholder="Paste your LaTeX CV content here..."
+                  class="tex-input"
+                ></textarea>
+              </div>
+
+              @if (error()) {
+                <div class="alert alert-error">{{ error() }}</div>
+              }
+
+              <button
+                (click)="uploadLatex()"
+                [disabled]="loading() || !texContent().trim()"
+                class="btn-primary"
+              >
+                @if (loading()) {
+                  <span class="btn-spinner"></span>
+                  Parsing...
+                } @else {
+                  Upload & Parse
+                }
+              </button>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="profile-view">
+          <div class="profile-header">
+            <div class="profile-identity">
+              <div class="avatar">{{ profile()!.name.charAt(0).toUpperCase() }}</div>
+              <div>
+                <h2>{{ profile()!.name }}</h2>
+                @if (profile()!.location) {
+                  <span class="profile-location">{{ profile()!.location }}</span>
+                }
+              </div>
+            </div>
+            <div class="profile-header-actions">
+              <button (click)="replaceCv()" class="btn-secondary">Replace CV</button>
+              <button (click)="addAnotherLanguage()" class="btn-secondary">+ Add Language</button>
+            </div>
+          </div>
+
+          @if (uploadedLanguages().length > 1) {
+            <div class="language-tabs" role="tablist" aria-label="CV language">
+              <span class="language-tabs-label">Viewing</span>
+              @for (lang of uploadedLanguages(); track lang) {
+                <button
+                  role="tab"
+                  class="lang-tab"
+                  [class.active]="activeLanguage() === lang"
+                  (click)="switchLanguage(lang)"
+                >
+                  {{ lang === 'es' ? 'Espanol' : 'English' }}
+                </button>
+              }
+            </div>
+          }
+
+          @if (profile(); as p) {
+            <div class="cv-actions">
+              <button type="button" class="btn-secondary" (click)="downloadPdf(p.language)">
+                Download PDF ({{ p.language }})
+              </button>
+              <button
+                type="button"
+                class="btn-secondary"
+                [disabled]="translating()"
+                (click)="translateToOther()"
+              >
+                {{ translating() ? 'Translating...' : 'Translate to ' + otherLanguage() }}
+              </button>
+              @if (p.machine_translated) {
+                <span class="badge badge-translated">Machine-translated</span>
+              }
+            </div>
+            @if (translateWarning()) {
+              <div class="alert alert-error">
+                {{ translateWarning() }}
+                @if (translateCompileError()) {
+                  <details class="compile-error-details">
+                    <summary>Show compiler error</summary>
+                    <pre class="compile-error-log">{{ translateCompileError() }}</pre>
+                  </details>
+                }
               </div>
             }
-          </div>
-          @if (error()) {
-            <div class="alert alert-error">{{ error() }}</div>
           }
-          <button (click)="uploadFile()" [disabled]="loading() || !selectedFile()" class="btn-primary">
-            @if (loading()) { Parsing... } @else { Upload & Parse }
-          </button>
-        </div>
-      }
 
-      <div class="info-grid">
-        @if (profile()!.email) {
-          <div class="info-item">
-            <span class="label">Email</span>
-            <span class="value">{{ profile()!.email }}</span>
-          </div>
-        }
-        @if (profile()!.phone) {
-          <div class="info-item">
-            <span class="label">Phone</span>
-            <span class="value">{{ profile()!.phone }}</span>
-          </div>
-        }
-        @if (profile()!.linkedin_url) {
-          <div class="info-item">
-            <span class="label">LinkedIn</span>
-            <a class="value info-link" [href]="profile()!.linkedin_url!" target="_blank" rel="noopener">{{ profile()!.linkedin_url }}</a>
-          </div>
-        }
-        @if (profile()!.github_url) {
-          <div class="info-item">
-            <span class="label">GitHub</span>
-            <a class="value info-link" [href]="profile()!.github_url!" target="_blank" rel="noopener">{{ profile()!.github_url }}</a>
-          </div>
-        }
-        @if (profile()!.portfolio_url) {
-          <div class="info-item">
-            <span class="label">Portfolio</span>
-            <a class="value info-link" [href]="profile()!.portfolio_url!" target="_blank" rel="noopener">{{ profile()!.portfolio_url }}</a>
-          </div>
-        }
-        <div class="info-item">
-          <span class="label">CV Language</span>
-          <span class="language-badge">{{ profile()!.language === 'es' ? 'Espanol' : 'English' }}</span>
-        </div>
-      </div>
+          @if (showUploadForm()) {
+            <div class="inline-upload">
+              <div class="inline-upload-header">
+                <h3>
+                  {{ uploadIntent() === 'replace' ? 'Replace' : 'Upload' }}
+                  {{ language() === 'es' ? 'Spanish' : 'English' }} CV
+                </h3>
+                <button (click)="cancelUpload()" class="btn-secondary btn-sm">Cancel</button>
+              </div>
+              <div class="language-selector">
+                <label for="upload-language">CV Language</label>
+                <select
+                  id="upload-language"
+                  [ngModel]="language()"
+                  (ngModelChange)="language.set($event)"
+                  name="language"
+                >
+                  <option value="en">English</option>
+                  <option value="es">Spanish</option>
+                </select>
+              </div>
+              <div
+                class="dropzone"
+                [class.drag-over]="dragOver()"
+                [class.has-file]="selectedFile()"
+                (dragover)="onDragOver($event)"
+                (dragleave)="onDragLeave($event)"
+                (drop)="onDrop($event)"
+              >
+                @if (!selectedFile()) {
+                  <div class="dropzone-content">
+                    <p class="dropzone-title">Drop your CV here</p>
+                    <p class="dropzone-hint">
+                      or <label for="inline-file-input" class="browse-link">browse files</label>
+                    </p>
+                    <p class="dropzone-formats">PDF or LaTeX (.tex)</p>
+                    <input
+                      id="inline-file-input"
+                      type="file"
+                      accept=".pdf,.tex"
+                      (change)="onFileSelected($event)"
+                      hidden
+                    />
+                  </div>
+                } @else {
+                  <div class="file-preview">
+                    <div class="file-details">
+                      <span class="file-name">{{ selectedFile()!.name }}</span>
+                      <span class="file-size">{{ formatFileSize(selectedFile()!.size) }}</span>
+                    </div>
+                    <button class="file-remove" (click)="removeFile()" title="Remove file">
+                      x
+                    </button>
+                  </div>
+                }
+              </div>
+              @if (error()) {
+                <div class="alert alert-error">{{ error() }}</div>
+              }
+              <button
+                (click)="uploadFile()"
+                [disabled]="loading() || !selectedFile()"
+                class="btn-primary"
+              >
+                @if (loading()) {
+                  Parsing...
+                } @else {
+                  Upload & Parse
+                }
+              </button>
+            </div>
+          }
 
-      @if (profile()!.skills.length > 0) {
-        <div class="section">
-          <h3>Skills</h3>
-          <div class="skills">
-            @for (skill of profile()!.skills; track skill) {
-              <span class="skill-tag">{{ skill }}</span>
+          <div class="info-grid">
+            @if (profile()!.email) {
+              <div class="info-item">
+                <span class="label">Email</span>
+                <span class="value">{{ profile()!.email }}</span>
+              </div>
             }
+            @if (profile()!.phone) {
+              <div class="info-item">
+                <span class="label">Phone</span>
+                <span class="value">{{ profile()!.phone }}</span>
+              </div>
+            }
+            @if (profile()!.linkedin_url) {
+              <div class="info-item">
+                <span class="label">LinkedIn</span>
+                <a
+                  class="value info-link"
+                  [href]="profile()!.linkedin_url!"
+                  target="_blank"
+                  rel="noopener"
+                  >{{ profile()!.linkedin_url }}</a
+                >
+              </div>
+            }
+            @if (profile()!.github_url) {
+              <div class="info-item">
+                <span class="label">GitHub</span>
+                <a
+                  class="value info-link"
+                  [href]="profile()!.github_url!"
+                  target="_blank"
+                  rel="noopener"
+                  >{{ profile()!.github_url }}</a
+                >
+              </div>
+            }
+            @if (profile()!.portfolio_url) {
+              <div class="info-item">
+                <span class="label">Portfolio</span>
+                <a
+                  class="value info-link"
+                  [href]="profile()!.portfolio_url!"
+                  target="_blank"
+                  rel="noopener"
+                  >{{ profile()!.portfolio_url }}</a
+                >
+              </div>
+            }
+            <div class="info-item">
+              <span class="label">CV Language</span>
+              <span class="language-badge">{{
+                profile()!.language === 'es' ? 'Espanol' : 'English'
+              }}</span>
+            </div>
           </div>
-        </div>
-      }
 
-      @for (section of profile()!.sections; track section.name) {
-        <div class="section">
-          <h3>{{ section.name }}</h3>
-          <app-cv-section-content [content]="section.content" />
+          @if (profile()!.skills.length > 0) {
+            <div class="section">
+              <h3>Skills</h3>
+              <div class="skills">
+                @for (skill of profile()!.skills; track skill) {
+                  <span class="skill-tag">{{ skill }}</span>
+                }
+              </div>
+            </div>
+          }
+
+          @for (section of profile()!.sections; track section.name) {
+            <div class="section">
+              <h3>{{ section.name }}</h3>
+              <app-cv-section-content [content]="section.content" />
+            </div>
+          }
         </div>
       }
-    </div>
-  }
-  </section>
+    </section>
   }
 
   @if (pageTab() === 'personal') {
-  <section class="tab-panel" id="panel-personal" role="tabpanel" aria-labelledby="tab-personal">
-    @if (profile(); as p) {
-      @if (!editingPersonal()) {
-      <div class="details-card">
-        <div class="details-card-header">
-          <h3 class="details-card-title">Personal details</h3>
-          <button type="button" class="btn-secondary" (click)="editingPersonal.set(true)">Edit</button>
+    <section class="tab-panel" id="panel-personal" role="tabpanel" aria-labelledby="tab-personal">
+      @if (profile(); as p) {
+        @if (!editingPersonal()) {
+          <div class="details-card">
+            <div class="details-card-header">
+              <h3 class="details-card-title">Personal details</h3>
+              <button type="button" class="btn-secondary" (click)="editingPersonal.set(true)">
+                Edit
+              </button>
+            </div>
+            <div class="details-grid">
+              <div class="details-item">
+                <span class="details-label">Name</span>
+                <span class="details-value">{{ p.name || '—' }}</span>
+              </div>
+              <div class="details-item">
+                <span class="details-label">Email</span>
+                <span class="details-value">{{ p.email || '—' }}</span>
+              </div>
+              <div class="details-item">
+                <span class="details-label">Phone</span>
+                <span class="details-value">{{ p.phone || '—' }}</span>
+              </div>
+              <div class="details-item">
+                <span class="details-label">Location</span>
+                <span class="details-value">{{ p.location || '—' }}</span>
+              </div>
+              <div class="details-item">
+                <span class="details-label">Primary language</span>
+                <span class="details-value">{{ p.language === 'es' ? 'Espanol' : 'English' }}</span>
+              </div>
+              <div class="details-item">
+                <span class="details-label">LinkedIn</span>
+                @if (p.linkedin_url) {
+                  <a
+                    class="details-value details-link"
+                    [href]="p.linkedin_url"
+                    target="_blank"
+                    rel="noopener"
+                    >{{ p.linkedin_url }}</a
+                  >
+                } @else {
+                  <span class="details-value details-empty">Not set</span>
+                }
+              </div>
+              <div class="details-item">
+                <span class="details-label">GitHub</span>
+                @if (p.github_url) {
+                  <a
+                    class="details-value details-link"
+                    [href]="p.github_url"
+                    target="_blank"
+                    rel="noopener"
+                    >{{ p.github_url }}</a
+                  >
+                } @else {
+                  <span class="details-value details-empty">Not set</span>
+                }
+              </div>
+              <div class="details-item">
+                <span class="details-label">Portfolio</span>
+                @if (p.portfolio_url) {
+                  <a
+                    class="details-value details-link"
+                    [href]="p.portfolio_url"
+                    target="_blank"
+                    rel="noopener"
+                    >{{ p.portfolio_url }}</a
+                  >
+                } @else {
+                  <span class="details-value details-empty">Not set</span>
+                }
+              </div>
+            </div>
+            <p class="details-source-note">Parsed from your uploaded CV.</p>
+          </div>
+        } @else {
+          <div class="details-card">
+            <app-manual-fields-form
+              [profile]="p"
+              (saved)="editingPersonal.set(false)"
+              (cancelled)="editingPersonal.set(false)"
+            />
+          </div>
+        }
+        <div class="details-card">
+          <app-apply-profile-card [profile]="p" />
         </div>
-        <div class="details-grid">
-          <div class="details-item">
-            <span class="details-label">Name</span>
-            <span class="details-value">{{ p.name || '—' }}</span>
-          </div>
-          <div class="details-item">
-            <span class="details-label">Email</span>
-            <span class="details-value">{{ p.email || '—' }}</span>
-          </div>
-          <div class="details-item">
-            <span class="details-label">Phone</span>
-            <span class="details-value">{{ p.phone || '—' }}</span>
-          </div>
-          <div class="details-item">
-            <span class="details-label">Location</span>
-            <span class="details-value">{{ p.location || '—' }}</span>
-          </div>
-          <div class="details-item">
-            <span class="details-label">Primary language</span>
-            <span class="details-value">{{ p.language === 'es' ? 'Espanol' : 'English' }}</span>
-          </div>
-          <div class="details-item">
-            <span class="details-label">LinkedIn</span>
-            @if (p.linkedin_url) {
-              <a class="details-value details-link" [href]="p.linkedin_url" target="_blank" rel="noopener">{{ p.linkedin_url }}</a>
-            } @else {
-              <span class="details-value details-empty">Not set</span>
-            }
-          </div>
-          <div class="details-item">
-            <span class="details-label">GitHub</span>
-            @if (p.github_url) {
-              <a class="details-value details-link" [href]="p.github_url" target="_blank" rel="noopener">{{ p.github_url }}</a>
-            } @else {
-              <span class="details-value details-empty">Not set</span>
-            }
-          </div>
-          <div class="details-item">
-            <span class="details-label">Portfolio</span>
-            @if (p.portfolio_url) {
-              <a class="details-value details-link" [href]="p.portfolio_url" target="_blank" rel="noopener">{{ p.portfolio_url }}</a>
-            } @else {
-              <span class="details-value details-empty">Not set</span>
-            }
-          </div>
-        </div>
-        <p class="details-source-note">Parsed from your uploaded CV.</p>
-      </div>
       } @else {
-      <div class="details-card">
-        <app-manual-fields-form
-          [profile]="p"
-          (saved)="editingPersonal.set(false)"
-          (cancelled)="editingPersonal.set(false)"
-        />
-      </div>
+        <div class="empty-state">
+          <p class="empty-state-title">No profile yet</p>
+          <p class="empty-state-hint">
+            Upload a CV in the
+            <button type="button" class="link-button" (click)="pageTab.set('cv')">CV tab</button> to
+            see your parsed details here.
+          </p>
+        </div>
       }
-      <div class="details-card">
-        <app-apply-profile-card [profile]="p" />
-      </div>
-    } @else {
-      <div class="empty-state">
-        <p class="empty-state-title">No profile yet</p>
-        <p class="empty-state-hint">
-          Upload a CV in the <button type="button" class="link-button" (click)="pageTab.set('cv')">CV tab</button> to see your parsed details here.
-        </p>
-      </div>
-    }
-    <app-portfolio-card />
-    <app-network-card />
-  </section>
+      <app-portfolio-card />
+      <app-network-card />
+    </section>
   }
 
   @if (pageTab() === 'cover-letters') {
-  <section class="tab-panel" id="panel-cover-letters" role="tabpanel" aria-labelledby="tab-cover-letters">
-    <div class="per-job-card">
-      <div class="per-job-icon" aria-hidden="true">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-          <polyline points="22,6 12,13 2,6"/>
-        </svg>
+    <section
+      class="tab-panel"
+      id="panel-cover-letters"
+      role="tabpanel"
+      aria-labelledby="tab-cover-letters"
+    >
+      <div class="per-job-card">
+        <div class="per-job-icon" aria-hidden="true">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.75"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
+        </div>
+        <div class="per-job-body">
+          <h3>Generated per job</h3>
+          <p>
+            Cover letters are tailored to each specific job in the
+            <strong>Applications</strong> tab. Open any application and use the <em>Apply</em> tab
+            to generate one matched to the job and your CV.
+          </p>
+          <a routerLink="/dashboard/applications" class="btn-primary per-job-cta">
+            Go to Applications
+          </a>
+        </div>
       </div>
-      <div class="per-job-body">
-        <h3>Generated per job</h3>
-        <p>
-          Cover letters are tailored to each specific job in the <strong>Applications</strong> tab.
-          Open any application and use the <em>Apply</em> tab to generate one matched to the job
-          and your CV.
-        </p>
-        <a routerLink="/dashboard/applications" class="btn-primary per-job-cta">
-          Go to Applications
-        </a>
+
+      <div class="details-card">
+        <app-cover-letter-library />
       </div>
-    </div>
 
-    <div class="details-card">
-      <app-cover-letter-library />
-    </div>
-
-    <div class="details-card">
-      <app-cover-letter-templates />
-    </div>
-  </section>
+      <div class="details-card">
+        <app-cover-letter-templates />
+      </div>
+    </section>
   }
 
   @if (pageTab() === 'account') {
-  <section class="tab-panel" id="panel-account" role="tabpanel" aria-labelledby="tab-account">
-    <app-account />
-  </section>
+    <section class="tab-panel" id="panel-account" role="tabpanel" aria-labelledby="tab-account">
+      <app-account />
+    </section>
   }
 </div>

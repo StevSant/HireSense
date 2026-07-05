@@ -147,12 +147,8 @@ def test_filter_by_date_range() -> None:
 
 def test_combined_filters_and_pagination() -> None:
     jobs = [
-        _job(id=str(i), source="remotive", location="Remote", skills=["python"])
-        for i in range(30)
-    ] + [
-        _job(id=str(i + 30), source="linkedin", location="NYC")
-        for i in range(20)
-    ]
+        _job(id=str(i), source="remotive", location="Remote", skills=["python"]) for i in range(30)
+    ] + [_job(id=str(i + 30), source="linkedin", location="NYC") for i in range(20)]
     params = JobQueryParams(source="remotive", page=1, page_size=20)
     result = filter_and_paginate(jobs, params)
     assert result.total == 30

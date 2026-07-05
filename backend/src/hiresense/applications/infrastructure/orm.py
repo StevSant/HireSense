@@ -22,9 +22,7 @@ from hiresense.infrastructure.database import Base
 class ApplicationJobSnapshotOrm(Base):
     __tablename__ = "application_job_snapshots"
 
-    id: Mapped[uuid_mod.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid_mod.uuid4
-    )
+    id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
     application_id: Mapped[uuid_mod.UUID] = mapped_column(
         Uuid,
         ForeignKey("tracked_applications.id", ondelete="CASCADE"),
@@ -44,13 +42,9 @@ class ApplicationJobSnapshotOrm(Base):
 
 class ApplicationMatchOrm(Base):
     __tablename__ = "application_matches"
-    __table_args__ = (
-        Index("ix_application_matches_app_created", "application_id", "created_at"),
-    )
+    __table_args__ = (Index("ix_application_matches_app_created", "application_id", "created_at"),)
 
-    id: Mapped[uuid_mod.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid_mod.uuid4
-    )
+    id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
     application_id: Mapped[uuid_mod.UUID] = mapped_column(
         Uuid, ForeignKey("tracked_applications.id", ondelete="CASCADE"), nullable=False
     )
@@ -72,13 +66,9 @@ class ApplicationMatchOrm(Base):
 
 class ApplicationCvOptimizationOrm(Base):
     __tablename__ = "application_cv_optimizations"
-    __table_args__ = (
-        Index("ix_application_cv_opts_app_created", "application_id", "created_at"),
-    )
+    __table_args__ = (Index("ix_application_cv_opts_app_created", "application_id", "created_at"),)
 
-    id: Mapped[uuid_mod.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid_mod.uuid4
-    )
+    id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
     application_id: Mapped[uuid_mod.UUID] = mapped_column(
         Uuid, ForeignKey("tracked_applications.id", ondelete="CASCADE"), nullable=False
     )
@@ -101,9 +91,7 @@ class ApplicationCoverLetterOrm(Base):
         Index("ix_application_cover_letters_app_created", "application_id", "created_at"),
     )
 
-    id: Mapped[uuid_mod.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid_mod.uuid4
-    )
+    id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
     application_id: Mapped[uuid_mod.UUID] = mapped_column(
         Uuid, ForeignKey("tracked_applications.id", ondelete="CASCADE"), nullable=False
     )
@@ -123,9 +111,7 @@ class ApplicationInterviewPrepOrm(Base):
         Index("ix_application_interview_preps_app_created", "application_id", "created_at"),
     )
 
-    id: Mapped[uuid_mod.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid_mod.uuid4
-    )
+    id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
     application_id: Mapped[uuid_mod.UUID] = mapped_column(
         Uuid, ForeignKey("tracked_applications.id", ondelete="CASCADE"), nullable=False
     )

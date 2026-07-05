@@ -139,7 +139,9 @@ def test_track_manual_job() -> None:
 
 def test_track_from_ingestion() -> None:
     job_id = str(uuid_mod.uuid4())
-    job = FakeJob(id=job_id, title="ML Engineer", company="DeepMind", url="https://deepmind.com/jobs/1")
+    job = FakeJob(
+        id=job_id, title="ML Engineer", company="DeepMind", url="https://deepmind.com/jobs/1"
+    )
     repo = FakeRepository()
     orchestrator = FakeIngestionOrchestrator(jobs={job_id: job})
     svc = make_service(repo=repo, orchestrator=orchestrator)
@@ -304,7 +306,9 @@ async def test_update_status_records_transition_on_change():
     bus = FakeEventBus()
     repo = FakeRepository()
     created = repo.create(_make_app(job_id=uuid_mod.uuid4(), status=ApplicationStatus.SAVED.value))
-    service = TrackingService(repository=repo, ingestion_orchestrator=FakeIngestionOrchestrator(), event_bus=bus)
+    service = TrackingService(
+        repository=repo, ingestion_orchestrator=FakeIngestionOrchestrator(), event_bus=bus
+    )
     await service.update_status(created.id, ApplicationStatus.APPLIED)
     assert repo.history[-1] == ("saved", "applied")
 
@@ -315,7 +319,9 @@ async def test_update_status_no_transition_when_unchanged():
     repo = FakeRepository()
     created = repo.create(_make_app(status=ApplicationStatus.APPLIED.value))
     before = len(repo.history)
-    service = TrackingService(repository=repo, ingestion_orchestrator=FakeIngestionOrchestrator(), event_bus=bus)
+    service = TrackingService(
+        repository=repo, ingestion_orchestrator=FakeIngestionOrchestrator(), event_bus=bus
+    )
     await service.update_status(created.id, ApplicationStatus.APPLIED)
     assert len(repo.history) == before
 

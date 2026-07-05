@@ -10,6 +10,7 @@ from hiresense.kernel.value_objects import SourceType
 # Fakes
 # ---------------------------------------------------------------------------
 
+
 class FakeResponse:
     def __init__(self, data: dict) -> None:
         self._data = data
@@ -54,6 +55,7 @@ SAMPLE_RESPONSE = {"jobs": [SAMPLE_JOB]}
 # ---------------------------------------------------------------------------
 # Adapter tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_ashby_fetches_jobs() -> None:
@@ -154,7 +156,9 @@ def test_ashby_normalizer_missing_location() -> None:
 
 def test_ashby_normalizer_missing_published_at() -> None:
     normalizer = AshbyNormalizer()
-    raw_data = {k: v for k, v in {**SAMPLE_JOB, "company": "ElevenLabs"}.items() if k != "publishedAt"}
+    raw_data = {
+        k: v for k, v in {**SAMPLE_JOB, "company": "ElevenLabs"}.items() if k != "publishedAt"
+    }
     raw = RawJobListing(source="ashby", source_id="job-001", raw_data=raw_data)
     result = normalizer.normalize(raw)
     assert result["posted_date"] is None
@@ -162,7 +166,9 @@ def test_ashby_normalizer_missing_published_at() -> None:
 
 def test_ashby_normalizer_missing_department() -> None:
     normalizer = AshbyNormalizer()
-    raw_data = {k: v for k, v in {**SAMPLE_JOB, "company": "ElevenLabs"}.items() if k != "departmentName"}
+    raw_data = {
+        k: v for k, v in {**SAMPLE_JOB, "company": "ElevenLabs"}.items() if k != "departmentName"
+    }
     raw = RawJobListing(source="ashby", source_id="job-001", raw_data=raw_data)
     result = normalizer.normalize(raw)
     assert result["department"] is None

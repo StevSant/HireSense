@@ -47,16 +47,18 @@ function makeNudge(over: Partial<Record<string, unknown>> = {}) {
 }
 
 describe('OutreachComponent', () => {
-  function mount(opts: {
-    appId?: string | null;
-    outreach?: Partial<Record<string, unknown>>;
-    applications?: Partial<Record<string, unknown>>;
-    network?: Partial<Record<string, unknown>>;
-  } = {}) {
+  function mount(
+    opts: {
+      appId?: string | null;
+      outreach?: Partial<Record<string, unknown>>;
+      applications?: Partial<Record<string, unknown>>;
+      network?: Partial<Record<string, unknown>>;
+    } = {},
+  ) {
     const route = {
       snapshot: {
         queryParamMap: {
-          get: (key: string) => (key === 'application_id' ? opts.appId ?? null : null),
+          get: (key: string) => (key === 'application_id' ? (opts.appId ?? null) : null),
         },
       },
     };
@@ -116,9 +118,7 @@ describe('OutreachComponent', () => {
     cmp.generate();
 
     expect(cmp.message()).toBe('');
-    expect(cmp.composeNotice()).toBe(
-      'Message generation is unavailable — check the LLM settings.',
-    );
+    expect(cmp.composeNotice()).toBe('Message generation is unavailable — check the LLM settings.');
   });
 
   it("record 'sent' triggers a timeline refresh", () => {
@@ -230,7 +230,9 @@ describe('OutreachComponent', () => {
     // Trigger suggestions render
     fixture.detectChanges();
 
-    const chip = (fixture.nativeElement as HTMLElement).querySelector('.chip') as HTMLButtonElement | null;
+    const chip = (fixture.nativeElement as HTMLElement).querySelector(
+      '.chip',
+    ) as HTMLButtonElement | null;
     expect(chip).toBeTruthy();
     chip!.click();
 

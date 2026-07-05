@@ -6,8 +6,11 @@ from hiresense.preference.domain.explanation import build_explanation
 
 def _sig(kind: FeedbackKind, emb=None) -> FeedbackSignal:
     return FeedbackSignal(
-        id=uuid.uuid4(), job_id=uuid.uuid4(), kind=kind,
-        source=FeedbackSource.EXPLICIT, job_embedding=emb,
+        id=uuid.uuid4(),
+        job_id=uuid.uuid4(),
+        kind=kind,
+        source=FeedbackSource.EXPLICIT,
+        job_embedding=emb,
     )
 
 

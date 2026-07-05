@@ -20,7 +20,9 @@ describe('JobDescriptionComponent', () => {
   });
 
   it('renders plain "Heading:" descriptions as section cards with bullet lists', () => {
-    const fixture = mount('Formación:\nIngeniería Informática o afín.\nRequisitos:\nLinux intermedio\nDocker intermedio');
+    const fixture = mount(
+      'Formación:\nIngeniería Informática o afín.\nRequisitos:\nLinux intermedio\nDocker intermedio',
+    );
     expect(fixture.nativeElement.querySelectorAll('.jd-section').length).toBe(2);
     const items = fixture.nativeElement.querySelectorAll('.jd-list li');
     expect(items.length).toBe(2);

@@ -37,7 +37,9 @@ def configure_logging(settings: Any, otel_handler: LoggingHandler | None) -> Non
         "version": 1,
         "disable_existing_loggers": False,
         "filters": {
-            "trace_context": {"()": "hiresense.observability.trace_context_filter.TraceContextFilter"},
+            "trace_context": {
+                "()": "hiresense.observability.trace_context_filter.TraceContextFilter"
+            },
         },
         "formatters": {"default": formatter},
         "handlers": handlers,

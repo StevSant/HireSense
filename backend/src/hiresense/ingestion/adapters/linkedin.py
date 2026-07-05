@@ -47,9 +47,7 @@ class LinkedInAdapter:
     def source_type(self) -> SourceType:
         return SourceType.SCRAPER
 
-    async def fetch_jobs(
-        self, filters: dict[str, Any] | None = None
-    ) -> list[RawJobListing]:
+    async def fetch_jobs(self, filters: dict[str, Any] | None = None) -> list[RawJobListing]:
         keywords = filters.get("keywords", "software engineer") if filters else "software engineer"
         location = filters.get("location", "") if filters else ""
         headers = {"User-Agent": USER_AGENT}

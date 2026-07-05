@@ -85,16 +85,19 @@ class InterviewPrepService:
 
         if self._llm is None:
             return InterviewPrep(
-                job_title=title, company=company,
-                matched_stories=[], competencies_to_probe=[],
-                technical_topics=[], negotiation_points=["LLM not configured"],
+                job_title=title,
+                company=company,
+                matched_stories=[],
+                competencies_to_probe=[],
+                technical_topics=[],
+                negotiation_points=["LLM not configured"],
             )
 
         stories = self._story_repo.list_all()
         valid_story_ids = {str(s.id) for s in stories}
         story_summaries = ""
         for i, s in enumerate(stories, 1):
-            story_summaries += f"{i}. [{s.id}] \"{s.title}\" ({s.competency}) - {s.situation[:100]}\n"
+            story_summaries += f'{i}. [{s.id}] "{s.title}" ({s.competency}) - {s.situation[:100]}\n'
 
         prompt = (
             "You are an interview preparation coach.\n\n"
@@ -109,7 +112,9 @@ class InterviewPrepService:
         )
 
         try:
-            response = await self._llm.complete(prompt, system="You are an interview coach. Return only valid JSON.")
+            response = await self._llm.complete(
+                prompt, system="You are an interview coach. Return only valid JSON."
+            )
             data = None
             try:
                 data = json.loads(response)
@@ -122,12 +127,15 @@ class InterviewPrepService:
                 raise ValueError("Could not parse LLM response")
 
             matched = [
-                StoryMatch(story_id=m["story_id"], story_title=m["story_title"], relevance=m["relevance"])
+                StoryMatch(
+                    story_id=m["story_id"], story_title=m["story_title"], relevance=m["relevance"]
+                )
                 for m in data.get("matched_stories", [])
                 if str(m.get("story_id", "")) in valid_story_ids
             ]
             return InterviewPrep(
-                job_title=title, company=company,
+                job_title=title,
+                company=company,
                 matched_stories=matched,
                 competencies_to_probe=data.get("competencies_to_probe", []),
                 technical_topics=data.get("technical_topics", []),
@@ -135,7 +143,10 @@ class InterviewPrepService:
             )
         except Exception:
             return InterviewPrep(
-                job_title=title, company=company,
-                matched_stories=[], competencies_to_probe=[],
-                technical_topics=[], negotiation_points=["Interview preparation is temporarily unavailable"],
+                job_title=title,
+                company=company,
+                matched_stories=[],
+                competencies_to_probe=[],
+                technical_topics=[],
+                negotiation_points=["Interview preparation is temporarily unavailable"],
             )

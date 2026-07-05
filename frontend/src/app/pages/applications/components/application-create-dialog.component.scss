@@ -40,7 +40,9 @@
   color: #6b7280;
   padding: 4px 8px;
 
-  &:hover { color: #374151; }
+  &:hover {
+    color: #374151;
+  }
 }
 
 .hint {
@@ -59,7 +61,8 @@
     font-size: 0.9em;
   }
 
-  input, textarea {
+  input,
+  textarea {
     width: 100%;
     padding: 8px 10px;
     font-family: inherit;
@@ -70,7 +73,7 @@
     &:focus {
       outline: none;
       border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
     }
   }
 }

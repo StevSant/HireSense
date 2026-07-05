@@ -138,8 +138,9 @@ async def test_adzuna_skipped_when_keys_absent(monkeypatch: pytest.MonkeyPatch) 
 
     app = create_app()
     transport = ASGITransport(app=app)
-    async with app.router.lifespan_context(app), AsyncClient(
-        transport=transport, base_url="http://test"
-    ) as client:
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=transport, base_url="http://test") as client,
+    ):
         resp = await client.get("/health")
     assert resp.status_code == 200

@@ -18,6 +18,7 @@ Workflow::
     export DATABASE_URL=postgresql+asyncpg://hiresense:hiresense@localhost:5432/hiresense
     uv run python -m pytest -m pgvector
 """
+
 from __future__ import annotations
 
 import os
@@ -33,9 +34,7 @@ def _pgvector_selected(config: pytest.Config) -> bool:
     return _PGVECTOR_MARK in markexpr
 
 
-def pytest_collection_modifyitems(
-    config: pytest.Config, items: list[pytest.Item]
-) -> None:
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     """Skip pgvector-marked tests unless the run explicitly opted in.
 
     This makes the default ``uv run python -m pytest`` invocation green without a
@@ -45,9 +44,7 @@ def pytest_collection_modifyitems(
     """
     if _pgvector_selected(config):
         return
-    skip = pytest.mark.skip(
-        reason="needs a live Postgres+pgvector DB; opt in with `-m pgvector`"
-    )
+    skip = pytest.mark.skip(reason="needs a live Postgres+pgvector DB; opt in with `-m pgvector`")
     for item in items:
         if _PGVECTOR_MARK in item.keywords:
             item.add_marker(skip)
@@ -105,9 +102,7 @@ def pgvector_session_factory():
             # would leave the dev DB tableless while alembic_version still reads
             # head, silently disabling the SemanticPreRanker.
             pre_existing = (
-                conn.execute(
-                    text("SELECT to_regclass('public.vector_embeddings')")
-                ).scalar()
+                conn.execute(text("SELECT to_regclass('public.vector_embeddings')")).scalar()
                 is not None
             )
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))

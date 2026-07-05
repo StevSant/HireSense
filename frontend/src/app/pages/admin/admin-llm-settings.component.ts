@@ -4,10 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { AdminLLMSettingsService } from '../../core/services/admin-llm-settings.service';
-import {
-  LLM_PROVIDERS,
-  MODEL_SUGGESTIONS,
-} from './constants/llm-provider-suggestions';
+import { LLM_PROVIDERS, MODEL_SUGGESTIONS } from './constants/llm-provider-suggestions';
 import { ExtraParam } from './models/extra-param.model';
 import { FeatureView } from './models/feature-view.model';
 import { LLMProvider } from './models/llm-provider.model';
@@ -61,37 +58,45 @@ export class AdminLLMSettingsComponent implements OnInit {
   refresh(): void {
     this.loading.set(true);
     this.error.set('');
-    this.api.getSettings().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (settings) => {
-        this.current.set(settings);
-        this.formProvider.set((LLM_PROVIDERS as readonly string[]).includes(settings.provider)
-          ? (settings.provider as LLMProvider)
-          : 'anthropic');
-        this.formModel.set(settings.model);
-        this.formApiKey.set('');
-        this.formExtras.set(toExtraList(settings.extra_params));
-        this.testResult.set(null);
-        this.hasTestedSinceEdit.set(false);
-        this.loadFeatures();
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Failed to load settings');
-        this.loading.set(false);
-      },
-    });
+    this.api
+      .getSettings()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (settings) => {
+          this.current.set(settings);
+          this.formProvider.set(
+            (LLM_PROVIDERS as readonly string[]).includes(settings.provider)
+              ? (settings.provider as LLMProvider)
+              : 'anthropic',
+          );
+          this.formModel.set(settings.model);
+          this.formApiKey.set('');
+          this.formExtras.set(toExtraList(settings.extra_params));
+          this.testResult.set(null);
+          this.hasTestedSinceEdit.set(false);
+          this.loadFeatures();
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Failed to load settings');
+          this.loading.set(false);
+        },
+      });
   }
 
   private loadFeatures(): void {
-    this.api.listFeatures().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (features) => {
-        this.features.set(features);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Failed to load features');
-        this.loading.set(false);
-      },
-    });
+    this.api
+      .listFeatures()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (features) => {
+          this.features.set(features);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Failed to load features');
+          this.loading.set(false);
+        },
+      });
   }
 
   // ---- Global form ------------------------------------------------
@@ -260,7 +265,9 @@ export class AdminLLMSettingsComponent implements OnInit {
   }
 
   addOverrideExtra(): void {
-    this.editingOverride.update((d) => (d ? { ...d, extra: [...d.extra, { key: '', value: '' }] } : d));
+    this.editingOverride.update((d) =>
+      d ? { ...d, extra: [...d.extra, { key: '', value: '' }] } : d,
+    );
   }
 
   removeOverrideExtra(idx: number): void {
@@ -323,10 +330,13 @@ export class AdminLLMSettingsComponent implements OnInit {
       `Reset ${feature.feature_name} to global config? The next call will use the global provider/model.`,
     );
     if (!ok) return;
-    this.api.clearOverride(feature.feature_key).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => this.loadFeatures(),
-      error: (err) => this.overrideError.set(err?.error?.detail ?? 'Reset failed'),
-    });
+    this.api
+      .clearOverride(feature.feature_key)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.loadFeatures(),
+        error: (err) => this.overrideError.set(err?.error?.detail ?? 'Reset failed'),
+      });
   }
 }
 

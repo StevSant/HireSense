@@ -29,12 +29,14 @@ def _enrich(
     job = orchestrator.get_job_by_id(str(app.job_id))
     if job is None:
         return response
-    return response.model_copy(update={
-        "location": job.location or None,
-        "salary_range": job.salary_range,
-        "source": job.source,
-        "posted_date": job.posted_date,
-    })
+    return response.model_copy(
+        update={
+            "location": job.location or None,
+            "salary_range": job.salary_range,
+            "source": job.source,
+            "posted_date": job.posted_date,
+        }
+    )
 
 
 @router.post("", response_model=TrackedApplicationResponse, status_code=201)

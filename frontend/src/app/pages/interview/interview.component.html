@@ -1,5 +1,4 @@
 <div class="page">
-
   <app-applications-prep-list />
 
   <!-- Story Bank Section -->
@@ -7,7 +6,11 @@
     <div class="section-header">
       <h1>Story Bank</h1>
       <button (click)="toggleAddStoryForm()" class="btn-secondary">
-        @if (showAddStoryForm()) { Cancel } @else { + Add Story }
+        @if (showAddStoryForm()) {
+          Cancel
+        } @else {
+          + Add Story
+        }
       </button>
     </div>
 
@@ -86,7 +89,9 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label for="story-reflection">Reflection <span class="optional">(optional)</span></label>
+            <label for="story-reflection"
+              >Reflection <span class="optional">(optional)</span></label
+            >
             <textarea
               id="story-reflection"
               [value]="newReflection()"
@@ -109,7 +114,11 @@
         </div>
         <div class="form-actions">
           <button (click)="addStory()" [disabled]="addingStory()" class="btn-primary">
-            @if (addingStory()) { Saving... } @else { Save Story }
+            @if (addingStory()) {
+              Saving...
+            } @else {
+              Save Story
+            }
           </button>
         </div>
       </div>
@@ -121,7 +130,12 @@
       @if (stories().length > 0) {
         <div class="stats">
           <span class="stat">{{ stories().length }} story(s) in bank</span>
-          <select class="filter-control" [value]="competencyFilter()" (change)="onCompetencyFilterChange($event)" aria-label="Filter by competency">
+          <select
+            class="filter-control"
+            [value]="competencyFilter()"
+            (change)="onCompetencyFilterChange($event)"
+            aria-label="Filter by competency"
+          >
             <option value="">All competencies</option>
             @for (c of competencyOptions; track c) {
               <option [value]="c">{{ c | titlecase }}</option>
@@ -149,7 +163,7 @@
                     </span>
                   </td>
                   <td class="situation-preview">{{ story.situation }}</td>
-                  <td>{{ story.created_at | date:'mediumDate' }}</td>
+                  <td>{{ story.created_at | date: 'mediumDate' }}</td>
                   <td>
                     <button (click)="deleteStory(story.id)" class="btn-danger">Delete</button>
                   </td>
@@ -213,14 +227,20 @@
       </div>
       <div class="form-actions">
         <button (click)="generatePrep()" [disabled]="preparing()" class="btn-primary">
-          @if (preparing()) { Generating... } @else { Generate Prep }
+          @if (preparing()) {
+            Generating...
+          } @else {
+            Generate Prep
+          }
         </button>
       </div>
     </div>
 
     @if (prepResult(); as prep) {
       <div class="prep-results">
-        <h2>Interview Prep for {{ prep.job_title }} at <app-company-link [name]="prep.company" /></h2>
+        <h2>
+          Interview Prep for {{ prep.job_title }} at <app-company-link [name]="prep.company" />
+        </h2>
 
         @if (prep.matched_stories.length > 0) {
           <div class="prep-card">
@@ -271,5 +291,4 @@
       </div>
     }
   </section>
-
 </div>

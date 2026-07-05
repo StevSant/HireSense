@@ -73,9 +73,14 @@ class CorpusAnalyticsRepository(SqlRepository):
             # a valid sample estimate (share of sampled open postings with a
             # salary string) rather than mixing a full-corpus count with a
             # capped numerator.
-            open_count = session.scalar(
-                select(func.count()).select_from(IngestedJob).where(IngestedJob.status == "open")
-            ) or 0
+            open_count = (
+                session.scalar(
+                    select(func.count())
+                    .select_from(IngestedJob)
+                    .where(IngestedJob.status == "open")
+                )
+                or 0
+            )
             total = min(int(open_count), self._sample_cap)
             stmt = (
                 select(IngestedJob.salary_range)
@@ -112,15 +117,29 @@ class CorpusAnalyticsRepository(SqlRepository):
             return {}
         with self._session_factory() as session:
             stmt = select(
-                IngestedJob.id, IngestedJob.title, IngestedJob.company, IngestedJob.location,
-                IngestedJob.source, IngestedJob.salary_range, IngestedJob.posted_date,
-                IngestedJob.remote_modality, IngestedJob.status, IngestedJob.quality,
+                IngestedJob.id,
+                IngestedJob.title,
+                IngestedJob.company,
+                IngestedJob.location,
+                IngestedJob.source,
+                IngestedJob.salary_range,
+                IngestedJob.posted_date,
+                IngestedJob.remote_modality,
+                IngestedJob.status,
+                IngestedJob.quality,
             ).where(IngestedJob.id.in_(job_ids))
             return {
                 r[0]: CorpusJobRow(
-                    id=r[0], title=r[1] or "", company=r[2] or "", location=r[3] or "",
-                    source=r[4] or "", salary_range=r[5], posted_date=r[6],
-                    remote_modality=r[7], status=r[8] or "open", quality=r[9] or "ok",
+                    id=r[0],
+                    title=r[1] or "",
+                    company=r[2] or "",
+                    location=r[3] or "",
+                    source=r[4] or "",
+                    salary_range=r[5],
+                    posted_date=r[6],
+                    remote_modality=r[7],
+                    status=r[8] or "open",
+                    quality=r[9] or "ok",
                 )
                 for r in session.execute(stmt).all()
             }

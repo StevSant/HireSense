@@ -9,7 +9,15 @@ from hiresense.applications.domain.models import ApplicationJobSnapshot, JobSnap
 
 
 class FakeNormalizedJob:
-    def __init__(self, id_: str, title: str, company: str, description: str, skills: list[str], url: str | None = None) -> None:
+    def __init__(
+        self,
+        id_: str,
+        title: str,
+        company: str,
+        description: str,
+        skills: list[str],
+        url: str | None = None,
+    ) -> None:
         self.id = id_
         self.title = title
         self.company = company
@@ -32,6 +40,7 @@ class FakeTrackingService:
 
     def track_from_ingestion(self, job_id: str):
         from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
+
         job_uuid = uuid.UUID(job_id)
         app = TrackedApplication(
             id=uuid.uuid4(),
@@ -45,6 +54,7 @@ class FakeTrackingService:
 
     def track_job(self, title: str, company: str, url=None, notes=None):
         from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
+
         app = TrackedApplication(
             id=uuid.uuid4(),
             title=title,
@@ -118,12 +128,13 @@ class FakeSkillExtractor:
 @pytest.mark.asyncio
 async def test_create_from_ingested_job_copies_skills_without_llm() -> None:
     job_id = str(uuid.uuid4())
-    ingestion = FakeIngestionOrchestrator({
-        job_id: FakeNormalizedJob(
-            job_id, "Software Engineer", "Fieldguide",
-            "Build cool stuff", ["python", "fastapi"]
-        )
-    })
+    ingestion = FakeIngestionOrchestrator(
+        {
+            job_id: FakeNormalizedJob(
+                job_id, "Software Engineer", "Fieldguide", "Build cool stuff", ["python", "fastapi"]
+            )
+        }
+    )
     tracking = FakeTrackingService()
     repo = FakeRepo()
     extractor = FakeSkillExtractor(skills=["should_not_be_called"])
@@ -148,12 +159,17 @@ async def test_create_from_ingested_falls_back_to_llm_when_skills_empty() -> Non
     """LinkedIn/HN Hiring ingest jobs with skills=[] — the fallback runs the
     extractor against the description so the snapshot is still useful."""
     job_id = str(uuid.uuid4())
-    ingestion = FakeIngestionOrchestrator({
-        job_id: FakeNormalizedJob(
-            job_id, "SRE", "Acme",
-            "Hiring SRE for Kubernetes and Terraform.", []  # empty skills
-        )
-    })
+    ingestion = FakeIngestionOrchestrator(
+        {
+            job_id: FakeNormalizedJob(
+                job_id,
+                "SRE",
+                "Acme",
+                "Hiring SRE for Kubernetes and Terraform.",
+                [],  # empty skills
+            )
+        }
+    )
     tracking = FakeTrackingService()
     repo = FakeRepo()
     extractor = FakeSkillExtractor(skills=["kubernetes", "terraform"])
@@ -177,9 +193,7 @@ async def test_create_from_ingested_falls_back_to_llm_when_skills_empty() -> Non
 async def test_create_from_ingested_skips_llm_when_description_empty() -> None:
     """If both skills and description are empty, the snapshot just stays INGESTED with []."""
     job_id = str(uuid.uuid4())
-    ingestion = FakeIngestionOrchestrator({
-        job_id: FakeNormalizedJob(job_id, "X", "Y", "", [])
-    })
+    ingestion = FakeIngestionOrchestrator({job_id: FakeNormalizedJob(job_id, "X", "Y", "", [])})
     tracking = FakeTrackingService()
     repo = FakeRepo()
     extractor = FakeSkillExtractor(skills=["should_not_run"])
@@ -237,9 +251,7 @@ async def test_create_from_manual_with_empty_extraction_uses_manual_source() -> 
         skill_extractor=extractor,
     )
 
-    agg = await service.create_from_manual(
-        title="X", company="Y", description="job desc", url=None
-    )
+    agg = await service.create_from_manual(title="X", company="Y", description="job desc", url=None)
     assert agg.job_snapshot is not None
     assert agg.job_snapshot.required_skills == []
     assert agg.job_snapshot.source == JobSnapshotSource.MANUAL.value
@@ -260,9 +272,7 @@ async def test_update_snapshot_in_place() -> None:
     )
 
     agg = await service.create_from_manual("X", "Y", "desc", url=None)
-    updated = service.update_snapshot(
-        agg.id, description="new desc", required_skills=["docker"]
-    )
+    updated = service.update_snapshot(agg.id, description="new desc", required_skills=["docker"])
     assert updated.job_snapshot is not None
     assert updated.job_snapshot.description == "new desc"
     assert updated.job_snapshot.required_skills == ["docker"]

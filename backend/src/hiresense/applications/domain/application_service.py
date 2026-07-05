@@ -67,11 +67,7 @@ class ApplicationService:
     ) -> ApplicationAggregate:
         tracked = self._tracking.track_job(title=title, company=company, url=url, notes=notes)
         skills = await self._extractor.extract(description)
-        source = (
-            JobSnapshotSource.LLM_EXTRACTED.value
-            if skills
-            else JobSnapshotSource.MANUAL.value
-        )
+        source = JobSnapshotSource.LLM_EXTRACTED.value if skills else JobSnapshotSource.MANUAL.value
         snapshot = ApplicationJobSnapshot(
             application_id=tracked.id,
             description=description,

@@ -9,6 +9,7 @@ Revision ID: 013
 Revises: 012
 Create Date: 2026-05-29
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -41,9 +42,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("job_id", "profile_hash", name="ux_job_match_cache_job_profile"),
     )
-    op.create_index(
-        "ix_job_match_cache_profile", "job_match_cache", ["profile_hash"], unique=False
-    )
+    op.create_index("ix_job_match_cache_profile", "job_match_cache", ["profile_hash"], unique=False)
 
 
 def downgrade() -> None:

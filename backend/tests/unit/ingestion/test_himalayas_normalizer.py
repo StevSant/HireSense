@@ -2,6 +2,7 @@
 `expiryDate`. The latter drives expiry-based closure since its public listing
 pages block URL probes (403), so the normalizer must surface both.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -18,7 +19,9 @@ def test_parses_pubdate_and_expirydate_unix_timestamps() -> None:
     # 2026-07-04T00:00:00Z and one day later, as unix seconds.
     posted = int(datetime(2026, 7, 4, tzinfo=timezone.utc).timestamp())
     expiry = int(datetime(2026, 7, 5, tzinfo=timezone.utc).timestamp())
-    result = HimalayasNormalizer().normalize(_raw({"title": "x", "pubDate": posted, "expiryDate": expiry}))
+    result = HimalayasNormalizer().normalize(
+        _raw({"title": "x", "pubDate": posted, "expiryDate": expiry})
+    )
     assert result["posted_date"] == datetime(2026, 7, 4, tzinfo=timezone.utc)
     assert result["expiry_date"] == datetime(2026, 7, 5, tzinfo=timezone.utc)
 

@@ -62,6 +62,8 @@ def test_application_interview_prep_lists() -> None:
         competencies_to_probe=["leadership"],
         technical_topics=["distributed systems"],
         negotiation_points=["remote-first"],
-        matched_stories=[{"story_id": str(uuid.uuid4()), "story_title": "led migration", "relevance": "high"}],
+        matched_stories=[
+            {"story_id": str(uuid.uuid4()), "story_title": "led migration", "relevance": "high"}
+        ],
     )
     assert prep.competencies_to_probe == ["leadership"]

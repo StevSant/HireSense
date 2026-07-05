@@ -23,7 +23,9 @@ def test_outreach_reexports_are_identical_objects():
 
 
 def test_smtp_sender_raises_when_unconfigured():
-    sender = SmtpEmailSender(host="", port=587, username="", password="", from_email="", use_tls=True)
+    sender = SmtpEmailSender(
+        host="", port=587, username="", password="", from_email="", use_tls=True
+    )
     try:
         sender.send(EmailMessage(to="a@b.com", subject="s", body="b"))
         assert False, "expected EmailUnavailableError"

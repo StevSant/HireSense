@@ -3,6 +3,7 @@
 TDD: tests are written first (RED), then the implementation makes them pass (GREEN).
 All dependencies are faked — no real DB, no real embeddings.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -17,7 +18,9 @@ from hiresense.ports.vector_store import ScoredResult
 # ---------------------------------------------------------------------------
 
 
-def _job(id: str, skill_score: float | None = None, semantic_score: float | None = None) -> NormalizedJob:
+def _job(
+    id: str, skill_score: float | None = None, semantic_score: float | None = None
+) -> NormalizedJob:
     return NormalizedJob(
         id=id,
         title=f"Job {id}",
@@ -36,7 +39,9 @@ def _job(id: str, skill_score: float | None = None, semantic_score: float | None
 class FakeVectorStore:
     """Fake VectorStorePort that returns canned ScoredResults."""
 
-    def __init__(self, results: list[ScoredResult] | None = None, raises: Exception | None = None) -> None:
+    def __init__(
+        self, results: list[ScoredResult] | None = None, raises: Exception | None = None
+    ) -> None:
         self._results = results or []
         self._raises = raises
         self.last_call: dict | None = None
@@ -65,7 +70,9 @@ class FakeEmbeddingPort:
 
     _SENTINEL: list[list[float]] = [[0.1, 0.2, 0.3]]
 
-    def __init__(self, vectors: list[list[float]] | None = None, raises: Exception | None = None) -> None:
+    def __init__(
+        self, vectors: list[list[float]] | None = None, raises: Exception | None = None
+    ) -> None:
         # Use sentinel to distinguish "not provided" from an explicit empty list
         self._vectors = self._SENTINEL if vectors is None else vectors
         self._raises = raises
@@ -177,7 +184,9 @@ class TestSemanticPreRankerUnindexed:
         jobs = [_job(f"job-{i}") for i in range(10)]
         skill_by_id = {j.id: 0.5 for j in jobs}
         # Only 3 are indexed
-        scored_results = [ScoredResult(id=f"job-{i}", score=0.9 - i * 0.1, metadata={}) for i in range(3)]
+        scored_results = [
+            ScoredResult(id=f"job-{i}", score=0.9 - i * 0.1, metadata={}) for i in range(3)
+        ]
         vs = FakeVectorStore(results=scored_results)
         emb = FakeEmbeddingPort(vectors=[PROFILE_VEC])
         ranker = SemanticPreRanker(vs, emb, top_k_cap=100, skill_weight=0.4, semantic_weight=0.6)

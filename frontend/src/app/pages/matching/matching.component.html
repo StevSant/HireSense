@@ -24,11 +24,21 @@
 
       @if (profileLoaded()) {
         <div class="auto-fill-notice">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-            <polyline points="22 4 12 14.01 9 11.01"/>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
           </svg>
-          Profile loaded ({{ selectedCvLanguage() === 'es' ? 'Spanish' : 'English' }}) — CV fields auto-filled
+          Profile loaded ({{ selectedCvLanguage() === 'es' ? 'Spanish' : 'English' }}) — CV fields
+          auto-filled
         </div>
       }
 
@@ -52,21 +62,47 @@
       <div class="form-row">
         <div class="form-group">
           <label for="match-job-desc">Job Description</label>
-          <textarea id="match-job-desc" [ngModel]="jobDescription()" (ngModelChange)="jobDescription.set($event)" name="jobDesc" rows="4" placeholder="Paste job description..."></textarea>
+          <textarea
+            id="match-job-desc"
+            [ngModel]="jobDescription()"
+            (ngModelChange)="jobDescription.set($event)"
+            name="jobDesc"
+            rows="4"
+            placeholder="Paste job description..."
+          ></textarea>
         </div>
         <div class="form-group">
           <label for="match-cv-summary">CV Summary</label>
-          <textarea id="match-cv-summary" [ngModel]="cvSummary()" (ngModelChange)="cvSummary.set($event)" name="cvSummary" rows="4" placeholder="Your professional summary..."></textarea>
+          <textarea
+            id="match-cv-summary"
+            [ngModel]="cvSummary()"
+            (ngModelChange)="cvSummary.set($event)"
+            name="cvSummary"
+            rows="4"
+            placeholder="Your professional summary..."
+          ></textarea>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label for="match-job-skills">Required Skills (comma-separated)</label>
-          <input id="match-job-skills" [ngModel]="jobSkills()" (ngModelChange)="jobSkills.set($event)" name="jobSkills" placeholder="python, fastapi, kubernetes" />
+          <input
+            id="match-job-skills"
+            [ngModel]="jobSkills()"
+            (ngModelChange)="jobSkills.set($event)"
+            name="jobSkills"
+            placeholder="python, fastapi, kubernetes"
+          />
         </div>
         <div class="form-group">
           <label for="match-cv-skills">Your Skills</label>
-          <input id="match-cv-skills" [ngModel]="cvSkills()" (ngModelChange)="cvSkills.set($event)" name="cvSkills" placeholder="python, fastapi, django" />
+          <input
+            id="match-cv-skills"
+            [ngModel]="cvSkills()"
+            (ngModelChange)="cvSkills.set($event)"
+            name="cvSkills"
+            placeholder="python, fastapi, django"
+          />
         </div>
       </div>
 
@@ -112,7 +148,9 @@
     <div class="results">
       <div class="results-header">
         <h2>Match Results</h2>
-        <button (click)="result.set(null); evaluationResult.set(null)" class="btn-secondary">New Analysis</button>
+        <button (click)="result.set(null); evaluationResult.set(null)" class="btn-secondary">
+          New Analysis
+        </button>
       </div>
 
       <div class="score-overview">
@@ -126,30 +164,54 @@
           <div class="breakdown-item">
             <span class="breakdown-label">Semantic</span>
             <div class="bar">
-              <div class="bar-fill" [style.width.%]="result()!.breakdown.semantic_score * 100" [style.background]="scoreColor(result()!.breakdown.semantic_score)"></div>
+              <div
+                class="bar-fill"
+                [style.width.%]="result()!.breakdown.semantic_score * 100"
+                [style.background]="scoreColor(result()!.breakdown.semantic_score)"
+              ></div>
             </div>
-            <span class="breakdown-value">{{ scorePercent(result()!.breakdown.semantic_score) }}%</span>
+            <span class="breakdown-value"
+              >{{ scorePercent(result()!.breakdown.semantic_score) }}%</span
+            >
           </div>
           <div class="breakdown-item">
             <span class="breakdown-label">Skills</span>
             <div class="bar">
-              <div class="bar-fill" [style.width.%]="result()!.breakdown.skill_score * 100" [style.background]="scoreColor(result()!.breakdown.skill_score)"></div>
+              <div
+                class="bar-fill"
+                [style.width.%]="result()!.breakdown.skill_score * 100"
+                [style.background]="scoreColor(result()!.breakdown.skill_score)"
+              ></div>
             </div>
-            <span class="breakdown-value">{{ scorePercent(result()!.breakdown.skill_score) }}%</span>
+            <span class="breakdown-value"
+              >{{ scorePercent(result()!.breakdown.skill_score) }}%</span
+            >
           </div>
           <div class="breakdown-item">
             <span class="breakdown-label">Experience</span>
             <div class="bar">
-              <div class="bar-fill" [style.width.%]="result()!.breakdown.experience_score * 100" [style.background]="scoreColor(result()!.breakdown.experience_score)"></div>
+              <div
+                class="bar-fill"
+                [style.width.%]="result()!.breakdown.experience_score * 100"
+                [style.background]="scoreColor(result()!.breakdown.experience_score)"
+              ></div>
             </div>
-            <span class="breakdown-value">{{ scorePercent(result()!.breakdown.experience_score) }}%</span>
+            <span class="breakdown-value"
+              >{{ scorePercent(result()!.breakdown.experience_score) }}%</span
+            >
           </div>
           <div class="breakdown-item">
             <span class="breakdown-label">Language</span>
             <div class="bar">
-              <div class="bar-fill" [style.width.%]="result()!.breakdown.language_score * 100" [style.background]="scoreColor(result()!.breakdown.language_score)"></div>
+              <div
+                class="bar-fill"
+                [style.width.%]="result()!.breakdown.language_score * 100"
+                [style.background]="scoreColor(result()!.breakdown.language_score)"
+              ></div>
             </div>
-            <span class="breakdown-value">{{ scorePercent(result()!.breakdown.language_score) }}%</span>
+            <span class="breakdown-value"
+              >{{ scorePercent(result()!.breakdown.language_score) }}%</span
+            >
           </div>
         </div>
       </div>
@@ -183,13 +245,17 @@
         <div class="detail-card">
           <h3>Strengths</h3>
           <ul>
-            @for (pro of result()!.pros; track pro) { <li class="pro">{{ pro }}</li> }
+            @for (pro of result()!.pros; track pro) {
+              <li class="pro">{{ pro }}</li>
+            }
           </ul>
         </div>
         <div class="detail-card">
           <h3>Weaknesses</h3>
           <ul>
-            @for (con of result()!.cons; track con) { <li class="con">{{ con }}</li> }
+            @for (con of result()!.cons; track con) {
+              <li class="con">{{ con }}</li>
+            }
           </ul>
         </div>
       </div>
@@ -198,7 +264,9 @@
         <div class="recommendations">
           <h3>Recommendations</h3>
           <ul>
-            @for (rec of result()!.recommendations; track rec) { <li>{{ rec }}</li> }
+            @for (rec of result()!.recommendations; track rec) {
+              <li>{{ rec }}</li>
+            }
           </ul>
         </div>
       }
@@ -217,7 +285,9 @@
         @if (evaluationResult()) {
           <div class="evaluation-results">
             <div class="composite-score">
-              <span class="score-value">{{ (evaluationResult()!.composite_score * 100).toFixed(0) }}</span>
+              <span class="score-value">{{
+                (evaluationResult()!.composite_score * 100).toFixed(0)
+              }}</span>
               <span class="score-label">Composite Score</span>
             </div>
 
@@ -229,10 +299,11 @@
                     <span class="dimension-score">{{ (dim.score * 100).toFixed(0) }}%</span>
                   </div>
                   <div class="dimension-bar">
-                    <div class="dimension-bar-fill"
-                         [style.width.%]="dim.score * 100"
-                         [style.background-color]="scoreColor(dim.score)">
-                    </div>
+                    <div
+                      class="dimension-bar-fill"
+                      [style.width.%]="dim.score * 100"
+                      [style.background-color]="scoreColor(dim.score)"
+                    ></div>
                   </div>
                   <p class="dimension-rationale">{{ dim.rationale }}</p>
                   <span class="dimension-weight">Weight: {{ dim.weight }}%</span>

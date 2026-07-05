@@ -19,31 +19,40 @@ class _Entry:
 
 
 class _Repo:
-    def __init__(self): self.added = []
+    def __init__(self):
+        self.added = []
 
     def add(self, d):
         d.id = uuid.uuid4()
         self.added.append(d)
         return d
 
-    def list(self, limit): return self.added[:limit]
-    def exists_for_job(self, job_id): return False
+    def list(self, limit):
+        return self.added[:limit]
+
+    def exists_for_job(self, job_id):
+        return False
 
 
 class _Drafter:
-    async def draft(self, job_id): return uuid.uuid4(), DraftStatus.DRAFTED, None
+    async def draft(self, job_id):
+        return uuid.uuid4(), DraftStatus.DRAFTED, None
 
 
 def _build_app():
     repo = _Repo()
     service = AutopilotPipelineService(
         latest_digest=lambda: type("D", (), {"entries": [_Entry("j1")]})(),
-        drafter=_Drafter(), repo=repo, top_n=3,
+        drafter=_Drafter(),
+        repo=repo,
+        top_n=3,
     )
     app = FastAPI()
     app.dependency_overrides[require_auth] = lambda: "u"
     app.dependency_overrides[require_admin] = lambda: {"role": "admin"}
-    app.dependency_overrides[get_autopilot_provider] = lambda: AutopilotProvider(service=service, repo=repo)
+    app.dependency_overrides[get_autopilot_provider] = lambda: AutopilotProvider(
+        service=service, repo=repo
+    )
     app.include_router(autopilot_router)
     return app, repo
 

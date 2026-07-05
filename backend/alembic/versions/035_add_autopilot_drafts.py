@@ -26,7 +26,9 @@ def upgrade() -> None:
         sa.Column("company", sa.String(length=256), nullable=True),
         sa.Column("status", sa.String(length=16), nullable=False),
         sa.Column("detail", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_autopilot_drafts_job_id", "autopilot_drafts", ["job_id"])

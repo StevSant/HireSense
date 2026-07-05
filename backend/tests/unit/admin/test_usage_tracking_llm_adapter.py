@@ -18,7 +18,9 @@ class _FakeResponse:
 
 
 class _FakeChatModel:
-    def __init__(self, response: _FakeResponse | None = None, raise_exc: Exception | None = None) -> None:
+    def __init__(
+        self, response: _FakeResponse | None = None, raise_exc: Exception | None = None
+    ) -> None:
         self._response = response
         self._raise = raise_exc
         self.calls: list[list] = []
@@ -84,7 +86,11 @@ def _build(config: ResolvedConfig, chat, recorder, feature_key: str) -> UsageTra
 @pytest.mark.asyncio
 async def test_success_records_token_counts_and_cost() -> None:
     config = ResolvedConfig(
-        provider="anthropic", model="claude-sonnet-4-6", api_key="k", extra_params={}, source="global",
+        provider="anthropic",
+        model="claude-sonnet-4-6",
+        api_key="k",
+        extra_params={},
+        source="global",
     )
     chat = _FakeChatModel(
         response=_FakeResponse(
@@ -114,7 +120,11 @@ async def test_success_records_token_counts_and_cost() -> None:
 @pytest.mark.asyncio
 async def test_error_path_records_failure_and_reraises_original() -> None:
     config = ResolvedConfig(
-        provider="anthropic", model="claude-sonnet-4-6", api_key="k", extra_params={}, source="global",
+        provider="anthropic",
+        model="claude-sonnet-4-6",
+        api_key="k",
+        extra_params={},
+        source="global",
     )
     chat = _FakeChatModel(raise_exc=RuntimeError("api outage"))
     recorder = _FakeRecorder()
@@ -134,7 +144,11 @@ async def test_error_path_records_failure_and_reraises_original() -> None:
 @pytest.mark.asyncio
 async def test_missing_usage_metadata_records_zero_tokens() -> None:
     config = ResolvedConfig(
-        provider="anthropic", model="claude-sonnet-4-6", api_key="k", extra_params={}, source="global",
+        provider="anthropic",
+        model="claude-sonnet-4-6",
+        api_key="k",
+        extra_params={},
+        source="global",
     )
     chat = _FakeChatModel(response=_FakeResponse(content="ok", usage_metadata=None))
     recorder = _FakeRecorder()

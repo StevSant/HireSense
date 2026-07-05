@@ -29,9 +29,21 @@ describe('AnalyticsService', () => {
     service.market().subscribe();
     const req = httpMock.expectOne(`${environment.apiUrl}/analytics/market`);
     expect(req.request.method).toBe('GET');
-    req.flush({ top_skills: [], remote_mix: {}, posting_trend: [], salary_distribution: {
-      currency: null, min_annual: null, median_annual: null, max_annual: null,
-      parsed_count: 0, unparsed_count: 0, other_currency_count: 0, disclosed_pct: 0 } });
+    req.flush({
+      top_skills: [],
+      remote_mix: {},
+      posting_trend: [],
+      salary_distribution: {
+        currency: null,
+        min_annual: null,
+        median_annual: null,
+        max_annual: null,
+        parsed_count: 0,
+        unparsed_count: 0,
+        other_currency_count: 0,
+        disclosed_pct: 0,
+      },
+    });
   });
 
   it('skillGap GETs /analytics/skill-gap', () => {
@@ -45,7 +57,13 @@ describe('AnalyticsService', () => {
     service.targetSalary().subscribe();
     const req = httpMock.expectOne(`${environment.apiUrl}/analytics/target-salary`);
     expect(req.request.method).toBe('GET');
-    req.flush({ insufficient_data: true, currency: null, p25_annual: null,
-      median_annual: null, p75_annual: null, sample_size: 0 });
+    req.flush({
+      insufficient_data: true,
+      currency: null,
+      p25_annual: null,
+      median_annual: null,
+      p75_annual: null,
+      sample_size: 0,
+    });
   });
 });

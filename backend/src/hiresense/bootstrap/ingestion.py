@@ -72,7 +72,9 @@ class IngestionBuild:
     revalidation_service: Any
 
 
-def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, preference_query: Any = None) -> IngestionBuild:
+def build_ingestion(
+    infra: SharedInfra, tracked: Callable[[str], Any], *, preference_query: Any = None
+) -> IngestionBuild:
     s = infra.settings
     http_client = infra.http_client
 
@@ -198,10 +200,9 @@ def build_ingestion(infra: SharedInfra, tracked: Callable[[str], Any], *, prefer
     # expiryDate instead, so the sweep's expiry pass (close_expired) handles its
     # closure. hn_hiring/csv have no reliable per-URL closure signal.
     revalidation_sources = [
-        name
-        for name in s.enabled_job_sources
-        if name not in ("hn_hiring", "csv", "himalayas")
+        name for name in s.enabled_job_sources if name not in ("hn_hiring", "csv", "himalayas")
     ]
+
     # LinkedIn closure lives on its guest API, not the public /jobs/view URL the
     # user clicks (that returns a login wall server-side). Probe the same guest
     # endpoint the adapter scrapes; it returns 200 + "No longer accepting

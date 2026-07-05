@@ -11,6 +11,7 @@ from hiresense.kernel.value_objects import SourceType
 # Fakes
 # ---------------------------------------------------------------------------
 
+
 class FakeResponse:
     def __init__(self, data: list) -> None:
         self._data = data
@@ -54,6 +55,7 @@ SAMPLE_RESPONSE = [SAMPLE_POSTING]
 # ---------------------------------------------------------------------------
 # Adapter tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_lever_fetches_jobs() -> None:
@@ -110,6 +112,7 @@ def test_lever_source_metadata() -> None:
 # Normalizer tests
 # ---------------------------------------------------------------------------
 
+
 def _make_raw(overrides: dict | None = None) -> RawJobListing:
     data = {**SAMPLE_POSTING, "company": "Retool"}
     if overrides:
@@ -151,7 +154,9 @@ def test_lever_normalizer_missing_categories() -> None:
 
 def test_lever_normalizer_no_categories_key() -> None:
     normalizer = LeverNormalizer()
-    raw_data = {k: v for k, v in {**SAMPLE_POSTING, "company": "Retool"}.items() if k != "categories"}
+    raw_data = {
+        k: v for k, v in {**SAMPLE_POSTING, "company": "Retool"}.items() if k != "categories"
+    }
     raw = RawJobListing(source="lever", source_id="abc-123", raw_data=raw_data)
     result = normalizer.normalize(raw)
     assert result["location"] == ""
@@ -166,7 +171,9 @@ def test_lever_normalizer_missing_created_at() -> None:
 
 def test_lever_normalizer_no_created_at_key() -> None:
     normalizer = LeverNormalizer()
-    raw_data = {k: v for k, v in {**SAMPLE_POSTING, "company": "Retool"}.items() if k != "createdAt"}
+    raw_data = {
+        k: v for k, v in {**SAMPLE_POSTING, "company": "Retool"}.items() if k != "createdAt"
+    }
     raw = RawJobListing(source="lever", source_id="abc-123", raw_data=raw_data)
     result = normalizer.normalize(raw)
     assert result["posted_date"] is None

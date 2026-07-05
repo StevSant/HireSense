@@ -80,8 +80,8 @@ def test_independent_dimensions_get_independent_deltas():
     calc = WeightNudgeCalculator(min_outcomes=4, clamp=5, scale=10.0)
     obs: list[OutcomeObservation] = []
     for _ in range(4):
-        obs.append(_obs("comp", 1.0, 1))      # strong positive
-        obs.append(_obs("growth", 0.5, 1))    # neutral
+        obs.append(_obs("comp", 1.0, 1))  # strong positive
+        obs.append(_obs("growth", 0.5, 1))  # neutral
     overrides = calc.compute_overrides(obs)
     assert overrides["comp"] == 5  # 0.5 * 10 = 5, clamped at 5
     assert "growth" not in overrides  # neutral -> zero -> omitted

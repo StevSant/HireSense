@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { DatePipe, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -19,7 +27,15 @@ type Feature = 'matching' | 'optimization' | 'interview';
 @Component({
   selector: 'app-job-detail',
   standalone: true,
-  imports: [DatePipe, RouterLink, DeepAnalysisComponent, MatchBreakdownComponent, MatchSkillsComponent, JobDescriptionComponent, FeedbackControlsComponent],
+  imports: [
+    DatePipe,
+    RouterLink,
+    DeepAnalysisComponent,
+    MatchBreakdownComponent,
+    MatchSkillsComponent,
+    JobDescriptionComponent,
+    FeedbackControlsComponent,
+  ],
   templateUrl: './job.component.html',
   styleUrl: './job.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -67,17 +83,20 @@ export class JobDetailComponent implements OnInit {
       this.loading.set(false);
       return;
     }
-    this.ingestion.getJob(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (j) => {
-        this.job.set(j);
-        this.loading.set(false);
-        this.loadAnalysis(id);
-      },
-      error: () => {
-        this.error.set(true);
-        this.loading.set(false);
-      },
-    });
+    this.ingestion
+      .getJob(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (j) => {
+          this.job.set(j);
+          this.loading.set(false);
+          this.loadAnalysis(id);
+        },
+        error: () => {
+          this.error.set(true);
+          this.loading.set(false);
+        },
+      });
   }
 
   private loadAnalysis(id: string): void {
@@ -88,16 +107,19 @@ export class JobDetailComponent implements OnInit {
     }
     this.analysisLoading.set(true);
     this.analysisError.set('');
-    this.ingestion.getJobAnalysis(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (a) => {
-        this.analysis.set(a);
-        this.analysisLoading.set(false);
-      },
-      error: (err) => {
-        this.analysisError.set(err?.error?.detail || 'Deep analysis failed');
-        this.analysisLoading.set(false);
-      },
-    });
+    this.ingestion
+      .getJobAnalysis(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (a) => {
+          this.analysis.set(a);
+          this.analysisLoading.set(false);
+        },
+        error: (err) => {
+          this.analysisError.set(err?.error?.detail || 'Deep analysis failed');
+          this.analysisLoading.set(false);
+        },
+      });
   }
 
   retryAnalysis(): void {
@@ -110,20 +132,23 @@ export class JobDetailComponent implements OnInit {
     if (!j || this.tracked() || this.tracking()) return;
     this.tracking.set(true);
     this.trackError.set('');
-    this.applications.createFromJob(j.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.ingestion.markTracked(j.id);
-        this.tracking.set(false);
-      },
-      error: (err) => {
-        this.tracking.set(false);
-        if (err?.status === 409) {
-          this.ingestion.markTracked(j.id);   // already tracked
-          return;
-        }
-        this.trackError.set(err?.error?.detail || 'Failed to track this job. Please try again.');
-      },
-    });
+    this.applications
+      .createFromJob(j.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.ingestion.markTracked(j.id);
+          this.tracking.set(false);
+        },
+        error: (err) => {
+          this.tracking.set(false);
+          if (err?.status === 409) {
+            this.ingestion.markTracked(j.id); // already tracked
+            return;
+          }
+          this.trackError.set(err?.error?.detail || 'Failed to track this job. Please try again.');
+        },
+      });
   }
 
   goTo(feature: Feature): void {

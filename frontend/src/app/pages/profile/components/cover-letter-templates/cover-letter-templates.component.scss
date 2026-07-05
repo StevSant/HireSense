@@ -99,9 +99,13 @@ textarea {
   font-family: inherit;
   background: $surface;
   color: $text-dark;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 
-  &::placeholder { color: #9ca3af; }
+  &::placeholder {
+    color: #9ca3af;
+  }
 
   &:focus {
     outline: none;
@@ -151,7 +155,9 @@ textarea {
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
 
   &:hover:not(:disabled) {
     color: $text-dark;

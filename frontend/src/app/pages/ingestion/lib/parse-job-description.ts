@@ -20,8 +20,14 @@ const BULLET_PATTERN = /^[-•·*]\s+/;
 const EMPHASIS_MAP: readonly [RegExp, JobDescriptionSection['emphasis']][] = [
   [/\b(compensation|salary|pay|comp|compensación|salario|sueldo|beneficios)\b/i, 'compensation'],
   [/\b(apply|how\s*to\s*apply|contact|email|postular?\w*|aplicar|contacto)\b/i, 'apply'],
-  [/\b(stack|tech\s*stack|technology|tools|requisitos|conocimientos|tecnologías?|herramientas)\b/i, 'stack'],
-  [/\b(role|position|responsibilities|about\s*the\s*role|experiencia|funciones|responsabilidades|rol|formación)\b/i, 'role'],
+  [
+    /\b(stack|tech\s*stack|technology|tools|requisitos|conocimientos|tecnologías?|herramientas)\b/i,
+    'stack',
+  ],
+  [
+    /\b(role|position|responsibilities|about\s*the\s*role|experiencia|funciones|responsabilidades|rol|formación)\b/i,
+    'role',
+  ],
 ];
 
 function detectEmphasis(title: string): JobDescriptionSection['emphasis'] {

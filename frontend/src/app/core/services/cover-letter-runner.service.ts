@@ -28,18 +28,16 @@ export class CoverLetterRunnerService {
     if (this.runningId() === applicationId) return;
     this.runningId.set(applicationId);
     this.lastError.set('');
-    this.service
-      .generateCoverLetter(applicationId, { cv_language: cvLanguage, tone })
-      .subscribe({
-        next: () => {
-          this.runningId.set(null);
-          this.completed$.next(applicationId);
-        },
-        error: (err) => {
-          this.runningId.set(null);
-          this.lastError.set(err?.error?.detail ?? 'Cover letter generation failed');
-          this.completed$.next(applicationId);
-        },
-      });
+    this.service.generateCoverLetter(applicationId, { cv_language: cvLanguage, tone }).subscribe({
+      next: () => {
+        this.runningId.set(null);
+        this.completed$.next(applicationId);
+      },
+      error: (err) => {
+        this.runningId.set(null);
+        this.lastError.set(err?.error?.detail ?? 'Cover letter generation failed');
+        this.completed$.next(applicationId);
+      },
+    });
   }
 }

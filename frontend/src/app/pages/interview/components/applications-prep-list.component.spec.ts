@@ -25,10 +25,7 @@ describe('ApplicationsPrepListComponent', () => {
     const service = { list: opts.list ?? (() => of([makeApp()])) };
     TestBed.configureTestingModule({
       imports: [ApplicationsPrepListComponent],
-      providers: [
-        provideRouter([]),
-        { provide: ApplicationsService, useValue: service },
-      ],
+      providers: [provideRouter([]), { provide: ApplicationsService, useValue: service }],
     });
     const fixture = TestBed.createComponent(ApplicationsPrepListComponent);
     fixture.detectChanges();

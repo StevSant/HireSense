@@ -48,8 +48,7 @@ class MatchingDimensionScorerAdapter:
             return scores or None
         except Exception:
             logger.exception(
-                "preference: dimension-score adapter failed for job %s — "
-                "no nudging contribution",
+                "preference: dimension-score adapter failed for job %s — no nudging contribution",
                 job_id,
             )
             return None

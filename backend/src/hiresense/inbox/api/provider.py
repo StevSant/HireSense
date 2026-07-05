@@ -5,9 +5,7 @@ from hiresense.inbox.domain.ports import DetectedSignalRepository
 
 
 class InboxProvider:
-    def __init__(
-        self, *, service: InboxProcessingService, repo: DetectedSignalRepository
-    ) -> None:
+    def __init__(self, *, service: InboxProcessingService, repo: DetectedSignalRepository) -> None:
         self._service = service
         self._repo = repo
 

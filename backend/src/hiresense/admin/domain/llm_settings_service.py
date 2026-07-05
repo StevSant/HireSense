@@ -104,7 +104,9 @@ class LLMSettingsService:
     ) -> TestResult:
         effective_key = api_key if api_key else self._current_global_key_or_env()
         if not effective_key:
-            return TestResult(success=False, latency_ms=0.0, response_preview="", error="no api_key available")
+            return TestResult(
+                success=False, latency_ms=0.0, response_preview="", error="no api_key available"
+            )
         config = ResolvedConfig(
             provider=provider,
             model=model,
@@ -126,7 +128,10 @@ class LLMSettingsService:
     ) -> GlobalSettingsView:
         if not skip_test:
             result = await self.test_global_config(
-                provider=provider, model=model, api_key=api_key, extra_params=extra_params,
+                provider=provider,
+                model=model,
+                api_key=api_key,
+                extra_params=extra_params,
             )
             if not result.success:
                 raise LLMSettingsServiceError(f"test call failed: {result.error}")
@@ -210,7 +215,9 @@ class LLMSettingsService:
         )
         if not candidate.api_key:
             return TestResult(
-                success=False, latency_ms=0.0, response_preview="",
+                success=False,
+                latency_ms=0.0,
+                response_preview="",
                 error="provider has no api_key configured; set the global key first",
             )
         return await self._test_runner.run(candidate)
@@ -227,7 +234,10 @@ class LLMSettingsService:
     ) -> EffectiveFeatureConfig:
         if not skip_test and (provider is not None or model is not None):
             result = await self.test_override(
-                feature_key=feature_key, provider=provider, model=model, extra_params=extra_params,
+                feature_key=feature_key,
+                provider=provider,
+                model=model,
+                extra_params=extra_params,
             )
             if not result.success:
                 raise LLMSettingsServiceError(f"override test failed: {result.error}")
@@ -251,7 +261,9 @@ class LLMSettingsService:
                     "provider": before.provider if before else None,
                     "model": before.model if before else None,
                     "extra_params": dict(before.extra_params) if before else None,
-                } if before else None,
+                }
+                if before
+                else None,
                 "after": {
                     "provider": provider,
                     "model": model,

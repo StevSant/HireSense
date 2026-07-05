@@ -54,7 +54,9 @@ class _Repo:
         self._latest_per = latest or []
 
     def add(self, event):
-        saved = event.model_copy(update={"id": uuid_mod.uuid4(), "created_at": datetime.now(timezone.utc)})
+        saved = event.model_copy(
+            update={"id": uuid_mod.uuid4(), "created_at": datetime.now(timezone.utc)}
+        )
         self.added.append(saved)
         return saved
 
@@ -67,9 +69,15 @@ class _Repo:
 
 def _svc(tracking, repo, gen=None, profile=None, research=None):
     return OutreachService(
-        tracking_service=tracking, profile_service=profile or _Profile(),
-        research_service=research or _Research(), generator=gen or _Gen(), repo=repo,
-        style_guide_path="does/not/exist.md", followup_cadence_days=7, max_chars=500, language="en",
+        tracking_service=tracking,
+        profile_service=profile or _Profile(),
+        research_service=research or _Research(),
+        generator=gen or _Gen(),
+        repo=repo,
+        style_guide_path="does/not/exist.md",
+        followup_cadence_days=7,
+        max_chars=500,
+        language="en",
     )
 
 
@@ -103,26 +111,35 @@ def test_record_persists_event():
 
 def _latest(app_id, kind, days_ago):
     return OutreachEvent(
-        id=uuid_mod.uuid4(), application_id=app_id, kind=kind, message="hi",
+        id=uuid_mod.uuid4(),
+        application_id=app_id,
+        kind=kind,
+        message="hi",
         created_at=datetime.now(timezone.utc) - timedelta(days=days_ago),
     )
 
 
 def test_due_followups_logic():
-    due = uuid_mod.uuid4()       # sent 10d ago, status applied -> due
-    fresh = uuid_mod.uuid4()     # sent 2d ago -> not due
-    replied = uuid_mod.uuid4()   # latest is replied -> not due
+    due = uuid_mod.uuid4()  # sent 10d ago, status applied -> due
+    fresh = uuid_mod.uuid4()  # sent 2d ago -> not due
+    replied = uuid_mod.uuid4()  # latest is replied -> not due
     advanced = uuid_mod.uuid4()  # sent 10d ago but status interviewing -> not due
-    repo = _Repo(latest=[
-        _latest(due, OutreachEventKind.SENT, 10),
-        _latest(fresh, OutreachEventKind.SENT, 2),
-        _latest(replied, OutreachEventKind.REPLIED, 10),
-        _latest(advanced, OutreachEventKind.SENT, 10),
-    ])
-    tracking = _Tracking([
-        _App(due, status="applied"), _App(fresh, status="applied"),
-        _App(replied, status="applied"), _App(advanced, status="interviewing"),
-    ])
+    repo = _Repo(
+        latest=[
+            _latest(due, OutreachEventKind.SENT, 10),
+            _latest(fresh, OutreachEventKind.SENT, 2),
+            _latest(replied, OutreachEventKind.REPLIED, 10),
+            _latest(advanced, OutreachEventKind.SENT, 10),
+        ]
+    )
+    tracking = _Tracking(
+        [
+            _App(due, status="applied"),
+            _App(fresh, status="applied"),
+            _App(replied, status="applied"),
+            _App(advanced, status="interviewing"),
+        ]
+    )
     svc = _svc(tracking, repo)
     nudges = svc.due_followups()
     ids = {n.application_id for n in nudges}

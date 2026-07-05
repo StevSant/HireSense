@@ -72,7 +72,19 @@ def test_score_caps_divisor_for_tag_heavy_sources() -> None:
 
 
 def test_score_clamps_above_one_when_many_matches() -> None:
-    skills = ["Python", "Go", "Rust", "FastAPI", "Django", "AWS", "GCP",
-              "Kubernetes", "Docker", "Postgres", "Redis", "React"]
+    skills = [
+        "Python",
+        "Go",
+        "Rust",
+        "FastAPI",
+        "Django",
+        "AWS",
+        "GCP",
+        "Kubernetes",
+        "Docker",
+        "Postgres",
+        "Redis",
+        "React",
+    ]
     result = score_job_against_skills(_job(skills), {s.lower() for s in skills})
     assert result == 1.0

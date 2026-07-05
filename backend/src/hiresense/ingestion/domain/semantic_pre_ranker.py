@@ -21,6 +21,7 @@ Profile embeddings are cached in-process by content hash (same strategy as
 SemanticScoringService) so repeated requests with the same profile only pay
 for one embed call.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -128,7 +129,9 @@ class SemanticPreRanker:
             try:
                 profile_vec = self._preference.query_vector(profile_vec)
             except Exception:
-                logger.exception("SemanticPreRanker: preference.query_vector failed — using baseline")
+                logger.exception(
+                    "SemanticPreRanker: preference.query_vector failed — using baseline"
+                )
 
         # A rogue preference port could return None; never pass None to search().
         if profile_vec is None:
@@ -180,9 +183,7 @@ class SemanticPreRanker:
 
         return rescored + unindexed
 
-    async def _get_profile_embedding(
-        self, skills: list[str], summary: str
-    ) -> list[float] | None:
+    async def _get_profile_embedding(self, skills: list[str], summary: str) -> list[float] | None:
         key = _profile_key(skills, summary)
         async with self._lock:
             cached = self._profile_cache.get(key)

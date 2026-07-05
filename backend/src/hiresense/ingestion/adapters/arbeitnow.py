@@ -29,9 +29,7 @@ class ArbeitnowAdapter:
     def source_type(self) -> SourceType:
         return SourceType.API
 
-    async def fetch_jobs(
-        self, filters: dict[str, Any] | None = None
-    ) -> list[RawJobListing]:
+    async def fetch_jobs(self, filters: dict[str, Any] | None = None) -> list[RawJobListing]:
         search = filters.get("search", "") if filters else ""
         jobs: list[RawJobListing] = []
         seen: set[str] = set()
@@ -50,9 +48,7 @@ class ArbeitnowAdapter:
                 if not slug or slug in seen:
                     continue
                 seen.add(slug)
-                jobs.append(
-                    RawJobListing(source="arbeitnow", source_id=slug, raw_data=job)
-                )
+                jobs.append(RawJobListing(source="arbeitnow", source_id=slug, raw_data=job))
             if not data.get("links", {}).get("next"):
                 break
         return jobs

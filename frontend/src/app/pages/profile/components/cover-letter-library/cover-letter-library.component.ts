@@ -1,5 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -49,9 +57,12 @@ export class CoverLetterLibraryComponent implements OnInit {
 
   private sortValue(l: CoverLetterLibraryItem, field: LibrarySortField): string | null {
     switch (field) {
-      case 'created': return l.created_at;
-      case 'company': return l.company;
-      case 'title': return l.title;
+      case 'created':
+        return l.created_at;
+      case 'company':
+        return l.company;
+      case 'title':
+        return l.title;
     }
   }
 
@@ -61,16 +72,19 @@ export class CoverLetterLibraryComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.service.listAllCoverLetters().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (list) => {
-        this.letters.set(list);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Could not load cover letters');
-        this.loading.set(false);
-      },
-    });
+    this.service
+      .listAllCoverLetters()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (list) => {
+          this.letters.set(list);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Could not load cover letters');
+          this.loading.set(false);
+        },
+      });
   }
 
   toggle(id: string): void {

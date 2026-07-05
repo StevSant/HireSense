@@ -17,14 +17,20 @@ class _LLM:
 
 
 def _email():
-    return InboundEmail(message_id="m1", from_address="r@acme.com",
-                        subject="Your application", body="We regret to inform you...",
-                        received_at=datetime.now(timezone.utc))
+    return InboundEmail(
+        message_id="m1",
+        from_address="r@acme.com",
+        subject="Your application",
+        body="We regret to inform you...",
+        received_at=datetime.now(timezone.utc),
+    )
 
 
 @pytest.mark.asyncio
 async def test_parses_structured_json():
-    llm = _LLM(response='{"job_related": true, "kind": "rejection", "company": "Acme", "role": "Dev", "confidence": 0.9}')
+    llm = _LLM(
+        response='{"job_related": true, "kind": "rejection", "company": "Acme", "role": "Dev", "confidence": 0.9}'
+    )
     result = await EmailClassifier(llm).classify(_email())
     assert result.job_related is True
     assert result.kind is EmailSignalKind.REJECTION

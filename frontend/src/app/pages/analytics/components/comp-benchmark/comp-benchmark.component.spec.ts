@@ -4,9 +4,18 @@ import { CompBenchmark } from '../../models/comp-benchmark.model';
 
 function comp(over: Partial<CompBenchmark> = {}): CompBenchmark {
   return {
-    insufficient_data: false, currency: 'USD', p25_annual: 90000, median_annual: 110000,
-    p75_annual: 130000, sample_size: 12, by_seniority: [], your_median_annual: null,
-    your_sample_size: 0, ask_min_annual: 110000, ask_max_annual: 130000, ...over,
+    insufficient_data: false,
+    currency: 'USD',
+    p25_annual: 90000,
+    median_annual: 110000,
+    p75_annual: 130000,
+    sample_size: 12,
+    by_seniority: [],
+    your_median_annual: null,
+    your_sample_size: 0,
+    ask_min_annual: 110000,
+    ask_max_annual: 130000,
+    ...over,
   };
 }
 
@@ -20,7 +29,9 @@ describe('CompBenchmarkComponent', () => {
   }
 
   it('shows insufficient-data message', () => {
-    const fixture = mount(comp({ insufficient_data: true, median_annual: null, ask_min_annual: null }));
+    const fixture = mount(
+      comp({ insufficient_data: true, median_annual: null, ask_min_annual: null }),
+    );
     expect(fixture.nativeElement.querySelector('.comp-empty')).not.toBeNull();
   });
 

@@ -38,9 +38,7 @@ class CVOptimizer:
             llm_response = await self._get_llm_suggestions(
                 original_tex, job_description, job_skills, missing_skills, recommendations
             )
-            changes = [
-                SectionChange(**c) for c in llm_response.get("changes", [])
-            ]
+            changes = [SectionChange(**c) for c in llm_response.get("changes", [])]
             optimized_tex = self._apply_changes(original_tex, changes)
             return OptimizationResult(
                 id=opt_id,

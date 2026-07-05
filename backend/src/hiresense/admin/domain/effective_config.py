@@ -33,7 +33,11 @@ class EffectiveFeatureConfig:
     ) -> "EffectiveFeatureConfig":
         inherits_provider = override_provider is None
         inherits_model = override_model is None
-        source = "inherited" if (inherits_provider and inherits_model and not extra_params) else "override"
+        source = (
+            "inherited"
+            if (inherits_provider and inherits_model and not extra_params)
+            else "override"
+        )
         return cls(
             feature_key=feature_key,
             feature_name=feature_name,

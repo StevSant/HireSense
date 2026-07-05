@@ -46,9 +46,7 @@ class Settings(
 ):
     """Composed application settings — flat attribute access over all groups."""
 
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @model_validator(mode="after")
     def _resolve_mode(self) -> "Settings":

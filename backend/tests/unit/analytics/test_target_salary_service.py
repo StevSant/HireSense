@@ -33,8 +33,12 @@ class _Corpus:
 
 def _svc(store, corpus):
     return TargetSalaryService(
-        embedding=_Emb(), vector_store=store, corpus=corpus,
-        salary_parser=SalaryParser(), top_k=50, min_sample=3,
+        embedding=_Emb(),
+        vector_store=store,
+        corpus=corpus,
+        salary_parser=SalaryParser(),
+        top_k=50,
+        min_sample=3,
     )
 
 
@@ -61,8 +65,14 @@ async def test_insufficient_sample():
 
 @pytest.mark.asyncio
 async def test_no_vector_store():
-    svc = TargetSalaryService(embedding=_Emb(), vector_store=None, corpus=_Corpus({}),
-                              salary_parser=SalaryParser(), top_k=50, min_sample=3)
+    svc = TargetSalaryService(
+        embedding=_Emb(),
+        vector_store=None,
+        corpus=_Corpus({}),
+        salary_parser=SalaryParser(),
+        top_k=50,
+        min_sample=3,
+    )
     res = await svc.compute(profile_skills=["python"], summary="x")
     assert res.insufficient_data is True
 

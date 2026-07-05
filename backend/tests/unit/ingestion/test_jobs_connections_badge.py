@@ -2,6 +2,7 @@
 
 Task 5, Phase 4 — connections count on the jobs list (backend).
 """
+
 from __future__ import annotations
 
 import pytest

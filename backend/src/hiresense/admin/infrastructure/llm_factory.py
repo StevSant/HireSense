@@ -59,7 +59,11 @@ class LLMFactory:
             except ImportError as exc:
                 raise UnsupportedProviderError("langchain_anthropic not installed") from exc
             kwargs: dict[str, Any] = {"model": config.model, "api_key": config.api_key}
-            kwargs.update(self._filter_extras(config.extra_params, allowed={"temperature", "max_tokens", "base_url"}))
+            kwargs.update(
+                self._filter_extras(
+                    config.extra_params, allowed={"temperature", "max_tokens", "base_url"}
+                )
+            )
             return ChatAnthropic(**kwargs)
         if provider == "openai":
             try:
@@ -69,7 +73,11 @@ class LLMFactory:
                     "langchain_openai not installed (install hiresense[openai] or add the package)"
                 ) from exc
             kwargs = {"model": config.model, "api_key": config.api_key}
-            kwargs.update(self._filter_extras(config.extra_params, allowed={"temperature", "max_tokens", "base_url"}))
+            kwargs.update(
+                self._filter_extras(
+                    config.extra_params, allowed={"temperature", "max_tokens", "base_url"}
+                )
+            )
             return ChatOpenAI(**kwargs)
         if provider == "groq":
             try:
@@ -79,7 +87,9 @@ class LLMFactory:
                     "langchain_groq not installed (install hiresense[groq])"
                 ) from exc
             kwargs = {"model": config.model, "api_key": config.api_key}
-            kwargs.update(self._filter_extras(config.extra_params, allowed={"temperature", "max_tokens"}))
+            kwargs.update(
+                self._filter_extras(config.extra_params, allowed={"temperature", "max_tokens"})
+            )
             return ChatGroq(**kwargs)
         if provider == "ollama":
             try:
@@ -89,7 +99,9 @@ class LLMFactory:
                     "langchain_ollama not installed (install hiresense[ollama])"
                 ) from exc
             kwargs = {"model": config.model}
-            kwargs.update(self._filter_extras(config.extra_params, allowed={"temperature", "base_url"}))
+            kwargs.update(
+                self._filter_extras(config.extra_params, allowed={"temperature", "base_url"})
+            )
             return ChatOllama(**kwargs)
         raise UnsupportedProviderError(f"unknown provider: {config.provider}")
 

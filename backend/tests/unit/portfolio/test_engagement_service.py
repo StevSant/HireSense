@@ -56,9 +56,7 @@ async def test_sorted_by_last_seen_desc() -> None:
 
 @pytest.mark.asyncio
 async def test_source_exception_returns_empty_list() -> None:
-    svc = PortfolioEngagementService(
-        _FakeSource([], raise_on_fetch=True), ref_prefix="hiresense"
-    )
+    svc = PortfolioEngagementService(_FakeSource([], raise_on_fetch=True), ref_prefix="hiresense")
     visits = await svc.visits()
     assert visits == []
 

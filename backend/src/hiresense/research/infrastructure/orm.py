@@ -11,9 +11,7 @@ from hiresense.infrastructure.database import Base
 
 class CompanyResearchOrm(Base):
     __tablename__ = "company_research"
-    __table_args__ = (
-        Index("ix_company_research_company_name", "company_name", unique=True),
-    )
+    __table_args__ = (Index("ix_company_research_company_name", "company_name", unique=True),)
 
     id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
     company_name: Mapped[str] = mapped_column(String(255), nullable=False)

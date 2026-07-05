@@ -30,9 +30,7 @@ def test_known_ats_url_is_classified_as_ats_form(url: str, expected_ats: str) ->
 def test_portal_platform_overrides_when_url_is_generic() -> None:
     # A portal job whose hosted URL is not on a recognisable ATS host still gets
     # classified from its configured platform.
-    result = classify_application(
-        "https://careers.acme.com/jobs/42", platform="greenhouse"
-    )
+    result = classify_application("https://careers.acme.com/jobs/42", platform="greenhouse")
 
     assert result.application_method == ApplicationMethod.ATS_FORM
     assert result.ats_type == "greenhouse"
@@ -48,9 +46,7 @@ def test_aggregator_url_is_a_redirect() -> None:
 
 
 def test_unrecognised_platform_falls_back_to_url_detection() -> None:
-    result = classify_application(
-        "https://jobs.lever.co/acme/x", platform="not-a-real-ats"
-    )
+    result = classify_application("https://jobs.lever.co/acme/x", platform="not-a-real-ats")
 
     assert result.application_method == ApplicationMethod.ATS_FORM
     assert result.ats_type == "lever"

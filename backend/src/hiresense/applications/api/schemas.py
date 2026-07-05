@@ -8,6 +8,7 @@ from pydantic import BaseModel, model_validator
 
 class CreateApplicationRequest(BaseModel):
     """Either job_id (from ingested job) OR title+company+description (manual)."""
+
     job_id: uuid.UUID | None = None
     title: str | None = None
     company: str | None = None

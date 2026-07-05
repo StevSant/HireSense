@@ -41,9 +41,7 @@ class PgVectorStore:
         self._dim = dim
         self._table = table
 
-    async def upsert(
-        self, id: str, embedding: list[float], metadata: dict[str, Any]
-    ) -> None:
+    async def upsert(self, id: str, embedding: list[float], metadata: dict[str, Any]) -> None:
         stmt = text(
             f"INSERT INTO {self._table} (id, embedding, metadata) "
             "VALUES (:id, CAST(:embedding AS vector), CAST(:metadata AS jsonb)) "

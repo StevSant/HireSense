@@ -134,9 +134,7 @@ class ProfileService:
         Falls back to the raw extracted text when no LaTeX compiler is wired
         (compilation simply won't be available in that configuration).
         """
-        if self._latex_compiler is None or not hasattr(
-            self._latex_compiler, "render_cv_tex"
-        ):
+        if self._latex_compiler is None or not hasattr(self._latex_compiler, "render_cv_tex"):
             return parsed.raw_tex
         return self._latex_compiler.render_cv_tex(
             name=parsed.name,
@@ -198,9 +196,7 @@ class ProfileService:
         else:
             self._profiles[profile.id] = profile
 
-        return TranslationOutcome(
-            profile=profile, pdf_ok=pdf_ok, compile_error=compile_error
-        )
+        return TranslationOutcome(profile=profile, pdf_ok=pdf_ok, compile_error=compile_error)
 
     async def compile_pdf(self, language: str) -> bytes:
         """Compile the latest CV variant for `language` to PDF bytes."""
@@ -208,14 +204,10 @@ class ProfileService:
             raise ValueError("PDF compilation not available")
         profile = self._get_latest_for_language_sync(language)
         if profile is None or not profile.raw_tex:
-            raise ValueError(
-                f"No CV found for language '{language}' — upload one first"
-            )
+            raise ValueError(f"No CV found for language '{language}' — upload one first")
         return await self._latex_compiler.compile_to_pdf(profile.raw_tex)
 
-    def _find_source_for_translation(
-        self, target_language: str
-    ) -> CandidateProfile | None:
+    def _find_source_for_translation(self, target_language: str) -> CandidateProfile | None:
         """Latest profile whose language differs from the target."""
         if self._repository is not None:
             candidates = self._repository.list_all()  # newest-first
@@ -320,9 +312,7 @@ class ProfileService:
             self._profiles[profile_id] = current.model_copy(update=per_language)
         return self._profiles[profile_id]
 
-    async def set_apply_profile(
-        self, apply_profile: ApplyProfile
-    ) -> CandidateProfile | None:
+    async def set_apply_profile(self, apply_profile: ApplyProfile) -> CandidateProfile | None:
         """Store the one-per-person Apply Assist answer bank.
 
         Broadcast across every profile row (it doesn't vary by CV language, like
@@ -331,9 +321,7 @@ class ProfileService:
         profile).
         """
         if self._repository is not None:
-            updated = self._repository.update_all(
-                {"apply_profile": apply_profile.model_dump()}
-            )
+            updated = self._repository.update_all({"apply_profile": apply_profile.model_dump()})
             if updated == 0:
                 return None
             return self._repository.get_latest()
@@ -345,9 +333,7 @@ class ProfileService:
             self._profiles[pid] = p.model_copy(update={"apply_profile": apply_profile})
         return next(reversed(self._profiles.values()))
 
-    async def get_prefill(
-        self, language: str | None = None
-    ) -> dict[str, object] | None:
+    async def get_prefill(self, language: str | None = None) -> dict[str, object] | None:
         """Canonical application-form field values for the current profile — the
         candidate-side handoff bundle Apply Assist clients fetch. None if no
         profile exists yet."""

@@ -18,7 +18,9 @@
   padding: 0;
   font-size: 0.9em;
 
-  &:hover { text-decoration: underline; }
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .company {
@@ -33,14 +35,33 @@
   background: #e5e7eb;
   color: #374151;
 
-  &.status-applied { background: #dbeafe; color: #1e40af; }
-  &.status-interviewing { background: #fef3c7; color: #92400e; }
-  &.status-offered { background: #d1fae5; color: #065f46; }
-  &.status-accepted { background: #d1fae5; color: #065f46; font-weight: 600; }
-  &.status-rejected { background: #fee2e2; color: #991b1b; }
+  &.status-applied {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  &.status-interviewing {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  &.status-offered {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  &.status-accepted {
+    background: #d1fae5;
+    color: #065f46;
+    font-weight: 600;
+  }
+  &.status-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+  }
 }
 
-.applied-at { color: #9ca3af; font-size: 0.9em; }
+.applied-at {
+  color: #9ca3af;
+  font-size: 0.9em;
+}
 
 .portfolio-visit-chip {
   display: inline-flex;
@@ -70,9 +91,13 @@
     color: #6b7280;
     font-size: 0.95em;
     font-weight: 500;
-    transition: color 0.15s, border-color 0.15s;
+    transition:
+      color 0.15s,
+      border-color 0.15s;
 
-    &:hover { color: #374151; }
+    &:hover {
+      color: #374151;
+    }
     &.active {
       border-bottom-color: #2563eb;
       color: #2563eb;
@@ -105,4 +130,6 @@
   border-radius: 6px;
 }
 
-.muted { color: #9ca3af; }
+.muted {
+  color: #9ca3af;
+}

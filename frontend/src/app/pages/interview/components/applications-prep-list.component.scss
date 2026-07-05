@@ -3,15 +3,21 @@
   padding-bottom: 1.5rem;
   border-bottom: 1px solid #e5e7eb;
 
-  h2 { margin: 0 0 1rem; font-size: 1.2em; }
+  h2 {
+    margin: 0 0 1rem;
+    font-size: 1.2em;
+  }
 }
 
-.table-scroll { overflow-x: auto; }
+.table-scroll {
+  overflow-x: auto;
+}
 
 table {
   width: 100%;
   border-collapse: collapse;
-  th, td {
+  th,
+  td {
     padding: 0.5rem 0.75rem;
     border-bottom: 1px solid #e5e7eb;
     text-align: left;
@@ -31,9 +37,17 @@ table {
   color: #9ca3af;
   font-size: 0.82em;
 
-  &.on { background: #10b981; color: white; }
+  &.on {
+    background: #10b981;
+    color: white;
+  }
 }
 
-.muted { color: #9ca3af; }
+.muted {
+  color: #9ca3af;
+}
 
-.btn-sm { font-size: 0.85em; padding: 4px 12px; }
+.btn-sm {
+  font-size: 0.85em;
+  padding: 4px 12px;
+}

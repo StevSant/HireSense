@@ -37,16 +37,19 @@ export class MatchTabComponent {
   run(): void {
     this.running.set(true);
     this.error.set('');
-    this.service.generateMatch(this.aggregate().id, this.cvLanguage()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.running.set(false);
-        this.changed.emit();
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Match failed');
-        this.running.set(false);
-      },
-    });
+    this.service
+      .generateMatch(this.aggregate().id, this.cvLanguage())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.running.set(false);
+          this.changed.emit();
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Match failed');
+          this.running.set(false);
+        },
+      });
   }
 
   onLangChange(ev: Event): void {

@@ -29,8 +29,10 @@
       @if (explanation(); as e) {
         @if (e.active) {
           <p class="tuning-status">
-            Personalizing from <strong>{{ e.total_signals }}</strong> signal(s)
-            ({{ e.positive_count }} positive, {{ e.negative_count }} negative).
+            Personalizing from <strong>{{ e.total_signals }}</strong> signal(s) ({{
+              e.positive_count
+            }}
+            positive, {{ e.negative_count }} negative).
           </p>
           <p class="tuning-drift">Drift magnitude: {{ e.drift_magnitude.toFixed(2) }}</p>
           <ul class="tuning-counts">
@@ -38,13 +40,12 @@
               <li>{{ entry.key }}: {{ entry.value }}</li>
             }
           </ul>
-          <button
-            type="button"
-            class="btn-reset"
-            [disabled]="resetting()"
-            (click)="reset()"
-          >
-            @if (resetting()) { Resetting&#8230; } @else { Reset tuning }
+          <button type="button" class="btn-reset" [disabled]="resetting()" (click)="reset()">
+            @if (resetting()) {
+              Resetting&#8230;
+            } @else {
+              Reset tuning
+            }
           </button>
         } @else {
           <p class="tuning-empty">No tuning yet &mdash; give feedback to personalize ranking.</p>

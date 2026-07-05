@@ -2,7 +2,14 @@ import { parseCvSection } from './parse-cv-section';
 
 describe('parseCvSection', () => {
   it('parses a single entry as heading, role, then bullet list', () => {
-    const content = ['Project Alpha', '', 'Backend Developer 2025', '', '- Built an API', '- Wrote tests'].join('\n');
+    const content = [
+      'Project Alpha',
+      '',
+      'Backend Developer 2025',
+      '',
+      '- Built an API',
+      '- Wrote tests',
+    ].join('\n');
 
     const blocks = parseCvSection(content);
 
@@ -39,15 +46,33 @@ describe('parseCvSection', () => {
 
     const blocks = parseCvSection(content);
 
-    const headings = blocks.filter((b) => b.kind === 'heading').map((b) => (b as { text: string }).text);
+    const headings = blocks
+      .filter((b) => b.kind === 'heading')
+      .map((b) => (b as { text: string }).text);
     const roles = blocks.filter((b) => b.kind === 'role').map((b) => (b as { text: string }).text);
 
     expect(headings).toEqual(['Centinela IA', 'SME Risk Assessment Agent', 'StreamFlowMusic']);
-    expect(roles).toEqual(['AI Agent — Backend Developer', 'Backend — AI Developer', 'Backend Developer 2025']);
+    expect(roles).toEqual([
+      'AI Agent — Backend Developer',
+      'Backend — AI Developer',
+      'Backend Developer 2025',
+    ]);
   });
 
   it('keeps separate entries (>=4 newlines) working the same way', () => {
-    const content = ['Project Alpha', '', 'Role A', '', '- Did A', '\n\n', 'Project Beta', '', 'Role B', '', '- Did B'].join('\n');
+    const content = [
+      'Project Alpha',
+      '',
+      'Role A',
+      '',
+      '- Did A',
+      '\n\n',
+      'Project Beta',
+      '',
+      'Role B',
+      '',
+      '- Did B',
+    ].join('\n');
 
     const headings = parseCvSection(content)
       .filter((b) => b.kind === 'heading')

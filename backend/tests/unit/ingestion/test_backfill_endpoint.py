@@ -6,6 +6,7 @@ TDD red-first: these tests are written before implementation. They verify:
   3. Idempotency: running twice produces the same upsert state (no duplicates).
   4. Empty corpus / unavailable vector store: returns counts=0, no crash.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -24,6 +25,7 @@ from hiresense.ingestion.domain.models import NormalizedJob
 # ---------------------------------------------------------------------------
 # Helpers shared across tests
 # ---------------------------------------------------------------------------
+
 
 def _job(job_id: str = None, bucket: str = "boards") -> NormalizedJob:
     return NormalizedJob(

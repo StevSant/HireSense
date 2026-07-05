@@ -36,9 +36,7 @@ async def test_analyze_endpoint() -> None:
     app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/matching/analyze",
             json={

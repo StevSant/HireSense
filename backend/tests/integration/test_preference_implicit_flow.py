@@ -13,6 +13,7 @@ Mirrors the harness in test_preference_flow.py:
 - The bus dispatches handlers via asyncio.create_task, so after the PATCH we
   poll a short loop yielding control until the implicit signal lands.
 """
+
 from __future__ import annotations
 
 import uuid as uuid_mod

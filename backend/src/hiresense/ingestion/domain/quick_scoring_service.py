@@ -46,8 +46,8 @@ _SYSTEM_PROMPT = (
     "SRE/infra/devops, data/ML, mobile, QA, or other. If it differs from the "
     "candidate's primary discipline, treat it as a weak fit (<= 0.4) unless the "
     "CV shows direct hands-on experience in that discipline.\n"
-    "4. Award \"strong\" (>= 0.7) ONLY when seniority fits AND the primary skill "
-    "and discipline match. Use \"weak\" (< 0.4) whenever any gate trips.\n"
+    '4. Award "strong" (>= 0.7) ONLY when seniority fits AND the primary skill '
+    'and discipline match. Use "weak" (< 0.4) whenever any gate trips.\n'
     "Keep each reason and dealbreaker to a short concrete phrase (~12 words max)."
 )
 
@@ -125,11 +125,7 @@ class QuickScoringService:
         profile_hash = score_profile_hash(candidate_skills, candidate_summary)
         hits = self._cache_repo.get_quick_bulk([j.id for j in jobs], profile_hash)
 
-        if (
-            not llm_on_miss
-            or self._llm is None
-            or (not candidate_skills and not candidate_summary)
-        ):
+        if not llm_on_miss or self._llm is None or (not candidate_skills and not candidate_summary):
             return hits
 
         misses = [j for j in jobs if j.id not in hits]
@@ -137,10 +133,7 @@ class QuickScoringService:
             return hits
 
         level = infer_candidate_level(candidate_summary)
-        chunks = [
-            misses[i : i + self._batch_size]
-            for i in range(0, len(misses), self._batch_size)
-        ]
+        chunks = [misses[i : i + self._batch_size] for i in range(0, len(misses), self._batch_size)]
         scored_chunks = await asyncio.gather(
             *(
                 self._score_chunk(chunk, candidate_skills, candidate_summary, level.value)
@@ -228,9 +221,7 @@ class QuickScoringService:
         return results
 
     @staticmethod
-    def _resolve_job(
-        item: dict, idx: int, chunk: list[NormalizedJob]
-    ) -> NormalizedJob | None:
+    def _resolve_job(item: dict, idx: int, chunk: list[NormalizedJob]) -> NormalizedJob | None:
         ref = item.get("ref")
         if isinstance(ref, (int, float)) and 1 <= int(ref) <= len(chunk):
             return chunk[int(ref) - 1]

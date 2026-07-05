@@ -33,7 +33,7 @@ class _FakeJobsRepo:
 class _FakePreRanker:
     async def rerank(self, jobs, skill_by_id, candidate_skills, candidate_summary, bucket):
         # Pass through already-scored jobs (sorted desc by score).
-        return sorted(jobs, key=lambda j: (j.match_score or 0), reverse=True)
+        return sorted(jobs, key=lambda j: j.match_score or 0, reverse=True)
 
 
 class _FakeProfile:
@@ -56,7 +56,9 @@ class _FakeDigestRepo:
         self.pruned_at = None
 
     def add(self, digest):
-        saved = digest.model_copy(update={"id": uuid_mod.uuid4(), "created_at": datetime.now(timezone.utc)})
+        saved = digest.model_copy(
+            update={"id": uuid_mod.uuid4(), "created_at": datetime.now(timezone.utc)}
+        )
         self.added.append(saved)
         self._latest = saved
         return saved
@@ -71,9 +73,15 @@ class _FakeDigestRepo:
 
 def _service(jobs_repo, digest_repo, profile=_FakeProfile(_View()), top_n=5):
     return AutoHuntService(
-        jobs_repo=jobs_repo, pre_ranker=_FakePreRanker(), profile_service=profile,
-        digest_repo=digest_repo, top_n=top_n, min_score=0.6,
-        initial_lookback_days=7, retention_days=90, language="en",
+        jobs_repo=jobs_repo,
+        pre_ranker=_FakePreRanker(),
+        profile_service=profile,
+        digest_repo=digest_repo,
+        top_n=top_n,
+        min_score=0.6,
+        initial_lookback_days=7,
+        retention_days=90,
+        language="en",
     )
 
 
@@ -98,8 +106,11 @@ async def test_run_top_n_cap():
 
 @pytest.mark.asyncio
 async def test_run_uses_latest_created_at_as_cutoff():
-    prev = Digest(id=uuid_mod.uuid4(), created_at=datetime(2026, 5, 20, tzinfo=timezone.utc),
-                  cutoff_at=datetime(2026, 5, 19, tzinfo=timezone.utc))
+    prev = Digest(
+        id=uuid_mod.uuid4(),
+        created_at=datetime(2026, 5, 20, tzinfo=timezone.utc),
+        cutoff_at=datetime(2026, 5, 19, tzinfo=timezone.utc),
+    )
     jobs_repo = _FakeJobsRepo([])
     svc = _service(jobs_repo, _FakeDigestRepo(latest=prev))
     await svc.run()

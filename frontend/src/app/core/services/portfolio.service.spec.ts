@@ -28,8 +28,14 @@ describe('PortfolioService', () => {
     req.flush({
       projects: [
         {
-          id: 'p1', source: 'supabase', source_key: 'hiresense', url: null, demo_url: null,
-          pinned: true, position: 1, tech: ['python'],
+          id: 'p1',
+          source: 'supabase',
+          source_key: 'hiresense',
+          url: null,
+          demo_url: null,
+          pinned: true,
+          position: 1,
+          tech: ['python'],
           translations: { en: { title: 'HireSense', description: 'AI job hunting' } },
         },
       ],
@@ -46,9 +52,14 @@ describe('PortfolioService', () => {
 
   it('fetches engagement data', () => {
     const visit = {
-      ref: 'ref-1', application_id: 'app-1', first_seen: '2026-06-01T00:00:00Z',
-      last_seen: '2026-06-09T00:00:00Z', page_views: 3, cv_downloads: 1,
-      country: 'US', organization: 'Acme',
+      ref: 'ref-1',
+      application_id: 'app-1',
+      first_seen: '2026-06-01T00:00:00Z',
+      last_seen: '2026-06-09T00:00:00Z',
+      page_views: 3,
+      cv_downloads: 1,
+      country: 'US',
+      organization: 'Acme',
     };
     service.engagement().subscribe((res) => {
       expect(res.configured).toBe(true);

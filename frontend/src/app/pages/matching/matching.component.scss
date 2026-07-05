@@ -52,7 +52,10 @@ $transition: 0.2s ease;
   color: $primary-dark;
   font-weight: 500;
 
-  svg { color: $primary; flex-shrink: 0; }
+  svg {
+    color: $primary;
+    flex-shrink: 0;
+  }
 }
 
 // --- Job Selector ---
@@ -77,7 +80,9 @@ $transition: 0.2s ease;
     color: $text-dark;
     background: $surface;
     cursor: pointer;
-    transition: border-color $transition, box-shadow $transition;
+    transition:
+      border-color $transition,
+      box-shadow $transition;
 
     &:focus {
       outline: none;
@@ -192,7 +197,8 @@ $transition: 0.2s ease;
     color: $text-mid;
   }
 
-  textarea, input {
+  textarea,
+  input {
     width: 100%;
     padding: 0.5rem 0.75rem;
     border: 1px solid $border;
@@ -201,7 +207,9 @@ $transition: 0.2s ease;
     font-family: inherit;
     color: $text-dark;
     box-sizing: border-box;
-    transition: border-color $transition, box-shadow $transition;
+    transition:
+      border-color $transition,
+      box-shadow $transition;
 
     &:focus {
       outline: none;
@@ -209,7 +217,9 @@ $transition: 0.2s ease;
       box-shadow: 0 0 0 3px rgba($primary, 0.1);
     }
 
-    &::placeholder { color: #c0c5ce; }
+    &::placeholder {
+      color: #c0c5ce;
+    }
   }
 }
 
@@ -226,14 +236,19 @@ $transition: 0.2s ease;
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 500;
-  transition: background $transition, box-shadow $transition;
+  transition:
+    background $transition,
+    box-shadow $transition;
 
   &:hover:not(:disabled) {
     background: $primary-dark;
     box-shadow: 0 2px 8px rgba($primary, 0.25);
   }
 
-  &:disabled { opacity: 0.55; cursor: not-allowed; }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
 }
 
 .btn-spinner {
@@ -246,7 +261,9 @@ $transition: 0.2s ease;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .btn-secondary {
@@ -258,7 +275,9 @@ $transition: 0.2s ease;
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
-  transition: background $transition, border-color $transition;
+  transition:
+    background $transition,
+    border-color $transition;
 
   &:hover {
     background: $primary-bg;
@@ -314,11 +333,19 @@ $transition: 0.2s ease;
   border: 3px solid;
   flex-shrink: 0;
 
-  .score-value { font-size: 1.75rem; font-weight: 700; }
-  .score-label { font-size: 0.75rem; color: $text-light; }
+  .score-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+  }
+  .score-label {
+    font-size: 0.75rem;
+    color: $text-light;
+  }
 }
 
-.breakdown { flex: 1; }
+.breakdown {
+  flex: 1;
+}
 
 .breakdown-item {
   display: flex;
@@ -326,10 +353,30 @@ $transition: 0.2s ease;
   gap: 0.75rem;
   margin-bottom: 0.625rem;
 
-  .breakdown-label { width: 80px; font-size: 0.8rem; color: $text-light; }
-  .bar { flex: 1; height: 8px; background: $bg; border-radius: 4px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
-  .breakdown-value { width: 40px; text-align: right; font-size: 0.8rem; font-weight: 500; color: $text-mid; }
+  .breakdown-label {
+    width: 80px;
+    font-size: 0.8rem;
+    color: $text-light;
+  }
+  .bar {
+    flex: 1;
+    height: 8px;
+    background: $bg;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s;
+  }
+  .breakdown-value {
+    width: 40px;
+    text-align: right;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: $text-mid;
+  }
 }
 
 .details-grid {
@@ -361,17 +408,31 @@ $transition: 0.2s ease;
     li {
       padding: 0.35rem 0;
       font-size: 0.85rem;
-      &.pro { color: $success; }
-      &.con { color: $danger; }
-      &::before { margin-right: 0.5rem; }
+      &.pro {
+        color: $success;
+      }
+      &.con {
+        color: $danger;
+      }
+      &::before {
+        margin-right: 0.5rem;
+      }
     }
 
-    li.pro::before { content: '+'; }
-    li.con::before { content: '\2212'; }
+    li.pro::before {
+      content: '+';
+    }
+    li.con::before {
+      content: '\2212';
+    }
   }
 }
 
-.tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
 
 .tag {
   padding: 0.25rem 0.55rem;
@@ -380,9 +441,18 @@ $transition: 0.2s ease;
   font-weight: 500;
 }
 
-.tag-success { background: $success-bg; color: $success; }
-.tag-danger { background: $danger-bg; color: $danger; }
-.no-data { font-size: 0.85rem; color: #aaa; }
+.tag-success {
+  background: $success-bg;
+  color: $success;
+}
+.tag-danger {
+  background: $danger-bg;
+  color: $danger;
+}
+.no-data {
+  font-size: 0.85rem;
+  color: #aaa;
+}
 
 .recommendations {
   background: $surface;
@@ -399,8 +469,14 @@ $transition: 0.2s ease;
     font-weight: 600;
   }
 
-  ul { padding-left: 1.25rem; }
-  li { font-size: 0.85rem; color: $text-mid; padding: 0.25rem 0; }
+  ul {
+    padding-left: 1.25rem;
+  }
+  li {
+    font-size: 0.85rem;
+    color: $text-mid;
+    padding: 0.25rem 0;
+  }
 }
 
 // --- Evaluation ---
@@ -408,7 +484,9 @@ $transition: 0.2s ease;
   margin-top: 1.5rem;
 }
 
-.evaluation-results { margin-top: 1.25rem; }
+.evaluation-results {
+  margin-top: 1.25rem;
+}
 
 .composite-score {
   display: flex;
@@ -420,8 +498,15 @@ $transition: 0.2s ease;
   box-shadow: $shadow-sm;
   margin-bottom: 1rem;
 
-  .score-value { font-size: 2.5rem; font-weight: 700; color: $text-dark; }
-  .score-label { font-size: 0.85rem; color: $text-light; }
+  .score-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: $text-dark;
+  }
+  .score-label {
+    font-size: 0.85rem;
+    color: $text-light;
+  }
 }
 
 .dimensions-grid {
@@ -443,8 +528,15 @@ $transition: 0.2s ease;
   align-items: center;
   margin-bottom: 0.5rem;
 
-  .dimension-name { font-weight: 600; font-size: 0.875rem; color: $text-dark; }
-  .dimension-score { font-weight: 600; font-size: 0.875rem; }
+  .dimension-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: $text-dark;
+  }
+  .dimension-score {
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
 }
 
 .dimension-bar {

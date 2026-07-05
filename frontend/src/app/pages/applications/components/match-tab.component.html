@@ -24,7 +24,9 @@
     <div class="score-grid">
       <div class="score-card big">
         <span class="label">Overall</span>
-        <span class="value" [style.color]="color(m.overall_score)">{{ pct(m.overall_score) }}%</span>
+        <span class="value" [style.color]="color(m.overall_score)"
+          >{{ pct(m.overall_score) }}%</span
+        >
       </div>
       <div class="score-card">
         <span class="label">Semantic</span>
@@ -58,19 +60,31 @@
     @if (m.pros.length) {
       <div class="row">
         <h3>Pros</h3>
-        <ul>@for (p of m.pros; track p) { <li>{{ p }}</li> }</ul>
+        <ul>
+          @for (p of m.pros; track p) {
+            <li>{{ p }}</li>
+          }
+        </ul>
       </div>
     }
     @if (m.cons.length) {
       <div class="row">
         <h3>Cons</h3>
-        <ul>@for (c of m.cons; track c) { <li>{{ c }}</li> }</ul>
+        <ul>
+          @for (c of m.cons; track c) {
+            <li>{{ c }}</li>
+          }
+        </ul>
       </div>
     }
     @if (m.recommendations.length) {
       <div class="row">
         <h3>Recommendations</h3>
-        <ul>@for (r of m.recommendations; track r) { <li>{{ r }}</li> }</ul>
+        <ul>
+          @for (r of m.recommendations; track r) {
+            <li>{{ r }}</li>
+          }
+        </ul>
       </div>
     }
   } @else {

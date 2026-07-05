@@ -12,7 +12,9 @@ if TYPE_CHECKING:
 
 
 class TrackingService:
-    def __init__(self, repository: TrackingRepositoryPort, ingestion_orchestrator: Any, event_bus: Any) -> None:
+    def __init__(
+        self, repository: TrackingRepositoryPort, ingestion_orchestrator: Any, event_bus: Any
+    ) -> None:
         self._repo = repository
         self._ingestion = ingestion_orchestrator
         self._event_bus = event_bus
@@ -73,9 +75,7 @@ class TrackingService:
         if notes is not None:
             app.notes = notes
         if previous != status.value:
-            saved = self._repo.save_with_history(
-                app, from_status=previous, to_status=status.value
-            )
+            saved = self._repo.save_with_history(app, from_status=previous, to_status=status.value)
         else:
             saved = self._repo.save(app)
         if previous != saved.status and saved.job_id is not None:

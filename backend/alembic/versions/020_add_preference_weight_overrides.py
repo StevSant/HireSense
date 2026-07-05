@@ -9,6 +9,7 @@ Revision ID: 020
 Revises: 019
 Create Date: 2026-06-07
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -20,9 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute(
-        "ALTER TABLE preference_models ADD COLUMN IF NOT EXISTS weight_overrides JSONB"
-    )
+    op.execute("ALTER TABLE preference_models ADD COLUMN IF NOT EXISTS weight_overrides JSONB")
 
 
 def downgrade() -> None:

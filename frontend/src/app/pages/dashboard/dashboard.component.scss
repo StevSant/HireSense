@@ -41,7 +41,9 @@ $mobile-breakpoint: 768px;
     height: 2px;
     background: var(--text-on-dark);
     border-radius: 1px;
-    transition: transform 0.2s var(--ease), opacity 0.2s var(--ease);
+    transition:
+      transform 0.2s var(--ease),
+      opacity 0.2s var(--ease);
   }
 }
 
@@ -123,14 +125,18 @@ $mobile-breakpoint: 768px;
         opacity: 0.6;
         transition: opacity 0.15s var(--ease);
 
-        svg { display: block; }
+        svg {
+          display: block;
+        }
       }
 
       &:hover {
         color: var(--text-on-dark);
         background: var(--bg-sidebar-hover);
 
-        .nav-icon { opacity: 0.9; }
+        .nav-icon {
+          opacity: 0.9;
+        }
       }
 
       &.active {
@@ -138,7 +144,9 @@ $mobile-breakpoint: 768px;
         background: var(--bg-sidebar-active);
         border-left-color: var(--accent);
 
-        .nav-icon { opacity: 1; }
+        .nav-icon {
+          opacity: 1;
+        }
       }
     }
   }

@@ -3,6 +3,7 @@
 These tests are intentionally written BEFORE the implementation (TDD RED phase).
 They verify REQ-06: prerank weights come from Settings, not hardcoded constants.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -18,6 +19,7 @@ def _make_settings(monkeypatch: pytest.MonkeyPatch) -> object:
     # Reimport so pydantic_settings picks up the patched env.
     import importlib
     import hiresense.config
+
     importlib.reload(hiresense.config)
     return hiresense.config.Settings()
 
@@ -43,7 +45,9 @@ def test_settings_has_prerank_top_k_cap_default_2000(monkeypatch: pytest.MonkeyP
     assert settings.prerank_top_k_cap == 2000
 
 
-def test_prerank_weights_are_distinct_from_matching_weights(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_prerank_weights_are_distinct_from_matching_weights(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Prerank weights are separate fields from the 10-dim matching weights.
 
     weight_skill_match and weight_semantic are int percentages for the deep
@@ -70,6 +74,7 @@ def test_prerank_weight_skill_overridable_via_env(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setenv("PRERANK_WEIGHT_SEMANTIC", "0.7")
     import importlib
     import hiresense.config
+
     importlib.reload(hiresense.config)
     settings = hiresense.config.Settings()
     assert abs(settings.prerank_weight_skill - 0.3) < 1e-9

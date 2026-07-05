@@ -33,10 +33,12 @@ def build_matching(
         GrowthScorer(llm=tracked("growth_scorer"), weight=s.weight_growth),
         CultureScorer(llm=tracked("culture_scorer"), weight=s.weight_culture),
         ApplicationStrengthScorer(
-            llm=tracked("application_strength_scorer"), weight=s.weight_application,
+            llm=tracked("application_strength_scorer"),
+            weight=s.weight_application,
         ),
         InterviewReadinessScorer(
-            llm=tracked("interview_readiness_scorer"), weight=s.weight_interview,
+            llm=tracked("interview_readiness_scorer"),
+            weight=s.weight_interview,
         ),
     ]
 

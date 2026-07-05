@@ -26,7 +26,9 @@ class FakeBatchService:
                 source_id=j.get("source_id", ""),
                 composite_score=0.8,
                 dimensions=[
-                    DimensionResult(dimension="seniority_fit", score=0.8, rationale="Good", weight=10),
+                    DimensionResult(
+                        dimension="seniority_fit", score=0.8, rationale="Good", weight=10
+                    ),
                 ],
             )
             for j in jobs
@@ -79,7 +81,9 @@ def _make_app() -> FastAPI:
     app.dependency_overrides[require_auth] = lambda: "test-user"
     app.dependency_overrides[get_batch_evaluation_service] = lambda: FakeBatchService()
     app.dependency_overrides[get_tracking_service_for_matching] = lambda: FakeTrackingService()
-    app.dependency_overrides[get_ingestion_orchestrator_for_matching] = lambda: FakeIngestionOrchestrator()
+    app.dependency_overrides[get_ingestion_orchestrator_for_matching] = lambda: (
+        FakeIngestionOrchestrator()
+    )
     return app
 
 
@@ -120,6 +124,7 @@ def test_batch_evaluate_empty_pipeline() -> None:
     class EmptyTrackingService:
         def list(self, status=None):
             return []
+
         def get(self, id):
             raise ValueError("Not found")
 

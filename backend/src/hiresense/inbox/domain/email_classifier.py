@@ -29,11 +29,7 @@ class EmailClassifier:
     async def classify(self, email: InboundEmail) -> EmailClassification:
         if self._llm is None:
             return EmailClassification(job_related=False)
-        prompt = (
-            f"From: {email.from_address}\n"
-            f"Subject: {email.subject}\n\n"
-            f"{email.body[:4000]}"
-        )
+        prompt = f"From: {email.from_address}\nSubject: {email.subject}\n\n{email.body[:4000]}"
         try:
             raw = await self._llm.complete(prompt, system=SYSTEM_PROMPT)
         except Exception:  # noqa: BLE001 - classification is best-effort

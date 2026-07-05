@@ -5,11 +5,15 @@ import { SearchFocus } from '../../models/search-focus.model';
 
 function focus(over: Partial<SearchFocus> = {}): SearchFocus {
   return {
-    insufficient_data: false, match_count: 6,
+    insufficient_data: false,
+    match_count: 6,
     best_fit_companies: [{ label: 'Acme', count: 3, avg_score: 0.8 }],
     best_fit_roles: [{ label: 'Backend Engineer', count: 4, avg_score: 0.7 }],
-    remote_share: 0.5, top_locations: [{ label: 'Remote', count: 3, avg_score: 0.7 }],
-    fresh_fit_count: 4, fresh_days: 7, ...over,
+    remote_share: 0.5,
+    top_locations: [{ label: 'Remote', count: 3, avg_score: 0.7 }],
+    fresh_fit_count: 4,
+    fresh_days: 7,
+    ...over,
   };
 }
 
@@ -47,10 +51,12 @@ describe('SearchFocusComponent', () => {
 
   it('links companies to their page and roles to filtered ingestion', () => {
     const fixture = mount(focus());
-    const hrefs = Array.from(fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>).map(
-      (a) => a.getAttribute('href'),
-    );
+    const hrefs = Array.from(
+      fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>,
+    ).map((a) => a.getAttribute('href'));
     expect(hrefs).toContain('/dashboard/company/Acme');
-    expect(hrefs.some((h) => h?.startsWith('/dashboard/ingestion') && h.includes('keyword=Backend'))).toBe(true);
+    expect(
+      hrefs.some((h) => h?.startsWith('/dashboard/ingestion') && h.includes('keyword=Backend')),
+    ).toBe(true);
   });
 });

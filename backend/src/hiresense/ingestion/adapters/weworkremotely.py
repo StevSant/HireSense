@@ -22,9 +22,7 @@ class WeWorkRemotelyAdapter:
     def source_type(self) -> SourceType:
         return SourceType.RSS
 
-    async def fetch_jobs(
-        self, filters: dict[str, Any] | None = None
-    ) -> list[RawJobListing]:
+    async def fetch_jobs(self, filters: dict[str, Any] | None = None) -> list[RawJobListing]:
         response = await self._http.get(self._rss_url)
         response.raise_for_status()
         feed = feedparser.parse(response.text)

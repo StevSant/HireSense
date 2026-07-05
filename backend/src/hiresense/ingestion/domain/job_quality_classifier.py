@@ -43,9 +43,9 @@ _SYSTEM_PROMPT = (
     "- \"spam\": MLM / pyramid / franchise / 'be your own boss' / commission-only "
     "/ pay-to-start / get-rich pitches, or anything not actually offering "
     "employment.\n"
-    "- \"low_quality\": real but near-empty/uninformative (no company, no real "
+    '- "low_quality": real but near-empty/uninformative (no company, no real '
     "description, pure recruiter spam, content-farm repost).\n"
-    "- \"ok\": a normal legitimate job posting. When unsure, choose \"ok\".\n"
+    '- "ok": a normal legitimate job posting. When unsure, choose "ok".\n'
     "Keep each reason under ~10 words."
 )
 
@@ -117,8 +117,7 @@ class JobQualityClassifier:
             return results
 
         chunks = [
-            needs_llm[i : i + self._batch_size]
-            for i in range(0, len(needs_llm), self._batch_size)
+            needs_llm[i : i + self._batch_size] for i in range(0, len(needs_llm), self._batch_size)
         ]
         sem = asyncio.Semaphore(self._max_concurrency)
 
@@ -131,9 +130,7 @@ class JobQualityClassifier:
             results.update(chunk_results)
         return results
 
-    async def _classify_chunk(
-        self, chunk: list[NormalizedJob]
-    ) -> dict[str, JobQualityVerdict]:
+    async def _classify_chunk(self, chunk: list[NormalizedJob]) -> dict[str, JobQualityVerdict]:
         # Default every job in the chunk to OK; override with parsed verdicts.
         out = {j.id: JobQualityVerdict(job_id=j.id, quality=JobQuality.OK) for j in chunk}
         prompt = self._build_prompt(chunk)

@@ -44,9 +44,13 @@
     color: #6b7280;
     border-radius: 6px;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition:
+      background 0.15s,
+      color 0.15s;
 
-    &:hover { color: #1f2937; }
+    &:hover {
+      color: #1f2937;
+    }
 
     &.active {
       background: white;
@@ -83,8 +87,15 @@
   margin-bottom: 1rem;
   background: #f9fafb;
 
-  h3 { margin: 0 0 0.5rem; font-size: 0.95em; color: #374151; }
-  p { margin: 0; color: #374151; }
+  h3 {
+    margin: 0 0 0.5rem;
+    font-size: 0.95em;
+    color: #374151;
+  }
+  p {
+    margin: 0;
+    color: #374151;
+  }
 }
 
 .section-title {
@@ -138,7 +149,9 @@
   font-style: italic;
 }
 
-.muted { color: #9ca3af; }
+.muted {
+  color: #9ca3af;
+}
 
 .pdf-preview {
   margin-bottom: 1.25rem;

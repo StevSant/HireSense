@@ -20,7 +20,9 @@ from hiresense.scheduler.infrastructure import (
 
 
 def _factory():
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)
 
@@ -47,13 +49,20 @@ def _build_app():
         return [1, 2, 3]
 
     defs = [
-        JobDefinition(name="ingestion_fetch", run=fetch, cron="0 */6 * * *",
-                      interval_hours=None, count_items=len),
+        JobDefinition(
+            name="ingestion_fetch",
+            run=fetch,
+            cron="0 */6 * * *",
+            interval_hours=None,
+            count_items=len,
+        ),
     ]
     job_runner = JobRunner(definitions=defs, run_repo=run_repo, toggle_repo=toggle_repo)
     provider = SchedulerProvider(
-        definitions=defs, runner=_FakeRunner(job_runner),
-        run_repo=run_repo, toggle_repo=toggle_repo,
+        definitions=defs,
+        runner=_FakeRunner(job_runner),
+        run_repo=run_repo,
+        toggle_repo=toggle_repo,
     )
 
     app = FastAPI()

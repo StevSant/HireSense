@@ -8,14 +8,24 @@
           <span class="funnel-name">{{ s.stage }}</span>
           <span class="funnel-reached">{{ s.reached }}</span>
         </div>
-        <span class="funnel-track"><span class="funnel-fill" [style.width.%]="width(s.reached)"></span></span>
+        <span class="funnel-track"
+          ><span class="funnel-fill" [style.width.%]="width(s.reached)"></span
+        ></span>
         <div class="funnel-meta">
-          @if (pct(s.conversion_from_prev); as c) { <span class="funnel-conv">{{ c }} from prev</span> }
-          @if (s.median_days_in_stage !== null) { <span class="funnel-time">~{{ s.median_days_in_stage }}d in stage</span> }
+          @if (pct(s.conversion_from_prev); as c) {
+            <span class="funnel-conv">{{ c }} from prev</span>
+          }
+          @if (s.median_days_in_stage !== null) {
+            <span class="funnel-time">~{{ s.median_days_in_stage }}d in stage</span>
+          }
         </div>
       </li>
     }
   </ul>
-  @if (insight(); as ins) { <p class="funnel-insight">{{ ins }}</p> }
-  <p class="funnel-rejected">Rejected: {{ metrics().rejected }} total ({{ metrics().current_rejected }} currently)</p>
+  @if (insight(); as ins) {
+    <p class="funnel-insight">{{ ins }}</p>
+  }
+  <p class="funnel-rejected">
+    Rejected: {{ metrics().rejected }} total ({{ metrics().current_rejected }} currently)
+  </p>
 }

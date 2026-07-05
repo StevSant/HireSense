@@ -48,15 +48,25 @@ def _percentile(sorted_vals: list[int], q: float) -> int:
 
 
 _SENIORITY_ORDER = [
-    SeniorityLevel.INTERN, SeniorityLevel.JUNIOR, SeniorityLevel.MID,
-    SeniorityLevel.SENIOR, SeniorityLevel.LEAD,
+    SeniorityLevel.INTERN,
+    SeniorityLevel.JUNIOR,
+    SeniorityLevel.MID,
+    SeniorityLevel.SENIOR,
+    SeniorityLevel.LEAD,
 ]
 
 
 class CompBenchmarkService:
     def __init__(
-        self, *, embedding: Any, vector_store: Any, corpus: Any, salary_parser: Any,
-        tracking_read: Any, top_k: int, min_sample: int,
+        self,
+        *,
+        embedding: Any,
+        vector_store: Any,
+        corpus: Any,
+        salary_parser: Any,
+        tracking_read: Any,
+        top_k: int,
+        min_sample: int,
     ) -> None:
         self._embedding = embedding
         self._vector_store = vector_store
@@ -100,23 +110,34 @@ class CompBenchmarkService:
 
         if len(vals) < self._min_sample:
             return CompBenchmark(
-                insufficient_data=True, currency=dominant, sample_size=len(vals),
-                your_median_annual=your_median, your_sample_size=your_n,
+                insufficient_data=True,
+                currency=dominant,
+                sample_size=len(vals),
+                your_median_annual=your_median,
+                your_sample_size=your_n,
             )
 
         median = int(statistics.median(vals))
         p75 = _percentile(vals, 0.75)
         return CompBenchmark(
-            insufficient_data=False, currency=dominant,
-            p25_annual=_percentile(vals, 0.25), median_annual=median, p75_annual=p75,
+            insufficient_data=False,
+            currency=dominant,
+            p25_annual=_percentile(vals, 0.25),
+            median_annual=median,
+            p75_annual=p75,
             sample_size=len(vals),
             by_seniority=self._seniority_bands(entries, rows, descriptions),
-            your_median_annual=your_median, your_sample_size=your_n,
-            ask_min_annual=median, ask_max_annual=p75,
+            your_median_annual=your_median,
+            your_sample_size=your_n,
+            ask_min_annual=median,
+            ask_max_annual=p75,
         )
 
     def _seniority_bands(
-        self, entries: list[tuple[str, int]], rows: dict, descriptions: dict,
+        self,
+        entries: list[tuple[str, int]],
+        rows: dict,
+        descriptions: dict,
     ) -> list[SeniorityBand]:
         buckets: dict[SeniorityLevel, list[int]] = {}
         for jid, mid in entries:
@@ -131,10 +152,13 @@ class CompBenchmarkService:
         for level in _SENIORITY_ORDER:
             mids = buckets.get(level)
             if mids and len(mids) >= self._min_sample:
-                bands.append(SeniorityBand(
-                    level=level.value, median_annual=int(statistics.median(mids)),
-                    sample_size=len(mids),
-                ))
+                bands.append(
+                    SeniorityBand(
+                        level=level.value,
+                        median_annual=int(statistics.median(mids)),
+                        sample_size=len(mids),
+                    )
+                )
         return bands
 
     def _pipeline_median(self, currency: str) -> tuple[int | None, int]:

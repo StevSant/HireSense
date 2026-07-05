@@ -1,7 +1,12 @@
 <div class="job-tab">
   <div class="row">
     <label for="job-tab-description">Job description</label>
-    <textarea id="job-tab-description" rows="10" [ngModel]="description()" (ngModelChange)="setDescription($event)"></textarea>
+    <textarea
+      id="job-tab-description"
+      rows="10"
+      [ngModel]="description()"
+      (ngModelChange)="setDescription($event)"
+    ></textarea>
   </div>
 
   <div class="row">
@@ -9,14 +14,19 @@
       <span class="row-label">Required skills</span>
       <span class="source-badge">source: {{ source() }}</span>
       <button class="btn-secondary btn-sm" (click)="regenerate()" [disabled]="regenerating()">
-        @if (regenerating()) { Regenerating... } @else { ↻ Regenerate from description }
+        @if (regenerating()) {
+          Regenerating...
+        } @else {
+          ↻ Regenerate from description
+        }
       </button>
     </div>
     <app-skill-chips
       [skills]="skills()"
       [editable]="true"
       (add)="addSkill($event)"
-      (remove)="removeSkill($event)" />
+      (remove)="removeSkill($event)"
+    />
   </div>
 
   @if (error()) {
@@ -25,7 +35,11 @@
 
   <div class="actions">
     <button class="btn-primary" (click)="save()" [disabled]="saving()">
-      @if (saving()) { Saving... } @else { Save snapshot }
+      @if (saving()) {
+        Saving...
+      } @else {
+        Save snapshot
+      }
     </button>
     @if (saved()) {
       <span class="save-confirmation" role="status">✓ Saved</span>

@@ -39,9 +39,7 @@ class TheMuseAdapter:
     def source_type(self) -> SourceType:
         return SourceType.API
 
-    async def fetch_jobs(
-        self, filters: dict[str, Any] | None = None
-    ) -> list[RawJobListing]:
+    async def fetch_jobs(self, filters: dict[str, Any] | None = None) -> list[RawJobListing]:
         jobs: list[RawJobListing] = []
         seen: set[str] = set()
         for page in range(1, MAX_PAGES + 1):
@@ -61,9 +59,7 @@ class TheMuseAdapter:
                 if not source_id or source_id in seen:
                     continue
                 seen.add(source_id)
-                jobs.append(
-                    RawJobListing(source="themuse", source_id=source_id, raw_data=job)
-                )
+                jobs.append(RawJobListing(source="themuse", source_id=source_id, raw_data=job))
             if page >= data.get("page_count", 1):
                 break
         return jobs

@@ -10,14 +10,21 @@
         <h1>{{ agg.title }}</h1>
         <p class="company">
           <app-company-link [name]="agg.company" /> ·
-          <span class="status-pill status-{{agg.status}}">{{ agg.status | titlecase }}</span>
+          <span class="status-pill status-{{ agg.status }}">{{ agg.status | titlecase }}</span>
           @if (agg.applied_at) {
-            <span class="applied-at">· Applied {{ agg.applied_at | date:'mediumDate' }}</span>
+            <span class="applied-at">· Applied {{ agg.applied_at | date: 'mediumDate' }}</span>
           }
         </p>
         @if (portfolioVisit(); as visit) {
-          <span class="portfolio-visit-chip" [title]="'First seen ' + (visit.first_seen | date: 'medium')">
-            👀 Portfolio visited — {{ visit.page_views }} page views · last {{ visit.last_seen | date: 'mediumDate' }}@if (visit.cv_downloads > 0) {<ng-container> · {{ visit.cv_downloads }} CV downloads</ng-container>}
+          <span
+            class="portfolio-visit-chip"
+            [title]="'First seen ' + (visit.first_seen | date: 'medium')"
+          >
+            👀 Portfolio visited — {{ visit.page_views }} page views · last
+            {{ visit.last_seen | date: 'mediumDate' }}
+            @if (visit.cv_downloads > 0) {
+              <ng-container> · {{ visit.cv_downloads }} CV downloads</ng-container>
+            }
           </span>
         }
       </div>
@@ -35,11 +42,21 @@
           @if (deleting()) {
             Deleting…
           } @else {
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 0.35rem;">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-              <path d="M10 11v6M14 11v6"/>
-              <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              style="vertical-align: -2px; margin-right: 0.35rem"
+            >
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6M14 11v6" />
+              <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
             </svg>
             Delete
           }
@@ -50,26 +67,48 @@
     <nav class="tabs">
       <button [class.active]="activeTab() === 'job'" (click)="setTab('job')">Job</button>
       <button [class.active]="activeTab() === 'match'" (click)="setTab('match')">
-        Match @if (agg.match_count) { <span class="count">{{ agg.match_count }}</span> }
+        Match
+        @if (agg.match_count) {
+          <span class="count">{{ agg.match_count }}</span>
+        }
       </button>
       <button [class.active]="activeTab() === 'cv'" (click)="setTab('cv')">
-        CV @if (agg.optimization_count) { <span class="count">{{ agg.optimization_count }}</span> }
+        CV
+        @if (agg.optimization_count) {
+          <span class="count">{{ agg.optimization_count }}</span>
+        }
       </button>
       <button [class.active]="activeTab() === 'interview'" (click)="setTab('interview')">
-        Interview @if (agg.interview_prep_count) { <span class="count">{{ agg.interview_prep_count }}</span> }
+        Interview
+        @if (agg.interview_prep_count) {
+          <span class="count">{{ agg.interview_prep_count }}</span>
+        }
       </button>
       <button [class.active]="activeTab() === 'apply'" (click)="setTab('apply')">
-        Apply @if (agg.cover_letter_count) { <span class="count">{{ agg.cover_letter_count }}</span> }
+        Apply
+        @if (agg.cover_letter_count) {
+          <span class="count">{{ agg.cover_letter_count }}</span>
+        }
       </button>
     </nav>
 
     <section class="tab-body">
       @switch (activeTab()) {
-        @case ('job')       { <app-job-tab [aggregate]="agg" (changed)="reload()" /> }
-        @case ('match')     { <app-match-tab [aggregate]="agg" (changed)="reload()" /> }
-        @case ('cv')        { <app-cv-tab [aggregate]="agg" (changed)="reload()" /> }
-        @case ('interview') { <app-interview-tab [aggregate]="agg" (changed)="reload()" /> }
-        @case ('apply')     { <app-apply-tab [aggregate]="agg" (changed)="reload()" /> }
+        @case ('job') {
+          <app-job-tab [aggregate]="agg" (changed)="reload()" />
+        }
+        @case ('match') {
+          <app-match-tab [aggregate]="agg" (changed)="reload()" />
+        }
+        @case ('cv') {
+          <app-cv-tab [aggregate]="agg" (changed)="reload()" />
+        }
+        @case ('interview') {
+          <app-interview-tab [aggregate]="agg" (changed)="reload()" />
+        }
+        @case ('apply') {
+          <app-apply-tab [aggregate]="agg" (changed)="reload()" />
+        }
       }
     </section>
   </div>

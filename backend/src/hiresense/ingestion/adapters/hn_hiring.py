@@ -65,9 +65,7 @@ class HNHiringAdapter:
             return None
         return hits[0]["objectID"]
 
-    async def fetch_jobs(
-        self, filters: dict[str, Any] | None = None
-    ) -> list[RawJobListing]:
+    async def fetch_jobs(self, filters: dict[str, Any] | None = None) -> list[RawJobListing]:
         thread_id = await self._find_latest_thread()
         if not thread_id:
             return []

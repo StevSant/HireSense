@@ -7,8 +7,10 @@ class FakeResponse:
     def __init__(self, data: dict) -> None:
         self._data = data
         self.status_code = 200
+
     def json(self) -> dict:
         return self._data
+
     def raise_for_status(self) -> None:
         pass
 
@@ -20,6 +22,7 @@ class FakeHttpClient:
     def __init__(self, response_data: dict) -> None:
         self._response_data = response_data
         self.last_url: str | None = None
+
     async def get(self, url: str, **kwargs) -> FakeResponse:
         self.last_url = url
         return FakeResponse(self._response_data)

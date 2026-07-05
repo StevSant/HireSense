@@ -45,9 +45,13 @@ $danger-bg: #fef2f2;
   font-family: inherit;
   background: $surface;
   color: $text-dark;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 
-  &::placeholder { color: #9ca3af; }
+  &::placeholder {
+    color: #9ca3af;
+  }
 
   &:focus {
     outline: none;
@@ -86,7 +90,9 @@ $danger-bg: #fef2f2;
   border-radius: 10px;
   background: $surface;
   overflow: hidden;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 
   &:hover {
     border-color: rgba($primary, 0.35);
@@ -194,7 +200,9 @@ $danger-bg: #fef2f2;
   cursor: pointer;
   transition: background 0.15s ease;
 
-  &:hover { background: $primary-dark; }
+  &:hover {
+    background: $primary-dark;
+  }
 }
 
 .btn-link {

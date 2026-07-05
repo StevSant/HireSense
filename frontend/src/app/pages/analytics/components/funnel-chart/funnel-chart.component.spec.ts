@@ -4,12 +4,38 @@ import { FunnelChartComponent } from './funnel-chart.component';
 const METRICS = {
   stages: [
     { stage: 'saved', reached: 4, conversion_from_prev: null, median_days_in_stage: 2, current: 1 },
-    { stage: 'applied', reached: 3, conversion_from_prev: 0.75, median_days_in_stage: 5, current: 1 },
-    { stage: 'interviewing', reached: 1, conversion_from_prev: 0.33, median_days_in_stage: null, current: 1 },
-    { stage: 'offered', reached: 0, conversion_from_prev: 0, median_days_in_stage: null, current: 0 },
-    { stage: 'accepted', reached: 0, conversion_from_prev: null, median_days_in_stage: null, current: 0 },
+    {
+      stage: 'applied',
+      reached: 3,
+      conversion_from_prev: 0.75,
+      median_days_in_stage: 5,
+      current: 1,
+    },
+    {
+      stage: 'interviewing',
+      reached: 1,
+      conversion_from_prev: 0.33,
+      median_days_in_stage: null,
+      current: 1,
+    },
+    {
+      stage: 'offered',
+      reached: 0,
+      conversion_from_prev: 0,
+      median_days_in_stage: null,
+      current: 0,
+    },
+    {
+      stage: 'accepted',
+      reached: 0,
+      conversion_from_prev: null,
+      median_days_in_stage: null,
+      current: 0,
+    },
   ],
-  rejected: 1, current_rejected: 1, total_applications: 4,
+  rejected: 1,
+  current_rejected: 1,
+  total_applications: 4,
 };
 
 describe('FunnelChartComponent', () => {

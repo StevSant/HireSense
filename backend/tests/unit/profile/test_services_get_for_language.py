@@ -24,7 +24,9 @@ def _make_service_with_in_memory_profiles(*profiles: CandidateProfile) -> Profil
     return service
 
 
-def _make_profile(profile_id: str, language: str, summary_text: str, skills: list[str], raw_tex: str = "TEX") -> CandidateProfile:
+def _make_profile(
+    profile_id: str, language: str, summary_text: str, skills: list[str], raw_tex: str = "TEX"
+) -> CandidateProfile:
     return CandidateProfile(
         id=profile_id,
         name="Bryan",
@@ -37,7 +39,13 @@ def _make_profile(profile_id: str, language: str, summary_text: str, skills: lis
 
 def test_returns_view_for_existing_language() -> None:
     service = _make_service_with_in_memory_profiles(
-        _make_profile("1", "en", "English summary text.", ["python", "fastapi"], raw_tex=r"\documentclass{article}"),
+        _make_profile(
+            "1",
+            "en",
+            "English summary text.",
+            ["python", "fastapi"],
+            raw_tex=r"\documentclass{article}",
+        ),
     )
 
     view = service.get_for_language("en")

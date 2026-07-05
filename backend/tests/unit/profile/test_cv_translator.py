@@ -19,9 +19,7 @@ class FakeLLM:
 async def test_translate_returns_tex_and_strips_markdown_fence() -> None:
     llm = FakeLLM("```latex\n\\section*{RESUMEN}\nIngeniero backend.\n```")
     translator = CVTranslator(llm=llm)
-    result = await translator.translate(
-        "\\section*{SUMMARY}\nBackend engineer.", "en", "es"
-    )
+    result = await translator.translate("\\section*{SUMMARY}\nBackend engineer.", "en", "es")
     assert result == "\\section*{RESUMEN}\nIngeniero backend."
 
 

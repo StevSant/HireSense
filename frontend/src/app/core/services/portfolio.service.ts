@@ -22,7 +22,10 @@ export class PortfolioService {
     return this.http.post<PortfolioSyncResult>(`${this.base}/sync`, {});
   }
 
-  setMatching(id: string, include_in_matching: boolean): Observable<{ include_in_matching: boolean }> {
+  setMatching(
+    id: string,
+    include_in_matching: boolean,
+  ): Observable<{ include_in_matching: boolean }> {
     return this.http.patch<{ include_in_matching: boolean }>(
       `${this.base}/projects/${id}/matching`,
       { include_in_matching },

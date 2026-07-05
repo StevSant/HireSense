@@ -9,7 +9,9 @@ from pydantic import BaseModel, Field
 class LLMSettingsView(BaseModel):
     provider: str
     model: str
-    api_key_mask: str = Field("", description="Masked preview of the stored API key; never the plaintext.")
+    api_key_mask: str = Field(
+        "", description="Masked preview of the stored API key; never the plaintext."
+    )
     has_stored_key: bool = False
     extra_params: dict = Field(default_factory=dict)
     updated_by: str | None = None

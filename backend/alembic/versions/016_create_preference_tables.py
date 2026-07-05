@@ -8,6 +8,7 @@ Revision ID: 016
 Revises: 015
 Create Date: 2026-05-31
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -31,9 +32,7 @@ def upgrade() -> None:
         )
         """
     )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS ix_feedback_signals_job_id ON feedback_signals (job_id)"
-    )
+    op.execute("CREATE INDEX IF NOT EXISTS ix_feedback_signals_job_id ON feedback_signals (job_id)")
     op.execute(
         """
         CREATE TABLE IF NOT EXISTS preference_models (

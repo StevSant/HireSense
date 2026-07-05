@@ -12,7 +12,9 @@ class IngestedJob(Base):
     __tablename__ = "ingested_jobs"
     __table_args__ = (
         UniqueConstraint(
-            "bucket", "source", "identity_key",
+            "bucket",
+            "source",
+            "identity_key",
             name="ux_ingested_jobs_bucket_source_identity",
         ),
         Index("ix_ingested_jobs_bucket_fetched_at", "bucket", "fetched_at"),
@@ -40,15 +42,11 @@ class IngestedJob(Base):
         String(20), nullable=False, default="unknown", server_default="unknown"
     )
     ats_type: Mapped[str | None] = mapped_column(String(30), nullable=True)
-    posted_date: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    posted_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Source-declared expiry (e.g. Himalayas' expiryDate). The revalidation
     # sweep closes open jobs whose expiry_date has passed — the closure path for
     # sources whose public pages block URL probes. Nullable: most sources omit it.
-    expiry_date: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    expiry_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     department: Mapped[str | None] = mapped_column(Text, nullable=True)
     skills: Mapped[list] = mapped_column(JSON, default=list)
     categories: Mapped[list] = mapped_column(JSON, default=list)
@@ -67,18 +65,18 @@ class IngestedJob(Base):
     )
     identity_key: Mapped[str] = mapped_column(String(64), nullable=False)
     source_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    status: Mapped[str] = mapped_column(String(10), nullable=False, default="open", server_default="open")
-    content_hash: Mapped[str] = mapped_column(String(64), nullable=False, default="", server_default="")
+    status: Mapped[str] = mapped_column(
+        String(10), nullable=False, default="open", server_default="open"
+    )
+    content_hash: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="", server_default=""
+    )
     last_seen_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    last_checked_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    missed_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
     )
-    closed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    updated_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    missed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")

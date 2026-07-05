@@ -76,13 +76,17 @@ class AutoHuntService:
             return self._persist([], cutoff, now)
 
         qualified = [
-            j for j in ranked
+            j
+            for j in ranked
             if getattr(j, "match_score", None) is not None and j.match_score >= self._min_score
         ][: self._top_n]
         entries = [
             DigestEntry(
-                job_id=j.id, title=j.title, company=j.company,
-                url=getattr(j, "url", None), score=j.match_score,
+                job_id=j.id,
+                title=j.title,
+                company=j.company,
+                url=getattr(j, "url", None),
+                score=j.match_score,
             )
             for j in qualified
         ]

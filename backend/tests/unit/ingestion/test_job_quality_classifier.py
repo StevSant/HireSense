@@ -10,11 +10,21 @@ from hiresense.ingestion.domain.job_quality_classifier import JobQualityClassifi
 from hiresense.ingestion.domain.models import NormalizedJob
 
 
-def _job(job_id: str, title: str = "Backend Engineer", description: str = "Build APIs.",
-         company: str = "Acme") -> NormalizedJob:
+def _job(
+    job_id: str,
+    title: str = "Backend Engineer",
+    description: str = "Build APIs.",
+    company: str = "Acme",
+) -> NormalizedJob:
     return NormalizedJob(
-        id=job_id, title=title, company=company, description=description, skills=[],
-        source="weworkremotely", source_type="rss", url=f"https://e.com/{job_id}",
+        id=job_id,
+        title=title,
+        company=company,
+        description=description,
+        skills=[],
+        source="weworkremotely",
+        source_type="rss",
+        url=f"https://e.com/{job_id}",
     )
 
 

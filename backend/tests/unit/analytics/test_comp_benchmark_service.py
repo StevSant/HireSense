@@ -44,9 +44,16 @@ class _Tracking:
 
 def _row(jid, salary, title="Senior Backend Engineer"):
     return CorpusJobRow(
-        id=jid, title=title, company="Co", location="Remote", source="x",
-        salary_range=salary, posted_date=None, remote_modality="remote",
-        status="open", quality="ok",
+        id=jid,
+        title=title,
+        company="Co",
+        location="Remote",
+        source="x",
+        salary_range=salary,
+        posted_date=None,
+        remote_modality="remote",
+        status="open",
+        quality="ok",
     )
 
 
@@ -59,9 +66,13 @@ async def test_pipeline_median_vs_market():
     rows["t2"] = _row("t2", "$90k-$100k")
     corpus = _Corpus(rows, tracked_salaries={"t1": "$80k-$100k", "t2": "$90k-$100k"})
     svc = CompBenchmarkService(
-        embedding=_Emb(), vector_store=_Store([f"m{i}" for i in range(5)]), corpus=corpus,
-        salary_parser=SalaryParser(), tracking_read=_Tracking(["t1", "t2"]),
-        top_k=50, min_sample=5,
+        embedding=_Emb(),
+        vector_store=_Store([f"m{i}" for i in range(5)]),
+        corpus=corpus,
+        salary_parser=SalaryParser(),
+        tracking_read=_Tracking(["t1", "t2"]),
+        top_k=50,
+        min_sample=5,
     )
 
     out = await svc.compute(profile_skills=["python"], summary="backend")
@@ -77,8 +88,13 @@ async def test_pipeline_median_vs_market():
 @pytest.mark.asyncio
 async def test_no_vector_store_is_insufficient():
     svc = CompBenchmarkService(
-        embedding=_Emb(), vector_store=None, corpus=_Corpus({}), salary_parser=SalaryParser(),
-        tracking_read=None, top_k=50, min_sample=5,
+        embedding=_Emb(),
+        vector_store=None,
+        corpus=_Corpus({}),
+        salary_parser=SalaryParser(),
+        tracking_read=None,
+        top_k=50,
+        min_sample=5,
     )
     out = await svc.compute(profile_skills=["python"], summary="x")
     assert out.insufficient_data is True

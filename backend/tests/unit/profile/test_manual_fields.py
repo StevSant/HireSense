@@ -156,7 +156,5 @@ def test_update_manual_fields_returns_none_for_missing_profile() -> None:
     profile = _make_profile()
     service, _ = _service_with(profile)
 
-    result = asyncio.run(
-        service.update_manual_fields(str(uuid.uuid4()), {"name": "X"})
-    )
+    result = asyncio.run(service.update_manual_fields(str(uuid.uuid4()), {"name": "X"}))
     assert result is None

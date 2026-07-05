@@ -5,6 +5,7 @@ the shared infrastructure, returning the provider (and any service that a later
 module depends on). Adding a module means adding one builder file here and one
 call in ``hiresense.main.create_app`` — no edits to unrelated wiring.
 """
+
 from hiresense.bootstrap.admin import AdminBuild, build_admin
 from hiresense.bootstrap.autopilot import AutopilotBuild, build_autopilot
 from hiresense.bootstrap.inbox import InboxBuild, build_inbox

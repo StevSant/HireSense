@@ -9,7 +9,9 @@ from hiresense.scheduler.infrastructure import JobRunOrm, JobToggleOrm  # noqa: 
 
 
 def _factory():
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)
 
@@ -24,26 +26,38 @@ class _Settings:
 
 
 class _Svc:
-    async def run(self): return 4
+    async def run(self):
+        return 4
 
 
 def _noop():
     class _N:
-        async def run(self): return []
-        async def sweep(self): return []
+        async def run(self):
+            return []
+
+        async def sweep(self):
+            return []
+
     return _N()
 
 
 @pytest.mark.asyncio
 async def test_inbox_scan_job_present_when_service_injected():
     class _Auto:
-        async def run(self): return type("D", (), {"job_count": 0})()
+        async def run(self):
+            return type("D", (), {"job_count": 0})()
+
     class _Out:
-        def due_followups(self): return []
+        def due_followups(self):
+            return []
+
     build = build_scheduler(
-        settings=_Settings(), sync_session_factory=_factory(),
-        ingestion_orchestrator=_noop(), revalidation_service=_noop(),
-        autohunt_service=_Auto(), outreach_service=_Out(),
+        settings=_Settings(),
+        sync_session_factory=_factory(),
+        ingestion_orchestrator=_noop(),
+        revalidation_service=_noop(),
+        autohunt_service=_Auto(),
+        outreach_service=_Out(),
         inbox_processing_service=_Svc(),
     )
     names = {v.name for v in build.provider.list_jobs()}
@@ -54,13 +68,20 @@ async def test_inbox_scan_job_present_when_service_injected():
 
 def test_inbox_scan_absent_by_default():
     class _Auto:
-        async def run(self): return type("D", (), {"job_count": 0})()
+        async def run(self):
+            return type("D", (), {"job_count": 0})()
+
     class _Out:
-        def due_followups(self): return []
+        def due_followups(self):
+            return []
+
     build = build_scheduler(
-        settings=_Settings(), sync_session_factory=_factory(),
-        ingestion_orchestrator=_noop(), revalidation_service=_noop(),
-        autohunt_service=_Auto(), outreach_service=_Out(),
+        settings=_Settings(),
+        sync_session_factory=_factory(),
+        ingestion_orchestrator=_noop(),
+        revalidation_service=_noop(),
+        autohunt_service=_Auto(),
+        outreach_service=_Out(),
     )
     names = {v.name for v in build.provider.list_jobs()}
     assert "inbox_scan" not in names

@@ -11,6 +11,7 @@ Concurrency is bounded by processing in sequential slices (the classifier itself
 gathers its per-20 chunks concurrently, so a whole-corpus call would otherwise
 fire ~N/20 LLM requests at once).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -49,9 +50,7 @@ async def main() -> None:
     for start in range(0, len(jobs), SLICE):
         chunk = jobs[start : start + SLICE]
         verdicts = await classifier.classify(chunk)
-        updates = [
-            QualityUpdate(v.job_id, v.quality.value, v.reason) for v in verdicts.values()
-        ]
+        updates = [QualityUpdate(v.job_id, v.quality.value, v.reason) for v in verdicts.values()]
         repository.bulk_update_quality(updates)
         for v in verdicts.values():
             tally[v.quality.value] += 1

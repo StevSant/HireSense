@@ -32,11 +32,7 @@ class RemoteOKNormalizer:
         d = raw.raw_data
         salary_min = d.get("salary_min")
         salary_max = d.get("salary_max")
-        salary_range = (
-            f"${salary_min}-${salary_max}"
-            if salary_min and salary_max
-            else None
-        )
+        salary_range = f"${salary_min}-${salary_max}" if salary_min and salary_max else None
         return {
             "title": d.get("position", ""),
             "company": d.get("company", ""),
@@ -54,11 +50,7 @@ class CSVNormalizer:
     def normalize(self, raw: RawJobListing) -> dict[str, Any]:
         d = raw.raw_data
         skills_str = d.get("skills", "")
-        skills = (
-            [s.strip() for s in skills_str.split(";")]
-            if skills_str
-            else []
-        )
+        skills = [s.strip() for s in skills_str.split(";")] if skills_str else []
         return {
             "title": d.get("title", ""),
             "company": d.get("company", ""),

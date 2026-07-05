@@ -57,28 +57,37 @@ export class MatchingComponent implements OnInit {
   ngOnInit(): void {
     // Load profiles if not cached
     if (this.availableLanguages().length === 0) {
-      this.profileService.listProfiles().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: () => this.applyProfile(),
-        error: () => {
-          this.profileService.getCurrentProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-            next: () => this.applyProfile(),
-            error: () => {},
-          });
-        },
-      });
+      this.profileService
+        .listProfiles()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => this.applyProfile(),
+          error: () => {
+            this.profileService
+              .getCurrentProfile()
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe({
+                next: () => this.applyProfile(),
+                error: () => {},
+              });
+          },
+        });
     } else {
       this.applyProfile();
     }
 
     // If no jobs in cache, try fetching from server
     if (this.jobs().length === 0) {
-      this.ingestionService.queryJobs('boards', 1, 100).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: (res) => {
-          this.jobs.set(res.jobs);
-          this.applyJobIdFromQuery();
-        },
-        error: () => {},
-      });
+      this.ingestionService
+        .queryJobs('boards', 1, 100)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (res) => {
+            this.jobs.set(res.jobs);
+            this.applyJobIdFromQuery();
+          },
+          error: () => {},
+        });
     } else {
       this.applyJobIdFromQuery();
     }
@@ -95,15 +104,18 @@ export class MatchingComponent implements OnInit {
       return;
     }
     // Job not in the first 100 — fetch directly
-    this.ingestionService.getJob(jobId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (j) => {
-        this.jobs.update((list) => [j, ...list]);
-        this.selectedJobId.set(jobId);
-        this.jobDescription.set(j.description);
-        this.jobSkills.set(j.skills.join(', '));
-      },
-      error: () => {},
-    });
+    this.ingestionService
+      .getJob(jobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (j) => {
+          this.jobs.update((list) => [j, ...list]);
+          this.selectedJobId.set(jobId);
+          this.jobDescription.set(j.description);
+          this.jobSkills.set(j.skills.join(', '));
+        },
+        error: () => {},
+      });
   }
 
   onCvLanguageChange(lang: string): void {
@@ -121,7 +133,7 @@ export class MatchingComponent implements OnInit {
     this.selectedCvLanguage.set(profile.language);
 
     const summary = profile.sections
-      .map(s => s.content)
+      .map((s) => s.content)
       .join('\n\n')
       .substring(0, 2000);
     this.cvSummary.set(summary);
@@ -132,10 +144,10 @@ export class MatchingComponent implements OnInit {
   toggleSkill(skill: string): void {
     const current = this.cvSkills()
       .split(',')
-      .map(s => s.trim())
+      .map((s) => s.trim())
       .filter(Boolean);
     const lower = skill.toLowerCase();
-    const idx = current.findIndex(s => s.toLowerCase() === lower);
+    const idx = current.findIndex((s) => s.toLowerCase() === lower);
     if (idx >= 0) {
       current.splice(idx, 1);
     } else {
@@ -147,7 +159,7 @@ export class MatchingComponent implements OnInit {
   isSkillSelected(skill: string): boolean {
     const current = this.cvSkills()
       .split(',')
-      .map(s => s.trim().toLowerCase())
+      .map((s) => s.trim().toLowerCase())
       .filter(Boolean);
     return current.includes(skill.toLowerCase());
   }
@@ -159,7 +171,7 @@ export class MatchingComponent implements OnInit {
       this.jobSkills.set('');
       return;
     }
-    const job = this.jobs().find(j => j.id === jobId);
+    const job = this.jobs().find((j) => j.id === jobId);
     if (job) {
       this.jobDescription.set(job.description);
       this.jobSkills.set(job.skills.join(', '));
@@ -173,20 +185,29 @@ export class MatchingComponent implements OnInit {
       job_id: this.selectedJobId() !== 'manual' ? this.selectedJobId() : 'manual',
       cv_id: 'manual',
       job_description: this.jobDescription(),
-      job_skills: this.jobSkills().split(',').map(s => s.trim()).filter(Boolean),
+      job_skills: this.jobSkills()
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
       cv_summary: this.cvSummary(),
-      cv_skills: this.cvSkills().split(',').map(s => s.trim()).filter(Boolean),
+      cv_skills: this.cvSkills()
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
     };
-    this.matchingService.analyze(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (res) => {
-        this.result.set(res);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.error.set(err.error?.detail || 'Analysis failed');
-        this.loading.set(false);
-      },
-    });
+    this.matchingService
+      .analyze(payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.result.set(res);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.error.set(err.error?.detail || 'Analysis failed');
+          this.loading.set(false);
+        },
+      });
   }
 
   evaluate(): void {
@@ -195,18 +216,24 @@ export class MatchingComponent implements OnInit {
       job_title: this.jobDescription().split('\n')[0] || 'Unknown',
       company: 'Unknown',
       description: this.jobDescription(),
-      skills: this.jobSkills().split(',').map(s => s.trim()).filter(Boolean),
+      skills: this.jobSkills()
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
     };
-    this.matchingService.evaluate(req).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (res) => {
-        this.evaluationResult.set(res);
-        this.evaluating.set(false);
-      },
-      error: (err) => {
-        this.error.set(err.error?.detail || 'Evaluation failed');
-        this.evaluating.set(false);
-      },
-    });
+    this.matchingService
+      .evaluate(req)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.evaluationResult.set(res);
+          this.evaluating.set(false);
+        },
+        error: (err) => {
+          this.error.set(err.error?.detail || 'Evaluation failed');
+          this.evaluating.set(false);
+        },
+      });
   }
 
   dimensionLabel(dimension: string): string {

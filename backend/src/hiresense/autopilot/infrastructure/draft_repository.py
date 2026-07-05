@@ -38,7 +38,5 @@ class DraftRepositoryImpl(SqlRepository):
 
     def exists_for_job(self, job_id: str) -> bool:
         with self._session_factory() as session:
-            stmt = select(AutopilotDraftOrm.id).where(
-                AutopilotDraftOrm.job_id == job_id
-            ).limit(1)
+            stmt = select(AutopilotDraftOrm.id).where(AutopilotDraftOrm.job_id == job_id).limit(1)
             return session.scalars(stmt).first() is not None

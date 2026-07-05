@@ -12,9 +12,7 @@ from hiresense.infrastructure.database import Base
 class StoryOrm(Base):
     __tablename__ = "stories"
 
-    id: Mapped[uuid_mod.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid_mod.uuid4
-    )
+    id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     competency: Mapped[str] = mapped_column(String(30), nullable=False)
     situation: Mapped[str] = mapped_column(Text, nullable=False)

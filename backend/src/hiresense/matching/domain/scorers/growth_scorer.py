@@ -13,7 +13,9 @@ class GrowthScorer(BaseLLMScorer):
     def _build_prompt(self, job: Any, profile: Any | None = None) -> str:
         title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
         company = job.get("company", "") if isinstance(job, dict) else getattr(job, "company", "")
-        description = job.get("description", "") if isinstance(job, dict) else getattr(job, "description", "")
+        description = (
+            job.get("description", "") if isinstance(job, dict) else getattr(job, "description", "")
+        )
         skills = job.get("skills", []) if isinstance(job, dict) else getattr(job, "skills", [])
 
         skills_display = ", ".join(skills) if skills else "Not specified"

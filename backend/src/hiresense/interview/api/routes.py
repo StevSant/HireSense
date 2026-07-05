@@ -28,7 +28,9 @@ def create_story(
     try:
         competency = Competency(request.competency)
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=f"Invalid competency: {request.competency}") from exc
+        raise HTTPException(
+            status_code=422, detail=f"Invalid competency: {request.competency}"
+        ) from exc
     story = service.add_story(
         title=request.title,
         competency=competency,
@@ -52,7 +54,9 @@ def list_stories(
         try:
             competency_enum = Competency(competency)
         except ValueError as exc:
-            raise HTTPException(status_code=422, detail=f"Invalid competency: {competency}") from exc
+            raise HTTPException(
+                status_code=422, detail=f"Invalid competency: {competency}"
+            ) from exc
     stories = service.list(competency=competency_enum)
     return [StoryResponse.model_validate(s) for s in stories]
 

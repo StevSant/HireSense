@@ -7,9 +7,19 @@ from hiresense.ingestion.domain.models import RawJobListing
 
 # Per-country salary currency (Adzuna results omit the currency symbol).
 _CURRENCY = {
-    "mx": "MXN", "br": "BRL", "ar": "ARS", "us": "USD", "gb": "GBP",
-    "de": "EUR", "fr": "EUR", "es": "EUR", "it": "EUR", "nl": "EUR",
-    "ca": "CAD", "au": "AUD", "in": "INR",
+    "mx": "MXN",
+    "br": "BRL",
+    "ar": "ARS",
+    "us": "USD",
+    "gb": "GBP",
+    "de": "EUR",
+    "fr": "EUR",
+    "es": "EUR",
+    "it": "EUR",
+    "nl": "EUR",
+    "ca": "CAD",
+    "au": "AUD",
+    "in": "INR",
 }
 
 

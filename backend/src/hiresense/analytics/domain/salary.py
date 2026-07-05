@@ -85,5 +85,8 @@ class SalaryParser:
 
         annual = sorted(int(round(n * mult)) for n in raw_numbers)
         return ParsedSalary(
-            currency=currency, min_annual=annual[0], max_annual=annual[-1], period=period,
+            currency=currency,
+            min_annual=annual[0],
+            max_annual=annual[-1],
+            period=period,
         )

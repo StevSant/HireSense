@@ -10,13 +10,13 @@
       }
     </div>
     <p class="hint">
-      We pre-filled this job's details below. Review them, then continue to the CV tab to
-      run the optimization and download a tailored PDF.
+      We pre-filled this job's details below. Review them, then continue to the CV tab to run the
+      optimization and download a tailored PDF.
     </p>
   } @else {
     <p class="hint">
-      Paste a job description below. We'll create an application, extract required skills,
-      and take you to the CV tab where you can run the optimization and download a tailored PDF.
+      Paste a job description below. We'll create an application, extract required skills, and take
+      you to the CV tab where you can run the optimization and download a tailored PDF.
     </p>
   }
 
@@ -27,11 +27,21 @@
   <div class="form">
     <div class="field">
       <label for="opt-title">Title</label>
-      <input id="opt-title" [ngModel]="title()" (ngModelChange)="title.set($event)" placeholder="e.g. Senior Backend Engineer" />
+      <input
+        id="opt-title"
+        [ngModel]="title()"
+        (ngModelChange)="title.set($event)"
+        placeholder="e.g. Senior Backend Engineer"
+      />
     </div>
     <div class="field">
       <label for="opt-company">Company</label>
-      <input id="opt-company" [ngModel]="company()" (ngModelChange)="company.set($event)" placeholder="e.g. Acme Corp" />
+      <input
+        id="opt-company"
+        [ngModel]="company()"
+        (ngModelChange)="company.set($event)"
+        placeholder="e.g. Acme Corp"
+      />
     </div>
     <div class="field">
       <label for="opt-description">Job description</label>
@@ -47,7 +57,11 @@
       <div class="alert alert-error">{{ error() }}</div>
     }
     <button class="btn-primary" (click)="submit()" [disabled]="saving()">
-      @if (saving()) { Creating... } @else { Continue to CV optimization → }
+      @if (saving()) {
+        Creating...
+      } @else {
+        Continue to CV optimization →
+      }
     </button>
   </div>
 </div>

@@ -8,14 +8,18 @@
     <details class="deep-collapsible" open>
       <summary class="deep-collapsible-label">
         Pros &amp; cons
-        <span class="deep-count">{{ analysis().pros.length }} pros · {{ analysis().cons.length }} cons</span>
+        <span class="deep-count"
+          >{{ analysis().pros.length }} pros · {{ analysis().cons.length }} cons</span
+        >
       </summary>
       <div class="deep-proscons">
         @if (analysis().pros.length) {
           <div class="pc-col">
             <span class="deep-block-label">Pros</span>
             <ul class="pc-list">
-              @for (p of analysis().pros; track p) { <li class="pc-pro">{{ p }}</li> }
+              @for (p of analysis().pros; track p) {
+                <li class="pc-pro">{{ p }}</li>
+              }
             </ul>
           </div>
         }
@@ -23,7 +27,9 @@
           <div class="pc-col">
             <span class="deep-block-label">Cons</span>
             <ul class="pc-list">
-              @for (c of analysis().cons; track c) { <li class="pc-con">{{ c }}</li> }
+              @for (c of analysis().cons; track c) {
+                <li class="pc-con">{{ c }}</li>
+              }
             </ul>
           </div>
         }
@@ -40,7 +46,9 @@
         <span class="deep-count">{{ analysis().recommendations.length }}</span>
       </summary>
       <ul class="rec-list">
-        @for (r of analysis().recommendations; track r) { <li>{{ r }}</li> }
+        @for (r of analysis().recommendations; track r) {
+          <li>{{ r }}</li>
+        }
       </ul>
     </details>
   }

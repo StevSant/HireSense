@@ -199,7 +199,9 @@ def create_app() -> FastAPI:
     app.include_router(tracking_router)
 
     # --- Auto-Hunt (scheduled digest of new taste-ranked matches) ---
-    autohunt = build_autohunt(infra, ingestion.boards_jobs_repo, ingestion.pre_ranker, profile.service)
+    autohunt = build_autohunt(
+        infra, ingestion.boards_jobs_repo, ingestion.pre_ranker, profile.service
+    )
     app.state.autohunt = autohunt.provider
     app.include_router(autohunt_router)
 
@@ -225,7 +227,9 @@ def create_app() -> FastAPI:
         cv_optimizer=optimization.cv_optimizer,
         interview_prep_service=interview.prep_service,
         profile_service=profile.service,
-        portfolio_citation=portfolio.provider.get_citation_service() if portfolio is not None else None,
+        portfolio_citation=portfolio.provider.get_citation_service()
+        if portfolio is not None
+        else None,
     )
     app.include_router(applications_router)
 
@@ -245,7 +249,9 @@ def create_app() -> FastAPI:
         tracking.service,
         profile.service,
         research.get_research_service(),
-        portfolio_citation=portfolio.provider.get_citation_service() if portfolio is not None else None,
+        portfolio_citation=portfolio.provider.get_citation_service()
+        if portfolio is not None
+        else None,
     )
     app.state.outreach = outreach.provider
     app.include_router(outreach_router)

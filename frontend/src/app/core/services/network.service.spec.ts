@@ -36,9 +36,7 @@ describe('NetworkService', () => {
       expect(res.company_normalized).toBe('acme corp');
       expect(res.contacts.length).toBe(1);
     });
-    const req = httpMock.expectOne(
-      `${environment.apiUrl}/network/match?company=Acme%20Corp`,
-    );
+    const req = httpMock.expectOne(`${environment.apiUrl}/network/match?company=Acme%20Corp`);
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('company')).toBe('Acme Corp');
     req.flush({

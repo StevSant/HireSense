@@ -16,7 +16,11 @@
           (click)="evaluateAll()"
           [disabled]="evaluating() || applications().length === 0"
         >
-          @if (evaluating()) { Evaluating… } @else { Evaluate All }
+          @if (evaluating()) {
+            Evaluating…
+          } @else {
+            Evaluate All
+          }
         </button>
       }
       <button class="btn-primary" (click)="openCreate()">+ New application</button>
@@ -26,7 +30,14 @@
   @if (notice()) {
     <div class="alert alert-info notice-banner" role="status">
       <span>{{ notice() }}</span>
-      <button type="button" class="notice-dismiss" (click)="dismissNotice()" aria-label="Dismiss notice">×</button>
+      <button
+        type="button"
+        class="notice-dismiss"
+        (click)="dismissNotice()"
+        aria-label="Dismiss notice"
+      >
+        ×
+      </button>
     </div>
   }
 
@@ -55,7 +66,10 @@
   } @else if (applications().length === 0) {
     <div class="empty-state">
       <p>No applications yet.</p>
-      <p class="muted">Track a job from <a routerLink="/dashboard/ingestion">Ingestion</a> or paste a job description to start.</p>
+      <p class="muted">
+        Track a job from <a routerLink="/dashboard/ingestion">Ingestion</a> or paste a job
+        description to start.
+      </p>
     </div>
   } @else {
     @if (evaluating()) {
@@ -69,158 +83,186 @@
     }
 
     <div class="table-container">
-    <table class="apps-table">
-      <thead>
-        <tr>
-          <th appSortHeader [state]="sort" field="title">Title</th>
-          <th appSortHeader [state]="sort" field="company">Company</th>
-          <th>Location</th>
-          <th>Salary</th>
-          <th>Source</th>
-          <th appSortHeader [state]="sort" field="status">Status</th>
-          <th appSortHeader [state]="sort" field="match">Match</th>
-          <th>Artifacts</th>
-          <th appSortHeader [state]="sort" field="created">Created</th>
-          <th class="col-actions" aria-label="Actions"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (app of visibleApplications(); track app.id) {
-          <tr (click)="open(app.id)" class="row">
-            <td>{{ app.title }}</td>
-            <td><app-company-link [name]="app.company" /></td>
-            <td class="location" [title]="app.location || ''">{{ app.location || '—' }}</td>
-            <td>{{ app.salary_range || '—' }}</td>
-            <td>
-              @if (app.source) {
-                <span class="source-badge">{{ app.source }}</span>
-              } @else {
-                <span class="muted">—</span>
-              }
-            </td>
-            <td>
-              <select
-                class="status-select status-{{ app.status }}"
-                [value]="app.status"
-                (click)="$event.stopPropagation()"
-                (change)="updateStatus(app, $event)"
-                aria-label="Change status"
-              >
-                @for (s of statusOptions; track s) {
-                  <option [value]="s">{{ s | titlecase }}</option>
-                }
-              </select>
-            </td>
-            <td>
-              @if (app.latest_match_score !== null) {
-                <span class="score-pill" [style.background]="scoreColor(app.latest_match_score)">
-                  {{ scorePct(app.latest_match_score) }}
-                </span>
-              } @else {
-                <span class="muted">—</span>
-              }
-            </td>
-            <td class="badges">
-              <span class="badge" [class.on]="app.has_match" title="Has match">M</span>
-              <span class="badge" [class.on]="app.has_optimization" title="Has CV optimization">CV</span>
-              <span class="badge" [class.on]="app.has_prep" title="Has interview prep">P</span>
-            </td>
-            <td>{{ app.created_at | date:'mediumDate' }}</td>
-            <td class="col-actions">
-              <div class="row-actions">
-                @if (hasResearch(app.id)) {
-                  <button
-                    type="button"
-                    class="btn-ghost btn-sm"
-                    (click)="toggleResearch(app.id, $event)"
-                  >
-                    @if (expandedResearchId() === app.id) { Hide research } @else { Research }
-                  </button>
-                } @else {
-                  <button
-                    type="button"
-                    class="btn-ghost btn-sm"
-                    [disabled]="researchingCompany() === app.id"
-                    (click)="researchCompany(app, $event)"
-                  >
-                    @if (researchingCompany() === app.id) { Researching… } @else { Research }
-                  </button>
-                }
-                <button
-                  type="button"
-                  class="row-delete"
-                  [disabled]="deletingId() === app.id"
-                  title="Delete application"
-                  aria-label="Delete application"
-                  (click)="remove(app, $event)"
-                >
-                  @if (deletingId() === app.id) {
-                    …
-                  } @else {
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="3 6 5 6 21 6"/>
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                      <path d="M10 11v6M14 11v6"/>
-                      <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
-                    </svg>
-                  }
-                </button>
-              </div>
-            </td>
+      <table class="apps-table">
+        <thead>
+          <tr>
+            <th appSortHeader [state]="sort" field="title">Title</th>
+            <th appSortHeader [state]="sort" field="company">Company</th>
+            <th>Location</th>
+            <th>Salary</th>
+            <th>Source</th>
+            <th appSortHeader [state]="sort" field="status">Status</th>
+            <th appSortHeader [state]="sort" field="match">Match</th>
+            <th>Artifacts</th>
+            <th appSortHeader [state]="sort" field="created">Created</th>
+            <th class="col-actions" aria-label="Actions"></th>
           </tr>
-          @if (expandedResearchId() === app.id && researchCache()[app.id]) {
-            <tr class="research-row">
-              <td colspan="10">
-                <div class="research-panel">
-                  <div class="research-grid">
-                    <div class="research-item">
-                      <span class="research-label">Funding Stage</span>
-                      <span class="research-badge">{{ researchCache()[app.id].funding_stage }}</span>
-                    </div>
-                    <div class="research-item">
-                      <span class="research-label">Tech Stack</span>
-                      <span class="research-value">{{ researchCache()[app.id].tech_stack }}</span>
-                    </div>
-                  </div>
-                  <div class="research-section">
-                    <h4>Culture</h4>
-                    <p>{{ researchCache()[app.id].culture_summary }}</p>
-                  </div>
-                  <div class="research-section">
-                    <h4>Growth Trajectory</h4>
-                    <p>{{ researchCache()[app.id].growth_trajectory }}</p>
-                  </div>
-                  <div class="research-grid">
-                    <div class="research-section">
-                      <h4>Pros</h4>
-                      <p>{{ researchCache()[app.id].pros }}</p>
-                    </div>
-                    <div class="research-section">
-                      <h4>Cons</h4>
-                      <p>{{ researchCache()[app.id].cons }}</p>
-                    </div>
-                  </div>
-                  @if (researchCache()[app.id].red_flags) {
-                    <div class="research-section research-red-flags">
-                      <h4>Red Flags</h4>
-                      <p>{{ researchCache()[app.id].red_flags }}</p>
-                    </div>
+        </thead>
+        <tbody>
+          @for (app of visibleApplications(); track app.id) {
+            <tr (click)="open(app.id)" class="row">
+              <td>{{ app.title }}</td>
+              <td><app-company-link [name]="app.company" /></td>
+              <td class="location" [title]="app.location || ''">{{ app.location || '—' }}</td>
+              <td>{{ app.salary_range || '—' }}</td>
+              <td>
+                @if (app.source) {
+                  <span class="source-badge">{{ app.source }}</span>
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </td>
+              <td>
+                <select
+                  class="status-select status-{{ app.status }}"
+                  [value]="app.status"
+                  (click)="$event.stopPropagation()"
+                  (change)="updateStatus(app, $event)"
+                  aria-label="Change status"
+                >
+                  @for (s of statusOptions; track s) {
+                    <option [value]="s">{{ s | titlecase }}</option>
                   }
-                  <div class="research-footer">
-                    <button (click)="refreshResearch(app)" [disabled]="researchingCompany() === app.id" class="btn-ghost btn-sm">
-                      Refresh
+                </select>
+              </td>
+              <td>
+                @if (app.latest_match_score !== null) {
+                  <span class="score-pill" [style.background]="scoreColor(app.latest_match_score)">
+                    {{ scorePct(app.latest_match_score) }}
+                  </span>
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </td>
+              <td class="badges">
+                <span class="badge" [class.on]="app.has_match" title="Has match">M</span>
+                <span class="badge" [class.on]="app.has_optimization" title="Has CV optimization"
+                  >CV</span
+                >
+                <span class="badge" [class.on]="app.has_prep" title="Has interview prep">P</span>
+              </td>
+              <td>{{ app.created_at | date: 'mediumDate' }}</td>
+              <td class="col-actions">
+                <div class="row-actions">
+                  @if (hasResearch(app.id)) {
+                    <button
+                      type="button"
+                      class="btn-ghost btn-sm"
+                      (click)="toggleResearch(app.id, $event)"
+                    >
+                      @if (expandedResearchId() === app.id) {
+                        Hide research
+                      } @else {
+                        Research
+                      }
                     </button>
-                    @if (researchCache()[app.id].updated_at) {
-                      <span class="research-updated">Last updated: {{ researchCache()[app.id].updated_at | date: 'MMM d, y' }}</span>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn-ghost btn-sm"
+                      [disabled]="researchingCompany() === app.id"
+                      (click)="researchCompany(app, $event)"
+                    >
+                      @if (researchingCompany() === app.id) {
+                        Researching…
+                      } @else {
+                        Research
+                      }
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    class="row-delete"
+                    [disabled]="deletingId() === app.id"
+                    title="Delete application"
+                    aria-label="Delete application"
+                    (click)="remove(app, $event)"
+                  >
+                    @if (deletingId() === app.id) {
+                      …
+                    } @else {
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.75"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6M14 11v6" />
+                        <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+                      </svg>
                     }
-                  </div>
+                  </button>
                 </div>
               </td>
             </tr>
+            @if (expandedResearchId() === app.id && researchCache()[app.id]) {
+              <tr class="research-row">
+                <td colspan="10">
+                  <div class="research-panel">
+                    <div class="research-grid">
+                      <div class="research-item">
+                        <span class="research-label">Funding Stage</span>
+                        <span class="research-badge">{{
+                          researchCache()[app.id].funding_stage
+                        }}</span>
+                      </div>
+                      <div class="research-item">
+                        <span class="research-label">Tech Stack</span>
+                        <span class="research-value">{{ researchCache()[app.id].tech_stack }}</span>
+                      </div>
+                    </div>
+                    <div class="research-section">
+                      <h4>Culture</h4>
+                      <p>{{ researchCache()[app.id].culture_summary }}</p>
+                    </div>
+                    <div class="research-section">
+                      <h4>Growth Trajectory</h4>
+                      <p>{{ researchCache()[app.id].growth_trajectory }}</p>
+                    </div>
+                    <div class="research-grid">
+                      <div class="research-section">
+                        <h4>Pros</h4>
+                        <p>{{ researchCache()[app.id].pros }}</p>
+                      </div>
+                      <div class="research-section">
+                        <h4>Cons</h4>
+                        <p>{{ researchCache()[app.id].cons }}</p>
+                      </div>
+                    </div>
+                    @if (researchCache()[app.id].red_flags) {
+                      <div class="research-section research-red-flags">
+                        <h4>Red Flags</h4>
+                        <p>{{ researchCache()[app.id].red_flags }}</p>
+                      </div>
+                    }
+                    <div class="research-footer">
+                      <button
+                        (click)="refreshResearch(app)"
+                        [disabled]="researchingCompany() === app.id"
+                        class="btn-ghost btn-sm"
+                      >
+                        Refresh
+                      </button>
+                      @if (researchCache()[app.id].updated_at) {
+                        <span class="research-updated"
+                          >Last updated:
+                          {{ researchCache()[app.id].updated_at | date: 'MMM d, y' }}</span
+                        >
+                      }
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            }
           }
-        }
-      </tbody>
-    </table>
+        </tbody>
+      </table>
     </div>
 
     @if (leaderboard().length > 0) {
@@ -243,13 +285,18 @@
                 <span class="rank" [attr.data-rank]="i + 1">{{ i + 1 }}</span>
                 <div class="leaderboard-info">
                   <span class="leaderboard-title">{{ result.job_title }}</span>
-                  <span class="leaderboard-company"><app-company-link [name]="result.company" /></span>
+                  <span class="leaderboard-company"
+                    ><app-company-link [name]="result.company"
+                  /></span>
                 </div>
                 @if (result.failed) {
                   <span class="leaderboard-score leaderboard-failed">Failed</span>
                 } @else {
                   <span class="leaderboard-score-block">
-                    <span class="leaderboard-score" [style.color]="scoreColor(result.composite_score)">
+                    <span
+                      class="leaderboard-score"
+                      [style.color]="scoreColor(result.composite_score)"
+                    >
                       {{ (result.composite_score * 100).toFixed(0) }}<span class="pct">%</span>
                     </span>
                     <span class="leaderboard-meter">
@@ -264,11 +311,23 @@
                 <button
                   type="button"
                   class="leaderboard-toggle"
-                  [attr.aria-label]="expandedResultId() === result.source_id ? 'Hide breakdown' : 'Show breakdown'"
+                  [attr.aria-label]="
+                    expandedResultId() === result.source_id ? 'Hide breakdown' : 'Show breakdown'
+                  "
                   (click)="toggleExpand(result.source_id, $event)"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.flipped]="expandedResultId() === result.source_id">
-                    <polyline points="6 9 12 15 18 9"/>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    [class.flipped]="expandedResultId() === result.source_id"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </button>
               </div>
@@ -278,10 +337,11 @@
                     <div class="dim-row">
                       <span class="dim-name">{{ dimensionLabel(dim.dimension) }}</span>
                       <div class="dim-bar">
-                        <div class="dim-bar-fill"
-                             [style.width.%]="dim.score * 100"
-                             [style.background-color]="scoreColor(dim.score)">
-                        </div>
+                        <div
+                          class="dim-bar-fill"
+                          [style.width.%]="dim.score * 100"
+                          [style.background-color]="scoreColor(dim.score)"
+                        ></div>
                       </div>
                       <span class="dim-score">{{ (dim.score * 100).toFixed(0) }}%</span>
                     </div>

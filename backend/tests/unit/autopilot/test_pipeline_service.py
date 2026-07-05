@@ -47,7 +47,8 @@ class _Drafter:
 
 
 class _Notifier:
-    def __init__(self): self.calls = []
+    def __init__(self):
+        self.calls = []
 
     async def notify_pipeline_drafts(self, count):
         self.calls.append(count)
@@ -56,15 +57,20 @@ class _Notifier:
 
 def _svc(entries, repo, drafter, top_n=3, notifier=None):
     return AutopilotPipelineService(
-        latest_digest=lambda: _Digest(entries), drafter=drafter, repo=repo,
-        top_n=top_n, notifier=notifier,
+        latest_digest=lambda: _Digest(entries),
+        drafter=drafter,
+        repo=repo,
+        top_n=top_n,
+        notifier=notifier,
     )
 
 
 @pytest.mark.asyncio
 async def test_drafts_top_n_and_records():
     repo, drafter = _Repo(), _Drafter()
-    result = await _svc([_Entry("a"), _Entry("b"), _Entry("c"), _Entry("d")], repo, drafter, top_n=2).run()
+    result = await _svc(
+        [_Entry("a"), _Entry("b"), _Entry("c"), _Entry("d")], repo, drafter, top_n=2
+    ).run()
     assert result.created == 2
     assert drafter.calls == ["a", "b"]
     assert len(repo.added) == 2
@@ -101,7 +107,8 @@ async def test_notifies_only_when_created():
 
 @pytest.mark.asyncio
 async def test_no_digest_returns_empty():
-    svc = AutopilotPipelineService(latest_digest=lambda: None, drafter=_Drafter(),
-                                   repo=_Repo(), top_n=3)
+    svc = AutopilotPipelineService(
+        latest_digest=lambda: None, drafter=_Drafter(), repo=_Repo(), top_n=3
+    )
     result = await svc.run()
     assert result.created == 0 and result.drafts == []

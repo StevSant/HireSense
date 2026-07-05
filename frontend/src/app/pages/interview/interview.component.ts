@@ -19,7 +19,14 @@ type StorySortField = 'title' | 'competency' | 'created';
 @Component({
   selector: 'app-interview',
   standalone: true,
-  imports: [FormsModule, TitleCasePipe, DatePipe, ApplicationsPrepListComponent, SortableHeaderDirective, CompanyLinkComponent],
+  imports: [
+    FormsModule,
+    TitleCasePipe,
+    DatePipe,
+    ApplicationsPrepListComponent,
+    SortableHeaderDirective,
+    CompanyLinkComponent,
+  ],
   templateUrl: './interview.component.html',
   styleUrl: './interview.component.scss',
 })
@@ -45,9 +52,12 @@ export class InterviewComponent implements OnInit {
 
   private storySortValue(s: Story, field: StorySortField): string {
     switch (field) {
-      case 'title': return s.title;
-      case 'competency': return s.competency;
-      case 'created': return s.created_at;
+      case 'title':
+        return s.title;
+      case 'competency':
+        return s.competency;
+      case 'created':
+        return s.created_at;
     }
   }
 
@@ -98,29 +108,35 @@ export class InterviewComponent implements OnInit {
   private applyJobIdFromQuery(): void {
     const jobId = this.route.snapshot.queryParamMap.get('job_id');
     if (!jobId) return;
-    this.ingestionService.getJob(jobId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (job) => {
-        this.prepJobTitle.set(job.title);
-        this.prepCompany.set(job.company);
-        this.prepDescription.set(job.description);
-      },
-      error: () => {},
-    });
+    this.ingestionService
+      .getJob(jobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (job) => {
+          this.prepJobTitle.set(job.title);
+          this.prepCompany.set(job.company);
+          this.prepDescription.set(job.description);
+        },
+        error: () => {},
+      });
   }
 
   loadStories(): void {
     this.storiesLoading.set(true);
     this.storiesError.set('');
-    this.interviewService.listStories().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (stories) => {
-        this.stories.set(stories);
-        this.storiesLoading.set(false);
-      },
-      error: (err) => {
-        this.storiesError.set(err.error?.detail || 'Failed to load stories');
-        this.storiesLoading.set(false);
-      },
-    });
+    this.interviewService
+      .listStories()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (stories) => {
+          this.stories.set(stories);
+          this.storiesLoading.set(false);
+        },
+        error: (err) => {
+          this.storiesError.set(err.error?.detail || 'Failed to load stories');
+          this.storiesLoading.set(false);
+        },
+      });
   }
 
   toggleAddStoryForm(): void {
@@ -153,29 +169,35 @@ export class InterviewComponent implements OnInit {
     const tags = this.newTags().trim();
     if (tags) body['tags'] = tags;
 
-    this.interviewService.createStory(body).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (story) => {
-        this.stories.update((list) => [story, ...list]);
-        this.addingStory.set(false);
-        this.showAddStoryForm.set(false);
-        this.resetStoryForm();
-      },
-      error: (err) => {
-        this.storiesError.set(err.error?.detail || 'Failed to add story');
-        this.addingStory.set(false);
-      },
-    });
+    this.interviewService
+      .createStory(body)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (story) => {
+          this.stories.update((list) => [story, ...list]);
+          this.addingStory.set(false);
+          this.showAddStoryForm.set(false);
+          this.resetStoryForm();
+        },
+        error: (err) => {
+          this.storiesError.set(err.error?.detail || 'Failed to add story');
+          this.addingStory.set(false);
+        },
+      });
   }
 
   deleteStory(id: string): void {
-    this.interviewService.deleteStory(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.stories.update((list) => list.filter((s) => s.id !== id));
-      },
-      error: (err) => {
-        this.storiesError.set(err.error?.detail || 'Failed to delete story');
-      },
-    });
+    this.interviewService
+      .deleteStory(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.stories.update((list) => list.filter((s) => s.id !== id));
+        },
+        error: (err) => {
+          this.storiesError.set(err.error?.detail || 'Failed to delete story');
+        },
+      });
   }
 
   generatePrep(): void {

@@ -99,20 +99,13 @@
   }
 
   <div class="form-actions">
-    <button
-      type="button"
-      class="btn-ghost"
-      (click)="cancel()"
-      [disabled]="saving()"
-    >
-      Cancel
-    </button>
-    <button
-      type="submit"
-      class="btn-primary"
-      [disabled]="!isDirty() || saving()"
-    >
-      @if (saving()) { Saving... } @else { Save changes }
+    <button type="button" class="btn-ghost" (click)="cancel()" [disabled]="saving()">Cancel</button>
+    <button type="submit" class="btn-primary" [disabled]="!isDirty() || saving()">
+      @if (saving()) {
+        Saving...
+      } @else {
+        Save changes
+      }
     </button>
   </div>
 </form>

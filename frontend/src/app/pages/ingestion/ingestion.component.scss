@@ -21,9 +21,13 @@
   cursor: pointer;
   border-bottom: 3px solid transparent;
   margin-bottom: -2px;
-  transition: color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+  transition:
+    color var(--duration) var(--ease),
+    border-color var(--duration) var(--ease);
 
-  &:hover { color: var(--text-primary); }
+  &:hover {
+    color: var(--text-primary);
+  }
 
   &.active {
     color: var(--accent);
@@ -82,8 +86,12 @@
   }
 }
 
-.filter-select { min-height: 5rem; }
-.filter-input { width: 100%; }
+.filter-select {
+  min-height: 5rem;
+}
+.filter-input {
+  width: 100%;
+}
 
 .scan-errors {
   margin-top: 0.75rem;
@@ -93,8 +101,16 @@
   font-size: 0.8125rem;
   border-left: 3px solid var(--danger);
 
-  summary { cursor: pointer; font-weight: 500; color: var(--danger); }
-  ul { margin-top: 0.5rem; padding-left: 1.25rem; color: var(--text-secondary); }
+  summary {
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--danger);
+  }
+  ul {
+    margin-top: 0.5rem;
+    padding-left: 1.25rem;
+    color: var(--text-secondary);
+  }
 }
 
 /* --- Loading --- */
@@ -109,13 +125,25 @@
   margin-bottom: 1rem;
   animation: pulseCard 2s ease-in-out infinite;
 
-  h3 { font-size: 1rem; color: var(--text-primary); margin-bottom: 0.25rem; }
-  p { font-size: 0.8125rem; color: var(--text-muted); }
+  h3 {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+  }
+  p {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
 }
 
 @keyframes pulseCard {
-  0%, 100% { border-color: var(--border-subtle); }
-  50% { border-color: var(--accent); }
+  0%,
+  100% {
+    border-color: var(--border-subtle);
+  }
+  50% {
+    border-color: var(--accent);
+  }
 }
 
 .spinner {
@@ -128,10 +156,16 @@
   flex-shrink: 0;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* --- Table --- */
-.table-container { overflow-x: auto; }
+.table-container {
+  overflow-x: auto;
+}
 
 table {
   width: 100%;
@@ -140,19 +174,36 @@ table {
      it the table fits. Kept low (flexible text columns ellipsis-truncate) so
      ~1280px laptops never trigger a scrollbar. */
   min-width: 900px;
-  th, td { padding: 0.625rem 0.75rem; font-size: 0.8125rem; }
-  th { font-size: 0.6875rem; white-space: nowrap; }
+  th,
+  td {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+  th {
+    font-size: 0.6875rem;
+    white-space: nowrap;
+  }
 }
 
 /* Column sizing — fixed layout prevents long cells from blowing out the row. */
-.col-match { width: 72px; }
-.col-salary { width: 130px; }
-.col-source { width: 110px; }
-.col-posted { width: 110px; }
+.col-match {
+  width: 72px;
+}
+.col-salary {
+  width: 130px;
+}
+.col-source {
+  width: 110px;
+}
+.col-posted {
+  width: 110px;
+}
 /* Wide enough for the full action row (View + 3 feedback buttons + Track, incl.
    the transient "Tracking…" label) so it doesn't spill past the column and
    force the table card to scroll sideways. */
-.col-actions { width: 230px; }
+.col-actions {
+  width: 230px;
+}
 
 .salary-cell {
   color: var(--text-secondary);
@@ -166,7 +217,9 @@ table {
 
 .clickable-row {
   cursor: pointer;
-  &:hover { background: var(--bg-inset); }
+  &:hover {
+    background: var(--bg-inset);
+  }
 }
 
 .title {
@@ -198,7 +251,9 @@ table {
   font-weight: 500;
   cursor: pointer;
   transition: background var(--duration) var(--ease);
-  &:hover { background: var(--accent-hover); }
+  &:hover {
+    background: var(--accent-hover);
+  }
 }
 
 .btn-tracked {
@@ -251,10 +306,23 @@ table {
   text-align: center;
 }
 
-.score-high { background: #dcfce7; color: #166534; }
-.score-mid  { background: #fef3c7; color: #92400e; }
-.score-low  { background: #fee2e2; color: #991b1b; }
-.score-na   { background: var(--bg-inset); color: var(--text-muted); font-weight: 500; }
+.score-high {
+  background: #dcfce7;
+  color: #166534;
+}
+.score-mid {
+  background: #fef3c7;
+  color: #92400e;
+}
+.score-low {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.score-na {
+  background: var(--bg-inset);
+  color: var(--text-muted);
+  font-weight: 500;
+}
 
 /* --- Closed-job row dimming --- */
 tr.closed {
@@ -279,18 +347,54 @@ tr.closed {
 }
 
 /* --- Source badge colors --- */
-.source-badge-remotive { background: #e0f2f1; color: #0d9488; }
-.source-badge-getonboard { background: #fef3c7; color: #92400e; }
-.source-badge-linkedin { background: #ede9fe; color: #5b21b6; }
-.source-badge-himalayas { background: #fce7f3; color: #9d174d; }
-.source-badge-remoteok { background: #dbeafe; color: #1e40af; }
-.source-badge-jobicy { background: #dcfce7; color: #166534; }
-.source-badge-weworkremotely { background: #ffedd5; color: #9a3412; }
-.source-badge-hn_hiring { background: #fee2e2; color: #991b1b; }
-.source-badge-greenhouse { background: #d1fae5; color: #065f46; }
-.source-badge-lever { background: #e0e7ff; color: #3730a3; }
-.source-badge-ashby { background: #cffafe; color: #155e75; }
-.source-badge-csv { background: #f3f4f6; color: #374151; }
+.source-badge-remotive {
+  background: #e0f2f1;
+  color: #0d9488;
+}
+.source-badge-getonboard {
+  background: #fef3c7;
+  color: #92400e;
+}
+.source-badge-linkedin {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+.source-badge-himalayas {
+  background: #fce7f3;
+  color: #9d174d;
+}
+.source-badge-remoteok {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.source-badge-jobicy {
+  background: #dcfce7;
+  color: #166534;
+}
+.source-badge-weworkremotely {
+  background: #ffedd5;
+  color: #9a3412;
+}
+.source-badge-hn_hiring {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.source-badge-greenhouse {
+  background: #d1fae5;
+  color: #065f46;
+}
+.source-badge-lever {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+.source-badge-ashby {
+  background: #cffafe;
+  color: #155e75;
+}
+.source-badge-csv {
+  background: #f3f4f6;
+  color: #374151;
+}
 
 .clickable-row.dimmed {
   opacity: 0.45;

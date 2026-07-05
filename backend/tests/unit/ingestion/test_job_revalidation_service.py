@@ -40,8 +40,14 @@ class _Indexer:
 
 def _job(sid: str, url: str) -> NormalizedJob:
     return NormalizedJob(
-        id=sid, title="Engineer", company="Acme", description="D",
-        source="remotive", source_type="api", url=url, source_id=sid,
+        id=sid,
+        title="Engineer",
+        company="Acme",
+        description="D",
+        source="remotive",
+        source_type="api",
+        url=url,
+        source_id=sid,
     )
 
 
@@ -60,8 +66,14 @@ async def test_sweep_closes_404_keeps_200_and_marks_checked() -> None:
     client = _Client({a.url: _Resp(200, "Apply now"), b.url: _Resp(404)})
     indexer = _Indexer()
     svc = JobRevalidationService(
-        http_client=client, repository=repo, indexer=indexer,
-        sources=["remotive"], markers=["closed"], batch=10, concurrency=2, delay=0.0,
+        http_client=client,
+        repository=repo,
+        indexer=indexer,
+        sources=["remotive"],
+        markers=["closed"],
+        batch=10,
+        concurrency=2,
+        delay=0.0,
     )
 
     closed = await svc.sweep()
@@ -75,13 +87,21 @@ async def test_sweep_closes_404_keeps_200_and_marks_checked() -> None:
 @pytest.mark.asyncio
 async def test_sweep_closes_on_content_marker() -> None:
     repo, a, b = _seed()
-    client = _Client({
-        a.url: _Resp(200, "Apply now"),
-        b.url: _Resp(200, "This position has been FILLED."),
-    })
+    client = _Client(
+        {
+            a.url: _Resp(200, "Apply now"),
+            b.url: _Resp(200, "This position has been FILLED."),
+        }
+    )
     svc = JobRevalidationService(
-        http_client=client, repository=repo, indexer=None,
-        sources=["remotive"], markers=["has been filled"], batch=10, concurrency=2, delay=0.0,
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["has been filled"],
+        batch=10,
+        concurrency=2,
+        delay=0.0,
     )
     closed = await svc.sweep()
     assert closed == ["b"]
@@ -93,8 +113,14 @@ async def test_sweep_request_error_is_unknown_not_closed() -> None:
     repo, a, b = _seed()
     client = _Client({a.url: _Resp(200, "ok")}, raise_urls={b.url})
     svc = JobRevalidationService(
-        http_client=client, repository=repo, indexer=None,
-        sources=["remotive"], markers=[], batch=10, concurrency=1, delay=0.0,
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=[],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
     )
     closed = await svc.sweep()
     assert closed == []  # a network error must NOT close the job
@@ -108,24 +134,39 @@ async def test_probe_url_builder_overrides_listing_url_per_source() -> None:
     (built from source_id) while other sources keep probing job.url."""
     repo = InMemoryJobsRepository()
     li = NormalizedJob(
-        id="li", title="E", company="C", description="D", source="linkedin",
-        source_type="scraper", url="https://www.linkedin.com/jobs/view/999", source_id="999",
+        id="li",
+        title="E",
+        company="C",
+        description="D",
+        source="linkedin",
+        source_type="scraper",
+        url="https://www.linkedin.com/jobs/view/999",
+        source_id="999",
     )
     other = _job("other", "https://e.com/o")  # source=remotive
     repo.upsert(li)
     repo.upsert(other)
 
     guest_url = "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/999"
-    client = _Client({
-        guest_url: _Resp(200, "No longer accepting applications"),
-        other.url: _Resp(200, "Apply now"),
-    })
+    client = _Client(
+        {
+            guest_url: _Resp(200, "No longer accepting applications"),
+            other.url: _Resp(200, "Apply now"),
+        }
+    )
     svc = JobRevalidationService(
-        http_client=client, repository=repo, indexer=None,
-        sources=["linkedin", "remotive"], markers=["no longer accepting applications"],
-        batch=10, concurrency=2, delay=0.0,
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["linkedin", "remotive"],
+        markers=["no longer accepting applications"],
+        batch=10,
+        concurrency=2,
+        delay=0.0,
         probe_url_builders={
-            "linkedin": lambda job: f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{job.source_id}",
+            "linkedin": lambda job: (
+                f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{job.source_id}"
+            ),
         },
     )
 
@@ -149,8 +190,14 @@ async def test_sweep_covers_whole_corpus_across_chunks() -> None:
     responses[jobs[3].url] = _Resp(404)  # one dead listing anywhere in the corpus
     client = _Client(responses)
     svc = JobRevalidationService(
-        http_client=client, repository=repo, indexer=None,
-        sources=["remotive"], markers=[], batch=2, concurrency=2, delay=0.0,
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=[],
+        batch=2,
+        concurrency=2,
+        delay=0.0,
     )
 
     closed = await svc.sweep()
@@ -168,21 +215,35 @@ async def test_revalidate_ids_probes_only_requested_probeable_open_jobs() -> Non
     dead = _job("dead", "https://e.com/dead")  # remotive (probeable)
     alive = _job("alive", "https://e.com/alive")  # remotive, requested but open
     hn = NormalizedJob(
-        id="hn", title="E", company="C", description="D", source="hn_hiring",
-        source_type="api", url="https://news.ycombinator.com/item?id=1", source_id="1",
+        id="hn",
+        title="E",
+        company="C",
+        description="D",
+        source="hn_hiring",
+        source_type="api",
+        url="https://news.ycombinator.com/item?id=1",
+        source_id="1",
     )
     untouched = _job("untouched", "https://e.com/untouched")
     for job in (dead, alive, hn, untouched):
         repo.upsert(job)
 
-    client = _Client({
-        dead.url: _Resp(404),
-        alive.url: _Resp(200, "Apply now"),
-        hn.url: _Resp(404),  # would close IF probed — but hn_hiring isn't probeable
-    })
+    client = _Client(
+        {
+            dead.url: _Resp(404),
+            alive.url: _Resp(200, "Apply now"),
+            hn.url: _Resp(404),  # would close IF probed — but hn_hiring isn't probeable
+        }
+    )
     svc = JobRevalidationService(
-        http_client=client, repository=repo, indexer=None,
-        sources=["remotive"], markers=[], batch=10, concurrency=2, delay=0.0,
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=[],
+        batch=10,
+        concurrency=2,
+        delay=0.0,
     )
 
     closed = await svc.revalidate_ids(["dead", "alive", "hn"])
@@ -203,8 +264,14 @@ async def test_probe_forwards_configured_user_agent_header() -> None:
     repo, a, b = _seed()
     client = _Client({a.url: _Resp(200, "ok"), b.url: _Resp(200, "ok")})
     svc = JobRevalidationService(
-        http_client=client, repository=repo, indexer=None,
-        sources=["remotive"], markers=[], batch=10, concurrency=2, delay=0.0,
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=[],
+        batch=10,
+        concurrency=2,
+        delay=0.0,
         user_agent="TestUA/1.0",
     )
 
@@ -221,8 +288,14 @@ async def test_probe_sends_no_headers_without_configured_user_agent() -> None:
     repo, a, b = _seed()
     client = _Client({a.url: _Resp(200, "ok"), b.url: _Resp(200, "ok")})
     svc = JobRevalidationService(
-        http_client=client, repository=repo, indexer=None,
-        sources=["remotive"], markers=[], batch=10, concurrency=2, delay=0.0,
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=[],
+        batch=10,
+        concurrency=2,
+        delay=0.0,
     )
 
     await svc.sweep()
@@ -239,13 +312,25 @@ async def test_sweep_closes_expired_jobs_without_probing() -> None:
     now = datetime(2026, 7, 4, tzinfo=timezone.utc)
     repo = InMemoryJobsRepository()
     expired = NormalizedJob(
-        id="exp", title="E", company="C", description="D", source="himalayas",
-        source_type="api", url="https://himalayas.app/x", source_id="exp",
+        id="exp",
+        title="E",
+        company="C",
+        description="D",
+        source="himalayas",
+        source_type="api",
+        url="https://himalayas.app/x",
+        source_id="exp",
         expiry_date=now - timedelta(days=1),
     )
     live = NormalizedJob(
-        id="live", title="E", company="C", description="D", source="himalayas",
-        source_type="api", url="https://himalayas.app/y", source_id="live",
+        id="live",
+        title="E",
+        company="C",
+        description="D",
+        source="himalayas",
+        source_type="api",
+        url="https://himalayas.app/y",
+        source_id="live",
         expiry_date=now + timedelta(days=1),
     )
     repo.upsert(expired)
@@ -253,8 +338,14 @@ async def test_sweep_closes_expired_jobs_without_probing() -> None:
     client = _Client({})  # himalayas not probeable → no probe responses needed
     indexer = _Indexer()
     svc = JobRevalidationService(
-        http_client=client, repository=repo, indexer=indexer,
-        sources=["remotive"], markers=[], batch=10, concurrency=2, delay=0.0,
+        http_client=client,
+        repository=repo,
+        indexer=indexer,
+        sources=["remotive"],
+        markers=[],
+        batch=10,
+        concurrency=2,
+        delay=0.0,
         clock=lambda: now,
     )
 
@@ -272,8 +363,14 @@ async def test_sweep_empty_when_no_open_jobs() -> None:
     repo = InMemoryJobsRepository()
     client = _Client({})
     svc = JobRevalidationService(
-        http_client=client, repository=repo, indexer=None,
-        sources=["remotive"], markers=[], batch=10, concurrency=1, delay=0.0,
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=[],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
     )
     assert await svc.sweep() == []
     assert client.requested == []

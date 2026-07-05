@@ -13,8 +13,12 @@ class CultureScorer(BaseLLMScorer):
     def _build_prompt(self, job: Any, profile: Any | None = None) -> str:
         title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
         company = job.get("company", "") if isinstance(job, dict) else getattr(job, "company", "")
-        location = job.get("location", "") if isinstance(job, dict) else getattr(job, "location", "")
-        description = job.get("description", "") if isinstance(job, dict) else getattr(job, "description", "")
+        location = (
+            job.get("location", "") if isinstance(job, dict) else getattr(job, "location", "")
+        )
+        description = (
+            job.get("description", "") if isinstance(job, dict) else getattr(job, "description", "")
+        )
 
         return (
             f"Job Title: {title}\n"

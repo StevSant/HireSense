@@ -26,9 +26,7 @@ def build_log_exporter(endpoint: str, insecure: bool = True) -> LogExporter:
     return OTLPLogExporter(endpoint=endpoint, insecure=insecure)
 
 
-def build_metric_reader(
-    endpoint: str, insecure: bool = True
-) -> PeriodicExportingMetricReader:
+def build_metric_reader(endpoint: str, insecure: bool = True) -> PeriodicExportingMetricReader:
     """Periodic metric reader wrapping OTLP or console metric exporter."""
     if not endpoint:
         return PeriodicExportingMetricReader(ConsoleMetricExporter())
@@ -36,6 +34,4 @@ def build_metric_reader(
         OTLPMetricExporter,
     )
 
-    return PeriodicExportingMetricReader(
-        OTLPMetricExporter(endpoint=endpoint, insecure=insecure)
-    )
+    return PeriodicExportingMetricReader(OTLPMetricExporter(endpoint=endpoint, insecure=insecure))

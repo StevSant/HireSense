@@ -43,7 +43,11 @@ class OutreachService:
         self._portfolio_citation = portfolio_citation
 
     async def generate(
-        self, application_id: uuid.UUID, *, contact_name: str | None = None, channel: str | None = None
+        self,
+        application_id: uuid.UUID,
+        *,
+        contact_name: str | None = None,
+        channel: str | None = None,
     ) -> str:
         app = self._tracking.get(application_id)  # raises ValueError if missing
         profile = await self._profile.get_current_profile(self._language)
@@ -85,8 +89,11 @@ class OutreachService:
         self._tracking.get(application_id)  # 404 if missing
         return self._repo.add(
             OutreachEvent(
-                application_id=application_id, kind=kind, message=message,
-                contact_name=contact_name, channel=channel,
+                application_id=application_id,
+                kind=kind,
+                message=message,
+                contact_name=contact_name,
+                channel=channel,
             )
         )
 
@@ -145,8 +152,11 @@ class OutreachService:
                 continue
             nudges.append(
                 OutreachNudge(
-                    application_id=latest.application_id, company=app.company,
-                    contact_name=latest.contact_name, sent_at=sent_at, days_since=days_since,
+                    application_id=latest.application_id,
+                    company=app.company,
+                    contact_name=latest.contact_name,
+                    sent_at=sent_at,
+                    days_since=days_since,
                 )
             )
         return nudges
@@ -156,7 +166,11 @@ class OutreachService:
         if research is None:
             return None
         bits = []
-        for label, attr in (("Culture", "culture_summary"), ("Tech", "tech_stack"), ("Pros", "pros")):
+        for label, attr in (
+            ("Culture", "culture_summary"),
+            ("Tech", "tech_stack"),
+            ("Pros", "pros"),
+        ):
             value = getattr(research, attr, None)
             if value:
                 bits.append(f"{label}: {value}")

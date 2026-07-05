@@ -13,7 +13,13 @@ import { CompanyLinkComponent } from '../../../../core/components/company-link';
 @Component({
   selector: 'app-job-detail-panel',
   standalone: true,
-  imports: [DatePipe, RouterLink, JobDescriptionComponent, FeedbackControlsComponent, CompanyLinkComponent],
+  imports: [
+    DatePipe,
+    RouterLink,
+    JobDescriptionComponent,
+    FeedbackControlsComponent,
+    CompanyLinkComponent,
+  ],
   templateUrl: './job-detail-panel.component.html',
   styleUrl: './job-detail-panel.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

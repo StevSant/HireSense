@@ -14,7 +14,7 @@ class SkillCount(BaseModel):
 
 
 class TrendPoint(BaseModel):
-    week: str       # ISO year-week, e.g. "2026-W18"
+    week: str  # ISO year-week, e.g. "2026-W18"
     count: int
 
 
@@ -35,6 +35,10 @@ class SalaryDistribution(BaseModel):
     unparsed_count: int
     other_currency_count: int
     disclosed_pct: float
+    # Postings (dominant currency) whose figure had no explicit period keyword
+    # and was assumed annual (parsed.period == "unknown"). Lets the UI caveat
+    # the band as based partly on unlabeled figures.
+    inferred_count: int = 0
 
 
 class MarketIntel(BaseModel):
@@ -84,6 +88,10 @@ class MarketIntelService:
         # Per currency: midpoints (for the median) + true low/high bounds.
         midpoints: dict[str, list[int]] = {}
         bounds: dict[str, list[int]] = {}  # [min_of_mins, max_of_maxes]
+        # Per-currency count of postings whose period was "unknown" (no keyword
+        # found; figure assumed annual). Surfaced as inferred_count for the
+        # dominant currency only.
+        inferred: dict[str, int] = {}
         unparsed = 0
         for s in strings:
             parsed = self._salary.parse(s)
@@ -96,19 +104,31 @@ class MarketIntelService:
             b = bounds.setdefault(parsed.currency, [parsed.min_annual, parsed.max_annual])
             b[0] = min(b[0], parsed.min_annual)
             b[1] = max(b[1], parsed.max_annual)
+            if parsed.period == "unknown":
+                inferred[parsed.currency] = inferred.get(parsed.currency, 0) + 1
         disclosed_pct = round(100.0 * len(strings) / total_open, 1) if total_open else 0.0
         if not midpoints:
             return SalaryDistribution(
-                currency=None, min_annual=None, median_annual=None, max_annual=None,
-                parsed_count=0, unparsed_count=unparsed, other_currency_count=0,
+                currency=None,
+                min_annual=None,
+                median_annual=None,
+                max_annual=None,
+                parsed_count=0,
+                unparsed_count=unparsed,
+                other_currency_count=0,
                 disclosed_pct=disclosed_pct,
             )
         dominant = max(midpoints, key=lambda c: len(midpoints[c]))
         mids = midpoints[dominant]
         other = sum(len(v) for c, v in midpoints.items() if c != dominant)
         return SalaryDistribution(
-            currency=dominant, min_annual=bounds[dominant][0],
-            median_annual=int(statistics.median(mids)), max_annual=bounds[dominant][1],
-            parsed_count=len(mids), unparsed_count=unparsed, other_currency_count=other,
+            currency=dominant,
+            min_annual=bounds[dominant][0],
+            median_annual=int(statistics.median(mids)),
+            max_annual=bounds[dominant][1],
+            parsed_count=len(mids),
+            unparsed_count=unparsed,
+            other_currency_count=other,
             disclosed_pct=disclosed_pct,
+            inferred_count=inferred.get(dominant, 0),
         )

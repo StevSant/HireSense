@@ -1,12 +1,18 @@
+import logging
+import secrets
+import warnings
+from enum import Enum
 from typing import Any, ClassVar
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import (
     BaseSettings,
     DotEnvSettingsSource,
     EnvSettingsSource,
     SettingsConfigDict,
 )
+
+_logger = logging.getLogger(__name__)
 
 # Known sample values shipped in .env.example. Startup refuses to run with
 # these so a copied-but-unedited .env fails loudly instead of exposing the
@@ -17,6 +23,81 @@ _PLACEHOLDER_SECRETS: frozenset[str] = frozenset(
         "change-this-to-a-random-secret",
     }
 )
+
+
+class AppMode(str, Enum):
+    """Runtime mode. LOCAL degrades missing LLM/auth config; PRODUCTION is strict."""
+
+    LOCAL = "local"
+    PRODUCTION = "production"
+
+
+# DATABASE_URL is required in BOTH modes (pgvector ANN needs Postgres; no SQLite
+# fallback). LLM/auth are required in production but degrade in local.
+_ALWAYS_REQUIRED: tuple[tuple[str, str], ...] = (("DATABASE_URL", "database_url"),)
+_PRODUCTION_REQUIRED: tuple[tuple[str, str], ...] = (
+    ("LLM_API_KEY", "llm_api_key"),
+    ("AUTH_USERNAME", "auth_username"),
+    ("AUTH_PASSWORD", "auth_password"),
+    ("JWT_SECRET_KEY", "jwt_secret_key"),
+)
+
+
+def _missing(settings: "Settings", required: tuple[tuple[str, str], ...]) -> list[str]:
+    return [env for env, attr in required if not getattr(settings, attr)]
+
+
+def _apply_mode(settings: "Settings") -> "Settings":
+    """Resolve APP_MODE: raise an aggregated error for missing required config, or
+    degrade blanks in local mode. Mutates and returns the settings instance."""
+    if settings.app_mode is AppMode.PRODUCTION:
+        missing = _missing(settings, _ALWAYS_REQUIRED + _PRODUCTION_REQUIRED)
+        if missing:
+            raise ValueError(
+                "Production mode (APP_MODE=production) requires these settings, "
+                "currently missing/blank:\n"
+                + "\n".join(f"  - {name}" for name in missing)
+                + "\nSet them in backend/.env or switch to APP_MODE=local for a "
+                "degraded local run."
+            )
+        _logger.info("HireSense config resolved: APP_MODE=production")
+        return settings
+
+    # local mode
+    missing_db = _missing(settings, _ALWAYS_REQUIRED)
+    if missing_db:
+        raise ValueError(
+            "APP_MODE=local still requires these settings, currently missing/blank:\n"
+            + "\n".join(f"  - {name}" for name in missing_db)
+            + "\nStart Postgres (docker compose up db) and set DATABASE_URL — "
+            "pgvector ANN has no SQLite fallback."
+        )
+    if not settings.llm_api_key:
+        _logger.info(
+            "APP_MODE=local: LLM_API_KEY not set — matching runs heuristic-only "
+            "(no LLM scoring; LLM-backed features return a not-configured state)."
+        )
+    if not settings.jwt_secret_key:
+        settings.jwt_secret_key = secrets.token_urlsafe(48)
+        warnings.warn(
+            "APP_MODE=local: JWT_SECRET_KEY not set — generated an EPHEMERAL secret; "
+            "issued tokens reset on every restart. Set JWT_SECRET_KEY for stable "
+            "sessions.",
+            stacklevel=2,
+        )
+    if not settings.auth_username:
+        settings.auth_username = "admin"
+        _logger.warning("APP_MODE=local: AUTH_USERNAME not set — defaulting to 'admin'.")
+    if not settings.auth_password:
+        generated = secrets.token_urlsafe(16)
+        settings.auth_password = generated
+        warnings.warn(
+            f"APP_MODE=local: AUTH_PASSWORD not set — generated a dev password: "
+            f"{generated}  (set AUTH_PASSWORD to silence this).",
+            stacklevel=2,
+        )
+    _logger.info("HireSense config resolved: APP_MODE=local")
+    return settings
 
 
 class _CommaSeparatedMixin:
@@ -59,6 +140,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     # Core
+    # Runtime mode. local = degrade missing LLM/auth config (dev-friendly);
+    # production = strict, refuses to boot without every required value.
+    app_mode: AppMode = AppMode.LOCAL
     app_name: str = "HireSense"
     app_port: int = 8000
     debug: bool = False
@@ -93,10 +177,18 @@ class Settings(BaseSettings):
     # for the local LGTM stack / docker-compose; set False to use TLS.
     otel_exporter_insecure: bool = True
 
-    # Auth
-    auth_username: str
-    auth_password: str
-    jwt_secret_key: str
+    # Auth. Blank in local mode → degraded (ephemeral dev secret + default
+    # creds, see _apply_mode); required in production.
+    auth_username: str = ""
+    auth_password: str = ""
+    jwt_secret_key: str = ""
+
+    @field_validator("app_mode", mode="before")
+    @classmethod
+    def _normalize_app_mode(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return value.strip().lower()
+        return value
 
     @field_validator("auth_password", "jwt_secret_key")
     @classmethod
@@ -112,8 +204,9 @@ class Settings(BaseSettings):
     # set to a non-admin value to genuinely exercise the admin gate.
     auth_role: str = "admin"
 
-    # Database
-    database_url: str
+    # Database. Required in BOTH modes (pgvector ANN needs Postgres; no SQLite
+    # fallback) — enforced by _apply_mode, hence the empty default here.
+    database_url: str = ""
     # Connection-pool sizing for the shared sync engine. pool_size persistent
     # connections + up to max_overflow burst ones; pre_ping validates a
     # connection before reuse (drops stale ones after DB restarts); recycle
@@ -123,9 +216,10 @@ class Settings(BaseSettings):
     db_pool_pre_ping: bool = True
     db_pool_recycle_seconds: int = 3600
 
-    # LLM
+    # LLM. Blank in local mode → heuristic-only matching (the tracked-LLM
+    # factory returns None); required in production.
     llm_provider: str = "anthropic"
-    llm_api_key: str
+    llm_api_key: str = ""
     llm_model: str = "claude-sonnet-4-6"
     # Fernet key for encrypting API keys at rest in the admin llm_settings
     # row. Generate via: Fernet.generate_key().decode(). Empty disables
@@ -551,6 +645,10 @@ class Settings(BaseSettings):
     # Supabase service_role key for reading visitor analytics (Dashboard →
     # Settings → API). Empty disables engagement readback entirely.
     portfolio_analytics_read_key: str = ""
+
+    @model_validator(mode="after")
+    def _resolve_mode(self) -> "Settings":
+        return _apply_mode(self)
 
     @classmethod
     def settings_customise_sources(

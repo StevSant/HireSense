@@ -5,7 +5,7 @@ class DatabaseSettings(BaseSettings):
     """Database connection + pooling and vector-store provider selection."""
 
     # Database. Required in BOTH modes (pgvector ANN needs Postgres; no SQLite
-    # fallback) — enforced by _apply_mode, hence the empty default here.
+    # fallback) — enforced by config.mode.apply_mode, hence the empty default here.
     database_url: str = ""
     # Connection-pool sizing for the shared sync engine. pool_size persistent
     # connections + up to max_overflow burst ones; pre_ping validates a

@@ -34,7 +34,7 @@ class CoreSettings(BaseSettings):
     cors_allow_headers: list[str] = ["Authorization", "Content-Type"]
 
     # Auth. Blank in local mode → degraded (ephemeral dev secret + default
-    # creds, see _apply_mode); required in production.
+    # creds, see config.mode.apply_mode); required in production.
     auth_username: str = ""
     auth_password: str = ""
     jwt_secret_key: str = ""

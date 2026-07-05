@@ -32,11 +32,7 @@
       </label>
       <label class="field field-narrow">
         <span class="field-label">Tone</span>
-        <select
-          name="tone"
-          [ngModel]="form().tone"
-          (ngModelChange)="setField('tone', $event)"
-        >
+        <select name="tone" [ngModel]="form().tone" (ngModelChange)="setField('tone', $event)">
           <option value="professional">Professional</option>
           <option value="enthusiastic">Enthusiastic</option>
           <option value="formal">Formal</option>
@@ -98,7 +94,11 @@
         Cancel
       </button>
       <button type="submit" class="btn-primary" [disabled]="saving()">
-        @if (saving()) { Saving... } @else { Save template }
+        @if (saving()) {
+          Saving...
+        } @else {
+          Save template
+        }
       </button>
     </div>
   </form>
@@ -118,13 +118,21 @@
       <option value="tone_asc">Tone</option>
       <option value="language_asc">Language</option>
     </select>
-    <select [value]="toneFilter()" (change)="onToneFilterChange($event)" aria-label="Filter by tone">
+    <select
+      [value]="toneFilter()"
+      (change)="onToneFilterChange($event)"
+      aria-label="Filter by tone"
+    >
       <option value="">All tones</option>
       @for (t of tones(); track t) {
         <option [value]="t">{{ t }}</option>
       }
     </select>
-    <select [value]="languageFilter()" (change)="onLanguageFilterChange($event)" aria-label="Filter by language">
+    <select
+      [value]="languageFilter()"
+      (change)="onLanguageFilterChange($event)"
+      aria-label="Filter by language"
+    >
       <option value="">All languages</option>
       @for (l of languages(); track l) {
         <option [value]="l">{{ l === 'es' ? 'Spanish' : l === 'en' ? 'English' : l }}</option>
@@ -139,9 +147,13 @@
             <h4 class="template-name">{{ template.name }}</h4>
             <div class="template-meta">
               <span class="badge">{{ template.tone }}</span>
-              <span class="badge badge-soft">{{ template.language === 'es' ? 'Spanish' : 'English' }}</span>
+              <span class="badge badge-soft">{{
+                template.language === 'es' ? 'Spanish' : 'English'
+              }}</span>
               @if (template.updated_at) {
-                <span class="template-date">Updated {{ template.updated_at | date: 'mediumDate' }}</span>
+                <span class="template-date"
+                  >Updated {{ template.updated_at | date: 'mediumDate' }}</span
+                >
               }
             </div>
           </div>
@@ -153,7 +165,11 @@
               (click)="remove(template)"
               [disabled]="deletingId() === template.id"
             >
-              @if (deletingId() === template.id) { Deleting… } @else { Delete }
+              @if (deletingId() === template.id) {
+                Deleting…
+              } @else {
+                Delete
+              }
             </button>
           </div>
         </div>

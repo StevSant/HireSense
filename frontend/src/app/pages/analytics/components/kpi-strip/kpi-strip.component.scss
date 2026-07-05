@@ -6,7 +6,9 @@
 }
 
 @media (max-width: 720px) {
-  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .kpi-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .kpi-tile {
@@ -18,7 +20,9 @@
   border-radius: var(--radius-lg);
   padding: 1.1rem 1.25rem 1.2rem;
   box-shadow: var(--shadow-sm);
-  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease);
+  transition:
+    transform 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
 }
 
 .kpi-tile:hover {

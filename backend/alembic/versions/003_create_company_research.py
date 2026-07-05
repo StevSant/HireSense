@@ -29,10 +29,16 @@ def upgrade() -> None:
         sa.Column("pros", sa.Text(), nullable=False),
         sa.Column("cons", sa.Text(), nullable=False),
         sa.Column("raw_llm_response", sa.Text(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True
+        ),
     )
-    op.create_index("ix_company_research_company_name", "company_research", ["company_name"], unique=True)
+    op.create_index(
+        "ix_company_research_company_name", "company_research", ["company_name"], unique=True
+    )
 
 
 def downgrade() -> None:

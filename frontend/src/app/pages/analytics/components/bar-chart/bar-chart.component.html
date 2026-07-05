@@ -8,7 +8,12 @@
         <span class="bar-track">
           <span class="bar-fill" [style.width.%]="row.pct"></span>
         </span>
-        <span class="bar-value">{{ row.value | number }}@if (row.note) { <span class="bar-note">{{ row.note }}</span> }</span>
+        <span class="bar-value"
+          >{{ row.value | number }}
+          @if (row.note) {
+            <span class="bar-note">{{ row.note }}</span>
+          }
+        </span>
       </li>
     }
   </ul>

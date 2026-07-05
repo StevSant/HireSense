@@ -68,10 +68,14 @@ export class CoverLetterTemplatesComponent implements OnInit {
 
   private sortValue(t: CoverLetterTemplate, field: TemplateSortField): string | null {
     switch (field) {
-      case 'updated': return t.updated_at;
-      case 'name': return t.name;
-      case 'tone': return t.tone;
-      case 'language': return t.language;
+      case 'updated':
+        return t.updated_at;
+      case 'name':
+        return t.name;
+      case 'tone':
+        return t.tone;
+      case 'language':
+        return t.language;
     }
   }
 
@@ -94,16 +98,19 @@ export class CoverLetterTemplatesComponent implements OnInit {
 
   refresh(): void {
     this.loading.set(true);
-    this.service.list().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (list) => {
-        this.templates.set(list);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Could not load templates');
-        this.loading.set(false);
-      },
-    });
+    this.service
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (list) => {
+          this.templates.set(list);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Could not load templates');
+          this.loading.set(false);
+        },
+      });
   }
 
   startNew(): void {
@@ -153,9 +160,7 @@ export class CoverLetterTemplatesComponent implements OnInit {
       signature: current.signature,
     };
     const obs =
-      state.mode === 'new'
-        ? this.service.create(payload)
-        : this.service.update(state.id, payload);
+      state.mode === 'new' ? this.service.create(payload) : this.service.update(state.id, payload);
     obs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.saving.set(false);
@@ -173,16 +178,19 @@ export class CoverLetterTemplatesComponent implements OnInit {
     const ok = window.confirm(`Delete template "${template.name}"?`);
     if (!ok) return;
     this.deletingId.set(template.id);
-    this.service.remove(template.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.deletingId.set(null);
-        this.refresh();
-      },
-      error: (err) => {
-        this.deletingId.set(null);
-        this.error.set(err?.error?.detail ?? 'Failed to delete template');
-      },
-    });
+    this.service
+      .remove(template.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.deletingId.set(null);
+          this.refresh();
+        },
+        error: (err) => {
+          this.deletingId.set(null);
+          this.error.set(err?.error?.detail ?? 'Failed to delete template');
+        },
+      });
   }
 
   isEditing(id: string): boolean {

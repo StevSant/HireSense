@@ -12,6 +12,7 @@ what registers the handler), then publishes events through the real
 The bus dispatches handlers via ``asyncio.create_task``, so after publishing we
 ``await asyncio.sleep(0)`` in a short poll loop to let the scheduled task run.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -105,9 +106,7 @@ async def test_build_preference_subscribes_to_status_changed() -> None:
         assert build.service.list_signals() == []
 
         # A mappable, job-linked status change records ONE implicit signal.
-        await event_bus.publish(
-            TrackingStatusChangedEvent(job_id=str(job_id), status="offered")
-        )
+        await event_bus.publish(TrackingStatusChangedEvent(job_id=str(job_id), status="offered"))
         assert await _wait_for(lambda: len(build.service.list_signals()) >= 1), (
             "implicit signal was never recorded — build_preference may not have "
             "subscribed to tracking.status_changed"
@@ -120,12 +119,8 @@ async def test_build_preference_subscribes_to_status_changed() -> None:
         assert signals[0].source == FeedbackSource.IMPLICIT
 
         # No-op path: job_id=None is ignored, and "saved" maps to no kind.
-        await event_bus.publish(
-            TrackingStatusChangedEvent(job_id=None, status="offered")
-        )
-        await event_bus.publish(
-            TrackingStatusChangedEvent(job_id=str(job_id), status="saved")
-        )
+        await event_bus.publish(TrackingStatusChangedEvent(job_id=None, status="offered"))
+        await event_bus.publish(TrackingStatusChangedEvent(job_id=str(job_id), status="saved"))
         # Give any (erroneously) scheduled handlers a chance to run, then assert
         # no additional signal was recorded.
         for _ in range(10):

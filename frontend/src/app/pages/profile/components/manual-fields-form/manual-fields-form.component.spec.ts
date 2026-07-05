@@ -22,9 +22,7 @@ function makeProfile(over: Partial<Record<string, unknown>> = {}) {
 }
 
 describe('ManualFieldsFormComponent', () => {
-  function mount(
-    updateManualFields = vi.fn(() => of(makeProfile({ name: 'Ada Lovelace' }))),
-  ) {
+  function mount(updateManualFields = vi.fn(() => of(makeProfile({ name: 'Ada Lovelace' })))) {
     TestBed.configureTestingModule({
       imports: [ManualFieldsFormComponent],
       providers: [{ provide: ProfileService, useValue: { updateManualFields } }],

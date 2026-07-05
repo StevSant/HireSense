@@ -13,14 +13,10 @@
       </select>
     </label>
 
-    <button (click)="onPrev()" [disabled]="page() <= 1" class="btn-page">
-      ← Prev
-    </button>
+    <button (click)="onPrev()" [disabled]="page() <= 1" class="btn-page">← Prev</button>
 
     <span class="page-indicator">Page {{ page() }} of {{ totalPages() }}</span>
 
-    <button (click)="onNext()" [disabled]="page() >= totalPages()" class="btn-page">
-      Next →
-    </button>
+    <button (click)="onNext()" [disabled]="page() >= totalPages()" class="btn-page">Next →</button>
   </div>
 </div>

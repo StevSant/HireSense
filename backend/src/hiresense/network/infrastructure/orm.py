@@ -12,9 +12,7 @@ class NetworkContactOrm(Base):
     """One imported LinkedIn connection (full-snapshot replacement model)."""
 
     __tablename__ = "network_contacts"
-    __table_args__ = (
-        Index("ix_network_contacts_company_normalized", "company_normalized"),
-    )
+    __table_args__ = (Index("ix_network_contacts_company_normalized", "company_normalized"),)
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     first_name: Mapped[str] = mapped_column(String(256), nullable=False)

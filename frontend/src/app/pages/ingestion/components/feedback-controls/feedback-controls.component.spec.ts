@@ -7,9 +7,9 @@ describe('FeedbackControlsComponent', () => {
   let submitFeedback: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
-    submitFeedback = vi.fn().mockReturnValue(
-      of({ id: 's', job_id: 'j1', kind: 'thumbs_up', created_at: null }),
-    );
+    submitFeedback = vi
+      .fn()
+      .mockReturnValue(of({ id: 's', job_id: 'j1', kind: 'thumbs_up', created_at: null }));
     await TestBed.configureTestingModule({
       imports: [FeedbackControlsComponent],
       providers: [{ provide: PreferenceService, useValue: { submitFeedback } }],

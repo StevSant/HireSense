@@ -1,8 +1,8 @@
 <div class="apply-profile-form">
   <h3 class="apply-profile-title">Apply profile</h3>
   <p class="apply-profile-hint">
-    Reusable answers Apply Assist drops into application forms. Stored once and
-    shared across your CV languages.
+    Reusable answers Apply Assist drops into application forms. Stored once and shared across your
+    CV languages.
   </p>
 
   <div class="apply-field">
@@ -88,9 +88,7 @@
   <div class="apply-screening">
     <div class="apply-screening-head">
       <h4>Reusable screening answers</h4>
-      <button type="button" class="link-button" (click)="addScreeningAnswer()">
-        + Add answer
-      </button>
+      <button type="button" class="link-button" (click)="addScreeningAnswer()">+ Add answer</button>
     </div>
     @for (qa of form().screening_answers; track $index) {
       <div class="apply-screening-row">
@@ -123,12 +121,7 @@
   }
 
   <div class="apply-actions">
-    <button
-      type="button"
-      class="btn-primary"
-      [disabled]="!isDirty() || saving()"
-      (click)="save()"
-    >
+    <button type="button" class="btn-primary" [disabled]="!isDirty() || saving()" (click)="save()">
       {{ saving() ? 'Saving…' : 'Save apply profile' }}
     </button>
     @if (savedFlash()) {

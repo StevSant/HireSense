@@ -21,7 +21,9 @@ class FakeRepo:
         self.cleared = False
 
     def add_signal(self, signal: FeedbackSignal) -> FeedbackSignal:
-        signal = signal.model_copy(update={"id": uuid.uuid4(), "created_at": datetime.now(timezone.utc)})
+        signal = signal.model_copy(
+            update={"id": uuid.uuid4(), "created_at": datetime.now(timezone.utc)}
+        )
         self.signals.append(signal)
         return signal
 
@@ -198,9 +200,7 @@ async def test_explain_layers_llm_summary() -> None:
     repo = FakeRepo()
     jid = uuid.uuid4()
     llm = _FakeLLM("You prefer backend roles.")
-    svc = _service_with_explainer(
-        repo, {str(jid): [0.0, 1.0]}, llm=llm, explanation_enabled=True
-    )
+    svc = _service_with_explainer(repo, {str(jid): [0.0, 1.0]}, llm=llm, explanation_enabled=True)
     svc.attach_job_lookup(_FakeJobLookup({str(jid): "Backend Engineer"}))
     await svc.record_signal(jid, FeedbackKind.THUMBS_UP)
     exp = await svc.explain()
@@ -388,9 +388,7 @@ async def test_reset_clears_weight_overrides() -> None:
 
 def test_weights_view_reports_base_override_effective() -> None:
     repo = FakeRepo()
-    svc = _service_with_nudge(
-        repo, {}, base_weights={"comp": 10, "culture": 5}
-    )
+    svc = _service_with_nudge(repo, {}, base_weights={"comp": 10, "culture": 5})
     # Inject a model with an override directly via the repo.
     repo.save_model(PreferenceModel(delta_vector=[], weight_overrides={"comp": 2}))
     view = {row["dimension"]: row for row in svc.weights_view()}

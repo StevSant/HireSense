@@ -45,8 +45,6 @@ def test_extract_skills_deduplicates() -> None:
 @pytest.mark.asyncio
 async def test_extract_with_llm() -> None:
     extractor = SkillExtractor(llm=FakeLLM())
-    skills = await extractor.extract_with_llm(
-        "Backend engineer with Python and FastAPI experience"
-    )
+    skills = await extractor.extract_with_llm("Backend engineer with Python and FastAPI experience")
     assert "python" in skills
     assert "fastapi" in skills

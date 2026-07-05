@@ -33,7 +33,11 @@
       </button>
       @if (letter()) {
         <button class="btn-secondary" (click)="copyLetter()">
-          @if (copyFlash()) { Copied! } @else { Copy text }
+          @if (copyFlash()) {
+            Copied!
+          } @else {
+            Copy text
+          }
         </button>
       }
     </div>
@@ -51,7 +55,9 @@
       <div class="letter-preview">
         <div class="letter-meta">
           <span class="badge">tone: {{ l.tone }}</span>
-          @if (l.match_id) { <span class="badge">linked to match</span> }
+          @if (l.match_id) {
+            <span class="badge">linked to match</span>
+          }
         </div>
         <pre class="letter-body">{{ l.body }}</pre>
       </div>
@@ -68,7 +74,10 @@
     </div>
 
     @if (!hasCv()) {
-      <div class="alert">No optimization yet — the CV button below downloads your <em>original</em> profile CV. Optimize the CV (CV tab) to get a tailored version and enable the bundle.</div>
+      <div class="alert">
+        No optimization yet — the CV button below downloads your <em>original</em> profile CV.
+        Optimize the CV (CV tab) to get a tailored version and enable the bundle.
+      </div>
     }
     @if (!letter()) {
       <div class="alert">Generate a cover letter (above) before downloading the bundle.</div>
@@ -76,15 +85,35 @@
 
     <div class="downloads">
       <button class="btn-secondary" (click)="downloadCv()" [disabled]="downloadingCv()">
-        @if (downloadingCv()) { Downloading... }
-        @else if (hasCv()) { 📄 Tailored CV (PDF) }
-        @else { 📄 Original CV (PDF) }
+        @if (downloadingCv()) {
+          Downloading...
+        } @else if (hasCv()) {
+          📄 Tailored CV (PDF)
+        } @else {
+          📄 Original CV (PDF)
+        }
       </button>
-      <button class="btn-secondary" (click)="downloadLetter()" [disabled]="!letter() || downloadingLetter()">
-        @if (downloadingLetter()) { Downloading... } @else { 📄 Cover letter (PDF) }
+      <button
+        class="btn-secondary"
+        (click)="downloadLetter()"
+        [disabled]="!letter() || downloadingLetter()"
+      >
+        @if (downloadingLetter()) {
+          Downloading...
+        } @else {
+          📄 Cover letter (PDF)
+        }
       </button>
-      <button class="btn-primary" (click)="downloadBundle()" [disabled]="!letter() || !hasCv() || downloadingBundle()">
-        @if (downloadingBundle()) { Downloading... } @else { 📦 Bundle (.zip) }
+      <button
+        class="btn-primary"
+        (click)="downloadBundle()"
+        [disabled]="!letter() || !hasCv() || downloadingBundle()"
+      >
+        @if (downloadingBundle()) {
+          Downloading...
+        } @else {
+          📦 Bundle (.zip)
+        }
       </button>
     </div>
   </section>
@@ -97,8 +126,8 @@
     </div>
 
     <p class="hint">
-      Open the original job posting and upload the bundle. When done, mark this application
-      as <em>applied</em> so it shows up in your tracker.
+      Open the original job posting and upload the bundle. When done, mark this application as
+      <em>applied</em> so it shows up in your tracker.
     </p>
 
     <div class="submit-row">
@@ -120,7 +149,10 @@
 
       @if (isApplied()) {
         <span class="applied-badge">
-          ✓ Applied @if (aggregate().applied_at; as appliedAt) { · {{ appliedAt | date: 'mediumDate' }} }
+          ✓ Applied
+          @if (aggregate().applied_at; as appliedAt) {
+            · {{ appliedAt | date: 'mediumDate' }}
+          }
         </span>
       }
     </div>

@@ -102,9 +102,7 @@ async def test_llm_on_miss_false_returns_only_cache_hits_without_calling_llm():
     llm = StubLLM(json.dumps([{"ref": 1, "score": 0.3, "verdict": "weak"}]))
     svc = QuickScoringService(llm=llm, cache_repo=cache)
 
-    results = await svc.score_page(
-        [_job("a"), _job("b")], ["python"], "summary", llm_on_miss=False
-    )
+    results = await svc.score_page([_job("a"), _job("b")], ["python"], "summary", llm_on_miss=False)
 
     assert set(results) == {"a"}  # only the cache hit; the miss is left unscored
     assert results["a"].score == 0.9

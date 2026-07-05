@@ -19,7 +19,9 @@ describe('PaginationComponent', () => {
   }
 
   function buttons(fixture: ReturnType<typeof mount>) {
-    return fixture.nativeElement.querySelectorAll('button.btn-page') as NodeListOf<HTMLButtonElement>;
+    return fixture.nativeElement.querySelectorAll(
+      'button.btn-page',
+    ) as NodeListOf<HTMLButtonElement>;
   }
 
   it('computes the showing range from page/pageSize/total', () => {
@@ -89,7 +91,9 @@ describe('PaginationComponent', () => {
     let emitted: number | null = null;
     fixture.componentInstance.pageSizeChange.subscribe((s) => (emitted = s));
 
-    const select = fixture.nativeElement.querySelector('select.page-size-select') as HTMLSelectElement;
+    const select = fixture.nativeElement.querySelector(
+      'select.page-size-select',
+    ) as HTMLSelectElement;
     select.value = '50';
     select.dispatchEvent(new Event('change'));
 

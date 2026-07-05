@@ -34,7 +34,9 @@ class CompanyResearchService:
 
         prompt = self._build_prompt(company_name, job_description)
         try:
-            response = await self._llm.complete(prompt, system="You are a company research analyst. Return only valid JSON.")
+            response = await self._llm.complete(
+                prompt, system="You are a company research analyst. Return only valid JSON."
+            )
             data = self._parse_response(response)
             existing = self._repo.get_by_company_name(company_name)
             if existing is not None:

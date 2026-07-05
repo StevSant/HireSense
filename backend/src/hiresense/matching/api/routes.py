@@ -36,7 +36,11 @@ class AnalyzeRequest(BaseModel):
     job_embedding: list[float] | None = None
 
 
-@router.post("/evaluate", response_model=EvaluationResponse, dependencies=[Depends(enforce_expensive_rate_limit)])
+@router.post(
+    "/evaluate",
+    response_model=EvaluationResponse,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
+)
 async def evaluate_job(
     body: EvaluateRequest,
     orchestrator: Annotated[object, Depends(get_matching_orchestrator)],
@@ -54,13 +58,17 @@ async def evaluate_job(
         job_title=result.job_title,
         company=result.company,
         dimensions=[
-            DimensionResultResponse(dimension=d.dimension, score=d.score, rationale=d.rationale, weight=d.weight)
+            DimensionResultResponse(
+                dimension=d.dimension, score=d.score, rationale=d.rationale, weight=d.weight
+            )
             for d in result.dimensions
         ],
     )
 
 
-@router.post("/analyze", response_model=MatchResult, dependencies=[Depends(enforce_expensive_rate_limit)])
+@router.post(
+    "/analyze", response_model=MatchResult, dependencies=[Depends(enforce_expensive_rate_limit)]
+)
 async def analyze_match(
     body: AnalyzeRequest,
     orchestrator: Annotated[object, Depends(get_matching_orchestrator)],
@@ -77,7 +85,11 @@ async def analyze_match(
     )
 
 
-@router.post("/batch-evaluate", response_model=BatchEvaluationResponse, dependencies=[Depends(enforce_expensive_rate_limit)])
+@router.post(
+    "/batch-evaluate",
+    response_model=BatchEvaluationResponse,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
+)
 async def batch_evaluate(
     body: BatchEvaluateRequest,
     batch_service: Annotated[object, Depends(get_batch_evaluation_service)],
@@ -90,36 +102,42 @@ async def batch_evaluate(
         for app_id in body.tracked_app_ids:
             try:
                 app = tracking_service.get(app_id)
-                jobs.append({
-                    "title": app.title,
-                    "company": app.company,
-                    "description": getattr(app, "notes", "") or "",
-                    "source": "tracked",
-                    "source_id": str(app.id),
-                })
+                jobs.append(
+                    {
+                        "title": app.title,
+                        "company": app.company,
+                        "description": getattr(app, "notes", "") or "",
+                        "source": "tracked",
+                        "source_id": str(app.id),
+                    }
+                )
             except ValueError:
                 continue
     else:
         for app in tracking_service.list():
-            jobs.append({
-                "title": app.title,
-                "company": app.company,
-                "description": "",
-                "source": "tracked",
-                "source_id": str(app.id),
-            })
+            jobs.append(
+                {
+                    "title": app.title,
+                    "company": app.company,
+                    "description": "",
+                    "source": "tracked",
+                    "source_id": str(app.id),
+                }
+            )
 
     if body.include_ingested:
         for job in ingestion_orchestrator.list_jobs():
-            jobs.append({
-                "title": job.title,
-                "company": job.company,
-                "description": getattr(job, "description", ""),
-                "skills": getattr(job, "skills", []),
-                "location": getattr(job, "location", ""),
-                "source": "ingested",
-                "source_id": str(job.id),
-            })
+            jobs.append(
+                {
+                    "title": job.title,
+                    "company": job.company,
+                    "description": getattr(job, "description", ""),
+                    "skills": getattr(job, "skills", []),
+                    "location": getattr(job, "location", ""),
+                    "source": "ingested",
+                    "source_id": str(job.id),
+                }
+            )
 
     results = await batch_service.evaluate_batch(jobs)
 
@@ -134,7 +152,10 @@ async def batch_evaluate(
                 composite_score=r.composite_score,
                 dimensions=[
                     DimensionResultResponse(
-                        dimension=d.dimension, score=d.score, rationale=d.rationale, weight=d.weight,
+                        dimension=d.dimension,
+                        score=d.score,
+                        rationale=d.rationale,
+                        weight=d.weight,
                     )
                     for d in r.dimensions
                 ],

@@ -56,8 +56,7 @@ def build_portfolio(infra: SharedInfra) -> PortfolioBuild | None:
                     )
             elif not s.portfolio_github_username:
                 raise ValueError(
-                    "portfolio source 'github' is enabled but "
-                    "PORTFOLIO_GITHUB_USERNAME is not set"
+                    "portfolio source 'github' is enabled but PORTFOLIO_GITHUB_USERNAME is not set"
                 )
             sources.append(
                 GitHubPortfolioAdapter(

@@ -10,6 +10,7 @@ Mirrors the harness established in test_ingestion_to_api_flow.py:
 - Auth is satisfied by overriding require_auth to return a fixed subject
   string, exactly as allowed by FastAPI's dependency_overrides mechanism.
 """
+
 from __future__ import annotations
 
 import uuid as uuid_mod

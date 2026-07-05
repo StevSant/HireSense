@@ -10,7 +10,7 @@ def test_plain_array():
 
 
 def test_fenced_json_array():
-    raw = "Here you go:\n```json\n[{\"ref\": 1, \"score\": 0.2}]\n```\nthanks"
+    raw = 'Here you go:\n```json\n[{"ref": 1, "score": 0.2}]\n```\nthanks'
     assert extract_json(raw) == [{"ref": 1, "score": 0.2}]
 
 

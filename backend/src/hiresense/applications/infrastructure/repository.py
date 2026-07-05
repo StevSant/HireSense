@@ -75,11 +75,7 @@ class ApplicationRepository(SqlRepository):
 
     def save_snapshot(self, snapshot: ApplicationJobSnapshot) -> ApplicationJobSnapshot:
         with self._session_factory() as session:
-            row = (
-                session.get(ApplicationJobSnapshotOrm, snapshot.id)
-                if snapshot.id
-                else None
-            )
+            row = session.get(ApplicationJobSnapshotOrm, snapshot.id) if snapshot.id else None
             if row is None:
                 row = ApplicationJobSnapshotOrm(**_orm_kwargs(snapshot, _SNAPSHOT_FIELDS))
                 session.add(row)
@@ -113,15 +109,11 @@ class ApplicationRepository(SqlRepository):
 
     # ---- optimizations -----------------------------------------------
 
-    def create_optimization(
-        self, opt: ApplicationCvOptimization
-    ) -> ApplicationCvOptimization:
+    def create_optimization(self, opt: ApplicationCvOptimization) -> ApplicationCvOptimization:
         row = ApplicationCvOptimizationOrm(**_orm_kwargs(opt, _OPT_FIELDS))
         return self._insert(row, ApplicationCvOptimization.model_validate)
 
-    def list_optimizations(
-        self, application_id: uuid.UUID
-    ) -> list[ApplicationCvOptimization]:
+    def list_optimizations(self, application_id: uuid.UUID) -> list[ApplicationCvOptimization]:
         stmt = (
             select(ApplicationCvOptimizationOrm)
             .where(ApplicationCvOptimizationOrm.application_id == application_id)
@@ -135,9 +127,7 @@ class ApplicationRepository(SqlRepository):
         opts = self.list_optimizations(application_id)
         return opts[0] if opts else None
 
-    def get_optimization(
-        self, optimization_id: uuid.UUID
-    ) -> ApplicationCvOptimization | None:
+    def get_optimization(self, optimization_id: uuid.UUID) -> ApplicationCvOptimization | None:
         return self._get_by_pk(
             ApplicationCvOptimizationOrm,
             optimization_id,
@@ -146,15 +136,11 @@ class ApplicationRepository(SqlRepository):
 
     # ---- interview preps ---------------------------------------------
 
-    def create_interview_prep(
-        self, prep: ApplicationInterviewPrep
-    ) -> ApplicationInterviewPrep:
+    def create_interview_prep(self, prep: ApplicationInterviewPrep) -> ApplicationInterviewPrep:
         row = ApplicationInterviewPrepOrm(**_orm_kwargs(prep, _PREP_FIELDS))
         return self._insert(row, ApplicationInterviewPrep.model_validate)
 
-    def list_interview_preps(
-        self, application_id: uuid.UUID
-    ) -> list[ApplicationInterviewPrep]:
+    def list_interview_preps(self, application_id: uuid.UUID) -> list[ApplicationInterviewPrep]:
         stmt = (
             select(ApplicationInterviewPrepOrm)
             .where(ApplicationInterviewPrepOrm.application_id == application_id)
@@ -170,15 +156,11 @@ class ApplicationRepository(SqlRepository):
 
     # ---- cover letters -----------------------------------------------
 
-    def create_cover_letter(
-        self, letter: ApplicationCoverLetter
-    ) -> ApplicationCoverLetter:
+    def create_cover_letter(self, letter: ApplicationCoverLetter) -> ApplicationCoverLetter:
         row = ApplicationCoverLetterOrm(**_orm_kwargs(letter, _LETTER_FIELDS))
         return self._insert(row, ApplicationCoverLetter.model_validate)
 
-    def list_cover_letters(
-        self, application_id: uuid.UUID
-    ) -> list[ApplicationCoverLetter]:
+    def list_cover_letters(self, application_id: uuid.UUID) -> list[ApplicationCoverLetter]:
         stmt = (
             select(ApplicationCoverLetterOrm)
             .where(ApplicationCoverLetterOrm.application_id == application_id)
@@ -186,15 +168,11 @@ class ApplicationRepository(SqlRepository):
         )
         return self._select_all(stmt, ApplicationCoverLetter.model_validate)
 
-    def get_latest_cover_letter(
-        self, application_id: uuid.UUID
-    ) -> ApplicationCoverLetter | None:
+    def get_latest_cover_letter(self, application_id: uuid.UUID) -> ApplicationCoverLetter | None:
         letters = self.list_cover_letters(application_id)
         return letters[0] if letters else None
 
-    def get_cover_letter(
-        self, cover_letter_id: uuid.UUID
-    ) -> ApplicationCoverLetter | None:
+    def get_cover_letter(self, cover_letter_id: uuid.UUID) -> ApplicationCoverLetter | None:
         return self._get_by_pk(
             ApplicationCoverLetterOrm,
             cover_letter_id,

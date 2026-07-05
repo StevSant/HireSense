@@ -317,7 +317,9 @@ async def test_get_pre_ranker_returns_instance_when_provider_has_it() -> None:
     from hiresense.ingestion.api.dependencies import get_pre_ranker
     from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
 
-    fake_ranker = SemanticPreRanker(None, None, top_k_cap=100, skill_weight=0.4, semantic_weight=0.6)
+    fake_ranker = SemanticPreRanker(
+        None, None, top_k_cap=100, skill_weight=0.4, semantic_weight=0.6
+    )
 
     class FakeProvider:
         def get_pre_ranker(self):
@@ -331,7 +333,9 @@ async def test_get_pre_ranker_returns_instance_when_provider_has_it() -> None:
         result = get_pre_ranker(request)
         return {"is_none": result is None}
 
-    async with AsyncClient(transport=ASGITransport(app=wired_app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=wired_app), base_url="http://test"
+    ) as client:
         resp = await client.get("/test-pre-ranker")
     assert resp.status_code == 200
     assert resp.json()["is_none"] is False
@@ -444,17 +448,31 @@ async def test_pre_ranker_promotes_job_to_page_one_before_pagination() -> None:
     from hiresense.ingestion.api.dependencies import get_pre_ranker
 
     jobs = [
-        NormalizedJob(id=f"job-{i}", title=f"T{i}", company="Co", description="d",
-                      source="remotive", source_type="api", language="en",
-                      url=f"https://e.com/{i}")
+        NormalizedJob(
+            id=f"job-{i}",
+            title=f"T{i}",
+            company="Co",
+            description="d",
+            source="remotive",
+            source_type="api",
+            language="en",
+            url=f"https://e.com/{i}",
+        )
         for i in range(3)
     ]
 
     class _Orch:
-        async def run(self, filters=None): return []
-        def list_jobs(self, criteria=None): return list(jobs)
-        def persist_scores(self, *a): pass
-        def persist_scores_batch(self, updates): pass
+        async def run(self, filters=None):
+            return []
+
+        def list_jobs(self, criteria=None):
+            return list(jobs)
+
+        def persist_scores(self, *a):
+            pass
+
+        def persist_scores_batch(self, updates):
+            pass
 
     class _PreRanker:
         # Simulate ANN deciding job-2 is the best match (was last in order).
@@ -473,7 +491,9 @@ async def test_pre_ranker_promotes_job_to_page_one_before_pagination() -> None:
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # page_size=1, no `sort` param -> default match_desc, pre-rank decides page 1
-        resp = await client.get("/ingestion/jobs", params={"tab": "boards", "page_size": 1, "min_score": 0})
+        resp = await client.get(
+            "/ingestion/jobs", params={"tab": "boards", "page_size": 1, "min_score": 0}
+        )
 
     assert resp.status_code == 200
     body = resp.json()
@@ -524,9 +544,16 @@ def _make_rescore_app(pre_ranker, quick_scoring):
 
     jobs = [
         NormalizedJob(
-            id=f"job-{i}", title=f"T{i}", company="Co", description="d", skills=["python"],
-            source="remotive", source_type="api", language="en",
-            url=f"https://e.com/{i}", match_score=0.5,
+            id=f"job-{i}",
+            title=f"T{i}",
+            company="Co",
+            description="d",
+            skills=["python"],
+            source="remotive",
+            source_type="api",
+            language="en",
+            url=f"https://e.com/{i}",
+            match_score=0.5,
         )
         for i in range(3)
     ]
@@ -650,14 +677,28 @@ async def test_cached_llm_score_ranks_globally_before_pagination() -> None:
     # Heuristic order would bury job-gob on page 2; the cached LLM score must
     # pull it to page 1.
     job_hn = NormalizedJob(
-        id="job-hn", title="HN Engineer", company="Co", description="d", skills=[],
-        source="hn_hiring", source_type="api", language="en",
-        url="https://e.com/hn", match_score=0.78,
+        id="job-hn",
+        title="HN Engineer",
+        company="Co",
+        description="d",
+        skills=[],
+        source="hn_hiring",
+        source_type="api",
+        language="en",
+        url="https://e.com/hn",
+        match_score=0.78,
     )
     job_gob = NormalizedJob(
-        id="job-gob", title="Programador Back-end Python", company="Co", description="d",
-        skills=[], source="getonboard", source_type="api", language="en",
-        url="https://e.com/gob", match_score=0.30,
+        id="job-gob",
+        title="Programador Back-end Python",
+        company="Co",
+        description="d",
+        skills=[],
+        source="getonboard",
+        source_type="api",
+        language="en",
+        url="https://e.com/gob",
+        match_score=0.30,
     )
 
     class _Orch:
@@ -739,9 +780,16 @@ async def test_cold_cache_source_champions_rank_globally() -> None:
     # has a low heuristic (0.3) but is a genuinely strong match (LLM 0.9).
     def _job(id_, source, score):
         return NormalizedJob(
-            id=id_, title=id_, company="Co", description="d", skills=[],
-            source=source, source_type="api", language="en",
-            url=f"https://e.com/{id_}", match_score=score,
+            id=id_,
+            title=id_,
+            company="Co",
+            description="d",
+            skills=[],
+            source=source,
+            source_type="api",
+            language="en",
+            url=f"https://e.com/{id_}",
+            match_score=score,
         )
 
     jobs = [
@@ -839,9 +887,16 @@ async def test_get_job_overlays_cached_quick_score() -> None:
     # Persisted row carries the heuristic blend (0.30); the quick-score cache has
     # an LLM score of 0.72 for it (what the list displayed).
     job = NormalizedJob(
-        id="job-detail", title="Engineer", company="Co", description="d", skills=["python"],
-        source="remotive", source_type="api", language="en",
-        url="https://e.com/detail", match_score=0.30,
+        id="job-detail",
+        title="Engineer",
+        company="Co",
+        description="d",
+        skills=["python"],
+        source="remotive",
+        source_type="api",
+        language="en",
+        url="https://e.com/detail",
+        match_score=0.30,
     )
 
     class _CachedQuick:
@@ -871,9 +926,16 @@ async def test_get_job_falls_back_to_heuristic_on_cache_miss() -> None:
     # Cold cache (job never scored): the detail view keeps the heuristic blend
     # and leaves llm_score unset rather than inventing a value.
     job = NormalizedJob(
-        id="job-cold", title="Engineer", company="Co", description="d", skills=["python"],
-        source="remotive", source_type="api", language="en",
-        url="https://e.com/cold", match_score=0.30,
+        id="job-cold",
+        title="Engineer",
+        company="Co",
+        description="d",
+        skills=["python"],
+        source="remotive",
+        source_type="api",
+        language="en",
+        url="https://e.com/cold",
+        match_score=0.30,
     )
 
     class _EmptyQuick:

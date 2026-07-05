@@ -10,7 +10,9 @@
   </div>
   <div class="band-track">
     <span class="band-fill" [style.left.%]="b.left" [style.width.%]="b.width"></span>
-    @if (b.median !== null) { <span class="band-median" [style.left.%]="b.median"></span> }
+    @if (b.median !== null) {
+      <span class="band-median" [style.left.%]="b.median"></span>
+    }
   </div>
   <div class="band-caps">
     <span>Low</span>

@@ -51,9 +51,7 @@ class SupabaseEngagementAdapter:
             return []
 
         # Tally cv_downloads per session_id from the cv_download table.
-        session_ids = [
-            sid for s in sessions if _SAFE_SESSION_ID.fullmatch(sid := str(s["id"]))
-        ]
+        session_ids = [sid for s in sessions if _SAFE_SESSION_ID.fullmatch(sid := str(s["id"]))]
         downloads_raw: list[dict[str, Any]] = []
         if session_ids:
             downloads_raw = await self._get(
@@ -80,9 +78,7 @@ class SupabaseEngagementAdapter:
             last_seen_values = [_parse_dt(s["last_seen_at"]) for s in group]
             last_seen = max(last_seen_values)
             page_views = sum(s.get("total_page_views") or 0 for s in group)
-            cv_downloads = sum(
-                download_count_by_session.get(str(s["id"]), 0) for s in group
-            )
+            cv_downloads = sum(download_count_by_session.get(str(s["id"]), 0) for s in group)
             # country / organization from the session with the latest last_seen_at.
             latest_session = group[last_seen_values.index(last_seen)]
             visits.append(

@@ -6,38 +6,42 @@
     <p class="muted">No applications yet. Track a job or create one to start preparing.</p>
   } @else {
     <div class="table-scroll">
-    <table>
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Company</th>
-          <th>Status</th>
-          <th>Prep</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (a of applications(); track a.id) {
+      <table>
+        <thead>
           <tr>
-            <td>{{ a.title }}</td>
-            <td><app-company-link [name]="a.company" /></td>
-            <td>{{ a.status | titlecase }}</td>
-            <td>
-              @if (a.has_prep) {
-                <span class="badge on">ready</span>
-              } @else {
-                <span class="badge">none</span>
-              }
-            </td>
-            <td>
-              <button class="btn-primary btn-sm" (click)="openPrep(a.id)">
-                @if (a.has_prep) { Open prep } @else { Generate prep }
-              </button>
-            </td>
+            <th>Title</th>
+            <th>Company</th>
+            <th>Status</th>
+            <th>Prep</th>
+            <th></th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (a of applications(); track a.id) {
+            <tr>
+              <td>{{ a.title }}</td>
+              <td><app-company-link [name]="a.company" /></td>
+              <td>{{ a.status | titlecase }}</td>
+              <td>
+                @if (a.has_prep) {
+                  <span class="badge on">ready</span>
+                } @else {
+                  <span class="badge">none</span>
+                }
+              </td>
+              <td>
+                <button class="btn-primary btn-sm" (click)="openPrep(a.id)">
+                  @if (a.has_prep) {
+                    Open prep
+                  } @else {
+                    Generate prep
+                  }
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   }
 </section>

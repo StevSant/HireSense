@@ -31,7 +31,9 @@ def upgrade() -> None:
         sa.Column("matched_application_id", sa.Uuid(), nullable=True),
         sa.Column("proposed_status", sa.String(length=16), nullable=True),
         sa.Column("state", sa.String(length=16), nullable=False, server_default="pending"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(

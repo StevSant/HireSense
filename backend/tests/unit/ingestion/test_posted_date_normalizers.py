@@ -1,6 +1,7 @@
 """Regression: previously Remotive/RemoteOK/LinkedIn didn't surface posted_date,
 so the ingestion table showed '—' for every job.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

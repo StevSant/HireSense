@@ -172,11 +172,13 @@ class ArtifactService:
             raise RuntimeError("tracking_service not wired into ArtifactService")
         tracked = self._tracking.get(application_id)
 
-        prep = await self._prep.prepare({
-            "title": tracked.title,
-            "company": tracked.company,
-            "description": snapshot.description,
-        })
+        prep = await self._prep.prepare(
+            {
+                "title": tracked.title,
+                "company": tracked.company,
+                "description": snapshot.description,
+            }
+        )
 
         row = ApplicationInterviewPrep(
             application_id=application_id,

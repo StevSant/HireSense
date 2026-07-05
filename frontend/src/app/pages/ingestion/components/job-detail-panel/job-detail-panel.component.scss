@@ -21,8 +21,12 @@
 }
 
 @keyframes slideIn {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 /* ---- Header ---- */
@@ -159,22 +163,22 @@
   padding-left: calc(1.5rem - 3px);
 }
 
-.section-card[data-emphasis="compensation"] {
+.section-card[data-emphasis='compensation'] {
   border-left-color: #65a30d;
   background: rgba(132, 204, 22, 0.04);
 }
 
-.section-card[data-emphasis="apply"] {
+.section-card[data-emphasis='apply'] {
   border-left-color: var(--accent);
   background: rgba(13, 148, 136, 0.04);
 }
 
-.section-card[data-emphasis="stack"] {
+.section-card[data-emphasis='stack'] {
   border-left-color: #6366f1;
   background: rgba(99, 102, 241, 0.04);
 }
 
-.section-card[data-emphasis="role"] {
+.section-card[data-emphasis='role'] {
   border-left-color: #f59e0b;
   background: rgba(245, 158, 11, 0.04);
 }
@@ -223,7 +227,8 @@
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background var(--duration) var(--ease),
+  transition:
+    background var(--duration) var(--ease),
     border-color var(--duration) var(--ease),
     color var(--duration) var(--ease);
 
@@ -379,7 +384,9 @@
 }
 
 @keyframes deep-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .deep-error {

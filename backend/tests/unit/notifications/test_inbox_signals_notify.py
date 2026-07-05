@@ -4,8 +4,11 @@ from hiresense.notifications.domain import NotificationService, render_inbox_sig
 
 
 class _Sender:
-    def __init__(self): self.sent = []
-    def send(self, message): self.sent.append(message)
+    def __init__(self):
+        self.sent = []
+
+    def send(self, message):
+        self.sent.append(message)
 
 
 def test_render_includes_count():

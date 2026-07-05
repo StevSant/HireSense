@@ -3,6 +3,7 @@
 Uses a fake HTTP client with canned payloads (same pattern as
 test_supabase_adapter.py) to stay DB-free.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -118,6 +119,7 @@ async def test_grouping_and_aggregation() -> None:
 # Test (b): zero sessions → no cv_download call, empty result
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_zero_sessions_no_second_query_and_empty_result() -> None:
     from hiresense.portfolio.adapters import SupabaseEngagementAdapter
@@ -137,6 +139,7 @@ async def test_zero_sessions_no_second_query_and_empty_result() -> None:
 # ---------------------------------------------------------------------------
 # Test (c): auth headers carry the read key on both endpoints
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_auth_headers_on_both_endpoints() -> None:

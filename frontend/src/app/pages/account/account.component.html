@@ -18,14 +18,16 @@
         <div class="account-field">
           <dt>Role</dt>
           <dd>
-            <span class="role-badge" [class.role-badge--admin]="role() === 'admin'">{{ role() }}</span>
+            <span class="role-badge" [class.role-badge--admin]="role() === 'admin'">{{
+              role()
+            }}</span>
           </dd>
         </div>
       </dl>
 
       <p class="account-note">
-        This is a single-user instance. The username and password are managed
-        via environment configuration and are read-only here.
+        This is a single-user instance. The username and password are managed via environment
+        configuration and are read-only here.
       </p>
 
       <button type="button" class="logout-btn" (click)="logout()">Sign Out</button>

@@ -169,16 +169,15 @@ describe('AdminUsageComponent', () => {
       const fixture = mount();
       const rows = fixture.nativeElement.querySelectorAll('.breakdown-table tbody tr');
       expect(rows.length).toBe(1);
-      expect(fixture.nativeElement.querySelector('.breakdown-table tbody code').textContent)
-        .toContain('matching.score');
+      expect(
+        fixture.nativeElement.querySelector('.breakdown-table tbody code').textContent,
+      ).toContain('matching.score');
     });
 
     it('shows the empty state when there are no breakdown buckets', () => {
       breakdown.mockReturnValue(of({ ...BREAKDOWN_FEATURE, buckets: [] }));
       const fixture = mount();
-      const empties = Array.from(
-        fixture.nativeElement.querySelectorAll('.empty'),
-      ) as HTMLElement[];
+      const empties = Array.from(fixture.nativeElement.querySelectorAll('.empty')) as HTMLElement[];
       expect(empties.some((e) => e.textContent?.includes('No usage to break down'))).toBe(true);
     });
   });

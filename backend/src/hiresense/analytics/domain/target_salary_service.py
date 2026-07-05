@@ -26,8 +26,16 @@ def _percentile(sorted_vals: list[int], q: float) -> int:
 
 
 class TargetSalaryService:
-    def __init__(self, *, embedding: Any, vector_store: Any, corpus: Any,
-                 salary_parser: Any, top_k: int, min_sample: int) -> None:
+    def __init__(
+        self,
+        *,
+        embedding: Any,
+        vector_store: Any,
+        corpus: Any,
+        salary_parser: Any,
+        top_k: int,
+        min_sample: int,
+    ) -> None:
         self._embedding = embedding
         self._vector_store = vector_store
         self._corpus = corpus
@@ -61,7 +69,8 @@ class TargetSalaryService:
         if len(vals) < self._min_sample:
             return TargetSalary(insufficient_data=True, currency=dominant, sample_size=len(vals))
         return TargetSalary(
-            insufficient_data=False, currency=dominant,
+            insufficient_data=False,
+            currency=dominant,
             p25_annual=_percentile(vals, 0.25),
             median_annual=int(statistics.median(vals)),
             p75_annual=_percentile(vals, 0.75),

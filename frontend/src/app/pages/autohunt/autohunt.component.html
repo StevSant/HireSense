@@ -1,8 +1,8 @@
 <div class="page">
   <h1>Auto-Hunt</h1>
   <p class="hint">
-    Periodic digests of the strongest new taste-ranked matches. Runs are scheduled via cron — trigger
-    one manually below to see what's new right now.
+    Periodic digests of the strongest new taste-ranked matches. Runs are scheduled via cron —
+    trigger one manually below to see what's new right now.
   </p>
 
   <!-- Latest digest hero -->
@@ -10,7 +10,11 @@
     <div class="hero-head">
       <h2>Latest digest</h2>
       <button class="btn-primary" (click)="run()" [disabled]="running()">
-        @if (running()) { Running… } @else { Run now }
+        @if (running()) {
+          Running…
+        } @else {
+          Run now
+        }
       </button>
     </div>
 
@@ -60,9 +64,7 @@
         </ul>
       }
     } @else {
-      <p class="muted empty">
-        No digests yet — runs are scheduled via cron, or trigger one now.
-      </p>
+      <p class="muted empty">No digests yet — runs are scheduled via cron, or trigger one now.</p>
     }
   </section>
 
@@ -71,7 +73,11 @@
     <div class="card-header">
       <h2>History</h2>
       @if (history().length > 0) {
-        <select [value]="historySort.token()" (change)="onHistorySort($event)" aria-label="Sort digests">
+        <select
+          [value]="historySort.token()"
+          (change)="onHistorySort($event)"
+          aria-label="Sort digests"
+        >
           <option value="created_desc">Newest first</option>
           <option value="created_asc">Oldest first</option>
           <option value="count_desc">Most matches</option>
@@ -90,7 +96,9 @@
         @for (digest of history(); track digest.id) {
           <li class="history-row">
             <button class="history-head" (click)="toggleExpanded(digest.id)">
-              <span class="history-date">{{ (digest.created_at ?? digest.cutoff_at) | date: 'MMM d, y, h:mm a' }}</span>
+              <span class="history-date">{{
+                digest.created_at ?? digest.cutoff_at | date: 'MMM d, y, h:mm a'
+              }}</span>
               <span class="history-count">
                 {{ digest.job_count }} {{ digest.job_count === 1 ? 'match' : 'matches' }}
               </span>
@@ -105,7 +113,9 @@
                     <li class="entry-row">
                       <div class="entry-main">
                         <span class="entry-title">{{ entry.title }}</span>
-                        <span class="entry-company">@ <app-company-link [name]="entry.company" /></span>
+                        <span class="entry-company"
+                          >@ <app-company-link [name]="entry.company"
+                        /></span>
                       </div>
                       <div class="entry-actions">
                         <span class="score-badge">{{ scorePercent(entry.score) }}%</span>

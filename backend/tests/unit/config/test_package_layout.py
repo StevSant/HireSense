@@ -45,10 +45,20 @@ def test_no_duplicate_field_across_groups() -> None:
 
     seen: dict[str, str] = {}
     group_classes = [
-        g.CoreSettings, g.ObservabilitySettings, g.DatabaseSettings, g.LLMSettings,
-        g.HttpSettings, g.IngestionSettings, g.JobSourcesSettings, g.PortalsSettings,
-        g.MatchingSettings, g.PreferenceSettings, g.AnalyticsSettings,
-        g.SchedulingSettings, g.OutreachSettings, g.ApplicationsSettings,
+        g.CoreSettings,
+        g.ObservabilitySettings,
+        g.DatabaseSettings,
+        g.LLMSettings,
+        g.HttpSettings,
+        g.IngestionSettings,
+        g.JobSourcesSettings,
+        g.PortalsSettings,
+        g.MatchingSettings,
+        g.PreferenceSettings,
+        g.AnalyticsSettings,
+        g.SchedulingSettings,
+        g.OutreachSettings,
+        g.ApplicationsSettings,
         g.PortfolioSettings,
     ]
     for cls in group_classes:

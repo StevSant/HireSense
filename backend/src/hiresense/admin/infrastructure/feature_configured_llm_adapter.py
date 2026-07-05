@@ -31,9 +31,7 @@ class FeatureConfiguredLLMAdapter:
         self._factory = factory
         self._feature_key = feature_key
 
-    async def generate(
-        self, prompt: str, *, system: str = "", model: str = ""
-    ) -> LLMResult:
+    async def generate(self, prompt: str, *, system: str = "", model: str = "") -> LLMResult:
         config = self._config_service.resolve(self._feature_key)
         try:
             inner = self._build_inner(config)
@@ -51,6 +49,4 @@ class FeatureConfiguredLLMAdapter:
 
     def _build_inner(self, config: ResolvedConfig) -> LangChainLLMAdapter:
         chat_model = self._factory.build_chat_model(config)
-        return LangChainLLMAdapter(
-            chat_model, provider=config.provider, model_name=config.model
-        )
+        return LangChainLLMAdapter(chat_model, provider=config.provider, model_name=config.model)

@@ -1,4 +1,5 @@
 from hiresense.infrastructure.database import Base
+
 # Importing the registry must register the scheduler tables on Base.metadata.
 import hiresense.infrastructure.registry  # noqa: F401
 

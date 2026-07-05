@@ -26,9 +26,7 @@ def _to_domain(row: CoverLetterTemplateOrm) -> CoverLetterTemplate:
 
 class CoverLetterTemplateRepository(SqlRepository):
     def list_all(self) -> list[CoverLetterTemplate]:
-        stmt = select(CoverLetterTemplateOrm).order_by(
-            CoverLetterTemplateOrm.updated_at.desc()
-        )
+        stmt = select(CoverLetterTemplateOrm).order_by(CoverLetterTemplateOrm.updated_at.desc())
         return self._select_all(stmt, _to_domain)
 
     def get(self, id: uuid.UUID) -> CoverLetterTemplate | None:
@@ -56,9 +54,7 @@ class CoverLetterTemplateRepository(SqlRepository):
 
     def update(self, id: uuid.UUID, fields: dict[str, Any]) -> CoverLetterTemplate | None:
         known = {
-            key: value
-            for key, value in fields.items()
-            if hasattr(CoverLetterTemplateOrm, key)
+            key: value for key, value in fields.items() if hasattr(CoverLetterTemplateOrm, key)
         }
         return self._update_by_pk(CoverLetterTemplateOrm, id, known, _to_domain)
 

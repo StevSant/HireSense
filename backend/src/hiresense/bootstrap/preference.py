@@ -62,6 +62,7 @@ def build_preference(infra: SharedInfra, tracked: Callable[[str], Any]) -> Prefe
         llm=tracked("preference_explanation") if s.preference_explanation_enabled else None,
         explanation_enabled=s.preference_explanation_enabled,
     )
+
     async def _on_status_changed(event: TrackingStatusChangedEvent) -> None:
         kind = status_to_feedback_kind(event.status)
         if kind is None or event.job_id is None:

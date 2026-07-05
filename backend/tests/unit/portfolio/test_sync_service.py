@@ -5,7 +5,9 @@ from hiresense.portfolio.domain import PortfolioProject, PortfolioSyncService, P
 
 def _project(key: str, source: str) -> PortfolioProject:
     return PortfolioProject(
-        id=key, source=source, source_key=key,
+        id=key,
+        source=source,
+        source_key=key,
         translations={"en": ProjectText(title=key)},
     )
 

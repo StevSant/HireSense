@@ -1,7 +1,11 @@
-.analytics-page { padding: 1.5rem 1.75rem 2.5rem; }
+.analytics-page {
+  padding: 1.5rem 1.75rem 2.5rem;
+}
 
 /* --- Page header --- */
-.analytics-header { margin: 0 0 1.5rem; }
+.analytics-header {
+  margin: 0 0 1.5rem;
+}
 .analytics-eyebrow {
   margin: 0 0 0.2rem;
   font-size: 0.72rem;
@@ -27,8 +31,17 @@
 /* --- Grid + cards --- */
 /* Two equal columns (Pay | Focus, Market | Skill gap); Performance spans both.
    align-items: start so a short card (Pay) never stretches to match a tall one (Focus). */
-.analytics-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; align-items: start; }
-@media (max-width: 760px) { .analytics-grid { grid-template-columns: 1fr; } }
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.1rem;
+  align-items: start;
+}
+@media (max-width: 760px) {
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .analytics-card {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
@@ -50,7 +63,7 @@
   color: var(--text-primary);
 
   &::before {
-    content: "";
+    content: '';
     flex: none;
     width: 0.28rem;
     height: 1.05rem;
@@ -59,16 +72,45 @@
   }
 }
 
-.sub { font-size: 0.75rem; color: var(--text-muted); margin: 1rem 0 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
-.salary-line { font-size: 0.9rem; }
-.section-loading, .section-empty { color: var(--text-muted); font-size: 0.85rem; }
-.section-error { color: var(--danger); font-size: 0.85rem; }
+.sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 1rem 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+.salary-line {
+  font-size: 0.9rem;
+}
+.section-loading,
+.section-empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.section-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+}
 
 /* Performance spans the full grid width: funnel left, source cards right. */
-.analytics-card-wide { grid-column: 1 / -1; }
-.perf-cols { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(14rem, 1fr); gap: 2rem; align-items: start; }
-@media (max-width: 720px) { .perf-cols { grid-template-columns: 1fr; } }
-.perf-sources .sub { margin-top: 0; }
+.analytics-card-wide {
+  grid-column: 1 / -1;
+}
+.perf-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(14rem, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+@media (max-width: 720px) {
+  .perf-cols {
+    grid-template-columns: 1fr;
+  }
+}
+.perf-sources .sub {
+  margin-top: 0;
+}
 
 /* Outcomes-by-source: stacked stat cards (never a misleading 0%-wide bar). */
 .source-list {
@@ -92,8 +134,16 @@
   gap: 0.5rem;
   margin-bottom: 0.4rem;
 }
-.source-name { font-weight: 600; color: var(--text-primary); font-size: 0.875rem; text-transform: capitalize; }
-.source-apps { color: var(--text-muted); font-size: 0.75rem; }
+.source-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  text-transform: capitalize;
+}
+.source-apps {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
 .source-rate {
   font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
@@ -102,9 +152,17 @@
   line-height: 1;
   color: var(--accent-text);
 
-  &.zero { color: var(--text-muted); font-weight: 600; }
+  &.zero {
+    color: var(--text-muted);
+    font-weight: 600;
+  }
 }
-.source-rate-unit { font-family: var(--font-body); font-size: 0.72rem; font-weight: 500; color: var(--text-muted); }
+.source-rate-unit {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
 
 /* Portfolio engagement visit list. */
 .engagement-list {
@@ -124,7 +182,9 @@
   border-bottom: 1px solid var(--border-subtle);
   font-size: 0.875rem;
 
-  &:last-child { border-bottom: none; }
+  &:last-child {
+    border-bottom: none;
+  }
 }
 .engagement-id {
   font-weight: 600;
@@ -135,7 +195,10 @@
   white-space: nowrap;
   flex: none;
 }
-.engagement-views { color: var(--text-secondary); flex: none; }
+.engagement-views {
+  color: var(--text-secondary);
+  flex: none;
+}
 .engagement-cv {
   padding: 1px 7px;
   border-radius: 999px;
@@ -145,8 +208,17 @@
   font-weight: 600;
   flex: none;
 }
-.engagement-date { color: var(--text-muted); font-size: 0.8rem; flex: none; margin-left: auto; }
-.engagement-meta { color: var(--text-muted); font-size: 0.78rem; flex: none; }
+.engagement-date {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  flex: none;
+  margin-left: auto;
+}
+.engagement-meta {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  flex: none;
+}
 
 /* Market context demoted into a collapsible footer. */
 .analytics-context {
@@ -160,5 +232,7 @@
     padding: 0.5rem 0;
   }
 
-  .analytics-grid { margin-top: 0.75rem; }
+  .analytics-grid {
+    margin-top: 0.75rem;
+  }
 }

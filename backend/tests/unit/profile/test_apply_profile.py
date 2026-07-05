@@ -100,9 +100,7 @@ def test_apply_profile_round_trips_through_json_column(repo) -> None:
             apply_profile=ApplyProfile(
                 work_authorization="US Citizen",
                 requires_visa_sponsorship=False,
-                screening_answers=[
-                    ScreeningAnswer(question="Why us?", answer="Mission fit.")
-                ],
+                screening_answers=[ScreeningAnswer(question="Why us?", answer="Mission fit.")],
             )
         )
     )

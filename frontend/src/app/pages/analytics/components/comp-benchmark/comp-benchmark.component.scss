@@ -8,7 +8,9 @@
   font-size: 0.9375rem;
   color: var(--text-secondary);
 
-  strong { color: var(--accent-text); }
+  strong {
+    color: var(--accent-text);
+  }
 }
 
 .comp-sub {
@@ -25,8 +27,14 @@
   border-radius: var(--radius-md);
   background: var(--bg-inset);
 
-  &.below { border-left-color: var(--danger); background: var(--danger-bg); }
-  &.above { border-left-color: var(--success); background: var(--success-bg); }
+  &.below {
+    border-left-color: var(--danger);
+    background: var(--danger-bg);
+  }
+  &.above {
+    border-left-color: var(--success);
+    background: var(--success-bg);
+  }
 }
 
 .comp-insight-label {
@@ -45,12 +53,20 @@
   line-height: 1.45;
   color: var(--text-secondary);
 
-  strong { color: var(--text-primary); }
+  strong {
+    color: var(--text-primary);
+  }
 }
 
-.comp-delta { font-weight: 700; }
-.comp-insight.below .comp-delta { color: var(--danger); }
-.comp-insight.above .comp-delta { color: var(--success); }
+.comp-delta {
+  font-weight: 700;
+}
+.comp-insight.below .comp-delta {
+  color: var(--danger);
+}
+.comp-insight.above .comp-delta {
+  color: var(--success);
+}
 
 .comp-insight-note {
   margin: 0.4rem 0 0;

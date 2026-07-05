@@ -8,6 +8,7 @@ Covers:
 - The existing suite (test_outreach_service.py) implicitly covers the default-None
   portfolio_citation path — no test here is needed for that case.
 """
+
 from __future__ import annotations
 
 import uuid as uuid_mod
@@ -104,8 +105,12 @@ class _FakeCitationService:
         language: str | None,
     ) -> str | None:
         self.calls.append(
-            {"job_skills": job_skills, "job_text": job_text,
-             "application_id": application_id, "language": language}
+            {
+                "job_skills": job_skills,
+                "job_text": job_text,
+                "application_id": application_id,
+                "language": language,
+            }
         )
         return self.result
 

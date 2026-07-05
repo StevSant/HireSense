@@ -9,8 +9,15 @@ from hiresense.ports.vector_store import ScoredResult
 
 def _job(id: str) -> NormalizedJob:
     return NormalizedJob(
-        id=id, title=f"Job {id}", company="Co", description="d", skills=["python"],
-        source="t", source_type="api", language="en", url=f"https://e/{id}",
+        id=id,
+        title=f"Job {id}",
+        company="Co",
+        description="d",
+        skills=["python"],
+        source="t",
+        source_type="api",
+        language="en",
+        url=f"https://e/{id}",
     )
 
 
@@ -24,11 +31,13 @@ class FakeVectorStore:
 
     async def upsert(self, id, embedding, metadata): ...
     async def delete(self, ids): ...
-    async def get_vector(self, id): return None
+    async def get_vector(self, id):
+        return None
 
 
 class FakeEmbedding:
-    async def embed(self, texts): return [[1.0, 0.0]]
+    async def embed(self, texts):
+        return [[1.0, 0.0]]
 
 
 class FakePreference:
@@ -42,7 +51,11 @@ class FakePreference:
 async def test_preference_transforms_query_vector() -> None:
     store = FakeVectorStore()
     ranker = SemanticPreRanker(
-        store, FakeEmbedding(), top_k_cap=10, skill_weight=0.4, semantic_weight=0.6,
+        store,
+        FakeEmbedding(),
+        top_k_cap=10,
+        skill_weight=0.4,
+        semantic_weight=0.6,
         preference=FakePreference(),
     )
     await ranker.rerank([_job("a")], {"a": None}, ["python"], "summary", "boards")
@@ -53,7 +66,11 @@ async def test_preference_transforms_query_vector() -> None:
 async def test_no_preference_uses_raw_profile_vector() -> None:
     store = FakeVectorStore()
     ranker = SemanticPreRanker(
-        store, FakeEmbedding(), top_k_cap=10, skill_weight=0.4, semantic_weight=0.6,
+        store,
+        FakeEmbedding(),
+        top_k_cap=10,
+        skill_weight=0.4,
+        semantic_weight=0.6,
     )
     await ranker.rerank([_job("a")], {"a": None}, ["python"], "summary", "boards")
     assert store.last_query == [1.0, 0.0]  # unchanged — backward compatible
@@ -68,7 +85,11 @@ class BrokenPreference:
 async def test_preference_exception_falls_back_to_baseline() -> None:
     store = FakeVectorStore()
     ranker = SemanticPreRanker(
-        store, FakeEmbedding(), top_k_cap=10, skill_weight=0.4, semantic_weight=0.6,
+        store,
+        FakeEmbedding(),
+        top_k_cap=10,
+        skill_weight=0.4,
+        semantic_weight=0.6,
         preference=BrokenPreference(),
     )
     await ranker.rerank([_job("a")], {"a": None}, ["python"], "summary", "boards")

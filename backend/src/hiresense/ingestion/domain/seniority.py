@@ -8,6 +8,7 @@ The detector is intentionally conservative: it only emits a label when the
 text contains a clear signal. This lets the filter UI surface "Unknown" as
 an explicit bucket rather than silently mis-bucketing ambiguous postings.
 """
+
 from __future__ import annotations
 
 import enum
@@ -26,12 +27,29 @@ class SeniorityLevel(str, enum.Enum):
 _TITLE_RULES: tuple[tuple[re.Pattern[str], SeniorityLevel], ...] = (
     # Order matters: 'staff engineer' is a lead-level role even though it
     # contains no obvious seniority word, so match before SENIOR / MID.
-    (re.compile(r"\b(intern|internship|trainee|practicante|becari[oa])\b", re.I), SeniorityLevel.INTERN),
-    (re.compile(r"\b(principal|staff|distinguished|fellow|head\s+of|director|vp|chief|cto|cpo)\b", re.I), SeniorityLevel.LEAD),
+    (
+        re.compile(r"\b(intern|internship|trainee|practicante|becari[oa])\b", re.I),
+        SeniorityLevel.INTERN,
+    ),
+    (
+        re.compile(
+            r"\b(principal|staff|distinguished|fellow|head\s+of|director|vp|chief|cto|cpo)\b", re.I
+        ),
+        SeniorityLevel.LEAD,
+    ),
     (re.compile(r"\b(lead|líder|team\s+lead|tech\s+lead)\b", re.I), SeniorityLevel.LEAD),
     (re.compile(r"\b(senior|sr\.?|snr|principal|sénior|s[eé]nior)\b", re.I), SeniorityLevel.SENIOR),
-    (re.compile(r"\b(junior|jr\.?|entry[\s-]?level|graduate|grad\s+(role|hire)|trainee|associate|asociado)\b", re.I), SeniorityLevel.JUNIOR),
-    (re.compile(r"\b(mid[\s-]?level|intermediate|mid\s+(developer|engineer))\b", re.I), SeniorityLevel.MID),
+    (
+        re.compile(
+            r"\b(junior|jr\.?|entry[\s-]?level|graduate|grad\s+(role|hire)|trainee|associate|asociado)\b",
+            re.I,
+        ),
+        SeniorityLevel.JUNIOR,
+    ),
+    (
+        re.compile(r"\b(mid[\s-]?level|intermediate|mid\s+(developer|engineer))\b", re.I),
+        SeniorityLevel.MID,
+    ),
 )
 
 _YEARS_PATTERNS: tuple[re.Pattern[str], ...] = (

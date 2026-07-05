@@ -15,7 +15,9 @@ from hiresense.scheduler.infrastructure import (
 
 
 def _factory():
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)
 
@@ -23,8 +25,13 @@ def _factory():
 def _run(name="autohunt_digest", status=JobStatus.SUCCESS, when=None):
     when = when or datetime.now(timezone.utc)
     return JobRun(
-        job_name=name, started_at=when, finished_at=when, status=status,
-        detail=None, items_affected=1, duration_seconds=0.0,
+        job_name=name,
+        started_at=when,
+        finished_at=when,
+        status=status,
+        detail=None,
+        items_affected=1,
+        duration_seconds=0.0,
     )
 
 

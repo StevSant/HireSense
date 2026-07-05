@@ -31,14 +31,16 @@ function makeJob(over: Partial<Record<string, unknown>> = {}) {
 }
 
 describe('OptimizationComponent', () => {
-  function mount(opts: {
-    jobId?: string | null;
-    getJob?: () => unknown;
-    applications?: Partial<Record<string, unknown>>;
-  } = {}) {
+  function mount(
+    opts: {
+      jobId?: string | null;
+      getJob?: () => unknown;
+      applications?: Partial<Record<string, unknown>>;
+    } = {},
+  ) {
     const route = {
       snapshot: {
-        queryParamMap: { get: (key: string) => (key === 'job_id' ? opts.jobId ?? null : null) },
+        queryParamMap: { get: (key: string) => (key === 'job_id' ? (opts.jobId ?? null) : null) },
       },
     };
     const ingestion = {

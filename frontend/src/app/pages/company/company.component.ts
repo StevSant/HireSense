@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -53,7 +61,9 @@ export class CompanyComponent implements OnInit {
   scoredCount = computed(() => this.jobs().filter((j) => this.displayScore(j) !== null).length);
 
   avgMatchPct = computed<number | null>(() => {
-    const scored = this.jobs().map((j) => this.displayScore(j)).filter((s): s is number => s !== null);
+    const scored = this.jobs()
+      .map((j) => this.displayScore(j))
+      .filter((s): s is number => s !== null);
     if (!scored.length) return null;
     const sum = scored.reduce((acc, s) => acc + s, 0);
     return Math.round((sum / scored.length) * PERCENT);
@@ -86,8 +96,14 @@ export class CompanyComponent implements OnInit {
       return;
     }
     forkJoin({
-      boards: this.ingestion.queryJobs('boards', 1, COMPANY_PAGE_SIZE, { company: name, sort: 'match_desc' }),
-      portals: this.ingestion.queryJobs('portals', 1, COMPANY_PAGE_SIZE, { company: name, sort: 'match_desc' }),
+      boards: this.ingestion.queryJobs('boards', 1, COMPANY_PAGE_SIZE, {
+        company: name,
+        sort: 'match_desc',
+      }),
+      portals: this.ingestion.queryJobs('portals', 1, COMPANY_PAGE_SIZE, {
+        company: name,
+        sort: 'match_desc',
+      }),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -154,20 +170,23 @@ export class CompanyComponent implements OnInit {
   trackJob(jobId: string): void {
     if (this.trackingJobId() !== null || this.isTracked(jobId)) return;
     this.trackingJobId.set(jobId);
-    this.applications.createFromJob(jobId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (agg) => {
-        this.ingestion.markTracked(jobId);
-        this.trackingJobId.set(null);
-        this.router.navigate(['/dashboard/applications', agg.id]);
-      },
-      error: (err) => {
-        this.trackingJobId.set(null);
-        if (err?.status === 409) {
+    this.applications
+      .createFromJob(jobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (agg) => {
           this.ingestion.markTracked(jobId);
-          this.router.navigate(['/dashboard/applications']);
-        }
-      },
-    });
+          this.trackingJobId.set(null);
+          this.router.navigate(['/dashboard/applications', agg.id]);
+        },
+        error: (err) => {
+          this.trackingJobId.set(null);
+          if (err?.status === 409) {
+            this.ingestion.markTracked(jobId);
+            this.router.navigate(['/dashboard/applications']);
+          }
+        },
+      });
   }
 
   onFeedback(jobId: string, kind: FeedbackKind): void {

@@ -97,7 +97,9 @@ class JobsRepository(SqlRepository):
         self._bucket = bucket
 
     @staticmethod
-    def _apply_to_row(row: IngestedJob, job: NormalizedJob, new_hash: str, now: datetime) -> UpsertResult:
+    def _apply_to_row(
+        row: IngestedJob, job: NormalizedJob, new_hash: str, now: datetime
+    ) -> UpsertResult:
         """Apply one job's upsert semantics to an existing row (no commit)."""
         row.last_seen_at = now
         row.missed_count = 0
@@ -302,9 +304,7 @@ class JobsRepository(SqlRepository):
         if not criteria.include_closed:
             stmt = stmt.where(IngestedJob.status != "closed")
         if not criteria.include_low_quality:
-            stmt = stmt.where(
-                (IngestedJob.quality.is_(None)) | (IngestedJob.quality == "ok")
-            )
+            stmt = stmt.where((IngestedJob.quality.is_(None)) | (IngestedJob.quality == "ok"))
         if criteria.source:
             stmt = stmt.where(IngestedJob.source == criteria.source)
         if criteria.company:

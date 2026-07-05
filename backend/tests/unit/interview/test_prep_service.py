@@ -26,6 +26,7 @@ class FakeStoryRepo:
 
 def _make_story(title="Led migration", competency="technical"):
     from types import SimpleNamespace
+
     return SimpleNamespace(
         id=uuid.uuid4(),
         title=title,
@@ -42,14 +43,24 @@ def _make_story(title="Led migration", competency="technical"):
 @pytest.mark.asyncio
 async def test_prepare_returns_matched_stories():
     story = _make_story()
-    llm_response = json.dumps({
-        "matched_stories": [{"story_id": str(story.id), "story_title": story.title, "relevance": "Direct experience"}],
-        "competencies_to_probe": ["technical", "leadership"],
-        "technical_topics": ["System design"],
-        "negotiation_points": ["Remote flexibility"],
-    })
+    llm_response = json.dumps(
+        {
+            "matched_stories": [
+                {
+                    "story_id": str(story.id),
+                    "story_title": story.title,
+                    "relevance": "Direct experience",
+                }
+            ],
+            "competencies_to_probe": ["technical", "leadership"],
+            "technical_topics": ["System design"],
+            "negotiation_points": ["Remote flexibility"],
+        }
+    )
     service = InterviewPrepService(llm=FakeLLM(llm_response), story_repo=FakeStoryRepo([story]))
-    result = await service.prepare({"title": "SWE", "company": "Acme", "description": "Build stuff"})
+    result = await service.prepare(
+        {"title": "SWE", "company": "Acme", "description": "Build stuff"}
+    )
     assert len(result.matched_stories) == 1
     assert result.matched_stories[0].story_title == "Led migration"
     assert len(result.technical_topics) == 1
@@ -57,12 +68,14 @@ async def test_prepare_returns_matched_stories():
 
 @pytest.mark.asyncio
 async def test_prepare_no_stories():
-    llm_response = json.dumps({
-        "matched_stories": [],
-        "competencies_to_probe": ["problem_solving"],
-        "technical_topics": ["APIs"],
-        "negotiation_points": ["Equity"],
-    })
+    llm_response = json.dumps(
+        {
+            "matched_stories": [],
+            "competencies_to_probe": ["problem_solving"],
+            "technical_topics": ["APIs"],
+            "negotiation_points": ["Equity"],
+        }
+    )
     service = InterviewPrepService(llm=FakeLLM(llm_response), story_repo=FakeStoryRepo())
     result = await service.prepare({"title": "SWE", "company": "X", "description": ""})
     assert result.matched_stories == []

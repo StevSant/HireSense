@@ -35,9 +35,7 @@ class GetOnBoardAdapter:
     def source_type(self) -> SourceType:
         return SourceType.API
 
-    async def fetch_jobs(
-        self, filters: dict[str, Any] | None = None
-    ) -> list[RawJobListing]:
+    async def fetch_jobs(self, filters: dict[str, Any] | None = None) -> list[RawJobListing]:
         query = filters.get("query", "") if filters else ""
         seen: set[str] = set()
         jobs: list[RawJobListing] = []

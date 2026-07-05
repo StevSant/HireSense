@@ -13,7 +13,9 @@ async def research_company(
     request: ResearchRequest,
     service: CompanyResearchService = Depends(get_company_research_service),
 ) -> CompanyResearchResponse:
-    result = await service.research(company_name=request.company_name, job_description=request.job_description)
+    result = await service.research(
+        company_name=request.company_name, job_description=request.job_description
+    )
     return CompanyResearchResponse.model_validate(result)
 
 
@@ -22,7 +24,9 @@ async def refresh_research(
     request: ResearchRequest,
     service: CompanyResearchService = Depends(get_company_research_service),
 ) -> CompanyResearchResponse:
-    result = await service.refresh(company_name=request.company_name, job_description=request.job_description)
+    result = await service.refresh(
+        company_name=request.company_name, job_description=request.job_description
+    )
     return CompanyResearchResponse.model_validate(result)
 
 

@@ -87,9 +87,7 @@ def _build_app():
     tracking = _Tracking(app_model)
     app = FastAPI()
     app.dependency_overrides[require_auth] = lambda: "u"
-    app.dependency_overrides[get_inbox_provider] = lambda: InboxProvider(
-        service=service, repo=repo
-    )
+    app.dependency_overrides[get_inbox_provider] = lambda: InboxProvider(service=service, repo=repo)
     app.dependency_overrides[get_tracking_service] = lambda: tracking
     app.include_router(inbox_router)
     return app, repo, tracking, app_model

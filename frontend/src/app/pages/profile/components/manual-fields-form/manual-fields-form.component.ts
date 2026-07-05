@@ -107,20 +107,23 @@ export class ManualFieldsFormComponent {
     }
     this.saving.set(true);
     this.error.set('');
-    this.profileService.updateManualFields(this.profile().id, update).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (saved) => {
-        this.saving.set(false);
-        const snap = snapshot(saved);
-        this.form.set(snap);
-        this.baseline.set(snap);
-        this.savedFlash.set(true);
-        setTimeout(() => this.savedFlash.set(false), 2200);
-        this.saved.emit();
-      },
-      error: (err) => {
-        this.saving.set(false);
-        this.error.set(err?.error?.detail ?? 'Failed to save changes');
-      },
-    });
+    this.profileService
+      .updateManualFields(this.profile().id, update)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (saved) => {
+          this.saving.set(false);
+          const snap = snapshot(saved);
+          this.form.set(snap);
+          this.baseline.set(snap);
+          this.savedFlash.set(true);
+          setTimeout(() => this.savedFlash.set(false), 2200);
+          this.saved.emit();
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.error.set(err?.error?.detail ?? 'Failed to save changes');
+        },
+      });
   }
 }

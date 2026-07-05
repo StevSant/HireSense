@@ -7,6 +7,7 @@ Run once after applying migration 014 so semantic search isn't empty on first us
 Idempotent — re-running re-embeds and upserts (ON CONFLICT) every job. Logs how
 many jobs were indexed vs skipped per bucket (no silent truncation).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -51,9 +52,7 @@ async def _run() -> None:
                 indexed,
                 skipped,
             )
-        logger.info(
-            "backfill complete: %d indexed, %d skipped", total_indexed, total_skipped
-        )
+        logger.info("backfill complete: %d indexed, %d skipped", total_indexed, total_skipped)
 
 
 if __name__ == "__main__":

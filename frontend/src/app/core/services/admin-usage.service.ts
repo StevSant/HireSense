@@ -25,7 +25,10 @@ export class AdminUsageService {
     });
   }
 
-  breakdown(dimension: 'provider' | 'model' | 'feature', days: number | null = 30): Observable<BreakdownResponse> {
+  breakdown(
+    dimension: 'provider' | 'model' | 'feature',
+    days: number | null = 30,
+  ): Observable<BreakdownResponse> {
     let params = new HttpParams().set('dimension', dimension);
     if (days !== null) {
       params = params.set('days', String(days));

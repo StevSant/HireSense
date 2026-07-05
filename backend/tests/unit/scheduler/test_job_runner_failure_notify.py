@@ -42,7 +42,9 @@ class _Notifier:
 
 
 def _defn(run):
-    return JobDefinition(name="job", run=run, cron="0 9 * * *", interval_hours=None, count_items=len)
+    return JobDefinition(
+        name="job", run=run, cron="0 9 * * *", interval_hours=None, count_items=len
+    )
 
 
 def _runner(defn, notifier):

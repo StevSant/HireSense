@@ -21,7 +21,11 @@ from hiresense.ingestion.api.dependencies import (
     get_semantic_scoring,
 )
 from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
-from hiresense.ingestion.domain.job_filter import JobQueryParams, PaginatedResult, filter_and_paginate
+from hiresense.ingestion.domain.job_filter import (
+    JobQueryParams,
+    PaginatedResult,
+    filter_and_paginate,
+)
 from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.job_sort import sort_jobs
@@ -49,9 +53,7 @@ from hiresense.portfolio.domain import PortfolioEnrichmentService
 from hiresense.profile.api.dependencies import get_profile_service
 from hiresense.profile.domain import ProfileService
 
-router = APIRouter(
-    prefix="/ingestion", tags=["ingestion"], dependencies=[Depends(require_auth)]
-)
+router = APIRouter(prefix="/ingestion", tags=["ingestion"], dependencies=[Depends(require_auth)])
 
 # Accepted sort tokens (`<field>_<dir>`) plus the legacy `date_*` aliases. Any
 # value outside this set falls back to the default `match_desc`.
@@ -112,7 +114,9 @@ class FetchResponse(BaseModel):
     jobs: list[NormalizedJob]
 
 
-@router.post("/fetch", response_model=FetchResponse, dependencies=[Depends(enforce_expensive_rate_limit)])
+@router.post(
+    "/fetch", response_model=FetchResponse, dependencies=[Depends(enforce_expensive_rate_limit)]
+)
 async def fetch_jobs(
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
     revalidation: Annotated[JobRevalidationService | None, Depends(get_revalidation_service)],
@@ -136,7 +140,9 @@ async def fetch_jobs(
     return FetchResponse(count=len(jobs), jobs=jobs)
 
 
-@router.post("/scan-portals", response_model=ScanResult, dependencies=[Depends(enforce_expensive_rate_limit)])
+@router.post(
+    "/scan-portals", response_model=ScanResult, dependencies=[Depends(enforce_expensive_rate_limit)]
+)
 async def scan_portals(
     filters: ScanFilters,
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
@@ -198,7 +204,9 @@ async def revalidate_jobs(
     return RevalidationResponse(started=True, closed=len(closed), closed_ids=closed)
 
 
-@router.get("/jobs", response_model=PaginatedResult, dependencies=[Depends(enforce_expensive_rate_limit)])
+@router.get(
+    "/jobs", response_model=PaginatedResult, dependencies=[Depends(enforce_expensive_rate_limit)]
+)
 async def list_jobs(
     request: Request,
     tab: Annotated[Literal["boards", "portals"], Query()],
@@ -264,7 +272,9 @@ async def list_jobs(
         orchestrator.list_jobs if tab == "boards" else scanner.list_jobs, criteria
     )
 
-    candidate_skills, candidate_summary = await _gather_profile(profile_service, portfolio_enrichment)
+    candidate_skills, candidate_summary = await _gather_profile(
+        profile_service, portfolio_enrichment
+    )
 
     persist_scores_batch = (
         orchestrator.persist_scores_batch if tab == "boards" else scanner.persist_scores_batch
@@ -343,22 +353,11 @@ async def list_jobs(
         # a full rescore of the unfiltered match-sorted view. The champion set
         # is the stable heuristic top-K per source (cached members are counted
         # but not re-sent), so once cached this pass costs zero LLM calls.
-        champions_k = (
-            settings.ingestion_source_champions_per_source
-            if settings is not None
-            else 0
-        )
-        if (
-            rescore
-            and champions_k > 0
-            and source is None
-            and effective_sort.startswith("match_")
-        ):
+        champions_k = settings.ingestion_source_champions_per_source if settings is not None else 0
+        if rescore and champions_k > 0 and source is None and effective_sort.startswith("match_"):
             taken: dict[str, int] = {}
             champions: list[NormalizedJob] = []
-            for job in sorted(
-                all_jobs, key=lambda j: j.match_score or 0.0, reverse=True
-            ):
+            for job in sorted(all_jobs, key=lambda j: j.match_score or 0.0, reverse=True):
                 if taken.get(job.source, 0) >= champions_k:
                     continue
                 taken[job.source] = taken.get(job.source, 0) + 1
@@ -369,9 +368,7 @@ async def list_jobs(
                     champions, candidate_skills, candidate_summary, llm_on_miss=True
                 )
                 if champion_quick:
-                    all_jobs = [
-                        _apply_quick(j, champion_quick.get(j.id)) for j in all_jobs
-                    ]
+                    all_jobs = [_apply_quick(j, champion_quick.get(j.id)) for j in all_jobs]
 
     params = JobQueryParams(
         page=page,
@@ -400,11 +397,7 @@ async def list_jobs(
     # only computes semantic for jobs on this page that don't yet have one;
     # the persisted score feeds back into the sort on subsequent calls.
     needs_semantic = [j for j in result.jobs if j.semantic_score is None]
-    if (
-        semantic_scoring is not None
-        and (candidate_skills or candidate_summary)
-        and needs_semantic
-    ):
+    if semantic_scoring is not None and (candidate_skills or candidate_summary) and needs_semantic:
         scored = await semantic_scoring.score_jobs(
             needs_semantic, candidate_skills, candidate_summary
         )
@@ -420,11 +413,7 @@ async def list_jobs(
         # Re-combine match_score using the skill side dict + fresh semantic.
         result.jobs = [
             j.model_copy(
-                update={
-                    "match_score": combine_fit_score(
-                        skill_by_id.get(j.id), j.semantic_score
-                    )
-                }
+                update={"match_score": combine_fit_score(skill_by_id.get(j.id), j.semantic_score)}
             )
             for j in result.jobs
         ]
@@ -472,15 +461,17 @@ async def list_jobs(
             sorted({key for key in company_key_by_job.values() if key}),
         )
         result.connections_by_job = {
-            job_id: counts[key]
-            for job_id, key in company_key_by_job.items()
-            if counts.get(key)
+            job_id: counts[key] for job_id, key in company_key_by_job.items() if counts.get(key)
         }
 
     return result
 
 
-@router.get("/jobs/{job_id}/analysis", response_model=DeepAnalysisResult, dependencies=[Depends(enforce_expensive_rate_limit)])
+@router.get(
+    "/jobs/{job_id}/analysis",
+    response_model=DeepAnalysisResult,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
+)
 async def analyze_job(
     job_id: str,
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
@@ -498,10 +489,10 @@ async def analyze_job(
         raise HTTPException(status_code=404, detail="Job not found")
     if deep_analysis is None:
         raise HTTPException(status_code=503, detail="Deep analysis is not available")
-    candidate_skills, candidate_summary = await _gather_profile(profile_service, portfolio_enrichment)
-    return await deep_analysis.analyze(
-        job, candidate_skills, candidate_summary, force=force
+    candidate_skills, candidate_summary = await _gather_profile(
+        profile_service, portfolio_enrichment
     )
+    return await deep_analysis.analyze(job, candidate_skills, candidate_summary, force=force)
 
 
 @router.get("/jobs/{job_id}", response_model=NormalizedJob)
@@ -549,7 +540,11 @@ class BackfillResponse(BaseModel):
     total: int
 
 
-@router.post("/backfill-embeddings", response_model=BackfillResponse, dependencies=[Depends(enforce_expensive_rate_limit)])
+@router.post(
+    "/backfill-embeddings",
+    response_model=BackfillResponse,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
+)
 async def backfill_embeddings(
     service: Annotated[EmbeddingBackfillService | None, Depends(get_backfill_service)],
 ) -> BackfillResponse:

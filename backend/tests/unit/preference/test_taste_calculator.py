@@ -75,9 +75,7 @@ def test_decay_with_nonpositive_tau_returns_one() -> None:
 def test_compute_delta_skips_dimension_mismatch() -> None:
     calc = TasteVectorCalculator(alpha=1.0, beta=1.0, gamma=1.0, tau_days=90.0)
     valid = SignalContribution(embedding=[1.0, 0.0], polarity=1, weight=1.0, age_days=0.0)
-    mismatched = SignalContribution(
-        embedding=[1.0, 1.0, 1.0], polarity=1, weight=1.0, age_days=0.0
-    )
+    mismatched = SignalContribution(embedding=[1.0, 1.0, 1.0], polarity=1, weight=1.0, age_days=0.0)
     delta_mixed = calc.compute_delta([valid, mismatched], dim=2)
     delta_valid_only = calc.compute_delta([valid], dim=2)
     assert delta_mixed == delta_valid_only

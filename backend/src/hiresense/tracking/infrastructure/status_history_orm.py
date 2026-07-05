@@ -18,9 +18,7 @@ class ApplicationStatusHistoryOrm(Base):
     """
 
     __tablename__ = "application_status_history"
-    __table_args__ = (
-        Index("ix_application_status_history_application_id", "application_id"),
-    )
+    __table_args__ = (Index("ix_application_status_history_application_id", "application_id"),)
 
     id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
     application_id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, nullable=False)

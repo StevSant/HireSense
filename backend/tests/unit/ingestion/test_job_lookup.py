@@ -5,7 +5,9 @@ from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.ingestion.infrastructure import InMemoryJobsRepository
 
 
-def _make_job(title: str = "SWE", company: str = "Acme", url: str = "https://example.com") -> NormalizedJob:
+def _make_job(
+    title: str = "SWE", company: str = "Acme", url: str = "https://example.com"
+) -> NormalizedJob:
     return NormalizedJob(
         id=str(uuid.uuid4()),
         title=title,

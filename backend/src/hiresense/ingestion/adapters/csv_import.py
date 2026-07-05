@@ -33,9 +33,7 @@ class CSVImportAdapter:
             raise ValueError(f"CSV import path escapes the import directory: {candidate}")
         return resolved
 
-    async def fetch_jobs(
-        self, filters: dict[str, Any] | None = None
-    ) -> list[RawJobListing]:
+    async def fetch_jobs(self, filters: dict[str, Any] | None = None) -> list[RawJobListing]:
         if not filters or "file_path" not in filters:
             return []
         file_path = self._resolve_inside_import_dir(str(filters["file_path"]))

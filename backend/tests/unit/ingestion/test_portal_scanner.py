@@ -20,7 +20,9 @@ from hiresense.kernel.events import DomainEvent
 
 
 class FakeAdapter:
-    def __init__(self, jobs: list[RawJobListing] | None = None, *, raise_on_fetch: bool = False) -> None:
+    def __init__(
+        self, jobs: list[RawJobListing] | None = None, *, raise_on_fetch: bool = False
+    ) -> None:
         self._jobs = jobs or []
         self._raise_on_fetch = raise_on_fetch
         self.calls: list[tuple[str, str]] = []
@@ -36,7 +38,9 @@ class FakeAdapter:
 
 
 class FakeNormalizer:
-    def __init__(self, title: str = "Engineer", company: str = "Acme", url: str = "https://example.com/1") -> None:
+    def __init__(
+        self, title: str = "Engineer", company: str = "Acme", url: str = "https://example.com/1"
+    ) -> None:
         self._title = title
         self._company = company
         self._url = url
@@ -63,7 +67,9 @@ class FakeEventBus:
         self.published.append(event)
 
 
-def _make_raw(title: str = "Engineer", company: str = "Acme", url: str = "https://example.com/1") -> RawJobListing:
+def _make_raw(
+    title: str = "Engineer", company: str = "Acme", url: str = "https://example.com/1"
+) -> RawJobListing:
     return RawJobListing(
         source="test",
         source_id="1",
@@ -90,8 +96,12 @@ async def test_scan_all_portals() -> None:
     adapter_lv = FakeAdapter([raw_lv])
 
     config = _make_config(
-        PortalEntry(name="GreenCo", platform="greenhouse", board_id="greenco", categories=["engineering"]),
-        PortalEntry(name="LeverCo", platform="lever", board_id="leverco", categories=["engineering"]),
+        PortalEntry(
+            name="GreenCo", platform="greenhouse", board_id="greenco", categories=["engineering"]
+        ),
+        PortalEntry(
+            name="LeverCo", platform="lever", board_id="leverco", categories=["engineering"]
+        ),
     )
     adapters = {"greenhouse": adapter_gh, "lever": adapter_lv}
     normalizers = {"greenhouse": FakeNormalizer(), "lever": FakeNormalizer()}
@@ -123,7 +133,9 @@ async def test_scan_filters_by_category() -> None:
     adapter_design = FakeAdapter([raw])
 
     config = _make_config(
-        PortalEntry(name="EngCo", platform="greenhouse", board_id="engco", categories=["engineering"]),
+        PortalEntry(
+            name="EngCo", platform="greenhouse", board_id="engco", categories=["engineering"]
+        ),
         PortalEntry(name="DesignCo", platform="lever", board_id="designco", categories=["design"]),
     )
     adapters = {"greenhouse": adapter_eng, "lever": adapter_design}
@@ -322,7 +334,9 @@ async def test_scan_stores_jobs_internally() -> None:
     adapter = FakeAdapter([raw])
 
     config = _make_config(
-        PortalEntry(name="Acme", platform="greenhouse", board_id="acme", categories=["engineering"]),
+        PortalEntry(
+            name="Acme", platform="greenhouse", board_id="acme", categories=["engineering"]
+        ),
     )
     adapters = {"greenhouse": adapter}
     normalizers = {"greenhouse": FakeNormalizer()}
@@ -350,7 +364,9 @@ async def test_scan_sets_platform_and_categories() -> None:
     adapter = FakeAdapter([raw])
 
     config = _make_config(
-        PortalEntry(name="Acme", platform="greenhouse", board_id="acme", categories=["ai-research"]),
+        PortalEntry(
+            name="Acme", platform="greenhouse", board_id="acme", categories=["ai-research"]
+        ),
     )
     adapters = {"greenhouse": adapter}
     normalizers = {"greenhouse": FakeNormalizer()}
@@ -378,8 +394,12 @@ async def test_scan_skips_disabled_portals() -> None:
     adapter_disabled = FakeAdapter([raw])
 
     config = _make_config(
-        PortalEntry(name="EnabledCo", platform="greenhouse", board_id="enabled", categories=[], enabled=True),
-        PortalEntry(name="DisabledCo", platform="lever", board_id="disabled", categories=[], enabled=False),
+        PortalEntry(
+            name="EnabledCo", platform="greenhouse", board_id="enabled", categories=[], enabled=True
+        ),
+        PortalEntry(
+            name="DisabledCo", platform="lever", board_id="disabled", categories=[], enabled=False
+        ),
     )
     adapters = {"greenhouse": adapter_enabled, "lever": adapter_disabled}
     normalizers = {"greenhouse": FakeNormalizer(), "lever": FakeNormalizer()}

@@ -52,7 +52,9 @@ def breakdown(
     days: int | None = Query(30, ge=1, le=365),
 ) -> BreakdownResponse:
     buckets = aggregator.breakdown(dimension=dimension, days=days)
-    return BreakdownResponse(dimension=dimension, days=days, buckets=[_to_bucket(b) for b in buckets])
+    return BreakdownResponse(
+        dimension=dimension, days=days, buckets=[_to_bucket(b) for b in buckets]
+    )
 
 
 @router.get("/calls", response_model=RecentCallsResponse)
@@ -67,8 +69,12 @@ def recent_calls(
     sort: str | None = None,
 ) -> RecentCallsResponse:
     rows = aggregator.recent_calls(
-        limit=limit, offset=offset,
-        provider=provider, model=model, feature_key=feature_key, days=days,
+        limit=limit,
+        offset=offset,
+        provider=provider,
+        model=model,
+        feature_key=feature_key,
+        days=days,
         sort=sort,
     )
     return RecentCallsResponse(
@@ -103,7 +109,10 @@ def export_csv(
     days: int | None = Query(90, ge=1, le=365),
 ) -> StreamingResponse:
     csv_text = aggregator.export_csv(
-        provider=provider, model=model, feature_key=feature_key, days=days,
+        provider=provider,
+        model=model,
+        feature_key=feature_key,
+        days=days,
     )
     return StreamingResponse(
         iter([csv_text]),

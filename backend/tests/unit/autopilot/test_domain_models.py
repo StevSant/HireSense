@@ -5,8 +5,12 @@ from hiresense.autopilot.domain import AutopilotDraft, DraftStatus, PipelineResu
 
 def test_models_construct():
     d = AutopilotDraft(
-        job_id="j1", application_id=uuid.uuid4(), job_title="Dev", company="Acme",
-        status=DraftStatus.DRAFTED, detail=None,
+        job_id="j1",
+        application_id=uuid.uuid4(),
+        job_title="Dev",
+        company="Acme",
+        status=DraftStatus.DRAFTED,
+        detail=None,
     )
     assert d.status is DraftStatus.DRAFTED
     assert DraftStatus.PARTIAL.value == "partial"

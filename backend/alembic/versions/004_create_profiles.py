@@ -29,7 +29,9 @@ def upgrade() -> None:
         sa.Column("language", sa.String(10), nullable=False, server_default="en"),
         sa.Column("skills", sa.JSON(), nullable=True),
         sa.Column("original_filename", sa.String(500), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True
+        ),
     )
     op.create_index("ix_profiles_created_at", "profiles", ["created_at"])
 

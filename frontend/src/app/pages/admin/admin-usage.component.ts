@@ -63,10 +63,14 @@ export class AdminUsageComponent implements OnInit {
 
   private bucketValue(b: UsageBucket, field: BreakdownSortField): string | number {
     switch (field) {
-      case 'key': return b.key;
-      case 'calls': return b.calls;
-      case 'total_tokens': return b.total_tokens;
-      case 'cost_usd': return b.cost_usd;
+      case 'key':
+        return b.key;
+      case 'calls':
+        return b.calls;
+      case 'total_tokens':
+        return b.total_tokens;
+      case 'cost_usd':
+        return b.cost_usd;
     }
   }
 
@@ -84,10 +88,13 @@ export class AdminUsageComponent implements OnInit {
   refresh(): void {
     this.loading.set(true);
     this.error.set('');
-    this.api.summary().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (s) => this.summary.set(s),
-      error: (err) => this.error.set(err?.error?.detail ?? 'Failed to load summary'),
-    });
+    this.api
+      .summary()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (s) => this.summary.set(s),
+        error: (err) => this.error.set(err?.error?.detail ?? 'Failed to load summary'),
+      });
     this.loadTimeseries();
     this.loadBreakdown();
     this.loadRecent();
@@ -105,23 +112,29 @@ export class AdminUsageComponent implements OnInit {
   }
 
   private loadTimeseries(): void {
-    this.api.timeseries(this.rangeDays()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (ts) => {
-        this.timeseries.set(ts);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.error.set(err?.error?.detail ?? 'Failed to load timeseries');
-        this.loading.set(false);
-      },
-    });
+    this.api
+      .timeseries(this.rangeDays())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (ts) => {
+          this.timeseries.set(ts);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Failed to load timeseries');
+          this.loading.set(false);
+        },
+      });
   }
 
   private loadBreakdown(): void {
-    this.api.breakdown(this.dimension(), this.rangeDays()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (b) => this.breakdown.set(b),
-      error: (err) => this.error.set(err?.error?.detail ?? 'Failed to load breakdown'),
-    });
+    this.api
+      .breakdown(this.dimension(), this.rangeDays())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (b) => this.breakdown.set(b),
+        error: (err) => this.error.set(err?.error?.detail ?? 'Failed to load breakdown'),
+      });
   }
 
   loadRecent(): void {

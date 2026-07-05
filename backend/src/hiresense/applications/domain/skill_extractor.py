@@ -7,7 +7,9 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = "You extract required technical skills from job descriptions. Return only a JSON array."
+SYSTEM_PROMPT = (
+    "You extract required technical skills from job descriptions. Return only a JSON array."
+)
 USER_PROMPT_TEMPLATE = (
     "Extract the required technical skills from the following job description. "
     "Return a JSON array of short lowercase strings (no commentary, no markdown, no explanation). "

@@ -45,9 +45,7 @@ def _service(projects, *, public_url="https://site.dev", ref_prefix="hiresense")
 @pytest.mark.asyncio
 async def test_citation_includes_projects_and_tracked_link() -> None:
     service = _service([_project("api", ["fastapi", "python"], demo="https://demo.x")])
-    text = await service.citation_for(
-        job_skills=["python"], job_text="", application_id="app-1"
-    )
+    text = await service.citation_for(job_skills=["python"], job_text="", application_id="app-1")
     assert text is not None
     assert "Api [fastapi, python]: Did things." in text
     assert "https://github.com/x/api" in text
@@ -57,15 +55,9 @@ async def test_citation_includes_projects_and_tracked_link() -> None:
 @pytest.mark.asyncio
 async def test_citation_none_when_no_relevant_projects_or_empty_snapshot() -> None:
     service = _service([_project("api", ["fastapi"])])
-    assert (
-        await service.citation_for(job_skills=["unity"], job_text="", application_id="a")
-        is None
-    )
+    assert await service.citation_for(job_skills=["unity"], job_text="", application_id="a") is None
     empty = _service([])
-    assert (
-        await empty.citation_for(job_skills=["python"], job_text="", application_id="a")
-        is None
-    )
+    assert await empty.citation_for(job_skills=["python"], job_text="", application_id="a") is None
 
 
 @pytest.mark.asyncio

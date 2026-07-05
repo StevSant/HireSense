@@ -8,7 +8,11 @@ from hiresense.ingestion.domain import IngestionCooldownError
 from hiresense.scheduler.domain.job_definition import JobDefinition
 from hiresense.scheduler.domain.job_run import JobRun
 from hiresense.scheduler.domain.job_status import JobStatus
-from hiresense.scheduler.domain.ports import JobFailureNotifier, JobRunRepository, JobToggleRepository
+from hiresense.scheduler.domain.ports import (
+    JobFailureNotifier,
+    JobRunRepository,
+    JobToggleRepository,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +48,7 @@ class JobRunner:
             # Never raise on an unknown job name: record a FAILURE instead so
             # the scheduler/run-now endpoint stay alive.
             now = self._clock()
-            return self._record(
-                name, now, now, JobStatus.FAILURE, f"unknown job: {name}", None
-            )
+            return self._record(name, now, now, JobStatus.FAILURE, f"unknown job: {name}", None)
 
         started = self._clock()
 

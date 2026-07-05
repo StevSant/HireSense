@@ -12,13 +12,9 @@ from hiresense.infrastructure.database import Base
 
 class ProfileOrm(Base):
     __tablename__ = "profiles"
-    __table_args__ = (
-        Index("ix_profiles_created_at", "created_at"),
-    )
+    __table_args__ = (Index("ix_profiles_created_at", "created_at"),)
 
-    id: Mapped[uuid_mod.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid_mod.uuid4
-    )
+    id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
     name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(100), nullable=True)

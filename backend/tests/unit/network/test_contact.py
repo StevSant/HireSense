@@ -2,9 +2,7 @@ from hiresense.network.domain import Contact
 
 
 def test_contact_normalizes_company_on_construction() -> None:
-    contact = Contact(
-        first_name="Jordan", last_name="Lee", company="Acme Inc.", position="EM"
-    )
+    contact = Contact(first_name="Jordan", last_name="Lee", company="Acme Inc.", position="EM")
     assert contact.company_normalized == "acme"
     assert contact.linkedin_url is None
     assert contact.email is None

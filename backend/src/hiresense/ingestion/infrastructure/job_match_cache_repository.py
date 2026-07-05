@@ -38,9 +38,7 @@ class JobMatchCacheRepository(SqlRepository):
 
     # ---- Quick (Tier-1) ----------------------------------------------
 
-    def get_quick_bulk(
-        self, job_ids: list[str], profile_hash: str
-    ) -> dict[str, QuickMatchResult]:
+    def get_quick_bulk(self, job_ids: list[str], profile_hash: str) -> dict[str, QuickMatchResult]:
         if not job_ids:
             return {}
         with self._session_factory() as session:

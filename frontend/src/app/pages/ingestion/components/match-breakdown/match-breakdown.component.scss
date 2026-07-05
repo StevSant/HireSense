@@ -1,16 +1,31 @@
-.mb-list { display: flex; flex-direction: column; gap: 0.7rem; }
+.mb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
 
-details > summary { list-style: none; cursor: pointer; }
-details > summary::-webkit-details-marker { display: none; }
+details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
 
-.mb-row { padding: 0.1rem 0; }
+.mb-row {
+  padding: 0.1rem 0;
+}
 .mb-row-toggle {
   border-radius: var(--radius-md);
   transition: background 0.15s var(--ease);
 
-  &:hover { background: var(--bg-inset); }
+  &:hover {
+    background: var(--bg-inset);
+  }
 }
-.mb-summary { padding: 0.2rem 0.15rem; }
+.mb-summary {
+  padding: 0.2rem 0.15rem;
+}
 
 .mb-head {
   display: flex;
@@ -24,14 +39,16 @@ details > summary::-webkit-details-marker { display: none; }
   color: var(--text-primary);
 }
 .mb-row-toggle .mb-name::after {
-  content: "›";
+  content: '›';
   display: inline-block;
   margin-left: 0.3rem;
   color: var(--text-muted);
   transform: rotate(90deg);
   transition: transform 0.2s var(--ease);
 }
-.mb-row-toggle[open] .mb-name::after { transform: rotate(-90deg); }
+.mb-row-toggle[open] .mb-name::after {
+  transform: rotate(-90deg);
+}
 .mb-score {
   font-size: 0.8125rem;
   font-weight: 700;

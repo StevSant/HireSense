@@ -26,7 +26,11 @@ def test_formats_title_tech_and_first_description_line() -> None:
 
 def test_pinned_projects_come_first_then_position() -> None:
     text = portfolio_profile_text(
-        [_project("b", position=2), _project("a", position=1), _project("p", pinned=True, position=9)],
+        [
+            _project("b", position=2),
+            _project("a", position=1),
+            _project("p", pinned=True, position=9),
+        ],
         language="en",
         char_cap=500,
     )

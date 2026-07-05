@@ -61,7 +61,10 @@
         @if (suggestions().length > 0) {
           <div class="contact-suggestions">
             <span class="muted">You know:</span>
-            @for (contact of suggestions(); track contact.linkedin_url ?? contact.first_name + contact.last_name) {
+            @for (
+              contact of suggestions();
+              track contact.linkedin_url ?? contact.first_name + contact.last_name
+            ) {
               <button type="button" class="chip" (click)="useContact(contact)">
                 {{ contact.first_name }} {{ contact.last_name }} — {{ contact.position }}
               </button>
@@ -81,7 +84,11 @@
     </div>
 
     <button class="btn-primary" (click)="generate()" [disabled]="generating() || !hasSelection()">
-      @if (generating()) { Generating… } @else { Generate message }
+      @if (generating()) {
+        Generating…
+      } @else {
+        Generate message
+      }
     </button>
 
     @if (composeNotice()) {
@@ -101,15 +108,31 @@
 
     <div class="actions">
       <button class="btn-secondary" (click)="copyMessage()" [disabled]="!message()">
-        @if (copied()) { Copied! } @else { Copy }
+        @if (copied()) {
+          Copied!
+        } @else {
+          Copy
+        }
       </button>
-      <button class="btn-primary" (click)="record('sent')" [disabled]="recording() || !hasSelection()">
+      <button
+        class="btn-primary"
+        (click)="record('sent')"
+        [disabled]="recording() || !hasSelection()"
+      >
         Mark as sent
       </button>
-      <button class="btn-secondary" (click)="record('followed_up')" [disabled]="recording() || !hasSelection()">
+      <button
+        class="btn-secondary"
+        (click)="record('followed_up')"
+        [disabled]="recording() || !hasSelection()"
+      >
         Followed up
       </button>
-      <button class="btn-secondary" (click)="record('replied')" [disabled]="recording() || !hasSelection()">
+      <button
+        class="btn-secondary"
+        (click)="record('replied')"
+        [disabled]="recording() || !hasSelection()"
+      >
         Replied
       </button>
     </div>
@@ -132,11 +155,19 @@
       <p class="muted empty">No outreach recorded yet.</p>
     } @else {
       <div class="timeline-controls">
-        <select [value]="eventSort.token()" (change)="onEventSort($event)" aria-label="Sort timeline">
+        <select
+          [value]="eventSort.token()"
+          (change)="onEventSort($event)"
+          aria-label="Sort timeline"
+        >
           <option value="created_desc">Newest first</option>
           <option value="created_asc">Oldest first</option>
         </select>
-        <select [value]="kindFilter()" (change)="onKindFilterChange($event)" aria-label="Filter by kind">
+        <select
+          [value]="kindFilter()"
+          (change)="onKindFilterChange($event)"
+          aria-label="Filter by kind"
+        >
           <option value="">All kinds</option>
           <option value="sent">Sent</option>
           <option value="followed_up">Followed up</option>

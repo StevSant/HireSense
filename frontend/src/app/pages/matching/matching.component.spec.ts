@@ -42,13 +42,15 @@ function makeMatchResult(over: Partial<Record<string, unknown>> = {}) {
 }
 
 describe('MatchingComponent', () => {
-  function mount(opts: {
-    profiles?: Record<string, unknown>;
-    listProfiles?: () => unknown;
-    queryJobs?: () => unknown;
-    matching?: Partial<Record<string, unknown>>;
-    jobId?: string | null;
-  } = {}) {
+  function mount(
+    opts: {
+      profiles?: Record<string, unknown>;
+      listProfiles?: () => unknown;
+      queryJobs?: () => unknown;
+      matching?: Partial<Record<string, unknown>>;
+      jobId?: string | null;
+    } = {},
+  ) {
     const profileService = {
       profiles: signal<Record<string, unknown>>(opts.profiles ?? {}),
       listProfiles: opts.listProfiles ?? (() => of([])),
@@ -65,7 +67,7 @@ describe('MatchingComponent', () => {
     };
     const route = {
       snapshot: {
-        queryParamMap: { get: (key: string) => (key === 'job_id' ? opts.jobId ?? null : null) },
+        queryParamMap: { get: (key: string) => (key === 'job_id' ? (opts.jobId ?? null) : null) },
       },
     };
 
@@ -104,8 +106,14 @@ describe('MatchingComponent', () => {
       imports: [MatchingComponent],
       providers: [
         { provide: ProfileService, useValue: profileService },
-        { provide: IngestionService, useValue: { queryJobs: () => of({ jobs: [] }), getJob: () => of({}) } },
-        { provide: MatchingService, useValue: { analyze: () => of(makeMatchResult()), evaluate: () => of({}) } },
+        {
+          provide: IngestionService,
+          useValue: { queryJobs: () => of({ jobs: [] }), getJob: () => of({}) },
+        },
+        {
+          provide: MatchingService,
+          useValue: { analyze: () => of(makeMatchResult()), evaluate: () => of({}) },
+        },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } },
       ],
     });

@@ -9,7 +9,9 @@ from hiresense.scheduler.infrastructure import JobRunOrm, JobToggleOrm  # noqa: 
 
 
 def _factory():
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)
 
@@ -23,29 +25,47 @@ class _Settings:
 
 
 class _Orchestrator:
-    async def run(self): return [1, 2]
+    async def run(self):
+        return [1, 2]
+
+
 class _Revalidation:
-    async def sweep(self): return []
+    async def sweep(self):
+        return []
+
+
 class _Outreach:
-    def due_followups(self): return []
+    def due_followups(self):
+        return []
 
 
 class _Autohunt:
-    def __init__(self, job_count): self._jc = job_count
-    async def run(self): return type("D", (), {"job_count": self._jc})()
+    def __init__(self, job_count):
+        self._jc = job_count
+
+    async def run(self):
+        return type("D", (), {"job_count": self._jc})()
 
 
 class _Notifier:
-    def __init__(self): self.matches = []
-    async def notify_new_matches(self, digest): self.matches.append(digest)
+    def __init__(self):
+        self.matches = []
+
+    async def notify_new_matches(self, digest):
+        self.matches.append(digest)
+
     async def notify_job_failure(self, job_name, detail): ...
 
 
 def _build(autohunt, notifier):
     return build_scheduler(
-        settings=_Settings(), sync_session_factory=_factory(),
-        ingestion_orchestrator=_Orchestrator(), revalidation_service=_Revalidation(),
-        autohunt_service=autohunt, outreach_service=_Outreach(), notification_service=notifier,
+        settings=_Settings(),
+        sync_session_factory=_factory(),
+        ingestion_orchestrator=_Orchestrator(),
+        revalidation_service=_Revalidation(),
+        autohunt_service=autohunt,
+        outreach_service=_Outreach(),
+        notification_service=notifier,
     )
 
 

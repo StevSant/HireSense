@@ -24,9 +24,7 @@ class NotificationStatus(BaseModel):
 def status(
     service: Annotated[NotificationService, Depends(get_notification_service)],
 ) -> NotificationStatus:
-    return NotificationStatus(
-        enabled=service.enabled, recipient_masked=service.masked_recipient()
-    )
+    return NotificationStatus(enabled=service.enabled, recipient_masked=service.masked_recipient())
 
 
 @router.post("/test", status_code=200)

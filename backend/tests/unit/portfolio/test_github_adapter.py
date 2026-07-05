@@ -13,8 +13,17 @@ class _FakeResponse:
         return self._payload
 
 
-def _repo(name, *, stars=0, fork=False, archived=False, topics=None, description="d",
-          homepage=None, pushed="2026-01-01T00:00:00Z"):
+def _repo(
+    name,
+    *,
+    stars=0,
+    fork=False,
+    archived=False,
+    topics=None,
+    description="d",
+    homepage=None,
+    pushed="2026-01-01T00:00:00Z",
+):
     return {
         "name": name,
         "full_name": f"StevSant/{name}",
@@ -55,10 +64,13 @@ async def test_fetch_projects_filters_sorts_and_normalizes() -> None:
         _repo("a-fork", fork=True, stars=99),
         _repo("old", archived=True, stars=99),
     ]
-    http = _FakeHttp(repos, {
-        "StevSant/hiresense": {"Python": 9000, "TypeScript": 100},
-        "StevSant/tiny": {},
-    })
+    http = _FakeHttp(
+        repos,
+        {
+            "StevSant/hiresense": {"Python": 9000, "TypeScript": 100},
+            "StevSant/tiny": {},
+        },
+    )
     adapter = GitHubPortfolioAdapter(
         http_client=http,
         api_url="https://api.github.com/",
@@ -95,8 +107,11 @@ async def test_equal_stars_ranked_by_recent_push() -> None:
     ]
     http = _FakeHttp(repos, {"StevSant/older": {}, "StevSant/newer": {}})
     adapter = GitHubPortfolioAdapter(
-        http_client=http, api_url="https://api.github.com", username="StevSant",
-        token="", max_repos=30,
+        http_client=http,
+        api_url="https://api.github.com",
+        username="StevSant",
+        token="",
+        max_repos=30,
     )
     projects = await adapter.fetch_projects()
     assert [p.source_key for p in projects] == ["StevSant/newer", "StevSant/older"]
@@ -109,8 +124,11 @@ async def test_max_repos_caps_languages_calls_and_token_header() -> None:
     repos = [_repo("hiresense", stars=5), _repo("tiny", stars=1)]
     http = _FakeHttp(repos, {"StevSant/hiresense": {"Python": 1}})
     adapter = GitHubPortfolioAdapter(
-        http_client=http, api_url="https://api.github.com", username="StevSant",
-        token="tok", max_repos=1,
+        http_client=http,
+        api_url="https://api.github.com",
+        username="StevSant",
+        token="tok",
+        max_repos=1,
     )
     projects = await adapter.fetch_projects()
 
@@ -141,8 +159,12 @@ async def test_include_private_uses_authenticated_endpoint() -> None:
 
     http = _PaginatedHttp({1: [_repo("secret")]})
     adapter = GitHubPortfolioAdapter(
-        http_client=http, api_url="https://api.github.com", username="ignored",
-        token="tok", max_repos=30, include_private=True,
+        http_client=http,
+        api_url="https://api.github.com",
+        username="ignored",
+        token="tok",
+        max_repos=30,
+        include_private=True,
     )
     projects = await adapter.fetch_projects()
 
@@ -158,12 +180,14 @@ async def test_include_private_uses_authenticated_endpoint() -> None:
 async def test_pagination_walks_until_short_page() -> None:
     from hiresense.portfolio.adapters import GitHubPortfolioAdapter
 
-    full_page = [_repo(f"r{i}", pushed=f"2026-01-{i % 28 + 1:02d}T00:00:00Z")
-                 for i in range(100)]
+    full_page = [_repo(f"r{i}", pushed=f"2026-01-{i % 28 + 1:02d}T00:00:00Z") for i in range(100)]
     http = _PaginatedHttp({1: full_page, 2: [_repo("last")]})
     adapter = GitHubPortfolioAdapter(
-        http_client=http, api_url="https://api.github.com", username="StevSant",
-        token="", max_repos=200,
+        http_client=http,
+        api_url="https://api.github.com",
+        username="StevSant",
+        token="",
+        max_repos=200,
     )
     projects = await adapter.fetch_projects()
 

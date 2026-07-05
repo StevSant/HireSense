@@ -8,9 +8,17 @@ from hiresense.ingestion.domain.models import NormalizedJob
 
 def _job(id: str, *, score=None, date=None, title="", company="", location="", source="x"):
     return NormalizedJob(
-        id=id, title=title, company=company, description="x", skills=[],
-        location=location, source=source, source_type="api", url="x",
-        match_score=score, posted_date=date,
+        id=id,
+        title=title,
+        company=company,
+        description="x",
+        skills=[],
+        location=location,
+        source=source,
+        source_type="api",
+        url="x",
+        match_score=score,
+        posted_date=date,
     )
 
 
@@ -57,7 +65,10 @@ def test_text_fields_case_insensitive_and_empty_last():
 
 
 def test_company_and_source_sort():
-    jobs = [_job("b", company="Beta", source="remotive"), _job("a", company="acme", source="jobicy")]
+    jobs = [
+        _job("b", company="Beta", source="remotive"),
+        _job("a", company="acme", source="jobicy"),
+    ]
     assert [j.id for j in sort_jobs(jobs, "company_asc")] == ["a", "b"]
     # source_desc: "remotive" (b) > "jobicy" (a), so b comes first.
     assert [j.id for j in sort_jobs(jobs, "source_desc")] == ["b", "a"]

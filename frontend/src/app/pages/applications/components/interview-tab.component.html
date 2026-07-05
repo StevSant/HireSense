@@ -20,7 +20,11 @@
       <section class="card">
         <h3>Competencies to probe</h3>
         @if (p.competencies_to_probe.length) {
-          <ul>@for (c of p.competencies_to_probe; track c) { <li>{{ c }}</li> }</ul>
+          <ul>
+            @for (c of p.competencies_to_probe; track c) {
+              <li>{{ c }}</li>
+            }
+          </ul>
         } @else {
           <p class="muted">None</p>
         }
@@ -28,7 +32,11 @@
       <section class="card">
         <h3>Technical topics</h3>
         @if (p.technical_topics.length) {
-          <ul>@for (t of p.technical_topics; track t) { <li>{{ t }}</li> }</ul>
+          <ul>
+            @for (t of p.technical_topics; track t) {
+              <li>{{ t }}</li>
+            }
+          </ul>
         } @else {
           <p class="muted">None</p>
         }
@@ -36,7 +44,11 @@
       <section class="card">
         <h3>Negotiation points</h3>
         @if (p.negotiation_points.length) {
-          <ul>@for (n of p.negotiation_points; track n) { <li>{{ n }}</li> }</ul>
+          <ul>
+            @for (n of p.negotiation_points; track n) {
+              <li>{{ n }}</li>
+            }
+          </ul>
         } @else {
           <p class="muted">None</p>
         }
@@ -53,6 +65,8 @@
       }
     }
   } @else {
-    <p class="muted">No prep yet. Generate one to see competencies, topics, and negotiation points.</p>
+    <p class="muted">
+      No prep yet. Generate one to see competencies, topics, and negotiation points.
+    </p>
   }
 </div>

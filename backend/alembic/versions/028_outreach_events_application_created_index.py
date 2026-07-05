@@ -26,9 +26,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index(
-        "ix_outreach_events_application_created", table_name="outreach_events"
-    )
+    op.drop_index("ix_outreach_events_application_created", table_name="outreach_events")
     op.create_index(
         "ix_outreach_events_application_id",
         "outreach_events",

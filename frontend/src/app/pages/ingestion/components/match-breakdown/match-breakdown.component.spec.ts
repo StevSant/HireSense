@@ -19,7 +19,9 @@ describe('MatchBreakdownComponent', () => {
   it('renders one row per dimension with a humanized label and score', () => {
     const fixture = mount(DIMS);
     expect(fixture.nativeElement.querySelectorAll('.mb-row').length).toBe(2);
-    expect(fixture.nativeElement.querySelector('.mb-name').textContent.trim()).toBe('Skills role fit');
+    expect(fixture.nativeElement.querySelector('.mb-name').textContent.trim()).toBe(
+      'Skills role fit',
+    );
     expect(fixture.nativeElement.textContent).toContain('90%');
   });
 

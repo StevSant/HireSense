@@ -20,7 +20,10 @@ export class LoginComponent {
 
   private readonly destroyRef = inject(DestroyRef);
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(
+    private auth: AuthService,
+    private router: Router,
+  ) {}
 
   onSubmit(): void {
     this.loading.set(true);

@@ -16,8 +16,14 @@
   gap: 4px;
 }
 
-.variant-matched .chip { background: #d1fae5; color: #065f46; }
-.variant-missing .chip { background: #fee2e2; color: #991b1b; }
+.variant-matched .chip {
+  background: #d1fae5;
+  color: #065f46;
+}
+.variant-missing .chip {
+  background: #fee2e2;
+  color: #991b1b;
+}
 
 .chip-remove {
   background: none;
@@ -28,7 +34,9 @@
   font-size: 0.85em;
   opacity: 0.6;
 
-  &:hover { opacity: 1; }
+  &:hover {
+    opacity: 1;
+  }
 }
 
 .chip-input {
@@ -39,7 +47,11 @@
   min-width: 120px;
   outline: none;
 
-  &:focus { border-color: #2563eb; }
+  &:focus {
+    border-color: #2563eb;
+  }
 }
 
-.empty { color: #9ca3af; }
+.empty {
+  color: #9ca3af;
+}

@@ -4,8 +4,11 @@ from hiresense.notifications.domain import NotificationService, render_pipeline_
 
 
 class _Sender:
-    def __init__(self): self.sent = []
-    def send(self, message): self.sent.append(message)
+    def __init__(self):
+        self.sent = []
+
+    def send(self, message):
+        self.sent.append(message)
 
 
 def test_render_includes_count():
@@ -17,7 +20,10 @@ def test_render_includes_count():
 @pytest.mark.asyncio
 async def test_notify_sends_when_enabled():
     sender = _Sender()
-    assert await NotificationService(sender=sender, to_email="me@x.com").notify_pipeline_drafts(2) is True
+    assert (
+        await NotificationService(sender=sender, to_email="me@x.com").notify_pipeline_drafts(2)
+        is True
+    )
     assert len(sender.sent) == 1
 
 

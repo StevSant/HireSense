@@ -23,9 +23,7 @@ class GetOnBoardNormalizer:
         max_salary = attrs.get("max_salary")
         currency = attrs.get("currency", "USD")
         salary_range = (
-            f"{currency} {min_salary}-{max_salary}/mo"
-            if min_salary and max_salary
-            else None
+            f"{currency} {min_salary}-{max_salary}/mo" if min_salary and max_salary else None
         )
         posted_date = None
         published_at = attrs.get("published_at")
@@ -63,15 +61,31 @@ class GetOnBoardNormalizer:
         if category and category not in tags:
             tags.append(category)
         latam_countries = (
-            "Chile", "Colombia", "Mexico", "Argentina", "Peru", "Ecuador",
-            "Venezuela", "Bolivia", "Uruguay", "Paraguay", "Costa Rica",
-            "Guatemala", "Honduras", "El Salvador", "Nicaragua", "Panama",
-            "Dominican Republic", "Cuba",
+            "Chile",
+            "Colombia",
+            "Mexico",
+            "Argentina",
+            "Peru",
+            "Ecuador",
+            "Venezuela",
+            "Bolivia",
+            "Uruguay",
+            "Paraguay",
+            "Costa Rica",
+            "Guatemala",
+            "Honduras",
+            "El Salvador",
+            "Nicaragua",
+            "Panama",
+            "Dominican Republic",
+            "Cuba",
         )
         language = "es" if any(c in latam_countries for c in countries) else "en"
         return {
             "title": attrs.get("title", ""),
-            "company": attrs.get("company_name", str(relationships.get("company", {}).get("data", {}).get("id", ""))),
+            "company": attrs.get(
+                "company_name", str(relationships.get("company", {}).get("data", {}).get("id", ""))
+            ),
             "description": description,
             "skills": tags,
             "location": location,

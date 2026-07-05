@@ -27,7 +27,7 @@
   --accent: #0f766e;
   --accent-hover: #0d6560;
   --accent-subtle: #ccfbf1;
-  --accent-soft: #5eead4;   /* visible soft teal — range fills, secondary bars */
+  --accent-soft: #5eead4; /* visible soft teal — range fills, secondary bars */
   --accent-text: #065f46;
 
   /* --- Semantic --- */
@@ -62,9 +62,10 @@
   --duration: 0.2s;
 }
 
-
 /* ---- Reset ---- */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -80,16 +81,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-
 /* ---- Typography ---- */
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   font-family: var(--font-display);
   font-weight: 600;
   line-height: 1.3;
   color: var(--text-primary);
   letter-spacing: -0.01em;
 }
-
 
 /* ---- Shared: Buttons ---- */
 .btn-primary {
@@ -105,7 +107,9 @@ h1, h2, h3, h4 {
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background var(--duration) var(--ease), transform var(--duration) var(--ease);
+  transition:
+    background var(--duration) var(--ease),
+    transform var(--duration) var(--ease);
 
   &:hover:not(:disabled) {
     background: var(--accent-hover);
@@ -157,14 +161,15 @@ h1, h2, h3, h4 {
   cursor: pointer;
   transition: background var(--duration) var(--ease);
 
-  &:hover { background: #fee2e2; }
+  &:hover {
+    background: #fee2e2;
+  }
 }
 
 .btn-sm {
   padding: 0.3rem 0.75rem;
   font-size: 0.8rem;
 }
-
 
 /* ---- Shared: Forms ---- */
 .form-group {
@@ -181,7 +186,10 @@ h1, h2, h3, h4 {
   }
 }
 
-input, textarea, select, .form-input {
+input,
+textarea,
+select,
+.form-input {
   width: 100%;
   padding: 0.5625rem 0.875rem;
   background: var(--bg-card);
@@ -190,7 +198,9 @@ input, textarea, select, .form-input {
   border-radius: var(--radius-md);
   font-family: var(--font-body);
   font-size: 0.875rem;
-  transition: border-color var(--duration) var(--ease), box-shadow var(--duration) var(--ease);
+  transition:
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
 
   &:focus {
     outline: none;
@@ -209,7 +219,7 @@ textarea {
   line-height: 1.6;
 }
 
-textarea[name="tex"],
+textarea[name='tex'],
 textarea#tex {
   font-family: var(--font-mono);
   font-size: 0.8125rem;
@@ -241,7 +251,6 @@ textarea#tex {
   justify-content: flex-end;
 }
 
-
 /* ---- Shared: Alerts ---- */
 .alert {
   padding: 0.75rem 1rem;
@@ -268,7 +277,6 @@ textarea#tex {
   border-left: 3px solid var(--info-text);
 }
 
-
 /* ---- Shared: Cards ---- */
 .card {
   background: var(--bg-card);
@@ -276,7 +284,6 @@ textarea#tex {
   border-radius: var(--radius-lg);
   padding: 1.5rem;
 }
-
 
 /* ---- Shared: Tables ---- */
 .table-container {
@@ -292,7 +299,8 @@ table {
   width: 100%;
   border-collapse: collapse;
 
-  th, td {
+  th,
+  td {
     padding: 0.8125rem 1rem;
     text-align: left;
     font-size: 0.875rem;
@@ -327,7 +335,6 @@ table {
   }
 }
 
-
 /* ---- Shared: Badges ---- */
 .badge {
   display: inline-block;
@@ -355,7 +362,6 @@ table {
   color: var(--text-muted);
 }
 
-
 /* ---- Shared: Tags ---- */
 .tag {
   display: inline-block;
@@ -365,9 +371,14 @@ table {
   font-weight: 500;
 }
 
-.tag-success { background: var(--success-bg); color: var(--success); }
-.tag-danger  { background: var(--danger-bg); color: var(--danger); }
-
+.tag-success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.tag-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
 
 /* ---- Shared: Links ---- */
 .link {
@@ -382,7 +393,6 @@ table {
   }
 }
 
-
 /* ---- Shared: Stats ---- */
 .stats {
   margin-bottom: 1rem;
@@ -393,7 +403,6 @@ table {
     font-weight: 500;
   }
 }
-
 
 /* ---- Shared: Empty/Loading ---- */
 .empty-state {
@@ -437,8 +446,13 @@ table {
 }
 
 @keyframes pulseCard {
-  0%, 100% { border-color: var(--border-subtle); }
-  50%      { border-color: var(--accent); }
+  0%,
+  100% {
+    border-color: var(--border-subtle);
+  }
+  50% {
+    border-color: var(--accent);
+  }
 }
 
 .spinner {
@@ -452,9 +466,10 @@ table {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
-
 
 /* ---- Shared: Page layout ---- */
 .page {
@@ -494,7 +509,6 @@ table {
     transform: translateY(0);
   }
 }
-
 
 /* ---- Scrollbar ---- */
 ::-webkit-scrollbar {

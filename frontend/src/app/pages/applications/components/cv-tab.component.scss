@@ -139,3 +139,37 @@
 }
 
 .muted { color: #9ca3af; }
+
+.pdf-preview {
+  margin-bottom: 1.25rem;
+}
+
+.preview-frame {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  height: 70vh;
+  overflow: hidden;
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.preview-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 1rem;
+  color: #6b7280;
+  text-align: center;
+  white-space: pre-wrap;
+}
+
+.preview-state-error {
+  color: #991b1b;
+}

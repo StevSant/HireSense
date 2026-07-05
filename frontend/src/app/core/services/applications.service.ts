@@ -87,6 +87,20 @@ export class ApplicationsService {
     return this.http.get(`${this.base}/${id}/cv.pdf`, { responseType: 'blob' });
   }
 
+  /**
+   * Fetch a CV PDF as a blob for inline preview. `original: true` compiles the
+   * untouched profile CV in `language`; otherwise the latest optimized CV.
+   */
+  fetchCvPdf(
+    id: string,
+    opts: { original?: boolean; language?: 'en' | 'es' } = {},
+  ): Observable<Blob> {
+    let params = new HttpParams();
+    if (opts.original) params = params.set('original', 'true');
+    if (opts.language) params = params.set('language', opts.language);
+    return this.http.get(`${this.base}/${id}/cv.pdf`, { params, responseType: 'blob' });
+  }
+
   /** Compile the user's untouched profile CV (no optimization required). */
   downloadOriginalCvPdf(id: string, language: 'en' | 'es' = 'en'): Observable<Blob> {
     const params = new HttpParams().set('original', 'true').set('language', language);

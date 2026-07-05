@@ -48,6 +48,41 @@
     <div class="alert alert-error">{{ downloadError() }}</div>
   }
 
+  <section class="pdf-preview">
+    <div class="view-toggle" role="tablist" aria-label="CV PDF preview source">
+      <button
+        role="tab"
+        [class.active]="effectivePreviewSource() === 'original'"
+        [attr.aria-selected]="effectivePreviewSource() === 'original'"
+        (click)="setPreviewSource('original')"
+      >
+        Original
+      </button>
+      @if (optimization()) {
+        <button
+          role="tab"
+          [class.active]="effectivePreviewSource() === 'optimized'"
+          [attr.aria-selected]="effectivePreviewSource() === 'optimized'"
+          (click)="setPreviewSource('optimized')"
+        >
+          Optimized
+        </button>
+      }
+    </div>
+
+    <div class="preview-frame">
+      @if (previewLoading()) {
+        <div class="preview-state">Compiling PDF…</div>
+      } @else if (previewError()) {
+        <div class="preview-state preview-state-error">{{ previewError() }}</div>
+      } @else if (previewUrl(); as url) {
+        <iframe [src]="url" title="CV PDF preview" class="preview-iframe"></iframe>
+      } @else {
+        <div class="preview-state">No preview available.</div>
+      }
+    </div>
+  </section>
+
   @if (optimization(); as opt) {
     @if (opt.improvement_summary) {
       <div class="summary-card">

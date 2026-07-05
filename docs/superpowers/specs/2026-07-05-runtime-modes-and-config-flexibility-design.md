@@ -24,26 +24,28 @@ up the config file while we're in there.
 ## Goals
 
 1. `APP_MODE=local|production` — one switch that sets a bundle of defaults. Default `local`.
-2. Currently-required deps degrade in `local`:
-   - `database_url` blank → SQLite file fallback.
+2. `database_url` (Postgres) stays **required in both modes** — the pgvector ANN store
+   depends on it, so there is no runtime SQLite fallback. It is one of the aggregated
+   required values.
+3. The other currently-required deps degrade in `local`:
    - `llm_api_key` blank → heuristic-only matching (LLM features return a clear
      "not configured" state; already supported at the factory level).
    - auth secrets blank → ephemeral per-boot dev secret + default creds, loud warning.
-3. `production` is strict: blank required values fail loudly with **one aggregated**
+4. `production` is strict: blank required values fail loudly with **one aggregated**
    startup error listing everything missing.
-4. Individual env vars always override mode defaults (escape hatch).
-5. Split `config.py` into a `config/` package, one concern per file, **preserving flat
+5. Individual env vars always override mode defaults (escape hatch).
+6. Split `config.py` into a `config/` package, one concern per file, **preserving flat
    attribute access** (`settings.otel_enabled`) so no consumer changes.
-6. Document the contract in `.env.example` and `CLAUDE.md`.
+7. Document the contract in `.env.example` and `CLAUDE.md`.
 
 ## Non-goals
 
 - No nested settings access (`settings.observability.enabled`) — would churn every
   read-site for no benefit. Flat access stays.
-- No async SQLite / aiosqlite work: the app builds only a **sync** engine
-  (`shared_infra.py`), so a sync `sqlite:///` URL is sufficient.
-- No pgvector-on-SQLite: SQLite fallback disables the pgvector ANN store (semantic
-  pre-ranking degrades to the non-vector path). Real Postgres is still required for ANN.
+- No runtime SQLite fallback for the app. SQLite remains **test-only** (the suite builds
+  the app against in-memory SQLite via fixtures that inject `DATABASE_URL`); the running
+  app always needs a real Postgres URL. This keeps pgvector ANN intact and avoids a
+  silent "am I on SQLite?" failure mode.
 - Not touching the already-degrading subsystems' behavior — only documenting them and,
   where natural, letting the mode inform their defaults.
 
@@ -99,7 +101,7 @@ The one-class-per-file rule is honored per group file; the composed `Settings` i
 
 > Grouping note: fields are partitioned by concern, but the composed class is flat. Where
 > a field is read by multiple concerns it lives with its primary owner (e.g.
-> `vector_store_provider` lives with `database` since SQLite fallback toggles it).
+> `vector_store_provider` lives with `database`).
 
 ### Mode resolution & degradation
 
@@ -115,17 +117,19 @@ Degradation runs as a `model_validator(mode="after")` on `Settings` (so it appli
 app *and* in tests, every time `Settings()` is built). Because degraded fields default to
 `""`/empty, a non-empty value unambiguously means "user set it" → env override wins.
 
-**local mode — fill blanks, warn:**
+**local mode — fill blanks, warn (`database_url` is NOT degraded — see below):**
 
 | Field | Blank → | Signal |
 |---|---|---|
-| `database_url` | `sqlite:///./hiresense_dev.db` | `warnings.warn` + log |
-| `vector_store_provider` | forced to `"none"` **iff** resolved DB is SQLite | log (info) |
 | `llm_api_key` | left blank (heuristic-only) | log (info) |
 | `jwt_secret_key` | `secrets.token_urlsafe(48)` (ephemeral) | **loud warn**: tokens reset on restart |
 | `auth_username` | `"admin"` | warn |
 | `auth_password` | ephemeral `secrets.token_urlsafe(16)` | **loud warn** (printed once so dev can log in) |
 | `otel_exporter_otlp_endpoint` | left blank → console | (already) |
+
+`database_url` is **required in local too**: if blank it is reported through the same
+aggregated missing-required error as production (in local the aggregated list is usually
+just `DATABASE_URL`, since LLM/auth degrade instead).
 
 **production mode — collect all, one error:**
 
@@ -160,42 +164,41 @@ model_validator(after) ──► mode.resolve(self)
       ▼
 main.py: settings = Settings()   # degradation already applied
       ▼
-build_shared_infra(settings, ...)  # sees a fully-resolved config; SQLite branch already handled
+build_shared_infra(settings, ...)  # sees a fully-resolved config; unchanged
 setup_telemetry(app, settings)     # unchanged
 ```
 
-`shared_infra.py` needs one small change: when `vector_store_provider == "none"` (or not
-`"pgvector"`), leave `vector_store=None` (already the case). Confirm every `vector_store`
-consumer tolerates `None` (they do today for the non-pgvector path).
+`shared_infra.py` needs **no change** — it already builds a Postgres engine from
+`database_url` and only builds `PgVectorStore` when `vector_store_provider == "pgvector"`.
+Since Postgres stays required, both paths keep working as today.
 
 ## Error handling
 
 - **Config errors** surface at `Settings()` construction (startup), never mid-request.
-  Production missing-config → aggregated `ValueError` → process exits with a readable
-  message. Local degradations → `warnings` + structured log lines, never silent.
+  Missing required config (both modes for `database_url`; also `llm_api_key`/auth in
+  production) → aggregated `ValueError` → process exits with a readable message. Local
+  degradations (LLM/auth) → `warnings` + structured log lines, never silent.
 - Ephemeral auth password is logged **once** at startup (local only) so the developer can
   authenticate; never logged in production (secret is required there).
-- SQLite fallback + a `vector_store_provider=pgvector` explicitly set by the user in local
-  mode: warn that pgvector needs Postgres and either (a) honor it and let it fail at query
-  time, or (b) downgrade to `none` with a warning. **Decision: downgrade to `none` + warn**
-  (fail-soft is the whole point of local mode).
 
 ## Testing
 
 New `tests/unit/config/`:
-- `local` mode with everything blank → `database_url` is the SQLite default, a
-  `jwt_secret_key` is generated (non-empty, differs across two `Settings()` builds),
-  `vector_store_provider == "none"`.
+- `local` mode with LLM/auth blank but `DATABASE_URL` set → no error; a `jwt_secret_key`
+  is generated (non-empty, differs across two `Settings()` builds); `llm_api_key` stays
+  blank.
+- `local` mode with `DATABASE_URL` also blank → raises the aggregated error naming
+  `DATABASE_URL`.
 - `production` mode with blanks → raises, and the message names **every** missing field
   (not just the first).
-- Env override beats mode default: `APP_MODE=local` + explicit `DATABASE_URL=postgres...`
-  keeps the Postgres URL.
+- Env override beats mode default: explicit `LLM_API_KEY`/`JWT_SECRET_KEY` in local mode
+  are kept, not overwritten by degradation.
 - Placeholder secret still rejected in both modes.
 - Comma-separated parsing still works after the source move (regression).
 
-Existing suite: builds the app on SQLite. With `APP_MODE=local` as the default, fixtures
-that currently inject `DATABASE_URL` can be simplified (follow-up cleanup, not required for
-green). Verify the full suite stays green and DB-free.
+Existing suite: builds the app on SQLite via fixtures that inject `DATABASE_URL`. That
+stays exactly as-is (SQLite is test-only; the running app still needs Postgres). Verify the
+full suite stays green and DB-free.
 
 ## Migration / rollout
 
@@ -215,6 +218,8 @@ green). Verify the full suite stays green and DB-free.
   `settings_customise_sources` + comma-sep sources still fire (regression test covers it).
 - **Ephemeral secret confusion**: a dev restarting the server gets logged out. Mitigated by
   the loud warning and documentation; devs who want stability set a real `JWT_SECRET_KEY`.
-- **Silent SQLite in local**: someone could run "local" believing they're on Postgres. The
-  startup warning names the SQLite path explicitly to avoid this.
+- **Local mode without Postgres**: because there is no SQLite fallback, a fresh `local`
+  clone still needs a `DATABASE_URL` before the app boots. This is intentional (pgvector
+  needs Postgres); the aggregated error names `DATABASE_URL` so the fix is obvious, and
+  `docker compose up db` provides one with zero extra config.
 ```

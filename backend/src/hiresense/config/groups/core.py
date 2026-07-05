@@ -1,0 +1,83 @@
+from typing import Any
+
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
+
+from hiresense.config.mode import AppMode
+
+# Known sample values shipped in .env.example. Startup refuses to run with
+# these so a copied-but-unedited .env fails loudly instead of exposing the
+# instance behind guessable credentials.
+_PLACEHOLDER_SECRETS: frozenset[str] = frozenset(
+    {
+        "changeme",
+        "change-this-to-a-random-secret",
+    }
+)
+
+
+class CoreSettings(BaseSettings):
+    """Core application, CORS, auth, language, upload, batch, and rate-limit settings."""
+
+    # Core
+    # Runtime mode. local = degrade missing LLM/auth config (dev-friendly);
+    # production = strict, refuses to boot without every required value.
+    app_mode: AppMode = AppMode.LOCAL
+    app_name: str = "HireSense"
+    app_port: int = 8000
+    debug: bool = False
+    cors_origins: list[str] = ["http://localhost:4200"]
+    # Explicit CORS method/header allow-lists. Wildcards are deliberately not
+    # the default: combined with allow_credentials=True they over-grant to any
+    # origin that slips into cors_origins.
+    cors_allow_methods: list[str] = ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    cors_allow_headers: list[str] = ["Authorization", "Content-Type"]
+
+    # Auth. Blank in local mode → degraded (ephemeral dev secret + default
+    # creds, see _apply_mode); required in production.
+    auth_username: str = ""
+    auth_password: str = ""
+    jwt_secret_key: str = ""
+
+    @field_validator("app_mode", mode="before")
+    @classmethod
+    def _normalize_app_mode(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return value.strip().lower()
+        return value
+
+    @field_validator("auth_password", "jwt_secret_key")
+    @classmethod
+    def _reject_placeholder_secrets(cls, value: str, info: Any) -> str:
+        if value in _PLACEHOLDER_SECRETS:
+            raise ValueError(
+                f"{info.field_name} is still set to the .env.example placeholder; "
+                'generate a real value (e.g. python -c "import secrets; print(secrets.token_urlsafe(48))")'
+            )
+        return value
+
+    # Role embedded in issued tokens. A single-user instance is admin by default;
+    # set to a non-admin value to genuinely exercise the admin gate.
+    auth_role: str = "admin"
+
+    # Language
+    supported_languages: list[str] = ["en", "es"]
+    default_language: str = "en"
+
+    # Seconds the shutdown lifespan waits for in-flight domain-event handlers
+    # before cancelling them.
+    event_bus_drain_timeout_seconds: float = 5.0
+
+    # --- Rate limiting (expensive endpoints) ---
+    # In-process sliding-window limiter applied to LLM/network-heavy endpoints
+    # (ingestion fetch/scan/list/analysis/backfill, matching, optimization).
+    # Keyed by client IP. Disable for load tests with RATE_LIMIT_ENABLED=false.
+    rate_limit_enabled: bool = True
+    rate_limit_max_requests: int = 30
+    rate_limit_window_seconds: float = 60.0
+
+    # Upload
+    max_upload_bytes: int = 10 * 1024 * 1024  # 10 MB
+
+    # Batch processing
+    batch_concurrency: int = 3

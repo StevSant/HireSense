@@ -48,3 +48,44 @@ def test_unparseable_returns_none():
     assert p.parse("competitive") is None
     assert p.parse("") is None
     assert p.parse(None) is None
+
+
+def test_labeled_monthly_sets_period_and_annualizes():
+    r = SalaryParser().parse("USD 2300-2500/mo")
+    assert r is not None
+    assert r.period == "monthly"
+    assert r.min_annual == 27600  # 2300 * 12
+    assert r.max_annual == 30000  # 2500 * 12
+
+
+def test_labeled_hourly_sets_period():
+    r = SalaryParser().parse("$50/hour")
+    assert r is not None
+    assert r.period == "hourly"
+    assert r.min_annual == 104000  # 50 * 2080
+
+
+def test_unlabeled_low_figure_inferred_monthly():
+    # Below the floor, no period keyword -> inferred monthly.
+    r = SalaryParser(annual_floor=12000).parse("USD 2500")
+    assert r is not None
+    assert r.period == "monthly"
+    assert r.min_annual == 30000  # 2500 * 12
+
+
+def test_unlabeled_plausible_figure_is_unknown_annual():
+    # Above the floor, no keyword -> assumed annual, flagged unknown.
+    r = SalaryParser(annual_floor=12000).parse("USD 90,000")
+    assert r is not None
+    assert r.period == "unknown"
+    assert r.min_annual == 90000
+    assert r.max_annual == 90000
+
+
+def test_unlabeled_range_uses_min_for_floor_decision():
+    # A range whose LOWEST figure is below the floor is treated as monthly.
+    r = SalaryParser(annual_floor=12000).parse("USD 2500-2800")
+    assert r is not None
+    assert r.period == "monthly"
+    assert r.min_annual == 30000  # 2500 * 12
+    assert r.max_annual == 33600  # 2800 * 12

@@ -7,15 +7,15 @@ SAMPLE_TEX = r"""
 \begin{document}
 
 \begin{center}
-{\LARGE \textbf{BRYAN STEVEN MENOSCAL SANTANA}}
+{\LARGE \textbf{JANE DOE}}
 \end{center}
 
 \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l l}
-\textbf{Location:} Ecuador, Manabí, Manta & \textbf{Phone:} +593 99 739 9441 \\
-\textbf{Email:} \href{mailto:bryanmenoscal2005@gmail.com}{bryanmenoscal2005@gmail.com}
-& \textbf{Portfolio:} \href{https://stevsant.vercel.app}{stevsant.vercel.app} \\
-\textbf{LinkedIn:} \href{https://linkedin.com/in/bryanmenoscal26}{linkedin.com/in/bryanmenoscal26}
-& \textbf{GitHub:} \href{https://github.com/StevSant}{github.com/StevSant} \\
+\textbf{Location:} Springfield, Illinois & \textbf{Phone:} +1 555 010 0000 \\
+\textbf{Email:} \href{mailto:jane.doe@example.com}{jane.doe@example.com}
+& \textbf{Portfolio:} \href{https://janedoe.example.com}{janedoe.example.com} \\
+\textbf{LinkedIn:} \href{https://linkedin.com/in/janedoe}{linkedin.com/in/janedoe}
+& \textbf{GitHub:} \href{https://github.com/janedoe}{github.com/janedoe} \\
 \end{tabular*}
 
 \section*{SUMMARY}
@@ -51,25 +51,25 @@ Backend Engineer focused on designing scalable, event-driven systems using Pytho
 def test_parse_extracts_name() -> None:
     parser = LaTeXParser()
     result = parser.parse(SAMPLE_TEX)
-    assert result.name == "BRYAN STEVEN MENOSCAL SANTANA"
+    assert result.name == "JANE DOE"
 
 
 def test_parse_extracts_email() -> None:
     parser = LaTeXParser()
     result = parser.parse(SAMPLE_TEX)
-    assert result.email == "bryanmenoscal2005@gmail.com"
+    assert result.email == "jane.doe@example.com"
 
 
 def test_parse_extracts_phone() -> None:
     parser = LaTeXParser()
     result = parser.parse(SAMPLE_TEX)
-    assert result.phone == "+593 99 739 9441"
+    assert result.phone == "+1 555 010 0000"
 
 
 def test_parse_extracts_location() -> None:
     parser = LaTeXParser()
     result = parser.parse(SAMPLE_TEX)
-    assert result.location == "Ecuador, Manabí, Manta"
+    assert result.location == "Springfield, Illinois"
 
 
 def test_parse_extracts_sections() -> None:

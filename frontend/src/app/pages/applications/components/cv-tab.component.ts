@@ -31,10 +31,14 @@ export class CvTabComponent {
   downloadError = signal('');
 
   previewSource = signal<PreviewSource>('optimized');
+  /** Compiling costs a backend LaTeX run, so the preview is opt-in. */
+  previewVisible = signal(false);
   previewUrl = signal<SafeResourceUrl | null>(null);
   previewLoading = signal(false);
   previewError = signal('');
-  private objectUrl: string | null = null;
+  /** Compiled blobs keyed by variant, so toggling never recompiles. */
+  private previewCache = new Map<string, string>();
+  private previewSeq = 0;
 
   running = computed(() => this.runner.isRunning(this.aggregate().id));
   runnerError = computed(() => this.runner.lastError());
@@ -60,31 +64,59 @@ export class CvTabComponent {
 
   constructor() {
     effect(() => {
-      const req = this.previewRequest();
-      this.loadPreview(req.appId, req.original, req.language);
+      if (!this.previewVisible()) return;
+      this.loadPreview(this.previewRequest());
     });
-    this.destroyRef.onDestroy(() => this.revokeObjectUrl());
+    this.destroyRef.onDestroy(() => this.revokeCachedUrls());
   }
 
   setPreviewSource(source: PreviewSource): void {
     this.previewSource.set(source);
   }
 
-  private loadPreview(appId: string, original: boolean, language: 'en' | 'es'): void {
-    this.previewLoading.set(true);
+  togglePreviewVisible(): void {
+    this.previewVisible.update((visible) => !visible);
+  }
+
+  /**
+   * The original CV only varies by language; the optimized one also by
+   * optimization run, so a re-run naturally misses the cache and recompiles.
+   */
+  private cacheKey(req: { original: boolean; language: string; optId: string | null }): string {
+    return req.original ? `original|${req.language}` : `optimized|${req.language}|${req.optId}`;
+  }
+
+  private loadPreview(req: {
+    appId: string;
+    original: boolean;
+    language: 'en' | 'es';
+    optId: string | null;
+  }): void {
+    const seq = ++this.previewSeq;
     this.previewError.set('');
+    const cached = this.previewCache.get(this.cacheKey(req));
+    if (cached) {
+      this.previewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(cached));
+      this.previewLoading.set(false);
+      return;
+    }
+    this.previewLoading.set(true);
     this.service
-      .fetchCvPdf(appId, { original, language })
+      .fetchCvPdf(req.appId, { original: req.original, language: req.language })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (blob) => {
-          this.revokeObjectUrl();
-          this.objectUrl = URL.createObjectURL(blob);
-          this.previewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.objectUrl));
+          const key = this.cacheKey(req);
+          const previous = this.previewCache.get(key);
+          if (previous) URL.revokeObjectURL(previous);
+          const url = URL.createObjectURL(blob);
+          this.previewCache.set(key, url);
+          if (seq !== this.previewSeq) return;
+          this.previewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
           this.previewLoading.set(false);
         },
         error: (err: unknown) => {
-          this.revokeObjectUrl();
+          if (seq !== this.previewSeq) return;
           this.previewUrl.set(null);
           this.previewLoading.set(false);
           void this.setPreviewError(err);
@@ -116,11 +148,11 @@ export class CvTabComponent {
     return typeof detail === 'string' ? detail : null;
   }
 
-  private revokeObjectUrl(): void {
-    if (this.objectUrl) {
-      URL.revokeObjectURL(this.objectUrl);
-      this.objectUrl = null;
+  private revokeCachedUrls(): void {
+    for (const url of this.previewCache.values()) {
+      URL.revokeObjectURL(url);
     }
+    this.previewCache.clear();
   }
 
   run(): void {

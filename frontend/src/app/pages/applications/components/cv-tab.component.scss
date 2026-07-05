@@ -144,7 +144,19 @@
   margin-bottom: 1.25rem;
 }
 
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+
+  .view-toggle {
+    margin: 0;
+  }
+}
+
 .preview-frame {
+  margin-top: 0.75rem;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: #f9fafb;

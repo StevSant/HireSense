@@ -159,9 +159,24 @@ describe('CvTabComponent', () => {
     expect(fixture.componentInstance.downloadingOriginal()).toBe(false);
   });
 
+  function showPreview(fixture: ReturnType<typeof TestBed.createComponent<CvTabComponent>>) {
+    fixture.componentInstance.togglePreviewVisible();
+    fixture.detectChanges();
+  }
+
+  it('keeps the preview hidden by default and only compiles once shown', () => {
+    const fetchCvPdf = vi.fn(() => of(new Blob(['pdf'])));
+    const { fixture } = mount(makeAggregate({ latest_optimization: OPT }), { fetchCvPdf });
+    expect(fixture.componentInstance.previewVisible()).toBe(false);
+    expect(fetchCvPdf).not.toHaveBeenCalled();
+    showPreview(fixture);
+    expect(fetchCvPdf).toHaveBeenCalledTimes(1);
+  });
+
   it('defaults the inline preview to the optimized variant when an optimization exists', () => {
     const fetchCvPdf = vi.fn(() => of(new Blob(['pdf'])));
     const { fixture } = mount(makeAggregate({ latest_optimization: OPT }), { fetchCvPdf });
+    showPreview(fixture);
     expect(fixture.componentInstance.effectivePreviewSource()).toBe('optimized');
     expect(fetchCvPdf).toHaveBeenCalledWith('app-1', { original: false, language: 'en' });
     expect(fixture.componentInstance.previewUrl()).not.toBeNull();
@@ -170,6 +185,7 @@ describe('CvTabComponent', () => {
   it('offers only the Original preview when no optimization exists', () => {
     const fetchCvPdf = vi.fn(() => of(new Blob(['pdf'])));
     const { fixture } = mount(makeAggregate(), { fetchCvPdf });
+    showPreview(fixture);
     expect(fixture.componentInstance.optimization()).toBeNull();
     expect(fixture.componentInstance.effectivePreviewSource()).toBe('original');
     // Selecting optimized is inert without an optimization to render.
@@ -181,15 +197,44 @@ describe('CvTabComponent', () => {
   it('switches the preview source and fetches the matching PDF variant', () => {
     const fetchCvPdf = vi.fn(() => of(new Blob(['pdf'])));
     const { fixture } = mount(makeAggregate({ latest_optimization: OPT }), { fetchCvPdf });
+    showPreview(fixture);
     fetchCvPdf.mockClear();
     fixture.componentInstance.setPreviewSource('original');
     fixture.detectChanges();
     expect(fetchCvPdf).toHaveBeenCalledWith('app-1', { original: true, language: 'en' });
   });
 
+  it('serves already-compiled variants from cache instead of recompiling', () => {
+    const fetchCvPdf = vi.fn(() => of(new Blob(['pdf'])));
+    const { fixture } = mount(makeAggregate({ latest_optimization: OPT }), { fetchCvPdf });
+    showPreview(fixture);
+    fixture.componentInstance.setPreviewSource('original');
+    fixture.detectChanges();
+    expect(fetchCvPdf).toHaveBeenCalledTimes(2);
+    // Toggling back to a variant that was already compiled must not refetch.
+    fixture.componentInstance.setPreviewSource('optimized');
+    fixture.detectChanges();
+    fixture.componentInstance.setPreviewSource('original');
+    fixture.detectChanges();
+    expect(fetchCvPdf).toHaveBeenCalledTimes(2);
+    expect(fixture.componentInstance.previewUrl()).not.toBeNull();
+  });
+
+  it('reuses the cache when the preview is hidden and shown again', () => {
+    const fetchCvPdf = vi.fn(() => of(new Blob(['pdf'])));
+    const { fixture } = mount(makeAggregate({ latest_optimization: OPT }), { fetchCvPdf });
+    showPreview(fixture);
+    expect(fetchCvPdf).toHaveBeenCalledTimes(1);
+    fixture.componentInstance.togglePreviewVisible();
+    fixture.detectChanges();
+    showPreview(fixture);
+    expect(fetchCvPdf).toHaveBeenCalledTimes(1);
+  });
+
   it('passes the CV language through to the preview fetch', () => {
     const fetchCvPdf = vi.fn(() => of(new Blob(['pdf'])));
     const { fixture } = mount(makeAggregate(), { fetchCvPdf });
+    showPreview(fixture);
     fetchCvPdf.mockClear();
     fixture.componentInstance.onLangChange({ target: { value: 'es' } } as unknown as Event);
     fixture.detectChanges();
@@ -201,6 +246,7 @@ describe('CvTabComponent', () => {
       throwError(() => ({ error: { detail: 'LaTeX compile failed: boom' } })),
     );
     const { fixture } = mount(makeAggregate({ latest_optimization: OPT }), { fetchCvPdf });
+    showPreview(fixture);
     await fixture.whenStable();
     expect(fixture.componentInstance.previewError()).toContain('LaTeX compile failed');
     expect(fixture.componentInstance.previewUrl()).toBeNull();
@@ -212,6 +258,7 @@ describe('CvTabComponent', () => {
     });
     const fetchCvPdf = vi.fn(() => throwError(() => ({ error: blob })));
     const { fixture } = mount(makeAggregate({ latest_optimization: OPT }), { fetchCvPdf });
+    showPreview(fixture);
     // Reading the Blob body is async; poll until the error surfaces.
     for (let i = 0; i < 20 && !fixture.componentInstance.previewError(); i++) {
       await new Promise((resolve) => setTimeout(resolve));

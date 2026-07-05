@@ -89,7 +89,10 @@ describe('ApplicationDetailComponent', () => {
       providers: [
         { provide: ActivatedRoute, useValue: route },
         { provide: Router, useValue: { navigate } },
-        { provide: ApplicationsService, useValue: { get, remove } },
+        {
+          provide: ApplicationsService,
+          useValue: { get, remove, fetchCvPdf: () => of(new Blob(['pdf'])) },
+        },
         { provide: CvOptimizationRunnerService, useValue: optRunner },
         { provide: CoverLetterRunnerService, useValue: clRunner },
         {

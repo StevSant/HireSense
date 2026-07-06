@@ -16,4 +16,10 @@ export class ResearchService {
   refresh(request: ResearchRequest): Observable<CompanyResearch> {
     return this.http.post<CompanyResearch>(`${environment.apiUrl}/research/refresh`, request);
   }
+
+  get(companyName: string): Observable<CompanyResearch> {
+    return this.http.get<CompanyResearch>(
+      `${environment.apiUrl}/research/${encodeURIComponent(companyName)}`,
+    );
+  }
 }

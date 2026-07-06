@@ -3,7 +3,7 @@
     Not enough salaried matches for your profile yet — add skills/CV or fetch more jobs.
   </p>
 } @else {
-  <app-salary-band [target]="comp()" />
+  <app-salary-band [target]="comp()" [period]="period()" />
 
   @if (comp().ask_min_annual !== null) {
     <p class="comp-ask">
@@ -13,7 +13,9 @@
           fmt(comp().ask_max_annual)
         }}</strong
       >
-      <span class="comp-sub">/ year — aim between the market median and the top quartile.</span>
+      <span class="comp-sub"
+        >{{ unit() }} — aim between the market median and the top quartile.</span
+      >
     </p>
   }
 

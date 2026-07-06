@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+title: HireSense
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+authors:
+  # Replace with your legal given-names / family-names for a proper citation.
+  - name: "Bryan (StevSant)"
+    alias: StevSant
+repository-code: "https://github.com/StevSant/HireSense"
+url: "https://github.com/StevSant/HireSense"
+abstract: >-
+  AI-assisted job hunting: ingests postings from job boards and company ATS
+  portals, ranks them against the user's profile with pgvector semantic search
+  and tiered LLM scoring, and manages applications end to end.
+keywords:
+  - job-search
+  - semantic-search
+  - pgvector
+  - llm
+  - fastapi
+  - angular
+license: MIT

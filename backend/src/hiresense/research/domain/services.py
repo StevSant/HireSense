@@ -28,6 +28,12 @@ class CompanyResearchService:
     async def refresh(self, company_name: str, job_description: str = "") -> CompanyResearch:
         return await self._do_research(company_name, job_description)
 
+    async def get_or_create(self, company_name: str, job_description: str = "") -> CompanyResearch:
+        cached = self._repo.get_by_company_name(company_name)
+        if cached is not None:
+            return cached
+        return await self._do_research(company_name, job_description)
+
     def get(self, company_name: str) -> CompanyResearch | None:
         return self._repo.get_by_company_name(company_name)
 

@@ -215,3 +215,55 @@ def test_get_returns_none_when_not_cached() -> None:
     result = service.get("NonExistentCorp")
 
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_or_create_returns_cache_without_llm_call() -> None:
+    class _CachingRepo:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def get_by_company_name(self, name: str) -> CompanyResearch:
+            self.calls += 1
+            return CompanyResearch(
+                company_name=name,
+                funding_stage="x",
+                tech_stack="x",
+                culture_summary="x",
+                growth_trajectory="x",
+                red_flags=None,
+                pros="x",
+                cons="x",
+                raw_llm_response="{}",
+            )
+
+        def create(self, research: CompanyResearch) -> CompanyResearch:
+            return research
+
+        def save(self, research: CompanyResearch) -> CompanyResearch:
+            return research
+
+    class _BoomLLM:
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            raise AssertionError("must not call LLM")
+
+    repo = _CachingRepo()
+    service = CompanyResearchService(repository=repo, llm=_BoomLLM())
+
+    result = await service.get_or_create("BC")
+
+    assert result.company_name == "BC"
+    assert repo.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_get_or_create_generates_and_persists_when_not_cached() -> None:
+    llm = FakeLLM(_LLM_RESPONSE)
+    repo = FakeRepo()
+    service = CompanyResearchService(repository=repo, llm=llm)
+
+    result = await service.get_or_create("Anthropic")
+
+    assert llm.call_count == 1
+    assert len(repo.created) == 1
+    assert result.company_name == "Anthropic"

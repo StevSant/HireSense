@@ -1,13 +1,20 @@
 from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
-from hiresense.identity.api.dependencies import require_auth
+from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.research.api.dependencies import get_company_research_service
 from hiresense.research.api.schemas import CompanyResearchResponse, ResearchRequest
 from hiresense.research.domain import logo_url as build_logo_url
 from hiresense.research.domain.models import CompanyResearch
 from hiresense.research.domain.services import CompanyResearchService
 
-router = APIRouter(prefix="/research", tags=["research"], dependencies=[Depends(require_auth)])
+# Every route here can trigger LLM + external-HTTP generation (GET is get-or-create,
+# POST/refresh always generate), so the whole router is behind the shared
+# expensive-operation rate limit in addition to auth.
+router = APIRouter(
+    prefix="/research",
+    tags=["research"],
+    dependencies=[Depends(require_auth), Depends(enforce_expensive_rate_limit)],
+)
 
 
 def _to_response(result: CompanyResearch, request: Request) -> CompanyResearchResponse:

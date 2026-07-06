@@ -15,6 +15,10 @@ _CONTENT_FIELDS = (
     "red_flags",
     "pros",
     "cons",
+    "industry",
+    "company_size",
+    "headquarters",
+    "website",
     "raw_llm_response",
 )
 

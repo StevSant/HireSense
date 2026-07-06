@@ -18,6 +18,7 @@ export interface SalaryDistribution {
   unparsed_count: number;
   other_currency_count: number;
   disclosed_pct: number;
+  inferred_count: number;
 }
 
 export interface MarketIntel {

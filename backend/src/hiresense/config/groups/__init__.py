@@ -12,6 +12,7 @@ from hiresense.config.groups.outreach import OutreachSettings
 from hiresense.config.groups.portals import PortalsSettings
 from hiresense.config.groups.portfolio import PortfolioSettings
 from hiresense.config.groups.preference import PreferenceSettings
+from hiresense.config.groups.research import ResearchSettings
 from hiresense.config.groups.scheduling import SchedulingSettings
 
 __all__ = [
@@ -29,5 +30,6 @@ __all__ = [
     "PortalsSettings",
     "PortfolioSettings",
     "PreferenceSettings",
+    "ResearchSettings",
     "SchedulingSettings",
 ]

@@ -19,6 +19,11 @@ class CompanyResearchResponse(BaseModel):
     red_flags: str | None
     pros: str
     cons: str
+    industry: str | None = None
+    company_size: str | None = None
+    headquarters: str | None = None
+    website: str | None = None
+    logo_url: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

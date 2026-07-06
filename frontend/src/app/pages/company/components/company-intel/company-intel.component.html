@@ -1,0 +1,93 @@
+@if (loading()) {
+  <p class="intel-state">Loading company intel…</p>
+} @else if (research(); as r) {
+  <div class="intel">
+    <div class="intel-head">
+      @if (showLogo()) {
+        <img
+          class="intel-logo"
+          [src]="r.logo_url"
+          [alt]="r.company_name + ' logo'"
+          (error)="onLogoError()"
+        />
+      } @else {
+        <span class="intel-monogram" aria-hidden="true">{{ monogram() }}</span>
+      }
+      <ul class="intel-facts">
+        @if (has(r.industry)) {
+          <li><span>Industry</span> {{ r.industry }}</li>
+        }
+        @if (has(r.company_size)) {
+          <li><span>Size</span> {{ r.company_size }}</li>
+        }
+        @if (has(r.headquarters)) {
+          <li><span>HQ</span> {{ r.headquarters }}</li>
+        }
+        @if (has(r.website)) {
+          <li>
+            <span>Web</span>
+            <a [href]="r.website" target="_blank" rel="noopener noreferrer">{{ r.website }}</a>
+          </li>
+        }
+      </ul>
+      <button type="button" class="intel-refresh" [disabled]="refreshing()" (click)="onRefresh()">
+        {{ refreshing() ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </div>
+
+    @if (notConfigured()) {
+      <p class="intel-state">
+        Company research isn't configured (no LLM). Add an API key to enable it.
+      </p>
+    } @else if (researchUnavailable()) {
+      <p class="intel-state">
+        Company research is temporarily unavailable. Try Refresh in a moment.
+      </p>
+    } @else {
+      <div class="intel-sections">
+        @if (has(r.funding_stage)) {
+          <section>
+            <h4>Funding</h4>
+            <p>{{ r.funding_stage }}</p>
+          </section>
+        }
+        @if (has(r.tech_stack)) {
+          <section>
+            <h4>Tech stack</h4>
+            <p>{{ r.tech_stack }}</p>
+          </section>
+        }
+        @if (has(r.culture_summary)) {
+          <section>
+            <h4>Culture</h4>
+            <p>{{ r.culture_summary }}</p>
+          </section>
+        }
+        @if (has(r.growth_trajectory)) {
+          <section>
+            <h4>Growth</h4>
+            <p>{{ r.growth_trajectory }}</p>
+          </section>
+        }
+        @if (has(r.pros)) {
+          <section>
+            <h4>Pros</h4>
+            <p>{{ r.pros }}</p>
+          </section>
+        }
+        @if (has(r.cons)) {
+          <section>
+            <h4>Cons</h4>
+            <p>{{ r.cons }}</p>
+          </section>
+        }
+        @if (has(r.red_flags)) {
+          <section class="intel-flags">
+            <h4>Red flags</h4>
+            <p>{{ r.red_flags }}</p>
+          </section>
+        }
+      </div>
+    }
+  </div>
+}

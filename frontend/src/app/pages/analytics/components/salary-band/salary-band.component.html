@@ -5,7 +5,9 @@
 } @else if (band(); as b) {
   <div class="band-numbers">
     <span>{{ target().currency }} {{ fmt(target().p25_annual) }}</span>
-    <strong>{{ fmt(target().median_annual) }}</strong>
+    <strong
+      >{{ fmt(target().median_annual) }} <span class="band-unit">{{ unit() }}</span></strong
+    >
     <span>{{ fmt(target().p75_annual) }}</span>
   </div>
   <div class="band-track">

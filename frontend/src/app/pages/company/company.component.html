@@ -26,6 +26,13 @@
     }
   </header>
 
+  <app-company-intel
+    [research]="research()"
+    [loading]="researchLoading()"
+    [refreshing]="researchRefreshing()"
+    (refresh)="refreshResearch()"
+  />
+
   @if (loading()) {
     <p class="company-state">Loading…</p>
   } @else if (error()) {

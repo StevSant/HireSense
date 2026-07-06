@@ -10,11 +10,29 @@
   <div class="analytics-grid">
     <!-- Pay -->
     <section class="analytics-card">
-      <h2 class="card-title">Pay — your market band</h2>
+      <div class="card-head">
+        <h2 class="card-title">Pay — your market band</h2>
+        <div class="period-toggle" role="group" aria-label="Pay period">
+          <button
+            type="button"
+            [class.active]="payPeriod() === 'annual'"
+            (click)="setPayPeriod('annual')"
+          >
+            Annual
+          </button>
+          <button
+            type="button"
+            [class.active]="payPeriod() === 'monthly'"
+            (click)="setPayPeriod('monthly')"
+          >
+            Monthly
+          </button>
+        </div>
+      </div>
       @if (compError()) {
         <p class="section-error">Couldn't load compensation.</p>
       } @else if (comp(); as c) {
-        <app-comp-benchmark [comp]="c" />
+        <app-comp-benchmark [comp]="c" [period]="payPeriod()" />
       } @else {
         <p class="section-loading">Loading…</p>
       }
@@ -125,6 +143,11 @@
             </p>
           } @else {
             <p class="section-loading">No parseable salaries.</p>
+          }
+          @if (m.salary_distribution.inferred_count > 0) {
+            <p class="salary-basis-note">
+              Some postings' period was inferred (annual assumed where unstated).
+            </p>
           }
         } @else {
           <p class="section-loading">Loading…</p>

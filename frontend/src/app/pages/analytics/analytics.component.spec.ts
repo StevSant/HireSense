@@ -23,6 +23,7 @@ function makeAnalyticsService(over: Partial<Record<string, unknown>> = {}) {
           unparsed_count: 1,
           other_currency_count: 0,
           disclosed_pct: 80,
+          inferred_count: 0,
         },
       }),
     skillGap: () => of({ has_profile: true, missing: [{ skill: 'rust', count: 2, pct: 40 }] }),
@@ -126,6 +127,64 @@ describe('AnalyticsComponent', () => {
     expect(rows.length).toBe(1);
     expect(fixture.nativeElement.textContent).toContain('5 views');
     expect(fixture.nativeElement.textContent).toContain('Acme Corp');
+  });
+
+  it('toggling to monthly re-labels the target-median KPI', () => {
+    const fixture = mount(
+      makeAnalyticsService({
+        comp: () =>
+          of({
+            insufficient_data: false,
+            currency: 'USD',
+            p25_annual: 28000,
+            median_annual: 31200,
+            p75_annual: 34000,
+            sample_size: 12,
+            by_seniority: [],
+            your_median_annual: null,
+            your_sample_size: 0,
+            ask_min_annual: null,
+            ask_max_annual: null,
+          }),
+      }),
+    );
+    const component = fixture.componentInstance;
+    component.setPayPeriod('monthly');
+    fixture.detectChanges();
+    const median = component.kpis().find((k) => k.label === 'Target median');
+    expect(median?.value).toContain('2,600');
+  });
+
+  it('shows the salary-basis footnote when the market has inferred-period salaries', () => {
+    const fixture = mount(
+      makeAnalyticsService({
+        market: () =>
+          of({
+            top_skills: [],
+            remote_mix: {},
+            posting_trend: [],
+            salary_distribution: {
+              currency: 'USD',
+              min_annual: 90000,
+              median_annual: 110000,
+              max_annual: 130000,
+              parsed_count: 5,
+              unparsed_count: 1,
+              other_currency_count: 0,
+              disclosed_pct: 80,
+              inferred_count: 3,
+            },
+          }),
+      }),
+    );
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.salary-basis-note')).not.toBeNull();
+  });
+
+  it('hides the salary-basis footnote when no salaries were inferred', () => {
+    const fixture = mount();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.salary-basis-note')).toBeNull();
   });
 
   it('hides the portfolio engagement card when configured is false', () => {

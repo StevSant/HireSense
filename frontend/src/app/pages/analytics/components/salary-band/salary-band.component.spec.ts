@@ -37,4 +37,20 @@ describe('SalaryBandComponent', () => {
     expect(fixture.nativeElement.querySelector('.band-fill')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('110,000');
   });
+
+  it('shows monthly figures when period is monthly', () => {
+    const fixture = mount({
+      insufficient_data: false,
+      currency: 'USD',
+      p25_annual: 27600,
+      median_annual: 31200,
+      p75_annual: 39000,
+      sample_size: 21,
+    });
+    fixture.componentRef.setInput('period', 'monthly');
+    fixture.detectChanges();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('2,600'); // 31200 / 12
+    expect(text).not.toContain('31,200');
+  });
 });

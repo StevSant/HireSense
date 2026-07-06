@@ -135,6 +135,67 @@ async def test_research_llm_failure_returns_fallback_not_persisted() -> None:
 
 
 @pytest.mark.asyncio
+async def test_research_populates_firmographics() -> None:
+    llm_response = json.dumps(
+        {
+            "funding_stage": "Series A",
+            "tech_stack": "Python",
+            "culture_summary": "ok",
+            "growth_trajectory": "up",
+            "red_flags": None,
+            "pros": "p",
+            "cons": "c",
+            "industry": "SaaS",
+            "company_size": "51-200",
+            "headquarters": "Santiago, CL",
+            "website": "https://bc.cl",
+        }
+    )
+    llm = FakeLLM(llm_response)
+    repo = FakeRepo()
+    service = CompanyResearchService(repository=repo, llm=llm)
+
+    result = await service.research("BC Tecnologia")
+
+    assert result.industry == "SaaS"
+    assert result.company_size == "51-200"
+    assert result.headquarters == "Santiago, CL"
+    assert result.website == "https://bc.cl"
+
+
+@pytest.mark.asyncio
+async def test_refresh_updates_firmographics_on_existing_record() -> None:
+    llm = FakeLLM(_LLM_RESPONSE)
+    repo = FakeRepo()
+    service = CompanyResearchService(repository=repo, llm=llm)
+
+    await service.research("Anthropic")
+
+    llm._response = json.dumps(
+        {
+            "funding_stage": "Series D",
+            "tech_stack": "Python, Rust",
+            "culture_summary": "AI safety focused",
+            "growth_trajectory": "Rapid growth",
+            "red_flags": None,
+            "pros": "Great mission",
+            "cons": "High intensity",
+            "industry": "AI",
+            "company_size": "1001-5000",
+            "headquarters": "San Francisco, US",
+            "website": "https://anthropic.com",
+        }
+    )
+    result = await service.refresh("Anthropic")
+
+    assert result.industry == "AI"
+    assert result.company_size == "1001-5000"
+    assert result.headquarters == "San Francisco, US"
+    assert result.website == "https://anthropic.com"
+    assert len(repo.saved) == 1
+
+
+@pytest.mark.asyncio
 async def test_get_returns_cached() -> None:
     llm = FakeLLM(_LLM_RESPONSE)
     repo = FakeRepo()
@@ -154,3 +215,55 @@ def test_get_returns_none_when_not_cached() -> None:
     result = service.get("NonExistentCorp")
 
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_or_create_returns_cache_without_llm_call() -> None:
+    class _CachingRepo:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def get_by_company_name(self, name: str) -> CompanyResearch:
+            self.calls += 1
+            return CompanyResearch(
+                company_name=name,
+                funding_stage="x",
+                tech_stack="x",
+                culture_summary="x",
+                growth_trajectory="x",
+                red_flags=None,
+                pros="x",
+                cons="x",
+                raw_llm_response="{}",
+            )
+
+        def create(self, research: CompanyResearch) -> CompanyResearch:
+            return research
+
+        def save(self, research: CompanyResearch) -> CompanyResearch:
+            return research
+
+    class _BoomLLM:
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            raise AssertionError("must not call LLM")
+
+    repo = _CachingRepo()
+    service = CompanyResearchService(repository=repo, llm=_BoomLLM())
+
+    result = await service.get_or_create("BC")
+
+    assert result.company_name == "BC"
+    assert repo.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_get_or_create_generates_and_persists_when_not_cached() -> None:
+    llm = FakeLLM(_LLM_RESPONSE)
+    repo = FakeRepo()
+    service = CompanyResearchService(repository=repo, llm=llm)
+
+    result = await service.get_or_create("Anthropic")
+
+    assert llm.call_count == 1
+    assert len(repo.created) == 1
+    assert result.company_name == "Anthropic"

@@ -48,6 +48,12 @@ class FakeCompanyResearchService:
     def get(self, company_name: str) -> CompanyResearch | None:
         return self._store.get(company_name.lower())
 
+    async def get_or_create(self, company_name: str, job_description: str = "") -> CompanyResearch:
+        key = company_name.lower()
+        if key in self._store:
+            return self._store[key]
+        return self._make_record(company_name)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -122,11 +128,14 @@ def test_get_cached_research() -> None:
     assert data["company_name"] == "Anthropic"
 
 
-def test_get_cached_not_found() -> None:
+def test_get_generates_on_first_visit() -> None:
     fake = FakeCompanyResearchService()
     client = TestClient(make_app(fake))
 
     resp = client.get("/research/nonexistent")
 
-    assert resp.status_code == 404
-    assert "nonexistent" in resp.json()["detail"]
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["company_name"] == "nonexistent"
+    for key in ("industry", "company_size", "headquarters", "website", "logo_url"):
+        assert key in data

@@ -13,9 +13,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { IngestionService } from '../../core/services/ingestion.service';
 import { ApplicationsService } from '../../core/services/applications.service';
+import { ResearchService } from '../../core/services/research.service';
 import { NormalizedJob } from '../ingestion/models/normalized-job.model';
 import { FeedbackKind } from '../ingestion/models/feedback-kind.model';
+import { CompanyResearch } from '../tracking/models/company-research.model';
 import { FeedbackControlsComponent } from '../ingestion/components/feedback-controls/feedback-controls.component';
+import { CompanyIntelComponent } from './components/company-intel/company-intel.component';
 import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { createSortState } from '../../core/utils/sort-state';
 import { scoreClass } from '../../core/utils/score-class';
@@ -30,7 +33,13 @@ type SortField = 'match' | 'title' | 'location' | 'source' | 'posted';
 @Component({
   selector: 'app-company',
   standalone: true,
-  imports: [RouterLink, DatePipe, FeedbackControlsComponent, SortableHeaderDirective],
+  imports: [
+    RouterLink,
+    DatePipe,
+    FeedbackControlsComponent,
+    SortableHeaderDirective,
+    CompanyIntelComponent,
+  ],
   templateUrl: './company.component.html',
   styleUrl: './company.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,6 +49,7 @@ export class CompanyComponent implements OnInit {
   private router = inject(Router);
   private ingestion = inject(IngestionService);
   private applications = inject(ApplicationsService);
+  private researchService = inject(ResearchService);
   private destroyRef = inject(DestroyRef);
 
   scoreClass = scoreClass;
@@ -48,6 +58,10 @@ export class CompanyComponent implements OnInit {
   jobs = signal<NormalizedJob[]>([]);
   loading = signal(true);
   error = signal(false);
+
+  research = signal<CompanyResearch | null>(null);
+  researchLoading = signal(true);
+  researchRefreshing = signal(false);
 
   // The id of the job currently being tracked, so its row can show progress.
   trackingJobId = signal<string | null>(null);
@@ -95,6 +109,18 @@ export class CompanyComponent implements OnInit {
       this.loading.set(false);
       return;
     }
+    this.researchService
+      .get(name)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (r) => {
+          this.research.set(r);
+          this.researchLoading.set(false);
+        },
+        error: () => {
+          this.researchLoading.set(false);
+        },
+      });
     forkJoin({
       boards: this.ingestion.queryJobs('boards', 1, COMPANY_PAGE_SIZE, {
         company: name,
@@ -116,6 +142,24 @@ export class CompanyComponent implements OnInit {
         error: () => {
           this.error.set(true);
           this.loading.set(false);
+        },
+      });
+  }
+
+  refreshResearch(): void {
+    const name = this.company();
+    if (!name || this.researchRefreshing()) return;
+    this.researchRefreshing.set(true);
+    this.researchService
+      .refresh({ company_name: name, job_description: '' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (r) => {
+          this.research.set(r);
+          this.researchRefreshing.set(false);
+        },
+        error: () => {
+          this.researchRefreshing.set(false);
         },
       });
   }

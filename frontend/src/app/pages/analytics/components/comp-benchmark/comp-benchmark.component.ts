@@ -3,6 +3,7 @@ import { CompBenchmark } from '../../models/comp-benchmark.model';
 import { BarRow } from '../../models/bar-row.model';
 import { SalaryBandComponent } from '../salary-band/salary-band.component';
 import { BarChartComponent } from '../bar-chart/bar-chart.component';
+import { PayPeriod, periodUnit, toPeriod } from '../../../../core/utils/pay-period';
 
 const PERCENT = 100;
 
@@ -16,6 +17,8 @@ const PERCENT = 100;
 })
 export class CompBenchmarkComponent {
   comp = input.required<CompBenchmark>();
+  period = input<PayPeriod>('annual');
+  unit = computed(() => periodUnit(this.period()));
 
   seniorityRows = computed<BarRow[]>(() => {
     const bands = this.comp().by_seniority;
@@ -52,6 +55,7 @@ export class CompBenchmarkComponent {
   });
 
   fmt(v: number | null): string {
-    return v === null ? '—' : v.toLocaleString('en-US');
+    const shown = toPeriod(v, this.period());
+    return shown === null ? '—' : shown.toLocaleString('en-US');
   }
 }

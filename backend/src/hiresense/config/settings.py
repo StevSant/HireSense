@@ -18,6 +18,7 @@ from hiresense.config.groups import (
     PortalsSettings,
     PortfolioSettings,
     PreferenceSettings,
+    ResearchSettings,
     SchedulingSettings,
 )
 from hiresense.config.mode import apply_mode
@@ -43,6 +44,7 @@ class Settings(
     OutreachSettings,
     ApplicationsSettings,
     PortfolioSettings,
+    ResearchSettings,
 ):
     """Composed application settings — flat attribute access over all groups."""
 

@@ -22,6 +22,10 @@ class CompanyResearchOrm(Base):
     red_flags: Mapped[str | None] = mapped_column(Text, nullable=True)
     pros: Mapped[str] = mapped_column(Text, nullable=False)
     cons: Mapped[str] = mapped_column(Text, nullable=False)
+    industry: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    company_size: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    headquarters: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    website: Mapped[str | None] = mapped_column(String(500), nullable=True)
     raw_llm_response: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

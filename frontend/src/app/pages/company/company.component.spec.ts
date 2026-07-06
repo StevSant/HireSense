@@ -7,6 +7,30 @@ import { CompanyComponent } from './company.component';
 import { IngestionService } from '../../core/services/ingestion.service';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { PreferenceService } from '../../core/services/preference.service';
+import { ResearchService } from '../../core/services/research.service';
+import { CompanyResearch } from '../tracking/models/company-research.model';
+
+function research(over: Partial<CompanyResearch> = {}): CompanyResearch {
+  return {
+    id: 'r-1',
+    company_name: 'Acme',
+    funding_stage: 'Series B',
+    tech_stack: 'TypeScript, Python',
+    culture_summary: 'Fast-paced',
+    growth_trajectory: 'Growing',
+    red_flags: null,
+    pros: 'Great team',
+    cons: 'Long hours',
+    industry: 'Software',
+    company_size: '51-200',
+    headquarters: 'Remote',
+    website: 'https://acme.com',
+    logo_url: null,
+    created_at: null,
+    updated_at: null,
+    ...over,
+  };
+}
 
 function job(over: Record<string, unknown> = {}) {
   return {
@@ -38,7 +62,11 @@ function page(jobs: unknown[]) {
   return { jobs, total: jobs.length, page: 1, page_size: 100, total_pages: 1 };
 }
 
-function mount(service: Record<string, unknown>, name = 'Acme') {
+function mount(
+  service: Record<string, unknown>,
+  name = 'Acme',
+  researchService: Record<string, unknown> = {},
+) {
   TestBed.configureTestingModule({
     imports: [CompanyComponent],
     providers: [
@@ -49,6 +77,14 @@ function mount(service: Record<string, unknown>, name = 'Acme') {
       },
       { provide: ApplicationsService, useValue: { createFromJob: () => of({ id: 'app-1' }) } },
       { provide: PreferenceService, useValue: { submitFeedback: () => of({}) } },
+      {
+        provide: ResearchService,
+        useValue: {
+          get: () => of(research()),
+          refresh: () => of(research()),
+          ...researchService,
+        },
+      },
       {
         provide: ActivatedRoute,
         useValue: { snapshot: { paramMap: convertToParamMap({ name }) } },
@@ -144,5 +180,36 @@ describe('CompanyComponent', () => {
     const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     (fixture.nativeElement.querySelector('tbody tr.clickable-row') as HTMLElement).click();
     expect(navigate).toHaveBeenCalledWith(['/dashboard/job', '1']);
+  });
+
+  it('loads company research on init, independently of jobs', () => {
+    const service = { queryJobs: () => of(page([])) };
+    const fixture = mount(service, 'Acme', { get: () => of(research()) });
+    const component = fixture.componentInstance;
+    expect(component.research()).not.toBeNull();
+    expect(component.research()?.company_name).toBe('Acme');
+    expect(component.researchLoading()).toBe(false);
+  });
+
+  it('sets researchLoading to false when research fails to load', () => {
+    const service = { queryJobs: () => of(page([])) };
+    const fixture = mount(service, 'Acme', { get: () => throwError(() => new Error('boom')) });
+    const component = fixture.componentInstance;
+    expect(component.research()).toBeNull();
+    expect(component.researchLoading()).toBe(false);
+  });
+
+  it('refreshes company research', () => {
+    const service = { queryJobs: () => of(page([])) };
+    const refreshed = research({ funding_stage: 'Series C' });
+    const fixture = mount(service, 'Acme', {
+      get: () => of(research()),
+      refresh: () => of(refreshed),
+    });
+    const component = fixture.componentInstance;
+    component.refreshResearch();
+    fixture.detectChanges();
+    expect(component.research()?.funding_stage).toBe('Series C');
+    expect(component.researchRefreshing()).toBe(false);
   });
 });

@@ -1,41 +1,53 @@
 from __future__ import annotations
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Request
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.research.api.dependencies import get_company_research_service
 from hiresense.research.api.schemas import CompanyResearchResponse, ResearchRequest
+from hiresense.research.domain import logo_url as build_logo_url
+from hiresense.research.domain.models import CompanyResearch
 from hiresense.research.domain.services import CompanyResearchService
 
 router = APIRouter(prefix="/research", tags=["research"], dependencies=[Depends(require_auth)])
 
 
+def _to_response(result: CompanyResearch, request: Request) -> CompanyResearchResponse:
+    """Build the response and attach the derived logo_url. Tolerates the router
+    being mounted without app.state.settings (e.g. unit tests on a bare app)."""
+    settings = getattr(request.app.state, "settings", None)
+    service_url = getattr(settings, "logo_service_url", "") or ""
+    resp = CompanyResearchResponse.model_validate(result)
+    return resp.model_copy(update={"logo_url": build_logo_url(result.website, service_url)})
+
+
 @router.post("", response_model=CompanyResearchResponse)
 async def research_company(
-    request: ResearchRequest,
+    payload: ResearchRequest,
+    request: Request,
     service: CompanyResearchService = Depends(get_company_research_service),
 ) -> CompanyResearchResponse:
     result = await service.research(
-        company_name=request.company_name, job_description=request.job_description
+        company_name=payload.company_name, job_description=payload.job_description
     )
-    return CompanyResearchResponse.model_validate(result)
+    return _to_response(result, request)
 
 
 @router.post("/refresh", response_model=CompanyResearchResponse)
 async def refresh_research(
-    request: ResearchRequest,
+    payload: ResearchRequest,
+    request: Request,
     service: CompanyResearchService = Depends(get_company_research_service),
 ) -> CompanyResearchResponse:
     result = await service.refresh(
-        company_name=request.company_name, job_description=request.job_description
+        company_name=payload.company_name, job_description=payload.job_description
     )
-    return CompanyResearchResponse.model_validate(result)
+    return _to_response(result, request)
 
 
 @router.get("/{company_name}", response_model=CompanyResearchResponse)
-def get_research(
+async def get_research(
     company_name: str,
+    request: Request,
     service: CompanyResearchService = Depends(get_company_research_service),
 ) -> CompanyResearchResponse:
-    result = service.get(company_name)
-    if result is None:
-        raise HTTPException(status_code=404, detail=f"No research found for {company_name}")
-    return CompanyResearchResponse.model_validate(result)
+    result = await service.get_or_create(company_name)
+    return _to_response(result, request)

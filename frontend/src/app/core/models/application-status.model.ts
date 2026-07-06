@@ -1,7 +1,2 @@
 export type ApplicationStatus =
-  | 'saved'
-  | 'applied'
-  | 'interviewing'
-  | 'offered'
-  | 'accepted'
-  | 'rejected';
+  'saved' | 'applied' | 'interviewing' | 'offered' | 'accepted' | 'rejected';

@@ -68,6 +68,29 @@ describe('CompanyIntelComponent', () => {
     expect(el.textContent ?? '').toContain("isn't configured");
   });
 
+  it('resets the logo fallback when the company (and its logo_url) changes', () => {
+    const withLogo: CompanyResearch = { ...research, logo_url: 'https://bc.cl/logo.png' };
+    const fixture = mount(withLogo);
+
+    fixture.componentInstance.onLogoError();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.intel-logo')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.intel-monogram')).not.toBeNull();
+
+    const otherCompany: CompanyResearch = {
+      ...research,
+      id: '2',
+      company_name: 'Other Co',
+      logo_url: 'https://other.co/logo.png',
+    };
+    fixture.componentRef.setInput('research', otherCompany);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.showLogo()).toBe(true);
+    expect(fixture.nativeElement.querySelector('.intel-logo')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.intel-monogram')).toBeNull();
+  });
+
   it('emits refresh when the button is clicked and disables it while refreshing', () => {
     const fixture = mount(research, false, true);
     const emitted: void[] = [];

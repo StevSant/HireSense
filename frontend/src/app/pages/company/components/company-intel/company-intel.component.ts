@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  output,
+} from '@angular/core';
 import { CompanyResearch } from '../../../tracking/models/company-research.model';
 
 // Sentinel strings the backend uses when the LLM/provider isn't configured.
@@ -18,7 +25,12 @@ export class CompanyIntelComponent {
   refreshing = input(false);
   refresh = output<void>();
 
-  logoFailed = signal(false);
+  // Resets to false whenever the company's logo_url changes, so a prior image
+  // error on one company doesn't suppress a different company's logo.
+  logoFailed = linkedSignal<string | null | undefined, boolean>({
+    source: () => this.research()?.logo_url,
+    computation: () => false,
+  });
 
   monogram = computed(
     () => (this.research()?.company_name ?? '?').trim().charAt(0).toUpperCase() || '?',

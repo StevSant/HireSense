@@ -75,7 +75,11 @@ async def test_all_routers_registered(monkeypatch: pytest.MonkeyPatch) -> None:
     # Drive the lifespan so telemetry providers are shut down on exit (see note
     # in the client-based tests above).
     async with app.router.lifespan_context(app):
-        routes = [r.path for r in app.routes]
+        # Starlette 1.0 wraps included routers as `_IncludedRouter` objects that
+        # have no `.path`, so `app.routes` can no longer be flattened directly.
+        # Introspect the generated OpenAPI schema, which enumerates every
+        # registered HTTP path regardless of the internal router structure.
+        routes = set(app.openapi()["paths"])
     assert "/health" in routes
     assert "/auth/login" in routes
     assert "/ingestion/fetch" in routes

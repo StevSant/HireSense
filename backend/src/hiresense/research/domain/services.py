@@ -12,9 +12,12 @@ _FALLBACK_RESEARCH_UNAVAILABLE = "Research unavailable"
 
 
 class CompanyResearchService:
-    def __init__(self, repository: CompanyResearchRepositoryPort, llm: Any = None) -> None:
+    def __init__(
+        self, repository: CompanyResearchRepositoryPort, llm: Any = None, firmographics: Any = None
+    ) -> None:
         self._repo = repository
         self._llm = llm
+        self._firmographics = firmographics
 
     async def research(self, company_name: str, job_description: str = "") -> CompanyResearch:
         cached = self._repo.get_by_company_name(company_name)
@@ -38,6 +41,18 @@ class CompanyResearchService:
                 prompt, system="You are a company research analyst. Return only valid JSON."
             )
             data = self._parse_response(response)
+
+            external = None
+            if self._firmographics is not None:
+                external = await self._firmographics.fetch(company_name)
+
+            def _pick(field: str):
+                if external is not None:
+                    val = getattr(external, field)
+                    if val:
+                        return val
+                return data.get(field)
+
             existing = self._repo.get_by_company_name(company_name)
             if existing is not None:
                 existing.funding_stage = data["funding_stage"]
@@ -47,10 +62,10 @@ class CompanyResearchService:
                 existing.red_flags = data.get("red_flags")
                 existing.pros = data["pros"]
                 existing.cons = data["cons"]
-                existing.industry = data.get("industry")
-                existing.company_size = data.get("company_size")
-                existing.headquarters = data.get("headquarters")
-                existing.website = data.get("website")
+                existing.industry = _pick("industry")
+                existing.company_size = _pick("company_size")
+                existing.headquarters = _pick("headquarters")
+                existing.website = _pick("website")
                 existing.raw_llm_response = response
                 return self._repo.save(existing)
             record = CompanyResearch(
@@ -62,10 +77,10 @@ class CompanyResearchService:
                 red_flags=data.get("red_flags"),
                 pros=data["pros"],
                 cons=data["cons"],
-                industry=data.get("industry"),
-                company_size=data.get("company_size"),
-                headquarters=data.get("headquarters"),
-                website=data.get("website"),
+                industry=_pick("industry"),
+                company_size=_pick("company_size"),
+                headquarters=_pick("headquarters"),
+                website=_pick("website"),
                 raw_llm_response=response,
             )
             return self._repo.create(record)

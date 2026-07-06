@@ -27,6 +27,7 @@ import { TrendLineComponent } from './components/trend-line/trend-line.component
 import { CompBenchmarkComponent } from './components/comp-benchmark/comp-benchmark.component';
 import { SearchFocusComponent } from './components/search-focus/search-focus.component';
 import { KpiStripComponent, KpiTile } from './components/kpi-strip/kpi-strip.component';
+import { PayPeriod, periodUnit, toPeriod } from '../../core/utils/pay-period';
 
 const PERCENT = 100;
 
@@ -69,6 +70,12 @@ export class AnalyticsComponent implements OnInit {
   focusError = signal(false);
 
   engagement = signal<PortfolioEngagementResponse | null>(null);
+
+  payPeriod = signal<PayPeriod>('annual');
+
+  setPayPeriod(p: PayPeriod): void {
+    this.payPeriod.set(p);
+  }
 
   ngOnInit(): void {
     this.analytics
@@ -133,7 +140,7 @@ export class AnalyticsComponent implements OnInit {
       {
         label: 'Target median',
         value: compReady
-          ? `${c!.currency ?? ''} ${c!.median_annual!.toLocaleString('en-US')}`.trim()
+          ? `${c!.currency ?? ''} ${toPeriod(c!.median_annual, this.payPeriod())!.toLocaleString('en-US')} ${periodUnit(this.payPeriod())}`.trim()
           : '—',
         hint: compReady ? `across ${c!.sample_size} matched roles` : 'for your profile',
       },

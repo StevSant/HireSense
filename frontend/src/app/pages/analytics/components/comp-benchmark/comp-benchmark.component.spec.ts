@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { CompBenchmarkComponent } from './comp-benchmark.component';
 import { CompBenchmark } from '../../models/comp-benchmark.model';
+import { PayPeriod } from '../../../../core/utils/pay-period';
 
 function comp(over: Partial<CompBenchmark> = {}): CompBenchmark {
   return {
@@ -20,10 +21,13 @@ function comp(over: Partial<CompBenchmark> = {}): CompBenchmark {
 }
 
 describe('CompBenchmarkComponent', () => {
-  function mount(c: CompBenchmark) {
+  function mount(c: CompBenchmark, period?: PayPeriod) {
     TestBed.configureTestingModule({ imports: [CompBenchmarkComponent] });
     const fixture = TestBed.createComponent(CompBenchmarkComponent);
     fixture.componentRef.setInput('comp', c);
+    if (period) {
+      fixture.componentRef.setInput('period', period);
+    }
     fixture.detectChanges();
     return fixture;
   }
@@ -46,5 +50,12 @@ describe('CompBenchmarkComponent', () => {
     expect(fixture.componentInstance.pipelineDelta()).toBeLessThan(0);
     expect(fixture.nativeElement.querySelector('.comp-insight.below')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('18% below');
+  });
+
+  it('shows monthly ask range and /mo unit when monthly', () => {
+    const fixture = mount(comp({ ask_min_annual: 31200, ask_max_annual: 39000 }), 'monthly');
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('2,600'); // 31200 / 12 (ask_min)
+    expect(text).toContain('/mo');
   });
 });

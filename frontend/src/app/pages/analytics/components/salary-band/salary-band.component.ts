@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { TargetSalary } from '../../models/target-salary.model';
+import { PayPeriod, periodUnit, toPeriod } from '../../../../core/utils/pay-period';
 
 /** Left edge of the visual scale, as a fraction of p25 (20% headroom below). */
 const SCALE_LOWER_FACTOR = 0.8;
@@ -20,6 +21,8 @@ const TRACK_MAX_PERCENT = 100;
 })
 export class SalaryBandComponent {
   target = input.required<TargetSalary>();
+  period = input<PayPeriod>('annual');
+  unit = computed(() => periodUnit(this.period()));
 
   // p25→p75 band positioned within a p25*SCALE_LOWER_FACTOR .. p75*SCALE_UPPER_FACTOR visual scale.
   band = computed(() => {
@@ -39,6 +42,7 @@ export class SalaryBandComponent {
   });
 
   fmt(v: number | null): string {
-    return v === null ? '—' : v.toLocaleString('en-US');
+    const shown = toPeriod(v, this.period());
+    return shown === null ? '—' : shown.toLocaleString('en-US');
   }
 }

@@ -12,9 +12,12 @@ _FALLBACK_RESEARCH_UNAVAILABLE = "Research unavailable"
 
 
 class CompanyResearchService:
-    def __init__(self, repository: CompanyResearchRepositoryPort, llm: Any = None) -> None:
+    def __init__(
+        self, repository: CompanyResearchRepositoryPort, llm: Any = None, firmographics: Any = None
+    ) -> None:
         self._repo = repository
         self._llm = llm
+        self._firmographics = firmographics
 
     async def research(self, company_name: str, job_description: str = "") -> CompanyResearch:
         cached = self._repo.get_by_company_name(company_name)
@@ -23,6 +26,12 @@ class CompanyResearchService:
         return await self._do_research(company_name, job_description)
 
     async def refresh(self, company_name: str, job_description: str = "") -> CompanyResearch:
+        return await self._do_research(company_name, job_description)
+
+    async def get_or_create(self, company_name: str, job_description: str = "") -> CompanyResearch:
+        cached = self._repo.get_by_company_name(company_name)
+        if cached is not None:
+            return cached
         return await self._do_research(company_name, job_description)
 
     def get(self, company_name: str) -> CompanyResearch | None:
@@ -38,6 +47,18 @@ class CompanyResearchService:
                 prompt, system="You are a company research analyst. Return only valid JSON."
             )
             data = self._parse_response(response)
+
+            external = None
+            if self._firmographics is not None:
+                external = await self._firmographics.fetch(company_name)
+
+            def _pick(field: str):
+                if external is not None:
+                    val = getattr(external, field)
+                    if val:
+                        return val
+                return data.get(field)
+
             existing = self._repo.get_by_company_name(company_name)
             if existing is not None:
                 existing.funding_stage = data["funding_stage"]
@@ -47,6 +68,10 @@ class CompanyResearchService:
                 existing.red_flags = data.get("red_flags")
                 existing.pros = data["pros"]
                 existing.cons = data["cons"]
+                existing.industry = _pick("industry")
+                existing.company_size = _pick("company_size")
+                existing.headquarters = _pick("headquarters")
+                existing.website = _pick("website")
                 existing.raw_llm_response = response
                 return self._repo.save(existing)
             record = CompanyResearch(
@@ -58,6 +83,10 @@ class CompanyResearchService:
                 red_flags=data.get("red_flags"),
                 pros=data["pros"],
                 cons=data["cons"],
+                industry=_pick("industry"),
+                company_size=_pick("company_size"),
+                headquarters=_pick("headquarters"),
+                website=_pick("website"),
                 raw_llm_response=response,
             )
             return self._repo.create(record)
@@ -79,10 +108,15 @@ class CompanyResearchService:
             "- growth_trajectory: string (growth and trajectory assessment)\n"
             "- red_flags: string or null (any concerns or red flags)\n"
             "- pros: string (benefits of working there)\n"
-            "- cons: string (downsides of working there)\n\n"
+            "- cons: string (downsides of working there)\n"
+            "- industry: string or null\n"
+            "- company_size: string or null (e.g. '51-200')\n"
+            "- headquarters: string or null (city, country)\n"
+            "- website: string or null (official homepage URL)\n\n"
             'Return valid JSON only: {"funding_stage": "...", "tech_stack": "...", '
             '"culture_summary": "...", "growth_trajectory": "...", "red_flags": null, '
-            '"pros": "...", "cons": "..."}'
+            '"pros": "...", "cons": "...", "industry": null, "company_size": null, '
+            '"headquarters": null, "website": null}'
         )
         return prompt
 

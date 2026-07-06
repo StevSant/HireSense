@@ -1,5 +1,5 @@
 export interface CompanyResearch {
-  id: string;
+  id: string | null;
   company_name: string;
   funding_stage: string;
   tech_stack: string;
@@ -8,6 +8,11 @@ export interface CompanyResearch {
   red_flags: string | null;
   pros: string;
   cons: string;
+  industry: string | null;
+  company_size: string | null;
+  headquarters: string | null;
+  website: string | null;
+  logo_url: string | null;
   created_at: string | null;
   updated_at: string | null;
 }

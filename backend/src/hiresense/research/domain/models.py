@@ -18,6 +18,10 @@ class CompanyResearch(BaseModel):
     red_flags: str | None = None
     pros: str
     cons: str
+    industry: str | None = None
+    company_size: str | None = None
+    headquarters: str | None = None
+    website: str | None = None
     raw_llm_response: str
     created_at: datetime | None = None
     updated_at: datetime | None = None

@@ -33,12 +33,12 @@ class ExternalFirmographicsAdapter:
                 )
                 resp.raise_for_status()
                 data = resp.json()
+                return Firmographics(
+                    industry=data.get("industry"),
+                    company_size=data.get("company_size") or data.get("size"),
+                    headquarters=data.get("headquarters") or data.get("location"),
+                    website=data.get("website") or data.get("domain"),
+                )
         except Exception:
             logger.warning("firmographics provider failed for %s", company_name, exc_info=True)
             return None
-        return Firmographics(
-            industry=data.get("industry"),
-            company_size=data.get("company_size") or data.get("size"),
-            headquarters=data.get("headquarters") or data.get("location"),
-            website=data.get("website") or data.get("domain"),
-        )

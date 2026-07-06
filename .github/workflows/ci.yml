@@ -41,7 +41,7 @@ jobs:
       # Skip the HuggingFace hub round-trip (the embedding model is mocked in tests).
       HF_HUB_OFFLINE: "1"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
@@ -92,7 +92,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Setup Node
         uses: actions/setup-node@v5

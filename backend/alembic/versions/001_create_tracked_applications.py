@@ -4,6 +4,7 @@ Revision ID: 001
 Revises:
 Create Date: 2026-04-06
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -26,8 +27,12 @@ def upgrade() -> None:
         sa.Column("status", sa.String(20), nullable=False, server_default="saved"),
         sa.Column("notes", sa.Text(), nullable=True),
         sa.Column("applied_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
     op.create_index("ix_tracked_applications_status", "tracked_applications", ["status"])
     op.create_index("ix_tracked_applications_job_id", "tracked_applications", ["job_id"])

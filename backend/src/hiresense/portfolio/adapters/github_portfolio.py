@@ -100,10 +100,7 @@ class GitHubPortfolioAdapter:
         # One /languages request per kept repo — issued concurrently so a sync
         # costs one round-trip of latency instead of max_repos sequential ones.
         language_maps = await asyncio.gather(
-            *(
-                self._get(f"{self._api}/repos/{repo['full_name']}/languages")
-                for repo in kept
-            )
+            *(self._get(f"{self._api}/repos/{repo['full_name']}/languages") for repo in kept)
         )
 
         projects: list[PortfolioProject] = []
@@ -123,9 +120,7 @@ class GitHubPortfolioAdapter:
                     position=index,
                     tech=tech,
                     translations={
-                        "en": ProjectText(
-                            title=repo["name"], description=repo.get("description")
-                        )
+                        "en": ProjectText(title=repo["name"], description=repo.get("description"))
                     },
                 )
             )

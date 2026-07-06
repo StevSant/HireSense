@@ -13,8 +13,14 @@
   .status {
     text-transform: capitalize;
     font-weight: 600;
-    &--drafted { color: var(--success, #2e7d32); }
-    &--partial { color: var(--warn, #ef6c00); }
-    &--failed { color: var(--danger, #c62828); }
+    &--drafted {
+      color: var(--success, #2e7d32);
+    }
+    &--partial {
+      color: var(--warn, #ef6c00);
+    }
+    &--failed {
+      color: var(--danger, #c62828);
+    }
   }
 }

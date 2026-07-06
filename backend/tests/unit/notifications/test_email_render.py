@@ -9,8 +9,12 @@ def _digest():
         cutoff_at=datetime.now(timezone.utc),
         job_count=2,
         entries=[
-            DigestEntry(job_id="1", title="Senior Python Dev", company="Acme", url="http://x/1", score=0.91),
-            DigestEntry(job_id="2", title="Backend Engineer", company="Globex", url=None, score=0.84),
+            DigestEntry(
+                job_id="1", title="Senior Python Dev", company="Acme", url="http://x/1", score=0.91
+            ),
+            DigestEntry(
+                job_id="2", title="Backend Engineer", company="Globex", url=None, score=0.84
+            ),
         ],
     )
 

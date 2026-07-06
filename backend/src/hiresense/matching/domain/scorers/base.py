@@ -17,7 +17,9 @@ class DimensionResult(BaseModel):
         return max(0.0, min(1.0, v))
 
     @classmethod
-    def default(cls, dimension: str, weight: int, rationale: str = "Not evaluated") -> DimensionResult:
+    def default(
+        cls, dimension: str, weight: int, rationale: str = "Not evaluated"
+    ) -> DimensionResult:
         return cls(dimension=dimension, score=0.5, rationale=rationale, weight=weight)
 
 

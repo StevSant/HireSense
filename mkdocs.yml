@@ -1,0 +1,56 @@
+site_name: HireSense
+site_description: AI-assisted job hunting — ingest, rank, and apply, end to end.
+site_url: https://stevsant.github.io/HireSense/
+repo_url: https://github.com/StevSant/HireSense
+repo_name: StevSant/HireSense
+edit_uri: edit/main/docs/
+
+# Keep working notes out of the public site (images under assets/ are still copied).
+exclude_docs: |
+  reference/
+  superpowers/
+
+theme:
+  name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.details
+
+nav:
+  - Home: index.md
+
+plugins:
+  - search

@@ -2,7 +2,9 @@ from hiresense.matching.domain.scorers.base import DimensionResult
 
 
 def test_dimension_result_creation() -> None:
-    result = DimensionResult(dimension="seniority_fit", score=0.8, rationale="Good seniority match", weight=10)
+    result = DimensionResult(
+        dimension="seniority_fit", score=0.8, rationale="Good seniority match", weight=10
+    )
     assert result.dimension == "seniority_fit"
     assert result.score == 0.8
     assert result.rationale == "Good seniority match"

@@ -38,7 +38,7 @@ def build_analytics(
         sample_cap=s.analytics_corpus_sample_cap,
     )
     normalizer = SkillNormalizer()
-    salary_parser = SalaryParser()
+    salary_parser = SalaryParser(annual_floor=s.salary_annual_floor)
     service = AnalyticsService(
         funnel=FunnelService(status_history_read, applications_read=tracking_read, corpus=corpus),
         market=MarketIntelService(corpus, normalizer, salary_parser),

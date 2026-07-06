@@ -6,9 +6,16 @@ from hiresense.ingestion.domain import content_hash
 
 def _job(**over) -> NormalizedJob:
     base = dict(
-        id="x", title="Engineer", company="Acme", description="Build things",
-        location="Remote", salary_range="$100k", skills=["python", "sql"],
-        source="remotive", source_type="api", url="https://e.com/1",
+        id="x",
+        title="Engineer",
+        company="Acme",
+        description="Build things",
+        location="Remote",
+        salary_range="$100k",
+        skills=["python", "sql"],
+        source="remotive",
+        source_type="api",
+        url="https://e.com/1",
     )
     base.update(over)
     return NormalizedJob(**base)

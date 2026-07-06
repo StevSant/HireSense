@@ -69,7 +69,9 @@ $transition: 0.2s ease;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // --- Upload Card ---
@@ -101,7 +103,10 @@ $transition: 0.2s ease;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: color $transition, border-color $transition, background $transition;
+  transition:
+    color $transition,
+    border-color $transition,
+    background $transition;
 
   svg {
     opacity: 0.5;
@@ -112,7 +117,9 @@ $transition: 0.2s ease;
     color: $text-mid;
     background: rgba($primary, 0.03);
 
-    svg { opacity: 0.7; }
+    svg {
+      opacity: 0.7;
+    }
   }
 
   &.active {
@@ -120,7 +127,9 @@ $transition: 0.2s ease;
     border-bottom-color: $primary;
     background: $surface;
 
-    svg { opacity: 1; }
+    svg {
+      opacity: 1;
+    }
   }
 }
 
@@ -151,7 +160,9 @@ $transition: 0.2s ease;
     background: $surface;
     min-width: 140px;
     cursor: pointer;
-    transition: border-color $transition, box-shadow $transition;
+    transition:
+      border-color $transition,
+      box-shadow $transition;
 
     &:focus {
       outline: none;
@@ -167,7 +178,10 @@ $transition: 0.2s ease;
   border-radius: $radius;
   padding: 2.5rem 1.5rem;
   text-align: center;
-  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
   cursor: pointer;
   margin-bottom: 1.25rem;
   position: relative;
@@ -209,7 +223,9 @@ $transition: 0.2s ease;
 
   svg {
     color: $text-light;
-    transition: transform 0.3s ease, color 0.3s ease;
+    transition:
+      transform 0.3s ease,
+      color 0.3s ease;
   }
 }
 
@@ -262,7 +278,9 @@ $transition: 0.2s ease;
   border-radius: 8px;
   flex-shrink: 0;
 
-  svg { color: $primary; }
+  svg {
+    color: $primary;
+  }
 }
 
 .file-details {
@@ -297,7 +315,9 @@ $transition: 0.2s ease;
   color: $text-light;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background $transition, color $transition;
+  transition:
+    background $transition,
+    color $transition;
 
   &:hover {
     background: $danger-bg;
@@ -330,9 +350,13 @@ $transition: 0.2s ease;
   background: $bg;
   box-sizing: border-box;
   resize: vertical;
-  transition: border-color $transition, box-shadow $transition;
+  transition:
+    border-color $transition,
+    box-shadow $transition;
 
-  &::placeholder { color: #c0c5ce; }
+  &::placeholder {
+    color: #c0c5ce;
+  }
 
   &:focus {
     outline: none;
@@ -355,7 +379,10 @@ $transition: 0.2s ease;
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 500;
-  transition: background $transition, transform 0.1s ease, box-shadow $transition;
+  transition:
+    background $transition,
+    transform 0.1s ease,
+    box-shadow $transition;
 
   &:hover:not(:disabled) {
     background: $primary-dark;
@@ -390,7 +417,9 @@ $transition: 0.2s ease;
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
-  transition: background $transition, border-color $transition;
+  transition:
+    background $transition,
+    border-color $transition;
 
   &:hover {
     background: $primary-bg;
@@ -663,7 +692,9 @@ $transition: 0.2s ease;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: color $transition, border-color $transition;
+  transition:
+    color $transition,
+    border-color $transition;
 
   &:hover {
     color: $text-mid;
@@ -681,8 +712,14 @@ $transition: 0.2s ease;
 }
 
 @keyframes tab-fade {
-  from { opacity: 0; transform: translateY(2px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 // --- Personal details tab ---

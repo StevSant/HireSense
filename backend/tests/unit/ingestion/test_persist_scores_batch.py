@@ -5,6 +5,7 @@ Verifies REQ-08: domain services expose a batched persist method that
 delegates to repo.bulk_update_scores — eliminating any N+1 loop at the
 call site.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -160,9 +161,11 @@ class TestPortalScannerPersistScoresBatch:
         repo.upsert(job)
 
         scanner = _make_portal_scanner(repo)
-        scanner.persist_scores_batch([
-            ScoreUpdate(job_id=job.id, match_score=0.6, semantic_score=0.75),
-        ])
+        scanner.persist_scores_batch(
+            [
+                ScoreUpdate(job_id=job.id, match_score=0.6, semantic_score=0.75),
+            ]
+        )
 
         stored = repo.get_by_id(job.id)
         assert stored is not None

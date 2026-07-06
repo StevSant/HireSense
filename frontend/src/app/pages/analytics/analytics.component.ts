@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { AnalyticsService } from '../../core/services/analytics.service';
@@ -9,7 +17,10 @@ import { SkillGap } from './models/skill-gap.model';
 import { CompBenchmark } from './models/comp-benchmark.model';
 import { SearchFocus } from './models/search-focus.model';
 import { BarRow } from './models/bar-row.model';
-import { PortfolioEngagementResponse, PortfolioVisit } from '../profile/models/portfolio-engagement.model';
+import {
+  PortfolioEngagementResponse,
+  PortfolioVisit,
+} from '../profile/models/portfolio-engagement.model';
 import { BarChartComponent } from './components/bar-chart/bar-chart.component';
 import { FunnelChartComponent } from './components/funnel-chart/funnel-chart.component';
 import { TrendLineComponent } from './components/trend-line/trend-line.component';
@@ -60,25 +71,50 @@ export class AnalyticsComponent implements OnInit {
   engagement = signal<PortfolioEngagementResponse | null>(null);
 
   ngOnInit(): void {
-    this.analytics.funnel().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (v) => this.funnel.set(v), error: () => this.funnelError.set(true),
-    });
-    this.analytics.market().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (v) => this.market.set(v), error: () => this.marketError.set(true),
-    });
-    this.analytics.skillGap().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (v) => this.skillGap.set(v), error: () => this.skillGapError.set(true),
-    });
-    this.analytics.comp().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (v) => this.comp.set(v), error: () => this.compError.set(true),
-    });
-    this.analytics.focus().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (v) => this.focus.set(v), error: () => this.focusError.set(true),
-    });
-    this.portfolioService.engagement().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (v) => this.engagement.set(v),
-      error: () => { /* keep empty on error */ },
-    });
+    this.analytics
+      .funnel()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (v) => this.funnel.set(v),
+        error: () => this.funnelError.set(true),
+      });
+    this.analytics
+      .market()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (v) => this.market.set(v),
+        error: () => this.marketError.set(true),
+      });
+    this.analytics
+      .skillGap()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (v) => this.skillGap.set(v),
+        error: () => this.skillGapError.set(true),
+      });
+    this.analytics
+      .comp()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (v) => this.comp.set(v),
+        error: () => this.compError.set(true),
+      });
+    this.analytics
+      .focus()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (v) => this.focus.set(v),
+        error: () => this.focusError.set(true),
+      });
+    this.portfolioService
+      .engagement()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (v) => this.engagement.set(v),
+        error: () => {
+          /* keep empty on error */
+        },
+      });
   }
 
   // Headline KPIs, composed from the section payloads. Each degrades to "—".
@@ -89,7 +125,7 @@ export class AnalyticsComponent implements OnInit {
     const compReady = c !== null && !c.insufficient_data && c.median_annual !== null;
     const focusReady = focus !== null && !focus.insufficient_data;
     const applyToInterview = f
-      ? f.stages.find((s) => s.stage === 'interviewing')?.conversion_from_prev ?? null
+      ? (f.stages.find((s) => s.stage === 'interviewing')?.conversion_from_prev ?? null)
       : null;
     const applied = f?.stages.find((s) => s.stage === 'applied')?.reached ?? null;
     const interviewing = f?.stages.find((s) => s.stage === 'interviewing')?.reached ?? null;
@@ -104,9 +140,12 @@ export class AnalyticsComponent implements OnInit {
       {
         label: 'Apply → interview',
         value: applyToInterview === null ? '—' : `${Math.round(applyToInterview * PERCENT)}%`,
-        hint: applied !== null && applied > 0
-          ? `${interviewing ?? 0} of ${applied} reached interview`
-          : f ? `${f.total_applications} tracked` : undefined,
+        hint:
+          applied !== null && applied > 0
+            ? `${interviewing ?? 0} of ${applied} reached interview`
+            : f
+              ? `${f.total_applications} tracked`
+              : undefined,
       },
       {
         label: 'Fresh-fit jobs',
@@ -143,7 +182,10 @@ export class AnalyticsComponent implements OnInit {
   remoteRows(m: MarketIntel): BarRow[] {
     const total = Object.values(m.remote_mix).reduce((a, b) => a + b, 0) || 1;
     return Object.entries(m.remote_mix).map(([k, v]) => ({
-      label: k, value: v, pct: Math.round((v / total) * PERCENT), note: `${Math.round((v / total) * PERCENT)}%`,
+      label: k,
+      value: v,
+      pct: Math.round((v / total) * PERCENT),
+      note: `${Math.round((v / total) * PERCENT)}%`,
     }));
   }
 

@@ -16,7 +16,9 @@ from hiresense.portfolio.domain import PortfolioProject, PortfolioVisit, Project
 
 def _project(key: str) -> PortfolioProject:
     return PortfolioProject(
-        id=key, source="supabase", source_key=key,
+        id=key,
+        source="supabase",
+        source_key=key,
         translations={"en": ProjectText(title=key)},
     )
 

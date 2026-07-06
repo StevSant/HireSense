@@ -11,6 +11,7 @@ from hiresense.kernel.value_objects import SourceType
 # Fakes
 # ---------------------------------------------------------------------------
 
+
 class FakeResponse:
     def __init__(self, data: dict) -> None:
         self._data = data
@@ -55,6 +56,7 @@ SAMPLE_RESPONSE = {"jobs": [SAMPLE_JOB]}
 # ---------------------------------------------------------------------------
 # Adapter tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_greenhouse_fetches_jobs() -> None:
@@ -111,6 +113,7 @@ def test_greenhouse_source_metadata() -> None:
 # Normalizer tests
 # ---------------------------------------------------------------------------
 
+
 def _make_raw(overrides: dict | None = None) -> RawJobListing:
     data = {**SAMPLE_JOB, "company": "Acme Corp"}
     if overrides:
@@ -148,7 +151,9 @@ def test_greenhouse_normalizer_missing_departments() -> None:
 
 def test_greenhouse_normalizer_no_departments_key() -> None:
     normalizer = GreenhouseNormalizer()
-    raw_data = {k: v for k, v in {**SAMPLE_JOB, "company": "Acme Corp"}.items() if k != "departments"}
+    raw_data = {
+        k: v for k, v in {**SAMPLE_JOB, "company": "Acme Corp"}.items() if k != "departments"
+    }
     raw = RawJobListing(source="greenhouse", source_id="4001", raw_data=raw_data)
     result = normalizer.normalize(raw)
     assert result["department"] is None

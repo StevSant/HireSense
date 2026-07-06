@@ -12,6 +12,7 @@ The pure SQL-construction behaviour is covered by ``tests/unit/test_pgvector_ada
 without a DB; this module validates the parts that only a real pgvector instance
 can: the ``<=>`` cosine ranking, eviction via ``delete``, and dimension handling.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -97,9 +98,7 @@ async def test_ann_search_ranks_by_cosine_distance(
     assert scores == sorted(scores, reverse=True)
 
 
-async def test_top_k_limits_result_count(
-    store: PgVectorStore, embedding_dim: int
-) -> None:
+async def test_top_k_limits_result_count(store: PgVectorStore, embedding_dim: int) -> None:
     for i in range(5):
         await store.upsert(f"v{i}", _unit_vector(embedding_dim, i), {})
 

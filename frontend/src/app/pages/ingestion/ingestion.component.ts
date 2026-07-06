@@ -64,8 +64,14 @@ export class IngestionComponent implements OnInit {
   // Filters
   filters = signal<JobFilters>({});
   boardSources = signal<string[]>([
-    'remotive', 'remoteok', 'jobicy', 'himalayas',
-    'hn_hiring', 'weworkremotely', 'getonboard', 'linkedin',
+    'remotive',
+    'remoteok',
+    'jobicy',
+    'himalayas',
+    'hn_hiring',
+    'weworkremotely',
+    'getonboard',
+    'linkedin',
   ]);
   portalSources = signal<string[]>([]);
 
@@ -137,7 +143,10 @@ export class IngestionComponent implements OnInit {
     this.loadJobs$
       .pipe(
         switchMap((rescore) => {
-          const filtersWithSort = { ...this.filters(), sort: this.sort.token() as JobFilters['sort'] };
+          const filtersWithSort = {
+            ...this.filters(),
+            sort: this.sort.token() as JobFilters['sort'],
+          };
           return this.ingestionService
             .queryJobs(
               this.activeTab(),
@@ -169,7 +178,10 @@ export class IngestionComponent implements OnInit {
       });
 
     this.feedbackRefetch$
-      .pipe(debounceTime(environment.feedbackRefetchDebounceMs), takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        debounceTime(environment.feedbackRefetchDebounceMs),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe(() => this.loadJobs());
     this.loadPortals();
     this.applyKeywordFromQueryParam();
@@ -185,10 +197,13 @@ export class IngestionComponent implements OnInit {
   private openDetailFromQueryParam(): void {
     const jobId = this.route.snapshot.queryParamMap.get('job_id');
     if (!jobId) return;
-    this.ingestionService.getJob(jobId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (job) => this.selectedJob.set(job),
-      error: () => {},
-    });
+    this.ingestionService
+      .getJob(jobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (job) => this.selectedJob.set(job),
+        error: () => {},
+      });
   }
 
   switchTab(tab: 'boards' | 'portals'): void {
@@ -211,17 +226,20 @@ export class IngestionComponent implements OnInit {
     this.loading.set(true);
     this.fetching.set(true);
     this.error.set('');
-    this.ingestionService.fetchJobs().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.fetching.set(false);
-        this.loadJobs();
-      },
-      error: (err) => {
-        this.error.set(err.error?.detail || 'Failed to fetch jobs');
-        this.fetching.set(false);
-        this.loading.set(false);
-      },
-    });
+    this.ingestionService
+      .fetchJobs()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.fetching.set(false);
+          this.loadJobs();
+        },
+        error: (err) => {
+          this.error.set(err.error?.detail || 'Failed to fetch jobs');
+          this.fetching.set(false);
+          this.loading.set(false);
+        },
+      });
   }
 
   // Manual closure check: probe the jobs currently on screen synchronously (so
@@ -234,37 +252,43 @@ export class IngestionComponent implements OnInit {
     this.error.set('');
     this.revalidateNotice.set('');
     const visibleIds = this.jobs().map((j) => j.id);
-    this.ingestionService.revalidate(visibleIds).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (res) => {
-        this.revalidating.set(false);
-        this.loadJobs(false); // reflect the immediate (visible-page) closures
-        this.revalidateNotice.set(
-          `Closed ${res.closed} job(s) on this page. Still scanning the rest of your jobs for closed listings in the background — more may drop off shortly.`,
-        );
-        timer(15000, 15000)
-          .pipe(take(8), takeUntilDestroyed(this.destroyRef))
-          .subscribe({
-            next: () => this.loadJobs(false),
-            complete: () => this.revalidateNotice.set(''),
-          });
-      },
-      error: (err) => {
-        this.revalidating.set(false);
-        this.error.set(err.error?.detail || 'Failed to check for closed jobs');
-      },
-    });
+    this.ingestionService
+      .revalidate(visibleIds)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.revalidating.set(false);
+          this.loadJobs(false); // reflect the immediate (visible-page) closures
+          this.revalidateNotice.set(
+            `Closed ${res.closed} job(s) on this page. Still scanning the rest of your jobs for closed listings in the background — more may drop off shortly.`,
+          );
+          timer(15000, 15000)
+            .pipe(take(8), takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: () => this.loadJobs(false),
+              complete: () => this.revalidateNotice.set(''),
+            });
+        },
+        error: (err) => {
+          this.revalidating.set(false);
+          this.error.set(err.error?.detail || 'Failed to check for closed jobs');
+        },
+      });
   }
 
   loadPortals(): void {
-    this.ingestionService.loadPortals().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (portals) => {
-        this.portals.set(portals);
-        const allCategories = portals.flatMap((p) => p.categories);
-        this.availableCategories.set([...new Set(allCategories)].sort());
-        this.portalSources.set(portals.map((p) => p.name));
-      },
-      error: () => {},
-    });
+    this.ingestionService
+      .loadPortals()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (portals) => {
+          this.portals.set(portals);
+          const allCategories = portals.flatMap((p) => p.categories);
+          this.availableCategories.set([...new Set(allCategories)].sort());
+          this.portalSources.set(portals.map((p) => p.name));
+        },
+        error: () => {},
+      });
   }
 
   scanPortals(): void {
@@ -278,20 +302,23 @@ export class IngestionComponent implements OnInit {
     const kw = this.scanKeyword().trim();
     if (kw) body.keyword = kw;
 
-    this.ingestionService.scanPortals(body).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (res) => {
-        this.scanSummary.set(
-          `Scan complete: ${res.total_fetched} fetched, ${res.new} new, ${res.duplicates} duplicates.`,
-        );
-        this.scanErrors.set(res.errors);
-        this.scanning.set(false);
-        this.loadJobs();
-      },
-      error: (err) => {
-        this.scanSummary.set(err.error?.detail || 'Scan failed.');
-        this.scanning.set(false);
-      },
-    });
+    this.ingestionService
+      .scanPortals(body)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.scanSummary.set(
+            `Scan complete: ${res.total_fetched} fetched, ${res.new} new, ${res.duplicates} duplicates.`,
+          );
+          this.scanErrors.set(res.errors);
+          this.scanning.set(false);
+          this.loadJobs();
+        },
+        error: (err) => {
+          this.scanSummary.set(err.error?.detail || 'Scan failed.');
+          this.scanning.set(false);
+        },
+      });
   }
 
   onFiltersChange(newFilters: JobFilters): void {
@@ -342,24 +369,27 @@ export class IngestionComponent implements OnInit {
     if (this.trackingJobId() !== null) return;
     this.trackingJobId.set(jobId);
     this.error.set('');
-    this.applicationsService.createFromJob(jobId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (agg) => {
-        this.ingestionService.markTracked(jobId);
-        this.trackingJobId.set(null);
-        this.router.navigate(['/dashboard/applications', agg.id]);
-      },
-      error: (err) => {
-        this.trackingJobId.set(null);
-        if (err.status === 409) {
-          // Already tracked — mark it and fall back to the applications list
-          // so the user can find the existing application.
+    this.applicationsService
+      .createFromJob(jobId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (agg) => {
           this.ingestionService.markTracked(jobId);
-          this.router.navigate(['/dashboard/applications']);
-          return;
-        }
-        this.error.set(err.error?.detail || 'Failed to track this job. Please try again.');
-      },
-    });
+          this.trackingJobId.set(null);
+          this.router.navigate(['/dashboard/applications', agg.id]);
+        },
+        error: (err) => {
+          this.trackingJobId.set(null);
+          if (err.status === 409) {
+            // Already tracked — mark it and fall back to the applications list
+            // so the user can find the existing application.
+            this.ingestionService.markTracked(jobId);
+            this.router.navigate(['/dashboard/applications']);
+            return;
+          }
+          this.error.set(err.error?.detail || 'Failed to track this job. Please try again.');
+        },
+      });
   }
 
   isTracking(jobId: string): boolean {

@@ -14,10 +14,16 @@ export class AuthService {
   readonly role = computed(() => roleFromToken(this.tokenSignal()));
   readonly isAdmin = computed(() => this.role() === 'admin');
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+  ) {}
 
   login(username: string, password: string) {
-    return this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, { username, password });
+    return this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, {
+      username,
+      password,
+    });
   }
 
   me(): Observable<{ username: string; role: string }> {

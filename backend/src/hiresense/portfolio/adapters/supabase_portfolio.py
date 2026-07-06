@@ -44,7 +44,11 @@ class SupabasePortfolioAdapter:
         )
         usages = await self._get(
             "/rest/v1/skill_usages",
-            {"select": "source_id,skill(code)", "source_type": "eq.project", "is_archived": "eq.false"},
+            {
+                "select": "source_id,skill(code)",
+                "source_type": "eq.project",
+                "is_archived": "eq.false",
+            },
         )
 
         tech_by_project: dict[int, list[str]] = {}

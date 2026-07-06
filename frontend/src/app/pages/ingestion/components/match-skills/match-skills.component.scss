@@ -26,5 +26,11 @@
   font-weight: 500;
   line-height: 1.35;
 }
-.tag-match { background: var(--success-bg); color: #166534; }
-.tag-miss { background: var(--danger-bg); color: #991b1b; }
+.tag-match {
+  background: var(--success-bg);
+  color: #166534;
+}
+.tag-miss {
+  background: var(--danger-bg);
+  color: #991b1b;
+}

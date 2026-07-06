@@ -1,7 +1,9 @@
 <div class="admin-usage">
   <header class="page-header">
     <h1>LLM Usage</h1>
-    <p class="subtitle">Track every LLM call: tokens, cost (USD), latency, by feature/provider/model.</p>
+    <p class="subtitle">
+      Track every LLM call: tokens, cost (USD), latency, by feature/provider/model.
+    </p>
     <div class="header-actions">
       <button class="btn" (click)="refresh()" type="button">Refresh</button>
       <button class="btn" (click)="exportCsv()" type="button">Export CSV</button>
@@ -17,21 +19,27 @@
     <section class="kpis">
       <div class="kpi-card">
         <div class="kpi-label">Today</div>
-        <div class="kpi-value">{{ s.today.total_cost_usd | currency:'USD':'symbol':'1.4-4' }}</div>
+        <div class="kpi-value">
+          {{ s.today.total_cost_usd | currency: 'USD' : 'symbol' : '1.4-4' }}
+        </div>
         <div class="kpi-sub">
           {{ s.today.total_calls }} calls · {{ s.today.total_tokens | number }} tokens
         </div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">This month</div>
-        <div class="kpi-value">{{ s.this_month.total_cost_usd | currency:'USD':'symbol':'1.4-4' }}</div>
+        <div class="kpi-value">
+          {{ s.this_month.total_cost_usd | currency: 'USD' : 'symbol' : '1.4-4' }}
+        </div>
         <div class="kpi-sub">
           {{ s.this_month.total_calls }} calls · {{ s.this_month.total_tokens | number }} tokens
         </div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">All time</div>
-        <div class="kpi-value">{{ s.all_time.total_cost_usd | currency:'USD':'symbol':'1.4-4' }}</div>
+        <div class="kpi-value">
+          {{ s.all_time.total_cost_usd | currency: 'USD' : 'symbol' : '1.4-4' }}
+        </div>
         <div class="kpi-sub">
           {{ s.all_time.total_calls }} calls · {{ s.all_time.total_tokens | number }} tokens
         </div>
@@ -44,9 +52,15 @@
     <div class="card-header">
       <h2>Cost over time</h2>
       <div class="range-toggle">
-        <button class="btn-toggle" [class.active]="rangeDays() === 7" (click)="setRange(7)">7d</button>
-        <button class="btn-toggle" [class.active]="rangeDays() === 30" (click)="setRange(30)">30d</button>
-        <button class="btn-toggle" [class.active]="rangeDays() === 90" (click)="setRange(90)">90d</button>
+        <button class="btn-toggle" [class.active]="rangeDays() === 7" (click)="setRange(7)">
+          7d
+        </button>
+        <button class="btn-toggle" [class.active]="rangeDays() === 30" (click)="setRange(30)">
+          30d
+        </button>
+        <button class="btn-toggle" [class.active]="rangeDays() === 90" (click)="setRange(90)">
+          90d
+        </button>
       </div>
     </div>
     @if (timeseries(); as ts) {
@@ -63,7 +77,10 @@
                 [attr.height]="barHeight(b.cost_usd, maxBucketCost(), 180)"
                 fill="#2563eb"
               >
-                <title>{{ formatDay(b.key) }} — {{ b.cost_usd | currency:'USD':'symbol':'1.4-4' }} · {{ b.calls }} calls</title>
+                <title>
+                  {{ formatDay(b.key) }} — {{ b.cost_usd | currency: 'USD' : 'symbol' : '1.4-4' }} ·
+                  {{ b.calls }} calls
+                </title>
               </rect>
             </g>
           }
@@ -83,9 +100,27 @@
     <div class="card-header">
       <h2>Breakdown</h2>
       <div class="range-toggle">
-        <button class="btn-toggle" [class.active]="dimension() === 'feature'" (click)="setDimension('feature')">Feature</button>
-        <button class="btn-toggle" [class.active]="dimension() === 'provider'" (click)="setDimension('provider')">Provider</button>
-        <button class="btn-toggle" [class.active]="dimension() === 'model'" (click)="setDimension('model')">Model</button>
+        <button
+          class="btn-toggle"
+          [class.active]="dimension() === 'feature'"
+          (click)="setDimension('feature')"
+        >
+          Feature
+        </button>
+        <button
+          class="btn-toggle"
+          [class.active]="dimension() === 'provider'"
+          (click)="setDimension('provider')"
+        >
+          Provider
+        </button>
+        <button
+          class="btn-toggle"
+          [class.active]="dimension() === 'model'"
+          (click)="setDimension('model')"
+        >
+          Model
+        </button>
       </div>
     </div>
     @if (breakdown(); as b) {
@@ -93,35 +128,41 @@
         <div class="empty">No usage to break down.</div>
       } @else {
         <div class="table-scroll">
-        <table class="breakdown-table">
-          <thead>
-            <tr>
-              <th appSortHeader [state]="breakdownSort" field="key">{{ b.dimension | titlecase }}</th>
-              <th class="right" appSortHeader [state]="breakdownSort" field="calls">Calls</th>
-              <th class="right" appSortHeader [state]="breakdownSort" field="total_tokens">Tokens</th>
-              <th class="right" appSortHeader [state]="breakdownSort" field="cost_usd">Cost</th>
-              <th class="bar-col">Share</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of visibleBuckets(); track row.key) {
+          <table class="breakdown-table">
+            <thead>
               <tr>
-                <td><code>{{ row.key }}</code></td>
-                <td class="right">{{ row.calls | number }}</td>
-                <td class="right">{{ row.total_tokens | number }}</td>
-                <td class="right">{{ row.cost_usd | currency:'USD':'symbol':'1.4-4' }}</td>
-                <td class="bar-col">
-                  <div class="row-bar">
-                    <div
-                      class="row-bar-fill"
-                      [style.width.%]="(row.cost_usd / maxBreakdownCost()) * 100">
-                    </div>
-                  </div>
-                </td>
+                <th appSortHeader [state]="breakdownSort" field="key">
+                  {{ b.dimension | titlecase }}
+                </th>
+                <th class="right" appSortHeader [state]="breakdownSort" field="calls">Calls</th>
+                <th class="right" appSortHeader [state]="breakdownSort" field="total_tokens">
+                  Tokens
+                </th>
+                <th class="right" appSortHeader [state]="breakdownSort" field="cost_usd">Cost</th>
+                <th class="bar-col">Share</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (row of visibleBuckets(); track row.key) {
+                <tr>
+                  <td>
+                    <code>{{ row.key }}</code>
+                  </td>
+                  <td class="right">{{ row.calls | number }}</td>
+                  <td class="right">{{ row.total_tokens | number }}</td>
+                  <td class="right">{{ row.cost_usd | currency: 'USD' : 'symbol' : '1.4-4' }}</td>
+                  <td class="bar-col">
+                    <div class="row-bar">
+                      <div
+                        class="row-bar-fill"
+                        [style.width.%]="(row.cost_usd / maxBreakdownCost()) * 100"
+                      ></div>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
       }
     }
@@ -138,17 +179,20 @@
         type="text"
         placeholder="Provider"
         [ngModel]="filterProvider()"
-        (ngModelChange)="filterProvider.set($event)" />
+        (ngModelChange)="filterProvider.set($event)"
+      />
       <input
         type="text"
         placeholder="Model"
         [ngModel]="filterModel()"
-        (ngModelChange)="filterModel.set($event)" />
+        (ngModelChange)="filterModel.set($event)"
+      />
       <input
         type="text"
         placeholder="Feature key"
         [ngModel]="filterFeature()"
-        (ngModelChange)="filterFeature.set($event)" />
+        (ngModelChange)="filterFeature.set($event)"
+      />
       <button class="btn" (click)="loadRecent()" type="button">Apply</button>
     </div>
 
@@ -157,42 +201,80 @@
         <div class="empty">No calls match the current filters.</div>
       } @else {
         <div class="table-scroll">
-        <table class="calls-table">
-          <thead>
-            <tr>
-              <th appSortHeader [state]="callsSort" field="created" (sorted)="loadRecent()">Time</th>
-              <th>Feature</th>
-              <th>Provider</th>
-              <th>Model</th>
-              <th class="right" appSortHeader [state]="callsSort" field="input_tokens" (sorted)="loadRecent()">In</th>
-              <th class="right" appSortHeader [state]="callsSort" field="output_tokens" (sorted)="loadRecent()">Out</th>
-              <th class="right" appSortHeader [state]="callsSort" field="cost" (sorted)="loadRecent()">Cost</th>
-              <th class="right" appSortHeader [state]="callsSort" field="latency" (sorted)="loadRecent()">Latency</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (call of r.calls; track call.id) {
-              <tr [class.failed]="!call.success">
-                <td>{{ call.created_at | date:'short' }}</td>
-                <td><code>{{ call.feature_key }}</code></td>
-                <td>{{ call.provider }}</td>
-                <td><code>{{ call.model }}</code></td>
-                <td class="right">{{ call.input_tokens | number }}</td>
-                <td class="right">{{ call.output_tokens | number }}</td>
-                <td class="right">{{ call.cost_usd | currency:'USD':'symbol':'1.6-6' }}</td>
-                <td class="right">{{ call.latency_ms | number:'1.0-0' }} ms</td>
-                <td>
-                  @if (call.success) {
-                    <span class="badge success">ok</span>
-                  } @else {
-                    <span class="badge error" [title]="call.error || ''">error</span>
-                  }
-                </td>
+          <table class="calls-table">
+            <thead>
+              <tr>
+                <th appSortHeader [state]="callsSort" field="created" (sorted)="loadRecent()">
+                  Time
+                </th>
+                <th>Feature</th>
+                <th>Provider</th>
+                <th>Model</th>
+                <th
+                  class="right"
+                  appSortHeader
+                  [state]="callsSort"
+                  field="input_tokens"
+                  (sorted)="loadRecent()"
+                >
+                  In
+                </th>
+                <th
+                  class="right"
+                  appSortHeader
+                  [state]="callsSort"
+                  field="output_tokens"
+                  (sorted)="loadRecent()"
+                >
+                  Out
+                </th>
+                <th
+                  class="right"
+                  appSortHeader
+                  [state]="callsSort"
+                  field="cost"
+                  (sorted)="loadRecent()"
+                >
+                  Cost
+                </th>
+                <th
+                  class="right"
+                  appSortHeader
+                  [state]="callsSort"
+                  field="latency"
+                  (sorted)="loadRecent()"
+                >
+                  Latency
+                </th>
+                <th>Status</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (call of r.calls; track call.id) {
+                <tr [class.failed]="!call.success">
+                  <td>{{ call.created_at | date: 'short' }}</td>
+                  <td>
+                    <code>{{ call.feature_key }}</code>
+                  </td>
+                  <td>{{ call.provider }}</td>
+                  <td>
+                    <code>{{ call.model }}</code>
+                  </td>
+                  <td class="right">{{ call.input_tokens | number }}</td>
+                  <td class="right">{{ call.output_tokens | number }}</td>
+                  <td class="right">{{ call.cost_usd | currency: 'USD' : 'symbol' : '1.6-6' }}</td>
+                  <td class="right">{{ call.latency_ms | number: '1.0-0' }} ms</td>
+                  <td>
+                    @if (call.success) {
+                      <span class="badge success">ok</span>
+                    } @else {
+                      <span class="badge error" [title]="call.error || ''">error</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
       }
     } @else {

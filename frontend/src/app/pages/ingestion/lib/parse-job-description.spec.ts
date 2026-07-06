@@ -51,7 +51,9 @@ describe('parseJobDescription', () => {
   });
 
   it('keeps paragraph-style bodies (blank-line separated) as prose unless fully bulleted', () => {
-    const parsed = parseJobDescription('About:\nFirst paragraph of prose.\n\nSecond paragraph of prose.');
+    const parsed = parseJobDescription(
+      'About:\nFirst paragraph of prose.\n\nSecond paragraph of prose.',
+    );
     expect(parsed.sections[0].items).toBeUndefined();
   });
 

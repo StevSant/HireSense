@@ -151,8 +151,13 @@ def repo(sync_session_factory):
 
 def _job(repo_id: str, **over):
     base = dict(
-        id=repo_id, title="Engineer", company="Acme", description="D",
-        source="remotive", source_type="api", url="https://e.com/1",
+        id=repo_id,
+        title="Engineer",
+        company="Acme",
+        description="D",
+        source="remotive",
+        source_type="api",
+        url="https://e.com/1",
         source_id="native-1",
     )
     base.update(over)
@@ -169,16 +174,16 @@ def test_upsert_updates_changed_fields_and_preserves_id(repo):
     assert repo.upsert(_job("b", salary_range="$200k")) == UpsertResult.UPDATED
     stored = repo.list_all()
     assert len(stored) == 1
-    assert stored[0].id == "a"               # original id preserved
-    assert stored[0].salary_range == "$200k" # field updated
+    assert stored[0].id == "a"  # original id preserved
+    assert stored[0].salary_range == "$200k"  # field updated
 
 
 def test_upsert_reopens_a_closed_job(repo):
     repo.upsert(_job("a"))
     closed = repo.list_all()[0].id
     repo.mark_closed([closed])
-    result = repo.upsert(_job("b"))           # same identity re-seen
-    assert result == UpsertResult.REOPENED    # signals caller to re-index
+    result = repo.upsert(_job("b"))  # same identity re-seen
+    assert result == UpsertResult.REOPENED  # signals caller to re-index
     assert repo.list_all()[0].status == "open"
 
 
@@ -195,9 +200,9 @@ def test_in_memory_repo_upsert_parity():
 
 
 def test_bulk_upsert_mixes_insert_update_reopen_unchanged(repo):
-    repo.upsert(_job("a", source_id="n1", url="https://e.com/1"))          # → UNCHANGED
-    repo.upsert(_job("b", source_id="n2", url="https://e.com/2"))          # → UPDATED
-    repo.upsert(_job("c", source_id="n3", url="https://e.com/3"))          # → REOPENED
+    repo.upsert(_job("a", source_id="n1", url="https://e.com/1"))  # → UNCHANGED
+    repo.upsert(_job("b", source_id="n2", url="https://e.com/2"))  # → UPDATED
+    repo.upsert(_job("c", source_id="n3", url="https://e.com/3"))  # → REOPENED
     repo.mark_closed(["c"])
 
     outcomes = repo.bulk_upsert(
@@ -205,7 +210,7 @@ def test_bulk_upsert_mixes_insert_update_reopen_unchanged(repo):
             _job("x1", source_id="n1", url="https://e.com/1"),
             _job("x2", source_id="n2", url="https://e.com/2", salary_range="$200k"),
             _job("x3", source_id="n3", url="https://e.com/3"),
-            _job("x4", source_id="n4", url="https://e.com/4"),               # → INSERTED
+            _job("x4", source_id="n4", url="https://e.com/4"),  # → INSERTED
         ]
     )
 
@@ -296,14 +301,12 @@ def test_bump_missed_and_close_persists_per_row(repo):
     repo.upsert(gone_job)
 
     # Only seen_job is present in this fetch; threshold 1 closes the missing one immediately.
-    closed = repo.bump_missed_and_close(
-        "remotive", {identity_key(seen_job)}, threshold=1
-    )
+    closed = repo.bump_missed_and_close("remotive", {identity_key(seen_job)}, threshold=1)
 
     by_sid = {j.source_id: j for j in repo.list_all()}
     assert by_sid["n2"].id in closed
-    assert by_sid["n2"].status == "closed"     # missing -> closed
-    assert by_sid["n1"].status == "open"       # seen -> stays open
+    assert by_sid["n2"].status == "closed"  # missing -> closed
+    assert by_sid["n1"].status == "open"  # seen -> stays open
 
 
 def test_find_open_stale_prioritizes_unchecked_and_caps(repo):
@@ -317,12 +320,12 @@ def test_find_open_stale_prioritizes_unchecked_and_caps(repo):
 
 
 def test_find_open_stale_excludes_closed_and_other_sources(repo):
-    repo.upsert(_job("a", source_id="n1", url="https://e.com/1"))               # remotive
+    repo.upsert(_job("a", source_id="n1", url="https://e.com/1"))  # remotive
     repo.upsert(_job("b", source="other", source_id="n2", url="https://e.com/2"))
     a_id = next(j.id for j in repo.list_all() if j.source == "remotive")
     repo.mark_closed([a_id])
-    assert repo.find_open_stale(["remotive"], 5) == []     # closed excluded
-    assert len(repo.find_open_stale(["other"], 5)) == 1    # different source, open
+    assert repo.find_open_stale(["remotive"], 5) == []  # closed excluded
+    assert len(repo.find_open_stale(["other"], 5)) == 1  # different source, open
 
 
 def test_find_open_stale_in_memory_parity():
@@ -336,28 +339,32 @@ def test_find_open_stale_in_memory_parity():
 
 def test_close_expired_closes_only_past_expiry(repo):
     now = datetime(2026, 7, 4, tzinfo=timezone.utc)
-    repo.upsert(_job("exp", source_id="n1", url="https://e.com/1",
-                     expiry_date=now - timedelta(days=1)))
-    repo.upsert(_job("live", source_id="n2", url="https://e.com/2",
-                     expiry_date=now + timedelta(days=1)))
+    repo.upsert(
+        _job("exp", source_id="n1", url="https://e.com/1", expiry_date=now - timedelta(days=1))
+    )
+    repo.upsert(
+        _job("live", source_id="n2", url="https://e.com/2", expiry_date=now + timedelta(days=1))
+    )
     repo.upsert(_job("noexp", source_id="n3", url="https://e.com/3"))  # expiry None
 
     closed = repo.close_expired(now)
 
     assert closed == ["exp"]
     statuses = {j.source_id: j.status for j in repo.list_all()}
-    assert statuses["n1"] == "closed"   # past expiry → closed
-    assert statuses["n2"] == "open"     # future expiry → open
-    assert statuses["n3"] == "open"     # no expiry → open
+    assert statuses["n1"] == "closed"  # past expiry → closed
+    assert statuses["n2"] == "open"  # future expiry → open
+    assert statuses["n3"] == "open"  # no expiry → open
 
 
 def test_close_expired_in_memory_parity():
     now = datetime(2026, 7, 4, tzinfo=timezone.utc)
     mem = InMemoryJobsRepository()
-    mem.upsert(_job("exp", source_id="n1", url="https://e.com/1",
-                    expiry_date=now - timedelta(days=1)))
-    mem.upsert(_job("live", source_id="n2", url="https://e.com/2",
-                    expiry_date=now + timedelta(days=1)))
+    mem.upsert(
+        _job("exp", source_id="n1", url="https://e.com/1", expiry_date=now - timedelta(days=1))
+    )
+    mem.upsert(
+        _job("live", source_id="n2", url="https://e.com/2", expiry_date=now + timedelta(days=1))
+    )
 
     assert mem.close_expired(now) == ["exp"]
     statuses = {j.source_id: j.status for j in mem.list_all()}
@@ -387,8 +394,13 @@ async def test_prune_evicts_pruned_vectors_from_index() -> None:
 
     idx = _FakeIndexer()
     orch = IngestionOrchestrator(
-        sources=[], normalizers={}, event_bus=_NoopBus(),
-        repository=repo, retention_days=1, indexer=idx, cooldown_seconds=0,
+        sources=[],
+        normalizers={},
+        event_bus=_NoopBus(),
+        repository=repo,
+        retention_days=1,
+        indexer=idx,
+        cooldown_seconds=0,
     )
     await orch._prune_expired()
 

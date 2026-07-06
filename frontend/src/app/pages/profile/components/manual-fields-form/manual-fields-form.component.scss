@@ -49,8 +49,14 @@ $danger-bg: #fef2f2;
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(-2px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .form-grid {
@@ -85,7 +91,9 @@ input {
   font-family: inherit;
   color: $text-dark;
   background: $surface;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 
   &::placeholder {
     color: #9ca3af;
@@ -126,7 +134,9 @@ input {
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
 
   &:hover:not(:disabled) {
     color: $text-dark;
@@ -148,7 +158,9 @@ input {
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 
   &:hover:not(:disabled) {
     background: $primary-dark;

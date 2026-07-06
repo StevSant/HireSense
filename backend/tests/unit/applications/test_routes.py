@@ -171,7 +171,9 @@ def artifact_service() -> FakeArtifactService:
 
 
 @pytest.fixture()
-def client(application_service: FakeApplicationService, artifact_service: FakeArtifactService) -> TestClient:
+def client(
+    application_service: FakeApplicationService, artifact_service: FakeArtifactService
+) -> TestClient:
     app = FastAPI()
     app.include_router(router)
     app.dependency_overrides[require_auth] = lambda: True
@@ -211,9 +213,7 @@ def test_list_returns_artifact_flags(client: TestClient):
 
 
 def test_get_returns_aggregate(client: TestClient):
-    resp = client.post(
-        "/applications", json={"title": "X", "company": "Y", "description": "Z"}
-    )
+    resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
     app_id = resp.json()["id"]
     resp = client.get(f"/applications/{app_id}")
     assert resp.status_code == 200
@@ -226,9 +226,7 @@ def test_get_missing_returns_404(client: TestClient):
 
 
 def test_update_snapshot(client: TestClient):
-    resp = client.post(
-        "/applications", json={"title": "X", "company": "Y", "description": "old"}
-    )
+    resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "old"})
     app_id = resp.json()["id"]
     resp = client.put(
         f"/applications/{app_id}/job-snapshot",
@@ -241,9 +239,7 @@ def test_update_snapshot(client: TestClient):
 
 
 def test_regenerate_skills(client: TestClient):
-    resp = client.post(
-        "/applications", json={"title": "X", "company": "Y", "description": "desc"}
-    )
+    resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "desc"})
     app_id = resp.json()["id"]
     resp = client.post(f"/applications/{app_id}/job-snapshot/regenerate-skills")
     assert resp.status_code == 200, resp.text
@@ -251,9 +247,7 @@ def test_regenerate_skills(client: TestClient):
 
 
 def test_delete(client: TestClient):
-    resp = client.post(
-        "/applications", json={"title": "X", "company": "Y", "description": "Z"}
-    )
+    resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
     app_id = resp.json()["id"]
     resp = client.delete(f"/applications/{app_id}")
     assert resp.status_code == 204
@@ -270,9 +264,7 @@ def test_create_with_unknown_job_id_returns_404(client: TestClient):
 
 
 def test_generate_match(client: TestClient):
-    resp = client.post(
-        "/applications", json={"title": "X", "company": "Y", "description": "Z"}
-    )
+    resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
     app_id = resp.json()["id"]
     resp = client.post(f"/applications/{app_id}/match", json={"cv_language": "en"})
     assert resp.status_code == 201, resp.text
@@ -280,18 +272,14 @@ def test_generate_match(client: TestClient):
 
 
 def test_generate_optimization_without_match_returns_400(client: TestClient):
-    resp = client.post(
-        "/applications", json={"title": "X", "company": "Y", "description": "Z"}
-    )
+    resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
     app_id = resp.json()["id"]
     resp = client.post(f"/applications/{app_id}/optimize", json={"cv_language": "en"})
     assert resp.status_code == 400
 
 
 def test_generate_interview_prep(client: TestClient):
-    resp = client.post(
-        "/applications", json={"title": "X", "company": "Y", "description": "Z"}
-    )
+    resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
     app_id = resp.json()["id"]
     resp = client.post(f"/applications/{app_id}/interview-prep")
     assert resp.status_code == 201, resp.text

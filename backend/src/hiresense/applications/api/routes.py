@@ -44,6 +44,7 @@ router = APIRouter(
 
 # -------- application CRUD --------------------------------------------
 
+
 @router.get("/cover-letters", response_model=list[CoverLetterLibraryItem])
 def list_all_cover_letters(
     service: ApplicationService = Depends(get_application_service),
@@ -150,6 +151,7 @@ def delete_application(
 
 # -------- job snapshot edits ------------------------------------------
 
+
 @router.put("/{application_id}/job-snapshot", response_model=ApplicationAggregate)
 def update_snapshot(
     application_id: uuid_mod.UUID,
@@ -181,6 +183,7 @@ async def regenerate_skills(
 
 
 # -------- artifact generation -----------------------------------------
+
 
 @router.post("/{application_id}/match", response_model=MatchView, status_code=201)
 async def generate_match(
@@ -230,6 +233,7 @@ async def generate_interview_prep(
 
 
 # -------- apply (cover letter + PDFs + bundle + mark-applied) ----------
+
 
 @router.post(
     "/{application_id}/cover-letter",
@@ -309,7 +313,9 @@ async def download_cover_letter_pdf(
     service: ApplyService = Depends(get_apply_service),
 ) -> StreamingResponse:
     try:
-        pdf = await service.compile_cover_letter_pdf(application_id, cover_letter_id=cover_letter_id)
+        pdf = await service.compile_cover_letter_pdf(
+            application_id, cover_letter_id=cover_letter_id
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except LatexCompileError as exc:
@@ -317,7 +323,9 @@ async def download_cover_letter_pdf(
     return StreamingResponse(
         iter([pdf]),
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="cover_letter_{application_id}.pdf"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="cover_letter_{application_id}.pdf"'
+        },
     )
 
 

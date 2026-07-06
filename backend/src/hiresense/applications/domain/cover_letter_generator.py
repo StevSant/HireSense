@@ -76,10 +76,7 @@ class CoverLetterGenerator:
             # the structural instructions. Anchor on the LAST occurrence: the
             # formatted {description} is external job-board data and may itself
             # contain "Constraints:\n", which must not hijack the splice point.
-            portfolio_block = (
-                f"{portfolio_section}\n"
-                f"{_PORTFOLIO_WEAVE_INSTRUCTION}\n\n"
-            )
+            portfolio_block = f"{portfolio_section}\n{_PORTFOLIO_WEAVE_INSTRUCTION}\n\n"
             marker = "Constraints:\n"
             idx = prompt.rfind(marker)
             if idx != -1:

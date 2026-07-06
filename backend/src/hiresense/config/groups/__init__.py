@@ -15,8 +15,19 @@ from hiresense.config.groups.preference import PreferenceSettings
 from hiresense.config.groups.scheduling import SchedulingSettings
 
 __all__ = [
-    "AnalyticsSettings", "ApplicationsSettings", "CoreSettings", "DatabaseSettings",
-    "HttpSettings", "IngestionSettings", "JobSourcesSettings", "LLMSettings",
-    "MatchingSettings", "ObservabilitySettings", "OutreachSettings", "PortalsSettings",
-    "PortfolioSettings", "PreferenceSettings", "SchedulingSettings",
+    "AnalyticsSettings",
+    "ApplicationsSettings",
+    "CoreSettings",
+    "DatabaseSettings",
+    "HttpSettings",
+    "IngestionSettings",
+    "JobSourcesSettings",
+    "LLMSettings",
+    "MatchingSettings",
+    "ObservabilitySettings",
+    "OutreachSettings",
+    "PortalsSettings",
+    "PortfolioSettings",
+    "PreferenceSettings",
+    "SchedulingSettings",
 ]

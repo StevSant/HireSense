@@ -52,8 +52,12 @@ def _runner(defn, run_repo=None, toggle_repo=None, clock=None):
 
 def _defn(run, count_items=len, default_enabled=True):
     return JobDefinition(
-        name="job", run=run, cron="0 9 * * *", interval_hours=None,
-        count_items=count_items, default_enabled=default_enabled,
+        name="job",
+        run=run,
+        cron="0 9 * * *",
+        interval_hours=None,
+        count_items=count_items,
+        default_enabled=default_enabled,
     )
 
 

@@ -21,11 +21,22 @@ Thumbs.db
 
 # Build
 *.pdf
+# MkDocs build output
+site/
+# Playwright MCP scratch output
+.playwright-mcp/
+# Frontend visual-test screenshots (scratch; may capture real profile data)
+frontend/.screenshots/
+# CV storage is runtime/personal data — never commit CVs (keep dirs via .gitkeep).
+# Covers both the repo-root cvs/ (compile.ps1 authoring dir) and backend/cvs/ (app runtime).
 cvs/compiled/
 cvs/optimized/
-# User-uploaded CVs are runtime data — never commit them (keep the dir via .gitkeep)
 cvs/originals/*
 !cvs/originals/.gitkeep
+backend/cvs/compiled/
+backend/cvs/optimized/
+backend/cvs/originals/*
+!backend/cvs/originals/.gitkeep
 
 # Docker
 docker-compose.override.yml

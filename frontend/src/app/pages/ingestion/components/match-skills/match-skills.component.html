@@ -3,7 +3,9 @@
     <div class="skills-col">
       <span class="skills-label">Matched skills</span>
       <div class="tag-row">
-        @for (s of matched(); track s) { <span class="tag tag-match">{{ s }}</span> }
+        @for (s of matched(); track s) {
+          <span class="tag tag-match">{{ s }}</span>
+        }
       </div>
     </div>
   }
@@ -11,7 +13,9 @@
     <div class="skills-col">
       <span class="skills-label">Gaps</span>
       <div class="tag-row">
-        @for (s of missing(); track s) { <span class="tag tag-miss">{{ s }}</span> }
+        @for (s of missing(); track s) {
+          <span class="tag tag-miss">{{ s }}</span>
+        }
       </div>
     </div>
   }

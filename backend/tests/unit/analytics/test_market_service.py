@@ -11,8 +11,11 @@ class _FakeCorpus:
         return {"remote": 5, "on_site": 3, "hybrid": 2}
 
     def posting_dates(self):
-        return [datetime(2026, 5, 1, tzinfo=timezone.utc), datetime(2026, 5, 2, tzinfo=timezone.utc),
-                datetime(2026, 5, 9, tzinfo=timezone.utc)]
+        return [
+            datetime(2026, 5, 1, tzinfo=timezone.utc),
+            datetime(2026, 5, 2, tzinfo=timezone.utc),
+            datetime(2026, 5, 9, tzinfo=timezone.utc),
+        ]
 
     def open_salary_strings(self):
         return (["$100k-$120k", "$90k", "competitive"], 4)
@@ -54,3 +57,24 @@ def test_weekly_trend_buckets():
     intel = _svc().compute(top_skills=10)
     # 3 postings across 2 ISO weeks
     assert sum(p.count for p in intel.posting_trend) == 3
+
+
+def test_salary_distribution_counts_inferred_basis():
+    # Two labeled ("/mo") + one unlabeled-low (inferred monthly) + one unlabeled-high (unknown).
+    class _Corpus:
+        def open_salary_strings(self):
+            return (["USD 3000/mo", "USD 3500/mo", "USD 2500", "USD 90,000"], 4)
+
+        def remote_modality_counts(self):
+            return {}
+
+        def open_skill_lists(self):
+            return []
+
+        def posting_dates(self):
+            return []
+
+    svc = MarketIntelService(_Corpus(), SkillNormalizer(), SalaryParser(annual_floor=12000))
+    dist = svc._salary_distribution()
+    # Only "USD 90,000" is period=="unknown"; unlabeled-low is inferred-monthly, not "unknown".
+    assert dist.inferred_count == 1

@@ -43,11 +43,7 @@ describe('IngestionComponent — connections badge', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [IngestionComponent],
-      providers: [
-        provideRouter([]),
-        provideHttpClient(),
-        provideHttpClientTesting(),
-      ],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
     httpMock = TestBed.inject(HttpTestingController);
   });
@@ -59,7 +55,9 @@ describe('IngestionComponent — connections badge', () => {
     fixture.detectChanges();
 
     // Flush portals call (order may vary)
-    httpMock.match((r) => r.url === `${environment.apiUrl}/ingestion/portals`).forEach((r) => r.flush([]));
+    httpMock
+      .match((r) => r.url === `${environment.apiUrl}/ingestion/portals`)
+      .forEach((r) => r.flush([]));
 
     // ngOnInit issues one request; the child filters component restoring its
     // location filter may issue a second, which switchMap cancels (the live one
@@ -81,7 +79,9 @@ describe('IngestionComponent — connections badge', () => {
     const component = fixture.componentInstance;
     fixture.detectChanges();
 
-    httpMock.match((r) => r.url === `${environment.apiUrl}/ingestion/portals`).forEach((r) => r.flush([]));
+    httpMock
+      .match((r) => r.url === `${environment.apiUrl}/ingestion/portals`)
+      .forEach((r) => r.flush([]));
     // Drain whatever ngOnInit + the filter restore issued (flush only live ones).
     httpMock
       .match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`)

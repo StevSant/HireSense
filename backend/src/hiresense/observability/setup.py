@@ -51,9 +51,7 @@ def setup_telemetry(app: FastAPI, settings: Any) -> None:
             resource=resource,
             sampler=ParentBasedTraceIdRatio(settings.otel_traces_sampler_ratio),
         )
-        provider.add_span_processor(
-            BatchSpanProcessor(build_span_exporter(endpoint, insecure))
-        )
+        provider.add_span_processor(BatchSpanProcessor(build_span_exporter(endpoint, insecure)))
         trace.set_tracer_provider(provider)
         providers.append(provider)
     except Exception:  # pragma: no cover - defensive
@@ -77,9 +75,7 @@ def setup_telemetry(app: FastAPI, settings: Any) -> None:
         logger_provider.add_log_record_processor(
             BatchLogRecordProcessor(build_log_exporter(endpoint, insecure))
         )
-        otel_handler = LoggingHandler(
-            level=settings.log_level, logger_provider=logger_provider
-        )
+        otel_handler = LoggingHandler(level=settings.log_level, logger_provider=logger_provider)
         providers.append(logger_provider)
     except Exception:  # pragma: no cover - defensive
         logger.exception("Logger provider setup failed")

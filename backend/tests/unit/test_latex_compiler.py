@@ -56,7 +56,9 @@ def test_render_cv_tex_omits_empty_sections() -> None:
 
 
 @pytest.mark.asyncio
-async def test_compile_failure_is_logged(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
+async def test_compile_failure_is_logged(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
     compiler = LatexCompiler()
 
     def _boom(_tex: str) -> bytes:

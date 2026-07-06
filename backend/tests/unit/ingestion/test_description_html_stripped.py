@@ -2,6 +2,7 @@
 through, causing <p>, <strong>, <br> to appear as literal text in the job
 detail panel on the frontend.
 """
+
 from __future__ import annotations
 
 import pytest

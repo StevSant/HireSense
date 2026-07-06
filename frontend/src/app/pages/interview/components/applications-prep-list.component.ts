@@ -23,13 +23,16 @@ export class ApplicationsPrepListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loading.set(true);
-    this.service.list().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (rows) => {
-        this.applications.set(rows);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+    this.service
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (rows) => {
+          this.applications.set(rows);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false),
+      });
   }
 
   openPrep(id: string): void {

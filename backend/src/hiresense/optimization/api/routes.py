@@ -25,7 +25,11 @@ class OptimizeRequest(BaseModel):
     recommendations: list[str] = []
 
 
-@router.post("/optimize", response_model=OptimizationResult, dependencies=[Depends(enforce_expensive_rate_limit)])
+@router.post(
+    "/optimize",
+    response_model=OptimizationResult,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
+)
 async def optimize_cv(
     body: OptimizeRequest,
     optimizer: Annotated[object, Depends(get_cv_optimizer)],

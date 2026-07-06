@@ -175,9 +175,7 @@ class IngestionOrchestrator:
                     await self._event_bus.publish(event)
 
                 span.set_attribute("ingestion.jobs_new", len(new_jobs))
-                _metrics.ingestion_run_duration_ms.record(
-                    (time.perf_counter() - started) * 1000.0
-                )
+                _metrics.ingestion_run_duration_ms.record((time.perf_counter() - started) * 1000.0)
                 return new_jobs
             except IngestionCooldownError:
                 # Normal throttling, not an error — leave span status unset.

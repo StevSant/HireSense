@@ -56,7 +56,9 @@ class _Research:
 
 
 def _factory():
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine, expire_on_commit=False), engine
 
@@ -64,10 +66,15 @@ def _factory():
 def _build_app(app_id, factory):
     repo = OutreachRepository(session_factory=factory)
     service = OutreachService(
-        tracking_service=_Tracking([_App(app_id)]), profile_service=_Profile(),
-        research_service=_Research(), generator=OutreachMessageGenerator(llm=_FakeLLM()),
-        repo=repo, style_guide_path="does/not/exist.md", followup_cadence_days=7,
-        max_chars=500, language="en",
+        tracking_service=_Tracking([_App(app_id)]),
+        profile_service=_Profile(),
+        research_service=_Research(),
+        generator=OutreachMessageGenerator(llm=_FakeLLM()),
+        repo=repo,
+        style_guide_path="does/not/exist.md",
+        followup_cadence_days=7,
+        max_chars=500,
+        language="en",
     )
     app = FastAPI()
     app.dependency_overrides[require_auth] = lambda: "test-user"
@@ -82,13 +89,21 @@ async def test_generate_record_list_flow():
     app_id = uuid_mod.uuid4()
     app = _build_app(app_id, factory)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
-        gen = await c.post("/outreach/generate", json={"application_id": str(app_id), "contact_name": "Sam"})
+        gen = await c.post(
+            "/outreach/generate", json={"application_id": str(app_id), "contact_name": "Sam"}
+        )
         assert gen.status_code == 200
         assert "connect" in gen.json()["message"]
 
-        rec = await c.post("/outreach/record", json={
-            "application_id": str(app_id), "kind": "sent", "message": gen.json()["message"], "contact_name": "Sam",
-        })
+        rec = await c.post(
+            "/outreach/record",
+            json={
+                "application_id": str(app_id),
+                "kind": "sent",
+                "message": gen.json()["message"],
+                "contact_name": "Sam",
+            },
+        )
         assert rec.status_code == 201
 
         events = await c.get(f"/outreach/events?application_id={app_id}")
@@ -101,7 +116,10 @@ async def test_nudge_surfaces_then_clears():
     app_id = uuid_mod.uuid4()
     app = _build_app(app_id, factory)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
-        await c.post("/outreach/record", json={"application_id": str(app_id), "kind": "sent", "message": "hi"})
+        await c.post(
+            "/outreach/record",
+            json={"application_id": str(app_id), "kind": "sent", "message": "hi"},
+        )
         # Back-date the sent event past the cadence so the nudge is due.
         with factory() as s:
             s.execute(

@@ -82,9 +82,7 @@ class SemanticScoringService:
             result.append(job.model_copy(update={"semantic_score": score}))
         return result
 
-    async def _get_profile_embedding(
-        self, skills: list[str], summary: str
-    ) -> list[float] | None:
+    async def _get_profile_embedding(self, skills: list[str], summary: str) -> list[float] | None:
         key = _profile_key(skills, summary)
         cached = self._profile_cache.get(key)
         if cached is not None:

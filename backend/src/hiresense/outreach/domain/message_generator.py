@@ -43,8 +43,7 @@ class OutreachMessageGenerator:
             raise OutreachUnavailableError("no LLM configured")
 
         parts = [
-            "Draft an outreach message following this style guide:\n"
-            f"---\n{style_guide}\n---\n",
+            f"Draft an outreach message following this style guide:\n---\n{style_guide}\n---\n",
             f"Role: {title} at {company}",
             f"Job context: {job_description[:1200]}",
             f"Candidate name (sign with this): {candidate_name or '(unknown)'}",

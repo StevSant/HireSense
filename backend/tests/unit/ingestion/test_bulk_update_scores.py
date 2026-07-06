@@ -3,6 +3,7 @@
 Written BEFORE implementation (TDD RED phase).
 Verifies REQ-08: batched score persistence — no N+1 per-job update loop.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -141,9 +142,7 @@ class TestInMemoryBulkUpdateScores:
         repo.update_scores(job_b.id, match_score=0.99, semantic_score=0.88)
 
         # Only update job_a
-        repo.bulk_update_scores([
-            ScoreUpdate(job_id=job_a.id, match_score=0.5, semantic_score=0.5)
-        ])
+        repo.bulk_update_scores([ScoreUpdate(job_id=job_a.id, match_score=0.5, semantic_score=0.5)])
 
         stored_b = repo.get_by_id(job_b.id)
         assert stored_b is not None
@@ -197,11 +196,13 @@ class TestBulkUpdateScoresLockOrder:
             repo.upsert(_seed_job(jid))
         captured.clear()  # ignore seeding writes; only inspect the bulk update
 
-        repo.bulk_update_scores([
-            ScoreUpdate(job_id="c", match_score=0.1, semantic_score=0.1),
-            ScoreUpdate(job_id="a", match_score=0.2, semantic_score=0.2),
-            ScoreUpdate(job_id="b", match_score=0.3, semantic_score=0.3),
-        ])
+        repo.bulk_update_scores(
+            [
+                ScoreUpdate(job_id="c", match_score=0.1, semantic_score=0.1),
+                ScoreUpdate(job_id="a", match_score=0.2, semantic_score=0.2),
+                ScoreUpdate(job_id="b", match_score=0.3, semantic_score=0.3),
+            ]
+        )
         assert captured, "executemany was never issued"
         assert captured[0] == ["a", "b", "c"], (
             "bulk_update_scores must order rows by job_id to avoid deadlocks"
@@ -215,11 +216,13 @@ class TestBulkUpdateScoresLockOrder:
             repo.upsert(_seed_job(jid))
         captured.clear()
 
-        repo.bulk_update_quality([
-            QualityUpdate(job_id="z", quality="spam", quality_reason="x"),
-            QualityUpdate(job_id="m", quality="ok", quality_reason=None),
-            QualityUpdate(job_id="a", quality="low_quality", quality_reason="y"),
-        ])
+        repo.bulk_update_quality(
+            [
+                QualityUpdate(job_id="z", quality="spam", quality_reason="x"),
+                QualityUpdate(job_id="m", quality="ok", quality_reason=None),
+                QualityUpdate(job_id="a", quality="low_quality", quality_reason="y"),
+            ]
+        )
         assert captured, "executemany was never issued"
         assert captured[0] == ["a", "m", "z"], (
             "bulk_update_quality must order rows by job_id to avoid deadlocks"
@@ -230,6 +233,7 @@ class TestJobsRepositoryPortHasBulkUpdateScores:
     def test_protocol_exposes_bulk_update_scores(self) -> None:
         """JobsRepositoryPort Protocol must declare bulk_update_scores."""
         from hiresense.ingestion.ports.jobs_repository import JobsRepositoryPort
+
         assert hasattr(JobsRepositoryPort, "bulk_update_scores"), (
             "JobsRepositoryPort must declare bulk_update_scores"
         )

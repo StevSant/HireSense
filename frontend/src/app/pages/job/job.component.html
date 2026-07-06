@@ -12,15 +12,25 @@
       <a class="job-company" [routerLink]="['/dashboard/company', j.company]">{{ j.company }}</a>
       <div class="job-facts">
         <span class="job-fact job-fact-source">{{ j.source }}</span>
-        @if (j.location) { <span class="job-fact job-fact-clamp" [title]="j.location">📍 {{ j.location }}</span> }
-        @if (j.salary_range) { <span class="job-fact">💰 {{ j.salary_range }}</span> }
-        @if (j.posted_date) { <span class="job-fact">📅 {{ j.posted_date | date: 'mediumDate' }}</span> }
-        @if (j.department) { <span class="job-fact">🏷 {{ j.department }}</span> }
+        @if (j.location) {
+          <span class="job-fact job-fact-clamp" [title]="j.location">📍 {{ j.location }}</span>
+        }
+        @if (j.salary_range) {
+          <span class="job-fact">💰 {{ j.salary_range }}</span>
+        }
+        @if (j.posted_date) {
+          <span class="job-fact">📅 {{ j.posted_date | date: 'mediumDate' }}</span>
+        }
+        @if (j.department) {
+          <span class="job-fact">🏷 {{ j.department }}</span>
+        }
       </div>
     </header>
 
     <div class="job-actions">
-      <a [href]="j.url" target="_blank" rel="noopener" class="job-btn job-btn-primary">View Original ↗</a>
+      <a [href]="j.url" target="_blank" rel="noopener" class="job-btn job-btn-primary"
+        >View Original ↗</a
+      >
       @if (tracked()) {
         <button type="button" class="job-btn" disabled>Tracked ✓</button>
       } @else if (tracking()) {
@@ -33,7 +43,9 @@
       <button type="button" class="job-btn" (click)="goTo('interview')">Prep Interview</button>
       <app-feedback-controls class="job-feedback" [jobId]="j.id" [compact]="true" />
     </div>
-    @if (trackError()) { <p class="job-track-error">{{ trackError() }}</p> }
+    @if (trackError()) {
+      <p class="job-track-error">{{ trackError() }}</p>
+    }
 
     <section class="job-card job-description-card">
       <h2 class="job-section-label">Description</h2>
@@ -62,7 +74,9 @@
           <section class="job-card">
             <h2 class="job-section-label">Categories</h2>
             <div class="job-chips">
-              @for (c of j.categories; track c) { <span class="job-tag">{{ c }}</span> }
+              @for (c of j.categories; track c) {
+                <span class="job-tag">{{ c }}</span>
+              }
             </div>
           </section>
         }
@@ -73,16 +87,25 @@
           <div class="job-score-row">
             @if (pillScore() !== null) {
               <div class="job-score">
-                <span class="job-score-num" [style.color]="scoreColor(pillScore())">{{ scorePercent() }}</span>
+                <span class="job-score-num" [style.color]="scoreColor(pillScore())">{{
+                  scorePercent()
+                }}</span>
                 <span class="job-score-label">match<br />score</span>
               </div>
               @if (analysis(); as a) {
                 @if (a.verdict) {
-                  <span class="job-verdict" [style.color]="scoreColor(pillScore())" [style.border-color]="scoreColor(pillScore())">{{ a.verdict }} fit</span>
+                  <span
+                    class="job-verdict"
+                    [style.color]="scoreColor(pillScore())"
+                    [style.border-color]="scoreColor(pillScore())"
+                    >{{ a.verdict }} fit</span
+                  >
                 }
               }
             } @else {
-              <p class="job-analysis-state">No score yet — add a profile or CV to see your match.</p>
+              <p class="job-analysis-state">
+                No score yet — add a profile or CV to see your match.
+              </p>
             }
           </div>
 
@@ -95,8 +118,12 @@
             }
             @if (a.matched_skills.length || a.missing_skills.length) {
               <div class="job-snapshot-block">
-                <h3 class="job-section-label">Skills &amp; gaps
-                  <span class="job-section-count">{{ a.matched_skills.length }} matched · {{ a.missing_skills.length }} gaps</span>
+                <h3 class="job-section-label">
+                  Skills &amp; gaps
+                  <span class="job-section-count"
+                    >{{ a.matched_skills.length }} matched ·
+                    {{ a.missing_skills.length }} gaps</span
+                  >
                 </h3>
                 <app-match-skills [matched]="a.matched_skills" [missing]="a.missing_skills" />
               </div>
@@ -109,7 +136,9 @@
             <div class="job-snapshot-block">
               <h3 class="job-section-label">Listed skills</h3>
               <div class="job-chips">
-                @for (s of j.skills; track s) { <span class="job-tag">{{ s }}</span> }
+                @for (s of j.skills; track s) {
+                  <span class="job-tag">{{ s }}</span>
+                }
               </div>
             </div>
           }
@@ -119,12 +148,16 @@
               <h3 class="job-section-label">Why this score</h3>
               @if (j.reasons.length) {
                 <ul class="reason-list">
-                  @for (r of j.reasons; track r) { <li class="reason-item">{{ r }}</li> }
+                  @for (r of j.reasons; track r) {
+                    <li class="reason-item">{{ r }}</li>
+                  }
                 </ul>
               }
               @if (j.dealbreakers.length) {
                 <ul class="reason-list dealbreaker-list">
-                  @for (d of j.dealbreakers; track d) { <li class="dealbreaker-item">⚠ {{ d }}</li> }
+                  @for (d of j.dealbreakers; track d) {
+                    <li class="dealbreaker-item">⚠ {{ d }}</li>
+                  }
                 </ul>
               }
             </div>

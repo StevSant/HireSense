@@ -40,7 +40,10 @@
   color: var(--text-muted);
 }
 
-.story-title { font-weight: 500; color: var(--text-primary); }
+.story-title {
+  font-weight: 500;
+  color: var(--text-primary);
+}
 
 .situation-preview {
   color: var(--text-muted);
@@ -108,7 +111,9 @@
     flex-direction: column;
     gap: 0.25rem;
 
-    &:last-child { border-bottom: none; }
+    &:last-child {
+      border-bottom: none;
+    }
   }
 
   .match-title {

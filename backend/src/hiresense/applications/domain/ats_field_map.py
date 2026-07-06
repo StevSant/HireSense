@@ -26,9 +26,7 @@ _LABEL_PATTERNS: dict[str, list[str]] = {
 }
 
 
-def build_autofill_plan(
-    ats_type: str | None, prefill: dict[str, object]
-) -> list[FieldFill]:
+def build_autofill_plan(ats_type: str | None, prefill: dict[str, object]) -> list[FieldFill]:
     """Turn a candidate's prefill values into per-field autofill instructions for
     an ATS form.
 

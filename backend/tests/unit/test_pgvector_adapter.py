@@ -4,6 +4,7 @@ These verify the adapter builds the right statements/parameters without a real
 Postgres (pgvector can't run on the sqlite test DB). The actual `<=>` ranking and
 extension behaviour must be validated against a real pgvector instance.
 """
+
 from __future__ import annotations
 
 import json

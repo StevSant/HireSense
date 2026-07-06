@@ -6,10 +6,12 @@
       <strong>{{ s.enabled ? 'Enabled' : 'Disabled (set NOTIFICATION_EMAIL)' }}</strong>
     </p>
     @if (s.recipient_masked) {
-      <p>Recipient: <code>{{ s.recipient_masked }}</code></p>
+      <p>
+        Recipient: <code>{{ s.recipient_masked }}</code>
+      </p>
     }
   }
-  <button type="button" (click)="sendTest()" [disabled]="busy() || !(status()?.enabled)">
+  <button type="button" (click)="sendTest()" [disabled]="busy() || !status()?.enabled">
     Send test email
   </button>
   @if (testResult()) {

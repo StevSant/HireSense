@@ -12,9 +12,7 @@ class ScoredResult:
 
 
 class VectorStorePort(Protocol):
-    async def upsert(
-        self, id: str, embedding: list[float], metadata: dict[str, Any]
-    ) -> None: ...
+    async def upsert(self, id: str, embedding: list[float], metadata: dict[str, Any]) -> None: ...
 
     async def search(
         self,

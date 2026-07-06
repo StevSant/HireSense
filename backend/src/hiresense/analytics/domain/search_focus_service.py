@@ -39,7 +39,9 @@ def _normalize_title(title: str) -> str:
     t = re.sub(r"\(.*?\)", " ", t)  # drop parentheticals
     t = re.sub(
         r"\b(senior|sr|junior|jr|staff|lead|principal|mid|intern|entry[- ]level|"
-        r"i{1,3}|iv|v|[0-9]+)\b", " ", t,
+        r"i{1,3}|iv|v|[0-9]+)\b",
+        " ",
+        t,
     )
     t = re.sub(r"[^a-z ]", " ", t)
     t = re.sub(r"\s+", " ", t).strip()
@@ -58,8 +60,14 @@ def _top(counter: dict[str, list[float]], n: int) -> list[FocusItem]:
 
 class SearchFocusService:
     def __init__(
-        self, *, embedding: Any, vector_store: Any, corpus: Any,
-        top_k: int, fresh_days: int, top_n: int = 8,
+        self,
+        *,
+        embedding: Any,
+        vector_store: Any,
+        corpus: Any,
+        top_k: int,
+        fresh_days: int,
+        top_n: int = 8,
     ) -> None:
         self._embedding = embedding
         self._vector_store = vector_store

@@ -4,6 +4,7 @@ Revision ID: 010
 Revises: 009
 Create Date: 2026-05-25
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -25,8 +26,12 @@ def upgrade() -> None:
         sa.Column("opening", sa.Text(), nullable=False, server_default=""),
         sa.Column("body", sa.Text(), nullable=False, server_default=""),
         sa.Column("signature", sa.Text(), nullable=False, server_default=""),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
     op.create_index(
         "ix_cover_letter_templates_updated_at",
@@ -36,7 +41,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index(
-        "ix_cover_letter_templates_updated_at", table_name="cover_letter_templates"
-    )
+    op.drop_index("ix_cover_letter_templates_updated_at", table_name="cover_letter_templates")
     op.drop_table("cover_letter_templates")

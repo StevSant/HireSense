@@ -21,7 +21,9 @@ class FakeOrchestrator:
             job_title=job.get("title", ""),
             company=job.get("company", ""),
             dimensions=[
-                DimensionResult(dimension="seniority_fit", score=self._score, rationale="Test", weight=10),
+                DimensionResult(
+                    dimension="seniority_fit", score=self._score, rationale="Test", weight=10
+                ),
             ],
         )
 
@@ -58,8 +60,20 @@ async def test_batch_evaluate_returns_sorted_results() -> None:
     orchestrator = FakeOrchestrator(score=0.75)
     service = BatchEvaluationService(orchestrator=orchestrator, concurrency=3)
     jobs = [
-        {"title": "SWE", "company": "Acme", "description": "", "source": "tracked", "source_id": "id-1"},
-        {"title": "ML Eng", "company": "Beta", "description": "", "source": "tracked", "source_id": "id-2"},
+        {
+            "title": "SWE",
+            "company": "Acme",
+            "description": "",
+            "source": "tracked",
+            "source_id": "id-1",
+        },
+        {
+            "title": "ML Eng",
+            "company": "Beta",
+            "description": "",
+            "source": "tracked",
+            "source_id": "id-2",
+        },
     ]
     results = await service.evaluate_batch(jobs)
     assert len(results) == 2
@@ -74,9 +88,15 @@ async def test_batch_evaluate_sorts_by_composite_desc() -> None:
     class VaryingOrchestrator:
         def __init__(self):
             self._scores = iter([0.3, 0.9, 0.6])
+
         async def evaluate(self, job, profile=None, dimension_scorers=None):
             score = next(self._scores)
-            return EvaluationResult(composite_score=score, job_title=job.get("title", ""), company=job.get("company", ""), dimensions=[])
+            return EvaluationResult(
+                composite_score=score,
+                job_title=job.get("title", ""),
+                company=job.get("company", ""),
+                dimensions=[],
+            )
 
     service = BatchEvaluationService(orchestrator=VaryingOrchestrator(), concurrency=3)
     jobs = [
@@ -100,7 +120,15 @@ async def test_batch_evaluate_empty_list() -> None:
 @pytest.mark.asyncio
 async def test_batch_evaluate_handles_single_job_failure() -> None:
     service = BatchEvaluationService(orchestrator=FailingOrchestrator(), concurrency=3)
-    jobs = [{"title": "SWE", "company": "Acme", "description": "", "source": "tracked", "source_id": "id-1"}]
+    jobs = [
+        {
+            "title": "SWE",
+            "company": "Acme",
+            "description": "",
+            "source": "tracked",
+            "source_id": "id-1",
+        }
+    ]
     results = await service.evaluate_batch(jobs)
     assert len(results) == 1
     assert results[0].composite_score == 0.0
@@ -113,7 +141,13 @@ async def test_batch_evaluate_respects_concurrency() -> None:
     orchestrator = SlowOrchestrator()
     service = BatchEvaluationService(orchestrator=orchestrator, concurrency=2)
     jobs = [
-        {"title": f"Job {i}", "company": "X", "description": "", "source": "tracked", "source_id": str(i)}
+        {
+            "title": f"Job {i}",
+            "company": "X",
+            "description": "",
+            "source": "tracked",
+            "source_id": str(i),
+        }
         for i in range(6)
     ]
     results = await service.evaluate_batch(jobs)

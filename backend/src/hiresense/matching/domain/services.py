@@ -55,19 +55,30 @@ class MatchingOrchestrator:
         self._semantic_scorer = SemanticScorer()
         self._skill_matcher = SkillMatcher()
 
-    async def evaluate(self, job: Any, profile: Any | None = None, dimension_scorers: list[Any] | None = None) -> EvaluationResult:
+    async def evaluate(
+        self, job: Any, profile: Any | None = None, dimension_scorers: list[Any] | None = None
+    ) -> EvaluationResult:
         _metrics = get_domain_metrics()
         with _tracer.start_as_current_span("matching.score") as span:
             try:
-                scorers = dimension_scorers if dimension_scorers is not None else self._dimension_scorers
+                scorers = (
+                    dimension_scorers if dimension_scorers is not None else self._dimension_scorers
+                )
                 title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
-                company = job.get("company", "") if isinstance(job, dict) else getattr(job, "company", "")
+                company = (
+                    job.get("company", "") if isinstance(job, dict) else getattr(job, "company", "")
+                )
 
                 async def safe_score(scorer: Any) -> DimensionResult:
                     try:
                         return await scorer.score(job, profile)
                     except Exception as exc:
-                        return DimensionResult(dimension=scorer.dimension_name, score=0.5, rationale=f"Evaluation failed: {exc}", weight=scorer.weight)
+                        return DimensionResult(
+                            dimension=scorer.dimension_name,
+                            score=0.5,
+                            rationale=f"Evaluation failed: {exc}",
+                            weight=scorer.weight,
+                        )
 
                 results = await asyncio.gather(*[safe_score(s) for s in scorers])
                 dimensions = list(results)
@@ -80,7 +91,12 @@ class MatchingOrchestrator:
                     else 0.5
                 )
 
-                result = EvaluationResult(composite_score=round(composite, 4), job_title=title, company=company, dimensions=dimensions)
+                result = EvaluationResult(
+                    composite_score=round(composite, 4),
+                    job_title=title,
+                    company=company,
+                    dimensions=dimensions,
+                )
                 _metrics.matches_completed_total.add(1)
                 # composite_score is already 0..1
                 span.set_attribute("matching.score", float(result.composite_score))
@@ -138,9 +154,7 @@ class MatchingOrchestrator:
         # Independent of the semantic score, so both run concurrently.
         semantic_score, llm_analysis = await asyncio.gather(
             semantic(),
-            self._get_llm_analysis(
-                job_description, job_skills, cv_summary, cv_skills, cv_text
-            ),
+            self._get_llm_analysis(job_description, job_skills, cv_summary, cv_skills, cv_text),
         )
 
         # 3. Skill match. A required skill counts as matched when it is in the

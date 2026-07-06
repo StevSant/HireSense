@@ -4,7 +4,7 @@ from hiresense.optimization.domain.services import CVOptimizer
 
 class FakeLLM:
     async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
-        return '''{
+        return """{
             "changes": [
                 {
                     "section_name": "SUMMARY",
@@ -14,7 +14,7 @@ class FakeLLM:
                 }
             ],
             "improvement_summary": "Optimized summary to highlight relevant FastAPI and cloud experience"
-        }'''
+        }"""
 
 
 @pytest.mark.asyncio

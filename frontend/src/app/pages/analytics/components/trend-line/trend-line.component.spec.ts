@@ -14,7 +14,10 @@ describe('TrendLineComponent', () => {
   }
 
   it('renders a polyline when 2+ points', () => {
-    const fixture = mount([{ week: '2026-W18', count: 2 }, { week: '2026-W19', count: 5 }]);
+    const fixture = mount([
+      { week: '2026-W18', count: 2 },
+      { week: '2026-W19', count: 5 },
+    ]);
     expect(fixture.nativeElement.querySelector('polyline')).not.toBeNull();
   });
 

@@ -5,6 +5,7 @@ Python; it imports nothing from infrastructure and no framework packages. Ports 
 reference domain types but never infrastructure/ORM. This test statically parses every
 module in those packages (including TYPE_CHECKING-only imports) and fails on a violation.
 """
+
 from __future__ import annotations
 
 import ast

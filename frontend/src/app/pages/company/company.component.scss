@@ -1,4 +1,8 @@
-.company-page { padding: 1.5rem 1.75rem 2.5rem; max-width: 1400px; margin: 0 auto; }
+.company-page {
+  padding: 1.5rem 1.75rem 2.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
 
 .company-back {
   display: inline-block;
@@ -7,10 +11,14 @@
   color: var(--text-secondary);
   text-decoration: none;
 
-  &:hover { color: var(--accent); }
+  &:hover {
+    color: var(--accent);
+  }
 }
 
-.company-header { margin-bottom: 1.5rem; }
+.company-header {
+  margin-bottom: 1.5rem;
+}
 .company-eyebrow {
   margin: 0 0 0.2rem;
   font-size: 0.72rem;
@@ -32,7 +40,9 @@
   font-size: 0.95rem;
   color: var(--text-secondary);
 
-  strong { color: var(--text-primary); }
+  strong {
+    color: var(--text-primary);
+  }
 }
 .company-locations {
   list-style: none;
@@ -50,11 +60,19 @@
   font-size: 0.8125rem;
   color: var(--text-secondary);
 
-  span { color: var(--text-muted); padding-left: 0.3rem; }
+  span {
+    color: var(--text-muted);
+    padding-left: 0.3rem;
+  }
 }
 
-.company-state { color: var(--text-muted); font-size: 0.9rem; }
-.company-state-error { color: var(--danger); }
+.company-state {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+.company-state-error {
+  color: var(--danger);
+}
 
 /* --- Jobs table — mirrors the ingestion table layout. This component is
    encapsulated, so the table/badge styles can't be inherited and are
@@ -73,27 +91,62 @@ table {
   min-width: 760px;
   border-collapse: collapse;
 
-  th, td { padding: 0.625rem 0.75rem; font-size: 0.8125rem; text-align: left; }
-  th { font-size: 0.6875rem; white-space: nowrap; color: var(--text-secondary); }
-  tbody tr { border-top: 1px solid var(--border-subtle); }
+  th,
+  td {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+    text-align: left;
+  }
+  th {
+    font-size: 0.6875rem;
+    white-space: nowrap;
+    color: var(--text-secondary);
+  }
+  tbody tr {
+    border-top: 1px solid var(--border-subtle);
+  }
 }
 
-.col-match { width: 72px; }
-.col-salary { width: 130px; }
-.col-source { width: 110px; }
-.col-posted { width: 110px; }
-.col-actions { width: 150px; }
+.col-match {
+  width: 72px;
+}
+.col-salary {
+  width: 130px;
+}
+.col-source {
+  width: 110px;
+}
+.col-posted {
+  width: 110px;
+}
+.col-actions {
+  width: 150px;
+}
 
-.salary-cell { color: var(--text-secondary); }
-.date-cell { color: var(--text-secondary); }
-.cell-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.salary-cell {
+  color: var(--text-secondary);
+}
+.date-cell {
+  color: var(--text-secondary);
+}
+.cell-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .clickable-row {
   cursor: pointer;
-  &:hover { background: var(--bg-inset); }
+  &:hover {
+    background: var(--bg-inset);
+  }
 }
-tr.closed { opacity: 0.5; }
-tr.dimmed { opacity: 0.45; }
+tr.closed {
+  opacity: 0.5;
+}
+tr.dimmed {
+  opacity: 0.45;
+}
 
 .title {
   font-weight: 500;
@@ -115,7 +168,9 @@ tr.dimmed { opacity: 0.45; }
   color: var(--accent-text);
   text-decoration: none;
 
-  &:hover { text-decoration: underline; }
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .btn-track {
@@ -129,8 +184,13 @@ tr.dimmed { opacity: 0.45; }
   cursor: pointer;
   transition: background var(--duration) var(--ease);
 
-  &:hover { background: var(--accent-hover); }
-  &:disabled { opacity: 0.6; cursor: default; }
+  &:hover {
+    background: var(--accent-hover);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
 }
 .btn-tracked {
   padding: 0.2rem 0.6rem;
@@ -154,10 +214,23 @@ tr.dimmed { opacity: 0.45; }
   min-width: 44px;
   text-align: center;
 }
-.score-high { background: #dcfce7; color: #166534; }
-.score-mid  { background: #fef3c7; color: #92400e; }
-.score-low  { background: #fee2e2; color: #991b1b; }
-.score-na   { background: var(--bg-inset); color: var(--text-muted); font-weight: 500; }
+.score-high {
+  background: #dcfce7;
+  color: #166534;
+}
+.score-mid {
+  background: #fef3c7;
+  color: #92400e;
+}
+.score-low {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.score-na {
+  background: var(--bg-inset);
+  color: var(--text-muted);
+  font-weight: 500;
+}
 
 .badge {
   display: inline-block;

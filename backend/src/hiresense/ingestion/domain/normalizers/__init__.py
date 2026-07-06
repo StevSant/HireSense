@@ -1,4 +1,8 @@
-from hiresense.ingestion.domain.normalizer import CSVNormalizer, RemoteOKNormalizer, RemotiveNormalizer
+from hiresense.ingestion.domain.normalizer import (
+    CSVNormalizer,
+    RemoteOKNormalizer,
+    RemotiveNormalizer,
+)
 from hiresense.ingestion.domain.normalizers.adzuna_normalizer import AdzunaNormalizer
 from hiresense.ingestion.domain.normalizers.arbeitnow_normalizer import ArbeitnowNormalizer
 from hiresense.ingestion.domain.normalizers.ashby_normalizer import AshbyNormalizer
@@ -10,9 +14,13 @@ from hiresense.ingestion.domain.normalizers.jobicy_normalizer import JobicyNorma
 from hiresense.ingestion.domain.normalizers.lever_normalizer import LeverNormalizer
 from hiresense.ingestion.domain.normalizers.linkedin_normalizer import LinkedInNormalizer
 from hiresense.ingestion.domain.normalizers.recruitee_normalizer import RecruiteeNormalizer
-from hiresense.ingestion.domain.normalizers.smartrecruiters_normalizer import SmartRecruitersNormalizer
+from hiresense.ingestion.domain.normalizers.smartrecruiters_normalizer import (
+    SmartRecruitersNormalizer,
+)
 from hiresense.ingestion.domain.normalizers.the_muse_normalizer import TheMuseNormalizer
-from hiresense.ingestion.domain.normalizers.weworkremotely_normalizer import WeWorkRemotelyNormalizer
+from hiresense.ingestion.domain.normalizers.weworkremotely_normalizer import (
+    WeWorkRemotelyNormalizer,
+)
 from hiresense.ingestion.domain.normalizers.workable_normalizer import WorkableNormalizer
 
 __all__ = [

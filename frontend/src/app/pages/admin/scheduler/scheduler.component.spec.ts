@@ -19,7 +19,13 @@ describe('SchedulerComponent', () => {
     fixture.detectChanges();
     const req = httpMock.expectOne('/api/scheduler/jobs');
     req.flush([
-      { name: 'ingestion_fetch', cron: '0 */6 * * *', enabled: true, last_run: null, next_run_at: null },
+      {
+        name: 'ingestion_fetch',
+        cron: '0 */6 * * *',
+        enabled: true,
+        last_run: null,
+        next_run_at: null,
+      },
     ]);
     expect(fixture.componentInstance.jobs().length).toBe(1);
     httpMock.verify();

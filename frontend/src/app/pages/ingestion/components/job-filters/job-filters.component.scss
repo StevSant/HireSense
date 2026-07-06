@@ -139,9 +139,12 @@
   cursor: pointer;
   text-transform: capitalize;
   user-select: none;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 
-  input[type="checkbox"] {
+  input[type='checkbox'] {
     width: 0;
     height: 0;
     opacity: 0;
@@ -176,7 +179,7 @@
   cursor: pointer;
   padding-bottom: 0.375rem;
 
-  input[type="checkbox"] {
+  input[type='checkbox'] {
     width: auto;
     margin: 0;
     cursor: pointer;

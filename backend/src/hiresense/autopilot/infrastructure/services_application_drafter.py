@@ -28,9 +28,7 @@ class ServicesApplicationDrafter:
         self._apply = apply_service
         self._cv_language = cv_language
 
-    async def draft(
-        self, job_id: str
-    ) -> tuple[uuid_mod.UUID | None, DraftStatus, str | None]:
+    async def draft(self, job_id: str) -> tuple[uuid_mod.UUID | None, DraftStatus, str | None]:
         try:
             aggregate = await self._applications.create_from_ingested(job_id)
         except Exception as exc:  # noqa: BLE001
@@ -46,9 +44,7 @@ class ServicesApplicationDrafter:
             )
             # Let ApplyService apply its own tone default ("professional");
             # passing tone=None would override it and fail the non-nullable field.
-            await self._apply.generate_cover_letter(
-                application_id, cv_language=self._cv_language
-            )
+            await self._apply.generate_cover_letter(application_id, cv_language=self._cv_language)
         except Exception as exc:  # noqa: BLE001
             logger.exception("autopilot: artifact generation failed for job %r", job_id)
             return application_id, DraftStatus.PARTIAL, str(exc)

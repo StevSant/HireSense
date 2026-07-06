@@ -25,7 +25,9 @@
   border-radius: var(--radius-full);
   cursor: pointer;
 
-  &:hover { background: var(--accent-subtle); }
+  &:hover {
+    background: var(--accent-subtle);
+  }
 }
 .jd-prose {
   margin: 0;
@@ -34,7 +36,9 @@
   color: var(--text-secondary);
   white-space: pre-wrap;
 }
-.jd-intro { margin-bottom: 0.75rem; }
+.jd-intro {
+  margin-bottom: 0.75rem;
+}
 .jd-section {
   margin-top: 0.85rem;
   padding: 0.75rem 0.9rem;
@@ -43,10 +47,18 @@
   border-left: 3px solid var(--border-default);
   border-radius: var(--radius-md);
 
-  &[data-emphasis='compensation'] { border-left-color: var(--success); }
-  &[data-emphasis='apply'] { border-left-color: var(--accent); }
-  &[data-emphasis='stack'] { border-left-color: var(--info-text); }
-  &[data-emphasis='role'] { border-left-color: var(--warning); }
+  &[data-emphasis='compensation'] {
+    border-left-color: var(--success);
+  }
+  &[data-emphasis='apply'] {
+    border-left-color: var(--accent);
+  }
+  &[data-emphasis='stack'] {
+    border-left-color: var(--info-text);
+  }
+  &[data-emphasis='role'] {
+    border-left-color: var(--warning);
+  }
 }
 .jd-list {
   margin: 0;
@@ -55,8 +67,12 @@
   line-height: 1.6;
   color: var(--text-secondary);
 
-  li { margin: 0.2rem 0; }
-  li::marker { color: var(--text-muted); }
+  li {
+    margin: 0.2rem 0;
+  }
+  li::marker {
+    color: var(--text-muted);
+  }
 }
 .jd-section-title {
   display: block;

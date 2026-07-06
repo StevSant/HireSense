@@ -4,6 +4,7 @@ Revision ID: 007
 Revises: 006
 Create Date: 2026-05-25
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -24,7 +25,9 @@ def upgrade() -> None:
         sa.Column("api_key_encrypted", sa.Text(), nullable=True),
         sa.Column("extra_params", sa.JSON(), nullable=False, server_default="{}"),
         sa.Column("updated_by", sa.String(128), nullable=True),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.CheckConstraint("id = 1", name="llm_settings_single_row"),
     )
 
@@ -36,13 +39,17 @@ def upgrade() -> None:
         sa.Column("model", sa.String(128), nullable=True),
         sa.Column("extra_params", sa.JSON(), nullable=False, server_default="{}"),
         sa.Column("updated_by", sa.String(128), nullable=True),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
     )
 
     op.create_table(
         "llm_usage_log",
         sa.Column("id", sa.Uuid(), primary_key=True, server_default=sa.text("gen_random_uuid()")),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.Column("feature_key", sa.String(64), nullable=False),
         sa.Column("provider", sa.String(32), nullable=False),
         sa.Column("model", sa.String(128), nullable=False),
@@ -56,13 +63,17 @@ def upgrade() -> None:
         sa.Column("user_id", sa.String(128), nullable=True),
     )
     op.create_index("ix_llm_usage_log_created_at", "llm_usage_log", ["created_at"])
-    op.create_index("ix_llm_usage_log_feature_created", "llm_usage_log", ["feature_key", "created_at"])
+    op.create_index(
+        "ix_llm_usage_log_feature_created", "llm_usage_log", ["feature_key", "created_at"]
+    )
     op.create_index("ix_llm_usage_log_provider_model", "llm_usage_log", ["provider", "model"])
 
     op.create_table(
         "llm_audit_log",
         sa.Column("id", sa.Uuid(), primary_key=True, server_default=sa.text("gen_random_uuid()")),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.Column("actor", sa.String(128), nullable=True),
         sa.Column("action", sa.String(64), nullable=False),
         sa.Column("target", sa.String(128), nullable=True),

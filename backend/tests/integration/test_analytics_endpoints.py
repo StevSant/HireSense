@@ -47,17 +47,30 @@ class _Store:
 
 
 def _factory():
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
     Base.metadata.create_all(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)
 
 
 def _seed(factory):
     with factory() as s:
-        s.add(IngestedJob(id="1", bucket="boards", source="x", source_type="board", title="A",
-                          skills=["Python", "React"], remote_modality="remote",
-                          salary_range="$100k-$120k", status="open", identity_key="k1",
-                          posted_date=datetime(2026, 5, 1, tzinfo=timezone.utc)))
+        s.add(
+            IngestedJob(
+                id="1",
+                bucket="boards",
+                source="x",
+                source_type="board",
+                title="A",
+                skills=["Python", "React"],
+                remote_modality="remote",
+                salary_range="$100k-$120k",
+                status="open",
+                identity_key="k1",
+                posted_date=datetime(2026, 5, 1, tzinfo=timezone.utc),
+            )
+        )
         s.commit()
     repo = TrackingRepository(session_factory=factory)
     app = repo.create(TrackedApplication(title="A", company="Acme", status="saved"))
@@ -73,13 +86,26 @@ def _build_app(factory, history, tracking_read=None):
         funnel=FunnelService(history, applications_read=tracking_read, corpus=corpus),
         market=MarketIntelService(corpus, norm, sal),
         skill_gap=SkillGapService(corpus, norm),
-        target_salary=TargetSalaryService(embedding=_Emb(), vector_store=_Store(), corpus=corpus,
-                                          salary_parser=sal, top_k=50, min_sample=5),
-        comp_benchmark=CompBenchmarkService(embedding=_Emb(), vector_store=_Store(), corpus=corpus,
-                                            salary_parser=sal, tracking_read=tracking_read,
-                                            top_k=50, min_sample=5),
-        search_focus=SearchFocusService(embedding=_Emb(), vector_store=_Store(), corpus=corpus,
-                                        top_k=50, fresh_days=14),
+        target_salary=TargetSalaryService(
+            embedding=_Emb(),
+            vector_store=_Store(),
+            corpus=corpus,
+            salary_parser=sal,
+            top_k=50,
+            min_sample=5,
+        ),
+        comp_benchmark=CompBenchmarkService(
+            embedding=_Emb(),
+            vector_store=_Store(),
+            corpus=corpus,
+            salary_parser=sal,
+            tracking_read=tracking_read,
+            top_k=50,
+            min_sample=5,
+        ),
+        search_focus=SearchFocusService(
+            embedding=_Emb(), vector_store=_Store(), corpus=corpus, top_k=50, fresh_days=14
+        ),
         profile_service=_FakeProfile(),
         cache=TtlCache(ttl_seconds=300),
     )
@@ -162,16 +188,25 @@ def _seed_salaried(factory, n=6):
     ids = [f"s{i}" for i in range(n)]
     with factory() as s:
         for i, jid in enumerate(ids):
-            s.add(IngestedJob(
-                id=jid, bucket="boards", source="getonboard" if i % 2 else "linkedin",
-                source_type="board", title=f"Senior Backend Engineer {i}",
-                description="Senior role, 5+ years", skills=["python"],
-                remote_modality="remote" if i % 2 else "on_site",
-                salary_range=f"${100 + i * 5}k-${120 + i * 5}k", status="open",
-                quality="ok", identity_key=f"sk{i}", company=f"Co{i}",
-                location="Remote" if i % 2 else "NYC",
-                posted_date=datetime.now(timezone.utc),
-            ))
+            s.add(
+                IngestedJob(
+                    id=jid,
+                    bucket="boards",
+                    source="getonboard" if i % 2 else "linkedin",
+                    source_type="board",
+                    title=f"Senior Backend Engineer {i}",
+                    description="Senior role, 5+ years",
+                    skills=["python"],
+                    remote_modality="remote" if i % 2 else "on_site",
+                    salary_range=f"${100 + i * 5}k-${120 + i * 5}k",
+                    status="open",
+                    quality="ok",
+                    identity_key=f"sk{i}",
+                    company=f"Co{i}",
+                    location="Remote" if i % 2 else "NYC",
+                    posted_date=datetime.now(timezone.utc),
+                )
+            )
         s.commit()
     return ids
 
@@ -183,13 +218,26 @@ def _build_app_with_store(factory, history, store, tracking_read=None):
         funnel=FunnelService(history, applications_read=tracking_read, corpus=corpus),
         market=MarketIntelService(corpus, norm, sal),
         skill_gap=SkillGapService(corpus, norm),
-        target_salary=TargetSalaryService(embedding=_Emb(), vector_store=store, corpus=corpus,
-                                          salary_parser=sal, top_k=50, min_sample=5),
-        comp_benchmark=CompBenchmarkService(embedding=_Emb(), vector_store=store, corpus=corpus,
-                                            salary_parser=sal, tracking_read=tracking_read,
-                                            top_k=50, min_sample=5),
-        search_focus=SearchFocusService(embedding=_Emb(), vector_store=store, corpus=corpus,
-                                        top_k=50, fresh_days=14),
+        target_salary=TargetSalaryService(
+            embedding=_Emb(),
+            vector_store=store,
+            corpus=corpus,
+            salary_parser=sal,
+            top_k=50,
+            min_sample=5,
+        ),
+        comp_benchmark=CompBenchmarkService(
+            embedding=_Emb(),
+            vector_store=store,
+            corpus=corpus,
+            salary_parser=sal,
+            tracking_read=tracking_read,
+            top_k=50,
+            min_sample=5,
+        ),
+        search_focus=SearchFocusService(
+            embedding=_Emb(), vector_store=store, corpus=corpus, top_k=50, fresh_days=14
+        ),
         profile_service=_FakeProfile(),
         cache=TtlCache(ttl_seconds=300),
     )

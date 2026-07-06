@@ -51,7 +51,9 @@ class FakePortalScanner:
         return self._result
 
 
-def _make_app(scanner: FakePortalScanner, config: PortalsConfig = _SAMPLE_PORTALS_CONFIG) -> FastAPI:
+def _make_app(
+    scanner: FakePortalScanner, config: PortalsConfig = _SAMPLE_PORTALS_CONFIG
+) -> FastAPI:
     app = FastAPI()
     app.dependency_overrides[get_portal_scanner] = lambda: scanner
     app.dependency_overrides[get_portals_config] = lambda: config

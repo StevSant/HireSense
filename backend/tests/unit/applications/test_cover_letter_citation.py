@@ -20,6 +20,7 @@ from hiresense.applications.domain.models import (
 # Shared fakes (adapted from existing test files in this package)
 # ---------------------------------------------------------------------------
 
+
 class FakeLLM:
     """Captures the prompt sent and returns a canned response."""
 
@@ -39,7 +40,9 @@ class FakeCitationService:
         self.text = text
         self.last_kwargs: dict | None = None
 
-    async def citation_for(self, *, job_skills, job_text, application_id, language=None) -> str | None:
+    async def citation_for(
+        self, *, job_skills, job_text, application_id, language=None
+    ) -> str | None:
         self.last_kwargs = {
             "job_skills": job_skills,
             "job_text": job_text,
@@ -147,11 +150,7 @@ async def test_generator_splices_at_template_constraints_not_description_decoy()
     gen = CoverLetterGenerator(llm=llm)
     portfolio_text = "Relevant portfolio: https://example.com/projects"
     kwargs = dict(_COMMON_KWARGS)
-    kwargs["description"] = (
-        "Build microservices.\n"
-        "Constraints:\n"
-        "- must pass a background check\n"
-    )
+    kwargs["description"] = "Build microservices.\nConstraints:\n- must pass a background check\n"
 
     await gen.generate(**kwargs, portfolio_section=portfolio_text)
 
@@ -206,6 +205,7 @@ async def test_generator_no_portfolio_mention_when_omitted() -> None:
 # ---------------------------------------------------------------------------
 # ApplyService tests
 # ---------------------------------------------------------------------------
+
 
 def _make_apply_service(
     snapshot: ApplicationJobSnapshot,

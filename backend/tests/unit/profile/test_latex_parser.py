@@ -13,9 +13,9 @@ SAMPLE_TEX = r"""
 \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l l}
 \textbf{Location:} Springfield, Illinois & \textbf{Phone:} +1 555 010 0000 \\
 \textbf{Email:} \href{mailto:jane.doe@example.com}{jane.doe@example.com}
-& \textbf{Portfolio:} \href{https://your-portfolio.example.com}{your-portfolio.example.com} \\
+& \textbf{Portfolio:} \href{https://janedoe.example.com}{janedoe.example.com} \\
 \textbf{LinkedIn:} \href{https://linkedin.com/in/janedoe}{linkedin.com/in/janedoe}
-& \textbf{GitHub:} \href{https://github.com/StevSant}{github.com/StevSant} \\
+& \textbf{GitHub:} \href{https://github.com/janedoe}{github.com/janedoe} \\
 \end{tabular*}
 
 \section*{SUMMARY}

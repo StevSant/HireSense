@@ -85,10 +85,7 @@ def filter_and_paginate(
 
     if params.keyword:
         kw = params.keyword.lower()
-        filtered = [
-            j for j in filtered
-            if kw in j.title.lower() or kw in j.description.lower()
-        ]
+        filtered = [j for j in filtered if kw in j.title.lower() or kw in j.description.lower()]
 
     if params.location:
         loc = params.location.lower()
@@ -96,21 +93,16 @@ def filter_and_paginate(
 
     if params.skills:
         skill_set = {s.strip().lower() for s in params.skills.split(",") if s.strip()}
-        filtered = [
-            j for j in filtered
-            if skill_set & {s.lower() for s in j.skills}
-        ]
+        filtered = [j for j in filtered if skill_set & {s.lower() for s in j.skills}]
 
     if params.date_from:
         filtered = [
-            j for j in filtered
-            if j.posted_date is not None and j.posted_date >= params.date_from
+            j for j in filtered if j.posted_date is not None and j.posted_date >= params.date_from
         ]
 
     if params.date_to:
         filtered = [
-            j for j in filtered
-            if j.posted_date is not None and j.posted_date <= params.date_to
+            j for j in filtered if j.posted_date is not None and j.posted_date <= params.date_to
         ]
 
     if params.min_score is not None:
@@ -123,25 +115,18 @@ def filter_and_paginate(
         # page-level semantic scoring pass can rescue it. Such jobs pass through
         # here and are gated, if at all, only once a real semantic score exists.
         filtered = [
-            j for j in filtered
-            if j.match_score is None
-            or j.semantic_score is None
-            or j.match_score >= threshold
+            j
+            for j in filtered
+            if j.match_score is None or j.semantic_score is None or j.match_score >= threshold
         ]
 
     if params.seniority_levels:
         allowed = set(params.seniority_levels)
-        filtered = [
-            j for j in filtered
-            if detect_seniority(j.title, j.description) in allowed
-        ]
+        filtered = [j for j in filtered if detect_seniority(j.title, j.description) in allowed]
 
     if params.max_years_experience is not None:
         cap = params.max_years_experience
-        filtered = [
-            j for j in filtered
-            if (extract_min_years(j.description) or 0) <= cap
-        ]
+        filtered = [j for j in filtered if (extract_min_years(j.description) or 0) <= cap]
 
     if params.max_age_days is not None and params.max_age_days > 0:
         cutoff = datetime.now(timezone.utc) - timedelta(days=params.max_age_days)
@@ -167,9 +152,18 @@ def filter_and_paginate(
         # rather than a geographic restriction. These must NOT exclude an
         # otherwise-worldwide remote role (e.g. "100% Remote (Full-time)").
         non_geo_qualifiers = (
-            "remote", "onsite", "on-site", "on site", "hybrid",
-            "full", "part", "contract", "freelance", "permanent",
-            "temporary", "intern",
+            "remote",
+            "onsite",
+            "on-site",
+            "on site",
+            "hybrid",
+            "full",
+            "part",
+            "contract",
+            "freelance",
+            "permanent",
+            "temporary",
+            "intern",
         )
 
         def _matches_country(job: NormalizedJob) -> bool:

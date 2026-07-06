@@ -11,13 +11,9 @@ from hiresense.infrastructure.database import Base
 
 class CoverLetterTemplateOrm(Base):
     __tablename__ = "cover_letter_templates"
-    __table_args__ = (
-        Index("ix_cover_letter_templates_updated_at", "updated_at"),
-    )
+    __table_args__ = (Index("ix_cover_letter_templates_updated_at", "updated_at"),)
 
-    id: Mapped[uuid_mod.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid_mod.uuid4
-    )
+    id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     tone: Mapped[str] = mapped_column(String(20), default="professional")
     language: Mapped[str] = mapped_column(String(10), default="en")

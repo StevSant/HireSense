@@ -4,8 +4,13 @@
   gap: 1rem;
 }
 
-details > summary { list-style: none; cursor: pointer; }
-details > summary::-webkit-details-marker { display: none; }
+details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
 
 .deep-narrative {
   font-size: 0.875rem;
@@ -42,7 +47,7 @@ details > summary::-webkit-details-marker { display: none; }
   color: var(--text-primary);
 
   &::after {
-    content: "›";
+    content: '›';
     margin-left: auto;
     font-size: 1.1rem;
     line-height: 1;
@@ -51,7 +56,9 @@ details > summary::-webkit-details-marker { display: none; }
     transition: transform 0.2s var(--ease);
   }
 }
-details[open] > .deep-collapsible-label::after { transform: rotate(-90deg); }
+details[open] > .deep-collapsible-label::after {
+  transform: rotate(-90deg);
+}
 .deep-count {
   font-weight: 500;
   text-transform: none;
@@ -59,7 +66,9 @@ details[open] > .deep-collapsible-label::after { transform: rotate(-90deg); }
   font-size: 0.75rem;
   color: var(--text-muted);
 }
-.deep-collapsible > *:not(summary) { margin-top: 0.85rem; }
+.deep-collapsible > *:not(summary) {
+  margin-top: 0.85rem;
+}
 
 /* ---- Pros/cons two-column ---- */
 .deep-proscons {
@@ -86,8 +95,12 @@ details[open] > .deep-collapsible-label::after { transform: rotate(-90deg); }
   line-height: 1.5;
   color: var(--text-secondary);
 }
-.pc-pro::marker { color: #16a34a; }
-.pc-con::marker { color: #dc2626; }
+.pc-pro::marker {
+  color: #16a34a;
+}
+.pc-con::marker {
+  color: #dc2626;
+}
 
 /* ---- Recommendations ---- */
 .rec-list {

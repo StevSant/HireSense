@@ -44,8 +44,11 @@ def record(
 ) -> OutreachEvent:
     try:
         return service.record(
-            body.application_id, kind=body.kind, message=body.message,
-            contact_name=body.contact_name, channel=body.channel,
+            body.application_id,
+            kind=body.kind,
+            message=body.message,
+            contact_name=body.contact_name,
+            channel=body.channel,
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

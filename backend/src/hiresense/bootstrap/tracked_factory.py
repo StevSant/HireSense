@@ -35,8 +35,6 @@ def make_tracked(
             factory=factory,
             feature_key=feature_key,
         )
-        return UsageTrackingLLMAdapter(
-            configured, recorder=recorder, feature_key=feature_key
-        )
+        return UsageTrackingLLMAdapter(configured, recorder=recorder, feature_key=feature_key)
 
     return _tracked

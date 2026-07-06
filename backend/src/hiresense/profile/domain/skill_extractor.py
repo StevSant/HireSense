@@ -39,9 +39,7 @@ class SkillExtractor:
             "nothing else.\n\n"
             f"Text: {text}"
         )
-        response = await self._llm.complete(
-            prompt, system="You are a skill extraction assistant."
-        )
+        response = await self._llm.complete(prompt, system="You are a skill extraction assistant.")
 
         cleaned = response.strip()
         fence_match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", cleaned, re.DOTALL)

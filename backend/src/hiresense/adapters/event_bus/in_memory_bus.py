@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 class InMemoryEventBus:
     def __init__(self) -> None:
-        self._subscribers: dict[
-            str, list[Callable[[DomainEvent], Awaitable[None]]]
-        ] = defaultdict(list)
+        self._subscribers: dict[str, list[Callable[[DomainEvent], Awaitable[None]]]] = defaultdict(
+            list
+        )
         # Strong references to in-flight handler tasks: the event loop only
         # holds weak refs, so without these the GC may drop a task mid-run.
         # They also let shutdown drain handlers instead of orphaning them.
@@ -72,6 +72,4 @@ class InMemoryEventBus:
                 )
                 span.record_exception(exc)
                 span.set_status(trace.Status(trace.StatusCode.ERROR))
-                get_domain_metrics().event_handler_errors_total.add(
-                    1, {"type": event.event_type}
-                )
+                get_domain_metrics().event_handler_errors_total.add(1, {"type": event.event_type})

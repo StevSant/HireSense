@@ -1,14 +1,28 @@
 .scheduler {
   padding: 1rem;
 
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--border, #e2e2e2); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border, #e2e2e2);
+  }
 
   .status {
     text-transform: capitalize;
     font-weight: 600;
-    &--success { color: var(--success, #2e7d32); }
-    &--failure { color: var(--danger, #c62828); }
-    &--skipped { color: var(--muted, #888); }
+    &--success {
+      color: var(--success, #2e7d32);
+    }
+    &--failure {
+      color: var(--danger, #c62828);
+    }
+    &--skipped {
+      color: var(--muted, #888);
+    }
   }
 }

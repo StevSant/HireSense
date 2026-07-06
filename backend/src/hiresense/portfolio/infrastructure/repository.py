@@ -55,9 +55,7 @@ class PortfolioProjectsRepository(SqlRepository):
                     select(PortfolioProjectOrm).where(PortfolioProjectOrm.source == source)
                 ).all()
             }
-            session.execute(
-                delete(PortfolioProjectOrm).where(PortfolioProjectOrm.source == source)
-            )
+            session.execute(delete(PortfolioProjectOrm).where(PortfolioProjectOrm.source == source))
             for project in projects:
                 orm = _to_orm(project, now)
                 if project.source_key in kept_flag:
@@ -71,17 +69,13 @@ class PortfolioProjectsRepository(SqlRepository):
 
     def list_for_matching(self) -> list[PortfolioProject]:
         return self._select_all(
-            select(PortfolioProjectOrm).where(
-                PortfolioProjectOrm.include_in_matching.is_(True)
-            ),
+            select(PortfolioProjectOrm).where(PortfolioProjectOrm.include_in_matching.is_(True)),
             _to_domain,
         )
 
     def set_include_in_matching(self, id: str, value: bool) -> bool:
         return (
-            self._update_by_pk(
-                PortfolioProjectOrm, id, {"include_in_matching": value}, _to_domain
-            )
+            self._update_by_pk(PortfolioProjectOrm, id, {"include_in_matching": value}, _to_domain)
             is not None
         )
 
@@ -100,9 +94,7 @@ class PortfolioProjectsRepository(SqlRepository):
         )
         with self._session_factory() as session:
             rows = [_to_domain(r) for r in session.scalars(stmt).all()]
-            total = session.scalar(
-                select(func.count()).select_from(PortfolioProjectOrm)
-            )
+            total = session.scalar(select(func.count()).select_from(PortfolioProjectOrm))
         return rows, int(total or 0)
 
     def last_synced_at(self) -> datetime | None:

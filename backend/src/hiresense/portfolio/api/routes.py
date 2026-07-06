@@ -55,9 +55,7 @@ async def sync_portfolio(
 @router.get("/projects", response_model=ProjectsResponse)
 async def list_projects(
     request: Request,
-    repository: Annotated[
-        PortfolioProjectsRepositoryPort | None, Depends(get_projects_repository)
-    ],
+    repository: Annotated[PortfolioProjectsRepositoryPort | None, Depends(get_projects_repository)],
     limit: Annotated[int | None, Query(ge=1, le=100)] = None,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> ProjectsResponse:
@@ -83,9 +81,7 @@ class MatchingUpdate(BaseModel):
 async def set_project_matching(
     project_id: str,
     body: MatchingUpdate,
-    repository: Annotated[
-        PortfolioProjectsRepositoryPort | None, Depends(get_projects_repository)
-    ],
+    repository: Annotated[PortfolioProjectsRepositoryPort | None, Depends(get_projects_repository)],
 ) -> dict[str, bool]:
     if repository is None:
         raise HTTPException(status_code=404, detail="Portfolio not configured")

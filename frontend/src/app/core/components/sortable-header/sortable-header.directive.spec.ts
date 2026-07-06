@@ -9,10 +9,14 @@ type F = 'match' | 'title';
 @Component({
   standalone: true,
   imports: [SortableHeaderDirective],
-  template: `<table><thead><tr>
-    <th appSortHeader [state]="state" field="match" (sorted)="count = count + 1">Match</th>
-    <th appSortHeader [state]="state" field="title" (sorted)="count = count + 1">Title</th>
-  </tr></thead></table>`,
+  template: `<table>
+    <thead>
+      <tr>
+        <th appSortHeader [state]="state" field="match" (sorted)="count = count + 1">Match</th>
+        <th appSortHeader [state]="state" field="title" (sorted)="count = count + 1">Title</th>
+      </tr>
+    </thead>
+  </table>`,
 })
 class HostComponent {
   state = createSortState<F>('match', 'desc', ['title']);
@@ -23,9 +27,7 @@ describe('SortableHeaderDirective', () => {
   it('marks the active column with aria-sort and toggles on click', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
-    const ths: HTMLTableCellElement[] = Array.from(
-      fixture.nativeElement.querySelectorAll('th'),
-    );
+    const ths: HTMLTableCellElement[] = Array.from(fixture.nativeElement.querySelectorAll('th'));
     expect(ths[0].getAttribute('aria-sort')).toBe('descending');
     expect(ths[1].getAttribute('aria-sort')).toBe('none');
 

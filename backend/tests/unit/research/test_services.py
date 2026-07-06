@@ -40,15 +40,17 @@ class FakeRepo:
         return research
 
 
-_LLM_RESPONSE = json.dumps({
-    "funding_stage": "Series D",
-    "tech_stack": "Python, Rust",
-    "culture_summary": "AI safety focused",
-    "growth_trajectory": "Rapid growth",
-    "red_flags": None,
-    "pros": "Great mission",
-    "cons": "High intensity",
-})
+_LLM_RESPONSE = json.dumps(
+    {
+        "funding_stage": "Series D",
+        "tech_stack": "Python, Rust",
+        "culture_summary": "AI safety focused",
+        "growth_trajectory": "Rapid growth",
+        "red_flags": None,
+        "pros": "Great mission",
+        "cons": "High intensity",
+    }
+)
 
 
 @pytest.mark.asyncio

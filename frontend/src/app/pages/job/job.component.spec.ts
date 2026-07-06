@@ -7,21 +7,48 @@ import { ApplicationsService } from '../../core/services/applications.service';
 
 function job(over: Record<string, unknown> = {}) {
   return {
-    id: 'j1', title: 'Backend Engineer', company: 'Acme', description: 'Plain description.',
-    skills: ['python'], location: 'Remote', salary_range: null, source: 'remotive',
-    source_type: 'api', platform: null, categories: [], department: null,
-    url: 'https://e.com/1', posted_date: null, match_score: 0.82, llm_score: null,
-    verdict: 'strong', reasons: ['Good skill overlap'], dealbreakers: [], status: 'open', ...over,
+    id: 'j1',
+    title: 'Backend Engineer',
+    company: 'Acme',
+    description: 'Plain description.',
+    skills: ['python'],
+    location: 'Remote',
+    salary_range: null,
+    source: 'remotive',
+    source_type: 'api',
+    platform: null,
+    categories: [],
+    department: null,
+    url: 'https://e.com/1',
+    posted_date: null,
+    match_score: 0.82,
+    llm_score: null,
+    verdict: 'strong',
+    reasons: ['Good skill overlap'],
+    dealbreakers: [],
+    status: 'open',
+    ...over,
   };
 }
 
 const analysis = {
-  job_id: 'j1', overall_score: 0.8, verdict: 'strong', dimensions: [],
-  matched_skills: ['python'], missing_skills: [], pros: ['Remote'], cons: ['Low pay'],
-  recommendations: [], narrative: 'Solid fit.',
+  job_id: 'j1',
+  overall_score: 0.8,
+  verdict: 'strong',
+  dimensions: [],
+  matched_skills: ['python'],
+  missing_skills: [],
+  pros: ['Remote'],
+  cons: ['Low pay'],
+  recommendations: [],
+  narrative: 'Solid fit.',
 };
 
-function mount(over: Partial<Record<string, unknown>> = {}, appsOver: Record<string, unknown> = {}, id = 'j1') {
+function mount(
+  over: Partial<Record<string, unknown>> = {},
+  appsOver: Record<string, unknown> = {},
+  id = 'j1',
+) {
   const ingestion = {
     getJob: () => of(job()),
     getCachedAnalysis: () => undefined,
@@ -59,7 +86,9 @@ describe('JobDetailComponent', () => {
   });
 
   it('shows the analysis error state when analysis fails', () => {
-    const fixture = mount({ getJobAnalysis: () => throwError(() => ({ error: { detail: 'nope' } })) });
+    const fixture = mount({
+      getJobAnalysis: () => throwError(() => ({ error: { detail: 'nope' } })),
+    });
     expect(fixture.nativeElement.querySelector('.job-analysis-error')).not.toBeNull();
   });
 
@@ -71,7 +100,9 @@ describe('JobDetailComponent', () => {
   });
 
   it('falls back to the job score when analysis is unavailable', () => {
-    const fixture = mount({ getJobAnalysis: () => throwError(() => ({ error: { detail: 'nope' } })) });
+    const fixture = mount({
+      getJobAnalysis: () => throwError(() => ({ error: { detail: 'nope' } })),
+    });
     // No analysis → llm_score (null) ?? match_score (0.82 → 82%).
     expect(fixture.componentInstance.pillScore()).toBe(0.82);
     expect(fixture.nativeElement.querySelector('.job-score-num')?.textContent).toContain('82%');
@@ -81,7 +112,9 @@ describe('JobDetailComponent', () => {
     const marked: string[] = [];
     const fixture = mount(
       { markTracked: (id: string) => marked.push(id) },
-      { createFromJob: () => throwError(() => ({ status: 500, error: { detail: 'server boom' } })) },
+      {
+        createFromJob: () => throwError(() => ({ status: 500, error: { detail: 'server boom' } })),
+      },
     );
     fixture.componentInstance.track();
     fixture.detectChanges();

@@ -29,9 +29,7 @@ def build_explanation(
     counts = Counter(s.kind.value for s in signals)
     positive = sum(1 for s in signals if s.kind.polarity > 0)
     negative = sum(1 for s in signals if s.kind.polarity < 0)
-    magnitude = (
-        math.sqrt(sum(x * x for x in delta_vector)) if delta_vector else 0.0
-    )
+    magnitude = math.sqrt(sum(x * x for x in delta_vector)) if delta_vector else 0.0
     return PreferenceExplanation(
         active=bool(delta_vector) and magnitude > 0.0,
         total_signals=len(signals),

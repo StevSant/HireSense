@@ -17,20 +17,14 @@ class TrackedApplicationOrm(Base):
         Index("ix_tracked_applications_job_id", "job_id"),
     )
 
-    id: Mapped[uuid_mod.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid_mod.uuid4
-    )
+    id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
     job_id: Mapped[uuid_mod.UUID | None] = mapped_column(Uuid, nullable=True)
     title: Mapped[str] = mapped_column(String(255))
     company: Mapped[str] = mapped_column(String(255))
     url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
-    status: Mapped[str] = mapped_column(
-        String(20), default=ApplicationStatus.SAVED.value
-    )
+    status: Mapped[str] = mapped_column(String(20), default=ApplicationStatus.SAVED.value)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    applied_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    applied_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

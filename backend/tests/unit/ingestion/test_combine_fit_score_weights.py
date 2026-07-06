@@ -3,6 +3,7 @@
 Written BEFORE implementation (TDD RED phase).
 Verifies REQ-06: hardcoded module constants removed; weights become parameters.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -34,8 +35,8 @@ class TestCombineFitScoreInjectedWeights:
         Job A: high skill, low semantic → wins with skill_weight=0.9
         Job B: low skill, high semantic → wins with semantic_weight=0.9
         """
-        skill_heavy_job_score = combine_fit_score(1.0, 0.1)   # default 0.4*1 + 0.6*0.1 = 0.46
-        semantic_heavy_job_score = combine_fit_score(0.1, 1.0) # default 0.4*0.1 + 0.6*1 = 0.64
+        skill_heavy_job_score = combine_fit_score(1.0, 0.1)  # default 0.4*1 + 0.6*0.1 = 0.46
+        semantic_heavy_job_score = combine_fit_score(0.1, 1.0)  # default 0.4*0.1 + 0.6*1 = 0.64
 
         # With defaults: semantic-heavy job wins
         assert semantic_heavy_job_score > skill_heavy_job_score  # type: ignore[operator]
@@ -62,13 +63,18 @@ class TestCombineFitScoreInjectedWeights:
     def test_none_handling_unchanged_with_custom_weights(self) -> None:
         """Fallback behaviour for None inputs is unchanged when weights are supplied."""
         assert combine_fit_score(None, None, skill_weight=0.5, semantic_weight=0.5) is None
-        assert combine_fit_score(0.7, None, skill_weight=0.5, semantic_weight=0.5) == pytest.approx(0.7)
-        assert combine_fit_score(None, 0.5, skill_weight=0.5, semantic_weight=0.5) == pytest.approx(0.5)
+        assert combine_fit_score(0.7, None, skill_weight=0.5, semantic_weight=0.5) == pytest.approx(
+            0.7
+        )
+        assert combine_fit_score(None, 0.5, skill_weight=0.5, semantic_weight=0.5) == pytest.approx(
+            0.5
+        )
 
 
 def test_no_module_level_skill_weight_constant() -> None:
     """_SKILL_WEIGHT and _SEMANTIC_WEIGHT module constants must be removed."""
     import hiresense.ingestion.domain.job_scorer as scorer
+
     assert not hasattr(scorer, "_SKILL_WEIGHT"), (
         "_SKILL_WEIGHT must be removed — weights are now parameters"
     )

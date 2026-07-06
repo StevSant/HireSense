@@ -11,48 +11,58 @@ class DomainMetrics:
         meter = get_meter("hiresense.domain")
 
         self.jobs_fetched_total = meter.create_counter(
-            "hiresense.jobs_fetched_total", unit="1",
+            "hiresense.jobs_fetched_total",
+            unit="1",
             description="Jobs fetched per ingestion source",
         )
         self.jobs_indexed_total = meter.create_counter(
-            "hiresense.jobs_indexed_total", unit="1",
-            description="Jobs queued for indexing (inserted/updated/reopened) "
-            "per ingestion source",
+            "hiresense.jobs_indexed_total",
+            unit="1",
+            description="Jobs queued for indexing (inserted/updated/reopened) per ingestion source",
         )
         self.ingestion_run_duration_ms = meter.create_histogram(
-            "hiresense.ingestion_run_duration_ms", unit="ms",
+            "hiresense.ingestion_run_duration_ms",
+            unit="ms",
             description="Wall-clock duration of an ingestion run",
         )
         self.matches_completed_total = meter.create_counter(
-            "hiresense.matches_completed_total", unit="1",
+            "hiresense.matches_completed_total",
+            unit="1",
             description="Match evaluations completed",
         )
         self.match_score = meter.create_histogram(
-            "hiresense.match_score", unit="1",
+            "hiresense.match_score",
+            unit="1",
             description="Distribution of computed match scores",
         )
         self.llm_tokens_total = meter.create_counter(
-            "hiresense.llm_tokens_total", unit="1",
+            "hiresense.llm_tokens_total",
+            unit="1",
             description="LLM tokens consumed (type=input|output)",
         )
         self.llm_cost_usd_total = meter.create_counter(
-            "hiresense.llm_cost_usd_total", unit="{USD}",
+            "hiresense.llm_cost_usd_total",
+            unit="{USD}",
             description="Estimated LLM spend",
         )
         self.llm_call_duration_ms = meter.create_histogram(
-            "hiresense.llm_call_duration_ms", unit="ms",
+            "hiresense.llm_call_duration_ms",
+            unit="ms",
             description="LLM call latency",
         )
         self.llm_errors_total = meter.create_counter(
-            "hiresense.llm_errors_total", unit="1",
+            "hiresense.llm_errors_total",
+            unit="1",
             description="Failed LLM calls",
         )
         self.events_published_total = meter.create_counter(
-            "hiresense.events_published_total", unit="1",
+            "hiresense.events_published_total",
+            unit="1",
             description="Domain events published",
         )
         self.event_handler_errors_total = meter.create_counter(
-            "hiresense.event_handler_errors_total", unit="1",
+            "hiresense.event_handler_errors_total",
+            unit="1",
             description="Domain event handler failures",
         )
 

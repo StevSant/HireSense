@@ -24,6 +24,15 @@ class AnalyticsSettings(BaseSettings):
     # numbers are affected at all.
     analytics_corpus_sample_cap: int = 5000
 
+    # --- Salary period normalization ---
+    # Raw magnitude (pre-multiplier, currency-agnostic) below which an UNLABELED
+    # salary figure is treated as monthly (×12) rather than annual. LATAM job
+    # boards often list monthly pay with no period keyword; a bare "USD 2,500"
+    # is monthly, not a 2,500/yr annual salary. Chosen below any realistic annual
+    # salary so plausible annual figures are never downgraded. Only ever raises a
+    # too-low unlabeled figure to monthly; labeled figures are unaffected.
+    salary_annual_floor: int = 12000
+
     # --- Admin LLM usage dashboard ---
     # Default cap on rows returned by the "recent calls" listing (newest-first)
     # when the API/aggregator caller does not specify one. Bounds the unbounded

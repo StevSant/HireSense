@@ -1,1 +1,7 @@
-export type ApplicationStatus = 'saved' | 'applied' | 'interviewing' | 'offered' | 'accepted' | 'rejected';
+export type ApplicationStatus =
+  | 'saved'
+  | 'applied'
+  | 'interviewing'
+  | 'offered'
+  | 'accepted'
+  | 'rejected';

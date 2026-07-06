@@ -14,13 +14,17 @@ class InterviewReadinessScorer(BaseLLMScorer):
     def _build_prompt(self, job: Any, profile: Any | None = None) -> str:
         title = job.get("title", "") if isinstance(job, dict) else getattr(job, "title", "")
         company = job.get("company", "") if isinstance(job, dict) else getattr(job, "company", "")
-        description = job.get("description", "") if isinstance(job, dict) else getattr(job, "description", "")
+        description = (
+            job.get("description", "") if isinstance(job, dict) else getattr(job, "description", "")
+        )
         job_skills = job.get("skills", []) if isinstance(job, dict) else getattr(job, "skills", [])
 
         job_skills_display = ", ".join(job_skills) if job_skills else "Not specified"
 
         candidate_skills = getattr(profile, "skills", []) if profile else []
-        candidate_skills_display = ", ".join(candidate_skills) if candidate_skills else "Not specified"
+        candidate_skills_display = (
+            ", ".join(candidate_skills) if candidate_skills else "Not specified"
+        )
 
         sections_text = ""
         if profile:

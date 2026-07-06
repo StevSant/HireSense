@@ -44,9 +44,7 @@ def _extract_connections_member(payload: bytes) -> bytes:
 def _parse_csv(payload: bytes) -> list[Contact]:
     text = payload.decode("utf-8-sig", errors="replace")
     lines = text.splitlines()
-    header_index = next(
-        (i for i, line in enumerate(lines) if line.startswith("First Name,")), None
-    )
+    header_index = next((i for i, line in enumerate(lines) if line.startswith("First Name,")), None)
     if header_index is None:
         raise ConnectionsParseError("No connections header row found")
     reader = csv.DictReader(io.StringIO("\n".join(lines[header_index:])))

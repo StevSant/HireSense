@@ -49,9 +49,13 @@ class FakeRepo:
 class FakeMatchResult:
     def __init__(self) -> None:
         from hiresense.matching.domain.models import ScoreBreakdown
+
         self.overall_score = 0.75
         self.breakdown = ScoreBreakdown(
-            semantic_score=0.8, skill_score=0.7, experience_score=0.75, language_score=0.7,
+            semantic_score=0.8,
+            skill_score=0.7,
+            experience_score=0.75,
+            language_score=0.7,
         )
         self.matched_skills = ["python"]
         self.missing_skills = ["k8s"]
@@ -64,7 +68,9 @@ class FakeMatchingOrchestrator:
     def __init__(self) -> None:
         self.last_args: dict | None = None
 
-    async def analyze(self, *, job_id, cv_id, job_description, job_skills, cv_summary, cv_skills, **kwargs):
+    async def analyze(
+        self, *, job_id, cv_id, job_description, job_skills, cv_summary, cv_skills, **kwargs
+    ):
         self.last_args = {
             "job_description": job_description,
             "job_skills": job_skills,
@@ -102,7 +108,18 @@ class FakeOptimizer:
     def __init__(self) -> None:
         self.last_args: dict | None = None
 
-    async def optimize(self, *, match_id, job_id, cv_id, original_tex, job_description, job_skills, missing_skills, recommendations):
+    async def optimize(
+        self,
+        *,
+        match_id,
+        job_id,
+        cv_id,
+        original_tex,
+        job_description,
+        job_skills,
+        missing_skills,
+        recommendations,
+    ):
         self.last_args = {
             "original_tex": original_tex,
             "job_skills": job_skills,
@@ -208,7 +225,10 @@ async def test_generate_match_raises_when_no_snapshot() -> None:
 @pytest.mark.asyncio
 async def test_generate_match_raises_when_no_profile() -> None:
     snap = ApplicationJobSnapshot(
-        application_id=uuid.uuid4(), description="d", required_skills=[], source="manual",
+        application_id=uuid.uuid4(),
+        description="d",
+        required_skills=[],
+        source="manual",
     )
     repo = FakeRepo(snapshot=snap)
     service = ArtifactService(
@@ -226,22 +246,33 @@ async def test_generate_match_raises_when_no_profile() -> None:
 async def test_generate_optimization_pulls_missing_skills_from_match() -> None:
     app_id = uuid.uuid4()
     snap = ApplicationJobSnapshot(
-        application_id=app_id, description="desc", required_skills=["python", "k8s"], source="manual",
+        application_id=app_id,
+        description="desc",
+        required_skills=["python", "k8s"],
+        source="manual",
     )
     repo = FakeRepo(snapshot=snap)
     # Pre-populate a match
     match = ApplicationMatch(
         id=uuid.uuid4(),
         application_id=app_id,
-        overall_score=0.7, semantic_score=0.7, skill_score=0.5,
-        experience_score=0.8, language_score=0.8,
-        matched_skills=["python"], missing_skills=["k8s"],
-        pros=[], cons=[], recommendations=["learn k8s"],
+        overall_score=0.7,
+        semantic_score=0.7,
+        skill_score=0.5,
+        experience_score=0.8,
+        language_score=0.8,
+        matched_skills=["python"],
+        missing_skills=["k8s"],
+        pros=[],
+        cons=[],
+        recommendations=["learn k8s"],
         cv_language="en",
     )
     repo.matches.append(match)
 
-    profiles = FakeProfileService(FakeProfile("en", "summary", ["python"], raw_tex=r"\documentclass{}"))
+    profiles = FakeProfileService(
+        FakeProfile("en", "summary", ["python"], raw_tex=r"\documentclass{}")
+    )
     optimizer = FakeOptimizer()
 
     service = ArtifactService(
@@ -261,7 +292,10 @@ async def test_generate_optimization_pulls_missing_skills_from_match() -> None:
 @pytest.mark.asyncio
 async def test_generate_optimization_raises_without_match() -> None:
     snap = ApplicationJobSnapshot(
-        application_id=uuid.uuid4(), description="d", required_skills=["x"], source="manual",
+        application_id=uuid.uuid4(),
+        description="d",
+        required_skills=["x"],
+        source="manual",
     )
     repo = FakeRepo(snapshot=snap)
     profiles = FakeProfileService(FakeProfile("en", "s", ["x"], raw_tex=r"\documentclass{}"))
@@ -280,7 +314,10 @@ async def test_generate_optimization_raises_without_match() -> None:
 async def test_generate_interview_prep_uses_snapshot() -> None:
     app_id = uuid.uuid4()
     snap = ApplicationJobSnapshot(
-        application_id=app_id, description="desc", required_skills=["x"], source="manual",
+        application_id=app_id,
+        description="desc",
+        required_skills=["x"],
+        source="manual",
     )
     repo = FakeRepo(snapshot=snap)
     prep_service = FakeInterviewPrepService()

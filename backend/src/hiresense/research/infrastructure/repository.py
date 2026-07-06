@@ -31,9 +31,7 @@ class CompanyResearchRepository(SqlRepository):
         return self._select_one(stmt, _to_domain)
 
     def create(self, research: CompanyResearch) -> CompanyResearch:
-        row = CompanyResearchOrm(
-            **{field: getattr(research, field) for field in _CONTENT_FIELDS}
-        )
+        row = CompanyResearchOrm(**{field: getattr(research, field) for field in _CONTENT_FIELDS})
         return self._insert(row, _to_domain)
 
     def save(self, research: CompanyResearch) -> CompanyResearch:

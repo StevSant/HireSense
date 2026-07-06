@@ -71,13 +71,8 @@ class RetryingAsyncClient:
                 await self._backoff(attempt, method, url, reason=type(exc).__name__)
                 continue
 
-            if (
-                response.status_code in self._retry_status_codes
-                and attempt < self._max_retries
-            ):
-                await self._backoff(
-                    attempt, method, url, reason=f"HTTP {response.status_code}"
-                )
+            if response.status_code in self._retry_status_codes and attempt < self._max_retries:
+                await self._backoff(attempt, method, url, reason=f"HTTP {response.status_code}")
                 continue
 
             return response

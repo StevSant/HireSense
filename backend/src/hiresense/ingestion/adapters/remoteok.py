@@ -20,9 +20,7 @@ class RemoteOKAdapter:
     def source_type(self) -> SourceType:
         return SourceType.API
 
-    async def fetch_jobs(
-        self, filters: dict[str, Any] | None = None
-    ) -> list[RawJobListing]:
+    async def fetch_jobs(self, filters: dict[str, Any] | None = None) -> list[RawJobListing]:
         headers = {"User-Agent": "HireSense/1.0"}
         response = await self._http.get(self._base_url, headers=headers)
         response.raise_for_status()

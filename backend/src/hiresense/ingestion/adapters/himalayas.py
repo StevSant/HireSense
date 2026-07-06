@@ -23,9 +23,7 @@ class HimalayasAdapter:
     def source_type(self) -> SourceType:
         return SourceType.API
 
-    async def fetch_jobs(
-        self, filters: dict[str, Any] | None = None
-    ) -> list[RawJobListing]:
+    async def fetch_jobs(self, filters: dict[str, Any] | None = None) -> list[RawJobListing]:
         jobs: list[RawJobListing] = []
         offset = 0
         for _ in range(MAX_PAGES):
@@ -41,8 +39,6 @@ class HimalayasAdapter:
                 break
             for job in page_jobs:
                 guid = job.get("guid") or job.get("title", "")
-                jobs.append(
-                    RawJobListing(source="himalayas", source_id=guid, raw_data=job)
-                )
+                jobs.append(RawJobListing(source="himalayas", source_id=guid, raw_data=job))
             offset += PAGE_LIMIT
         return jobs

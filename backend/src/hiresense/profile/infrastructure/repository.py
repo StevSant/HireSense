@@ -32,9 +32,7 @@ def _to_domain(row: ProfileOrm) -> CandidateProfile:
         github_url=row.github_url,
         portfolio_url=row.portfolio_url,
         apply_profile=(
-            ApplyProfile.model_validate(row.apply_profile)
-            if row.apply_profile
-            else None
+            ApplyProfile.model_validate(row.apply_profile) if row.apply_profile else None
         ),
         machine_translated=row.machine_translated,
     )
@@ -55,9 +53,7 @@ def _to_orm(profile: CandidateProfile, original_filename: str | None = None) -> 
         linkedin_url=profile.linkedin_url,
         github_url=profile.github_url,
         portfolio_url=profile.portfolio_url,
-        apply_profile=(
-            profile.apply_profile.model_dump() if profile.apply_profile else None
-        ),
+        apply_profile=(profile.apply_profile.model_dump() if profile.apply_profile else None),
         machine_translated=profile.machine_translated,
     )
 

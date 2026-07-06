@@ -9,9 +9,25 @@ import re
 # handled by _DOTTED_SUFFIX_RE while the dots still exist.
 _LEGAL_SUFFIXES = frozenset(
     {
-        "inc", "incorporated", "llc", "llp", "ltd", "limited", "corp",
-        "corporation", "co", "company", "gmbh", "sa", "sas", "srl", "sl",
-        "bv", "ag", "plc", "cv",
+        "inc",
+        "incorporated",
+        "llc",
+        "llp",
+        "ltd",
+        "limited",
+        "corp",
+        "corporation",
+        "co",
+        "company",
+        "gmbh",
+        "sa",
+        "sas",
+        "srl",
+        "sl",
+        "bv",
+        "ag",
+        "plc",
+        "cv",
     }
 )
 # Dotted legal-acronym suffixes ("Globant S.A.", "... S.A. de C.V.") removed

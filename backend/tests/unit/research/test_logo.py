@@ -2,7 +2,9 @@ from hiresense.research.domain import logo_url
 
 
 def test_logo_url_from_website():
-    assert logo_url("https://www.bc.cl/careers", "https://logo.x/{domain}") == "https://logo.x/bc.cl"
+    assert (
+        logo_url("https://www.bc.cl/careers", "https://logo.x/{domain}") == "https://logo.x/bc.cl"
+    )
 
 
 def test_logo_url_bare_domain():

@@ -39,6 +39,10 @@
       <p class="intel-state">
         Company research isn't configured (no LLM). Add an API key to enable it.
       </p>
+    } @else if (researchUnavailable()) {
+      <p class="intel-state">
+        Company research is temporarily unavailable. Try Refresh in a moment.
+      </p>
     } @else {
       <div class="intel-sections">
         @if (has(r.funding_stage)) {

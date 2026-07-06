@@ -95,10 +95,12 @@
   }
 }
 
-.intel-flags {
-  background: var(--color-error-bg, #fdecea) !important;
+// Higher specificity than the base `.intel-sections section` rules above, so the
+// error styling wins without `!important`.
+.intel-sections section.intel-flags {
+  background: var(--color-error-bg, #fdecea);
 
   h4 {
-    color: var(--color-error, #d32f2f) !important;
+    color: var(--color-error, #d32f2f);
   }
 }

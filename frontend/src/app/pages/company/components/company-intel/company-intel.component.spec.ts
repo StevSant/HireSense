@@ -68,6 +68,23 @@ describe('CompanyIntelComponent', () => {
     expect(el.textContent ?? '').toContain("isn't configured");
   });
 
+  it('shows a transient-unavailable message (not the no-LLM one) for the "Research unavailable" sentinel', () => {
+    const unavailable: CompanyResearch = {
+      ...research,
+      funding_stage: 'Research unavailable',
+      tech_stack: 'Research unavailable',
+      culture_summary: 'Research unavailable',
+      growth_trajectory: 'Research unavailable',
+      pros: 'Research unavailable',
+      cons: 'Research unavailable',
+    };
+    const fixture = mount(unavailable);
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('temporarily unavailable');
+    expect(text).not.toContain("isn't configured");
+    expect(fixture.nativeElement.querySelectorAll('.intel-sections section').length).toBe(0);
+  });
+
   it('resets the logo fallback when the company (and its logo_url) changes', () => {
     const withLogo: CompanyResearch = { ...research, logo_url: 'https://bc.cl/logo.png' };
     const fixture = mount(withLogo);

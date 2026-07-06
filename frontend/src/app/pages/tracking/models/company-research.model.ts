@@ -1,5 +1,5 @@
 export interface CompanyResearch {
-  id: string;
+  id: string | null;
   company_name: string;
   funding_stage: string;
   tech_stack: string;

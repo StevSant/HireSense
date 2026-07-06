@@ -8,8 +8,12 @@ import {
 } from '@angular/core';
 import { CompanyResearch } from '../../../tracking/models/company-research.model';
 
-// Sentinel strings the backend uses when the LLM/provider isn't configured.
-const NOT_CONFIGURED = ['LLM not configured', 'Research unavailable'];
+// Sentinel strings the backend writes when research couldn't be produced.
+// Distinguish "no LLM configured" (actionable: add a key) from a transient
+// "research unavailable" (actionable: retry). Both are hidden from content.
+const LLM_NOT_CONFIGURED = 'LLM not configured';
+const RESEARCH_UNAVAILABLE = 'Research unavailable';
+const SENTINELS = [LLM_NOT_CONFIGURED, RESEARCH_UNAVAILABLE];
 
 @Component({
   selector: 'app-company-intel',
@@ -38,14 +42,12 @@ export class CompanyIntelComponent {
 
   showLogo = computed(() => !!this.research()?.logo_url && !this.logoFailed());
 
-  notConfigured = computed(() => {
-    const r = this.research();
-    return !!r && NOT_CONFIGURED.includes(r.funding_stage);
-  });
+  notConfigured = computed(() => this.research()?.funding_stage === LLM_NOT_CONFIGURED);
+  researchUnavailable = computed(() => this.research()?.funding_stage === RESEARCH_UNAVAILABLE);
 
   // Only render a text section when it has real content (not a sentinel).
   has(value: string | null | undefined): boolean {
-    return !!value && !NOT_CONFIGURED.includes(value);
+    return !!value && !SENTINELS.includes(value);
   }
 
   onLogoError(): void {

@@ -42,9 +42,7 @@ describe('AuthService', () => {
     const { service, httpMock } = makeService();
     service.login('admin', 'secret').subscribe();
     httpMock.expectOne(`${environment.apiUrl}/auth/login`).flush({ access_token: 't' });
-    httpMock
-      .expectOne(`${environment.apiUrl}/auth/me`)
-      .flush({ username: 'admin', role: 'admin' });
+    httpMock.expectOne(`${environment.apiUrl}/auth/me`).flush({ username: 'admin', role: 'admin' });
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
     httpMock.verify();
@@ -79,9 +77,7 @@ describe('AuthService', () => {
   it('caches the session probe so repeat ensureLoaded calls do not refetch', () => {
     const { service, httpMock } = makeService();
     service.ensureLoaded().subscribe();
-    httpMock
-      .expectOne(`${environment.apiUrl}/auth/me`)
-      .flush({ username: 'admin', role: 'admin' });
+    httpMock.expectOne(`${environment.apiUrl}/auth/me`).flush({ username: 'admin', role: 'admin' });
     // Second call: state resolved, so no new request.
     let ok: boolean | undefined;
     service.ensureLoaded().subscribe((r) => (ok = r));
@@ -100,9 +96,7 @@ describe('AuthService', () => {
     expect(login.request.body).toEqual({ username: 'admin', password: 'secret' });
     login.flush({ access_token: 't', token_type: 'bearer' });
 
-    httpMock
-      .expectOne(`${environment.apiUrl}/auth/me`)
-      .flush({ username: 'admin', role: 'admin' });
+    httpMock.expectOne(`${environment.apiUrl}/auth/me`).flush({ username: 'admin', role: 'admin' });
     expect(user).toEqual({ username: 'admin', role: 'admin' });
     expect(service.isAuthenticated()).toBe(true);
     httpMock.verify();
@@ -113,9 +107,7 @@ describe('AuthService', () => {
     const { service, httpMock } = makeService({ navigate });
     // Seed an authenticated session first.
     service.ensureLoaded().subscribe();
-    httpMock
-      .expectOne(`${environment.apiUrl}/auth/me`)
-      .flush({ username: 'admin', role: 'admin' });
+    httpMock.expectOne(`${environment.apiUrl}/auth/me`).flush({ username: 'admin', role: 'admin' });
     expect(service.isAuthenticated()).toBe(true);
 
     service.logout();

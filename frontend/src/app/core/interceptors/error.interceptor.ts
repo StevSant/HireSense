@@ -26,7 +26,5 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 function isAuthEndpoint(url: string): boolean {
-  return (
-    url.includes('/auth/login') || url.includes('/auth/me') || url.includes('/auth/logout')
-  );
+  return url.includes('/auth/login') || url.includes('/auth/me') || url.includes('/auth/logout');
 }

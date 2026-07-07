@@ -17,10 +17,9 @@ function run(auth: Partial<AuthService>): Observable<boolean | UrlTree> {
   });
   return TestBed.runInInjectionContext(
     () =>
-      authGuard(
-        {} as ActivatedRouteSnapshot,
-        {} as RouterStateSnapshot,
-      ) as Observable<boolean | UrlTree>,
+      authGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot) as Observable<
+        boolean | UrlTree
+      >,
   );
 }
 

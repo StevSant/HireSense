@@ -89,3 +89,10 @@ def test_login_rejects_when_no_credential_configured() -> None:
     # A fully-blank credential must never authenticate.
     service = AuthService(username="", password="", jwt_secret="key")
     assert service.login("", "") is None
+
+
+def test_login_handles_non_ascii_input_without_error() -> None:
+    # compare_digest raises TypeError on non-ASCII str; the service must return a
+    # clean auth failure (None), not propagate an exception (500).
+    service = AuthService(username="admin", password="secret", jwt_secret="key")
+    assert service.login("admín", "sécret") is None

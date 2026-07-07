@@ -4,9 +4,7 @@ from hiresense.identity.domain import AuthService, hash_password
 
 
 def test_token_expiry_reflects_configured_hours() -> None:
-    service = AuthService(
-        username="admin", password="secret", jwt_secret="key", expiry_hours=1
-    )
+    service = AuthService(username="admin", password="secret", jwt_secret="key", expiry_hours=1)
     token = service.login("admin", "secret")
     assert token is not None
     payload = service.validate_token(token)

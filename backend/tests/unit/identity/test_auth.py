@@ -1,4 +1,4 @@
-from hiresense.identity.domain import AuthService
+from hiresense.identity.domain import AuthService, hash_password
 
 
 def test_verify_valid_credentials() -> None:
@@ -45,3 +45,55 @@ def test_token_carries_configured_role() -> None:
     payload = service.validate_token(token)
     assert payload is not None
     assert payload["role"] == "member"
+
+
+def test_login_with_password_hash_accepts_correct_password() -> None:
+    service = AuthService(
+        username="admin",
+        password="",
+        jwt_secret="key",
+        password_hash=hash_password("secret"),
+    )
+    assert service.login("admin", "secret") is not None
+
+
+def test_login_with_password_hash_rejects_wrong_password() -> None:
+    service = AuthService(
+        username="admin",
+        password="",
+        jwt_secret="key",
+        password_hash=hash_password("secret"),
+    )
+    assert service.login("admin", "wrong") is None
+
+
+def test_password_hash_takes_precedence_and_plaintext_not_retained() -> None:
+    ignored_plaintext = "wrong-value"
+    service = AuthService(
+        username="admin",
+        password=ignored_plaintext,
+        jwt_secret="key",
+        password_hash=hash_password("secret"),
+    )
+    # Plaintext arg is ignored when a hash is present, and not kept in the field.
+    assert service.login("admin", ignored_plaintext) is None
+    assert service.login("admin", "secret") is not None
+    assert service._password == ""
+
+
+def test_login_rejects_wrong_username() -> None:
+    service = AuthService(username="admin", password="secret", jwt_secret="key")
+    assert service.login("attacker", "secret") is None
+
+
+def test_login_rejects_when_no_credential_configured() -> None:
+    # A fully-blank credential must never authenticate.
+    service = AuthService(username="", password="", jwt_secret="key")
+    assert service.login("", "") is None
+
+
+def test_login_handles_non_ascii_input_without_error() -> None:
+    # compare_digest raises TypeError on non-ASCII str; the service must return a
+    # clean auth failure (None), not propagate an exception (500).
+    service = AuthService(username="admin", password="secret", jwt_secret="key")
+    assert service.login("admín", "sécret") is None

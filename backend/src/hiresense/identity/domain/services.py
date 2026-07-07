@@ -42,11 +42,15 @@ class AuthService:
         # length or match position through response timing. Compare UTF-8 bytes:
         # compare_digest raises TypeError on non-ASCII str, which would turn a
         # crafted non-ASCII credential into a 500 instead of a clean auth failure.
-        username_ok = secrets.compare_digest(username.encode("utf-8"), self._username.encode("utf-8"))
+        username_ok = secrets.compare_digest(
+            username.encode("utf-8"), self._username.encode("utf-8")
+        )
         if self._password_hash:
             password_ok = verify_password(password, self._password_hash)
         else:
-            password_ok = secrets.compare_digest(password.encode("utf-8"), self._password.encode("utf-8"))
+            password_ok = secrets.compare_digest(
+                password.encode("utf-8"), self._password.encode("utf-8")
+            )
         # Avoid short-circuiting so a wrong username and wrong password take the
         # same code path.
         return username_ok and password_ok

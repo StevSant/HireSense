@@ -35,7 +35,9 @@ class OutreachService:
         self._sender = sender
         # Lowercased recipient-domain allowlist. Empty = no restriction (any
         # syntactically valid address, still schema-validated as EmailStr).
-        self._allowed_recipient_domains = tuple(d.strip().lower() for d in allowed_recipient_domains if d.strip())
+        self._allowed_recipient_domains = tuple(
+            d.strip().lower() for d in allowed_recipient_domains if d.strip()
+        )
         self._tracking = tracking_service
         self._profile = profile_service
         self._research = research_service

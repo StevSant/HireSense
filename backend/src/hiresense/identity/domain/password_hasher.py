@@ -23,7 +23,9 @@ def _unb64(text: str) -> bytes:
     return base64.urlsafe_b64decode(text.encode("ascii"))
 
 
-def hash_password(password: str, *, n: int = _SCRYPT_N, r: int = _SCRYPT_R, p: int = _SCRYPT_P) -> str:
+def hash_password(
+    password: str, *, n: int = _SCRYPT_N, r: int = _SCRYPT_R, p: int = _SCRYPT_P
+) -> str:
     """Hash a plaintext password into a self-describing scrypt string.
 
     Format: ``scrypt$n$r$p$<salt_b64>$<hash_b64>``. Generate a value for

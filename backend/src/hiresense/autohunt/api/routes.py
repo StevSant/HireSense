@@ -9,9 +9,7 @@ from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, re
 router = APIRouter(prefix="/autohunt", tags=["autohunt"], dependencies=[Depends(require_auth)])
 
 
-@router.post(
-    "/run", response_model=Digest, dependencies=[Depends(enforce_expensive_rate_limit)]
-)
+@router.post("/run", response_model=Digest, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def run(service: AutoHuntService = Depends(get_autohunt_service)) -> Digest:
     return await service.run()
 

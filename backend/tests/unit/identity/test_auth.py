@@ -68,14 +68,15 @@ def test_login_with_password_hash_rejects_wrong_password() -> None:
 
 
 def test_password_hash_takes_precedence_and_plaintext_not_retained() -> None:
+    ignored_plaintext = "wrong-value"
     service = AuthService(
         username="admin",
-        password="plaintext-should-be-ignored",
+        password=ignored_plaintext,
         jwt_secret="key",
         password_hash=hash_password("secret"),
     )
     # Plaintext arg is ignored when a hash is present, and not kept in the field.
-    assert service.login("admin", "plaintext-should-be-ignored") is None
+    assert service.login("admin", ignored_plaintext) is None
     assert service.login("admin", "secret") is not None
     assert service._password == ""
 

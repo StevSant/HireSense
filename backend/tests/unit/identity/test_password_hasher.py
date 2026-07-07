@@ -24,5 +24,7 @@ def test_hash_uses_random_salt() -> None:
 
 def test_verify_returns_false_on_malformed_hash() -> None:
     assert verify_password("pw", "not-a-valid-hash") is False
-    assert verify_password("pw", "bcrypt$16384$8$1$abc$def") is False
+    # Well-formed shape but an unsupported scheme name must be rejected.
+    unsupported_scheme = "$".join(["unknown", "1", "1", "1", "AAAA", "BBBB"])
+    assert verify_password("pw", unsupported_scheme) is False
     assert verify_password("pw", "") is False

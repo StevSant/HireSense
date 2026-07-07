@@ -35,9 +35,12 @@ export class LoginComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (res) => {
-          this.auth.setToken(res.access_token);
-          this.router.navigate(['/dashboard']);
+        next: (user) => {
+          if (user) {
+            this.router.navigate(['/dashboard']);
+          } else {
+            this.error.set('Invalid credentials');
+          }
         },
         error: () => {
           this.error.set('Invalid credentials');

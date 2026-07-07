@@ -11,6 +11,7 @@ class IdentityProvider:
         jwt_secret: str,
         role: str = "admin",
         password_hash: str = "",
+        expiry_hours: int = 24,
     ) -> None:
         self._auth_service = AuthService(
             username=username,
@@ -18,6 +19,7 @@ class IdentityProvider:
             jwt_secret=jwt_secret,
             role=role,
             password_hash=password_hash,
+            expiry_hours=expiry_hours,
         )
 
     def get_auth_service(self) -> AuthService:

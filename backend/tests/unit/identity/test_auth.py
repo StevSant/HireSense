@@ -1,4 +1,19 @@
+from datetime import datetime, timezone
+
 from hiresense.identity.domain import AuthService, hash_password
+
+
+def test_token_expiry_reflects_configured_hours() -> None:
+    service = AuthService(
+        username="admin", password="secret", jwt_secret="key", expiry_hours=1
+    )
+    token = service.login("admin", "secret")
+    assert token is not None
+    payload = service.validate_token(token)
+    assert payload is not None
+    lifetime = payload["exp"] - int(datetime.now(timezone.utc).timestamp())
+    # ~1h window; allow slack for clock/execution time.
+    assert 3000 < lifetime <= 3600
 
 
 def test_verify_valid_credentials() -> None:

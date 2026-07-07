@@ -37,6 +37,11 @@ def _missing(settings: "Settings", required: tuple[tuple[str, str], ...]) -> lis
 def apply_mode(settings: "Settings") -> "Settings":
     """Resolve APP_MODE: raise an aggregated error for missing required config, or
     degrade blanks in local mode. Mutates and returns the settings instance."""
+    # Session cookie Secure flag is mode-aware unless explicitly set: on in
+    # production (HTTPS), off for local http dev where Secure would drop it.
+    if settings.session_cookie_secure is None:
+        settings.session_cookie_secure = settings.app_mode is AppMode.PRODUCTION
+
     if settings.app_mode is AppMode.PRODUCTION:
         missing = _missing(settings, _ALWAYS_REQUIRED + _PRODUCTION_REQUIRED)
         if missing:

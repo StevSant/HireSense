@@ -17,6 +17,7 @@ class AuthService:
         jwt_secret: str,
         role: str = "admin",
         password_hash: str = "",
+        expiry_hours: int = 24,
     ) -> None:
         self._username = username
         # When a hash is configured (AUTH_PASSWORD_HASH), the plaintext is never
@@ -27,6 +28,7 @@ class AuthService:
         self._password = "" if password_hash else password
         self._jwt_secret = jwt_secret
         self._role = role
+        self._expiry_hours = expiry_hours
 
     def login(self, username: str, password: str) -> str | None:
         if self._verify(username, password):
@@ -62,7 +64,7 @@ class AuthService:
             return None
 
     def _create_token(self, subject: str) -> str:
-        expire = datetime.now(timezone.utc) + timedelta(hours=24)
+        expire = datetime.now(timezone.utc) + timedelta(hours=self._expiry_hours)
         return jwt.encode(
             {"sub": subject, "role": self._role, "exp": expire},
             self._jwt_secret,

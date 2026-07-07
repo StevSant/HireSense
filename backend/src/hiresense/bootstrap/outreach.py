@@ -45,5 +45,6 @@ def build_outreach(
         language=s.default_language,
         portfolio_citation=portfolio_citation,
         sender=sender,
+        allowed_recipient_domains=tuple(s.outreach_allowed_recipient_domains),
     )
     return OutreachBuild(provider=OutreachProvider(outreach_service=service), service=service)

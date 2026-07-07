@@ -4,7 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from hiresense.identity.api.dependencies import require_auth
+from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.outreach.api.dependencies import get_outreach_service
 from hiresense.outreach.api.schemas import (
     GenerateRequest,
@@ -17,13 +17,18 @@ from hiresense.outreach.domain import (
     OutreachEvent,
     OutreachNudge,
     OutreachService,
+    RecipientNotAllowedError,
 )
 from hiresense.outreach.domain.message_generator import OutreachUnavailableError
 
 router = APIRouter(prefix="/outreach", tags=["outreach"], dependencies=[Depends(require_auth)])
 
 
-@router.post("/generate", response_model=GenerateResponse)
+@router.post(
+    "/generate",
+    response_model=GenerateResponse,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
+)
 async def generate(
     body: GenerateRequest, service: OutreachService = Depends(get_outreach_service)
 ) -> GenerateResponse:
@@ -54,7 +59,12 @@ def record(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@router.post("/send", response_model=OutreachEvent, status_code=201)
+@router.post(
+    "/send",
+    response_model=OutreachEvent,
+    status_code=201,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
+)
 async def send(
     body: SendRequest, service: OutreachService = Depends(get_outreach_service)
 ) -> OutreachEvent:
@@ -67,6 +77,9 @@ async def send(
             contact_name=body.contact_name,
             channel=body.channel,
         )
+    except RecipientNotAllowedError as exc:
+        # Subclass of ValueError, so this must precede the generic ValueError arm.
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except EmailUnavailableError as exc:

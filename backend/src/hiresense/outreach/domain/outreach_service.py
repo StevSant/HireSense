@@ -9,6 +9,7 @@ from hiresense.outreach.domain.email_message import EmailMessage
 from hiresense.outreach.domain.outreach_event import OutreachEvent
 from hiresense.outreach.domain.outreach_event_kind import OutreachEventKind
 from hiresense.outreach.domain.outreach_nudge import OutreachNudge
+from hiresense.outreach.domain.recipient_not_allowed_error import RecipientNotAllowedError
 from hiresense.outreach.domain.style_guide import load_style_guide
 
 _ACTIVE_STATUSES = {"saved", "applied"}
@@ -29,8 +30,14 @@ class OutreachService:
         language: str,
         portfolio_citation: Any = None,
         sender: Any = None,
+        allowed_recipient_domains: tuple[str, ...] = (),
     ) -> None:
         self._sender = sender
+        # Lowercased recipient-domain allowlist. Empty = no restriction (any
+        # syntactically valid address, still schema-validated as EmailStr).
+        self._allowed_recipient_domains = tuple(
+            d.strip().lower() for d in allowed_recipient_domains if d.strip()
+        )
         self._tracking = tracking_service
         self._profile = profile_service
         self._research = research_service
@@ -109,11 +116,13 @@ class OutreachService:
     ) -> OutreachEvent:
         """Send an outreach email, then record it as a SENT event.
 
-        Raises ValueError if the application is missing and EmailUnavailableError
-        (from the sender) if SMTP isn't configured — nothing is recorded when the
-        send fails.
+        Raises ValueError if the application is missing, RecipientNotAllowedError
+        if the recipient domain is outside the configured allowlist, and
+        EmailUnavailableError (from the sender) if SMTP isn't configured —
+        nothing is recorded when the send fails.
         """
         self._tracking.get(application_id)  # 404 if missing
+        self._ensure_recipient_allowed(to)
         await asyncio.to_thread(
             self._sender.send, EmailMessage(to=to, subject=subject, body=message)
         )
@@ -126,6 +135,15 @@ class OutreachService:
                 channel=channel,
             )
         )
+
+    def _ensure_recipient_allowed(self, to: str) -> None:
+        if not self._allowed_recipient_domains:
+            return
+        domain = to.rsplit("@", 1)[-1].strip().lower()
+        if domain not in self._allowed_recipient_domains:
+            raise RecipientNotAllowedError(
+                f"Recipient domain '{domain}' is not in the outreach allowlist"
+            )
 
     def list_for(self, application_id: uuid.UUID) -> list[OutreachEvent]:
         return self._repo.list_for(application_id)

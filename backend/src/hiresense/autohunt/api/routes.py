@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends, Query, Response
 
 from hiresense.autohunt.api.dependencies import get_autohunt_service
 from hiresense.autohunt.domain import AutoHuntService, Digest
-from hiresense.identity.api.dependencies import require_auth
+from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 
 router = APIRouter(prefix="/autohunt", tags=["autohunt"], dependencies=[Depends(require_auth)])
 
 
-@router.post("/run", response_model=Digest)
+@router.post("/run", response_model=Digest, dependencies=[Depends(enforce_expensive_rate_limit)])
 async def run(service: AutoHuntService = Depends(get_autohunt_service)) -> Digest:
     return await service.run()
 

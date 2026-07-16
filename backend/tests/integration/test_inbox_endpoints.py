@@ -135,6 +135,45 @@ async def test_confirm_unmatched_returns_409():
     assert conf.status_code == 409
 
 
+class _RaisingClassifier:
+    async def classify(self, email):
+        raise RuntimeError("boom")
+
+
+@pytest.mark.asyncio
+async def test_ingest_email_propagates_classifier_failure_as_500():
+    """A failed classification must NOT be swallowed into a 204 — the
+    message_id is never persisted on failure, so a 204 would tell the
+    provider "handled, don't retry" and the email would be lost for good.
+    It must surface as 500 so the provider redelivers."""
+    app_model = TrackedApplication(
+        id=uuid.uuid4(), title="Dev", company="Acme", status=ApplicationStatus.APPLIED.value
+    )
+    repo = _Repo()
+    service = InboxProcessingService(
+        reader=_Reader(),
+        repo=repo,
+        classifier=_RaisingClassifier(),
+        matcher=ApplicationMatcher(min_confidence=0.5),
+        list_active=lambda: [app_model],
+    )
+    app = FastAPI()
+    app.dependency_overrides[require_auth] = lambda: "u"
+    app.dependency_overrides[get_inbox_provider] = lambda: InboxProvider(service=service, repo=repo)
+    app.include_router(inbox_router)
+
+    # raise_app_exceptions=False so the 500 comes back as a response instead
+    # of re-raising the RuntimeError into this test process.
+    transport = ASGITransport(app=app, raise_app_exceptions=False)
+    async with AsyncClient(transport=transport, base_url="http://t") as client:
+        resp = await client.post(
+            "/tracking/ingest-email",
+            json={"from_address": "r@acme.com", "subject": "Update", "body": "We regret..."},
+        )
+    assert resp.status_code == 500
+    assert repo.signals == []
+
+
 @pytest.mark.asyncio
 async def test_dismiss_sets_state():
     app, repo, tracking, _ = _build_app()

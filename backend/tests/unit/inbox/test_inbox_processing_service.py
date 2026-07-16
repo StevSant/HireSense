@@ -151,6 +151,31 @@ async def test_ingest_one_returns_none_when_not_job_related():
     assert result is None
 
 
+class _AlwaysRaisingClassifier:
+    async def classify(self, email):
+        raise RuntimeError("boom")
+
+
+@pytest.mark.asyncio
+async def test_ingest_one_propagates_classifier_failure():
+    """Unlike run()'s batch path, ingest_one() (the webhook) must NOT swallow
+    a processing failure — the message_id was never persisted, so silently
+    returning None would look identical to "not job-related" and the caller
+    (the ingest-email route) would respond 204 instead of 500, telling the
+    sender the email was handled when it wasn't."""
+    repo = _Repo()
+    svc = InboxProcessingService(
+        reader=_Reader([]),
+        repo=repo,
+        classifier=_AlwaysRaisingClassifier(),
+        matcher=ApplicationMatcher(min_confidence=0.5),
+        list_active=lambda: [],
+    )
+    with pytest.raises(RuntimeError, match="boom"):
+        await svc.ingest_one(_email())
+    assert repo.signals == []
+
+
 class _RaisingClassifier:
     """Fails classification for one specific message_id; succeeds for others."""
 

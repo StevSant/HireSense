@@ -20,7 +20,12 @@ _PROCESSING_CONCURRENCY = 3
 
 class InboxProcessingService:
     """Orchestrates one inbox scan: read → classify → match → store pending
-    signals (dedup by message_id). Best-effort: never raises into the caller."""
+    signals (dedup by message_id). `run()` is best-effort per email: a failing
+    classification is isolated and logged, never aborting the rest of the
+    batch. `ingest_one()` (the /tracking/ingest-email webhook) does NOT
+    isolate failures — it must propagate them so the route returns 500 and
+    the provider redelivers, rather than silently dropping a message the
+    webhook already reported as 204/"handled"."""
 
     def __init__(
         self,
@@ -65,7 +70,11 @@ class InboxProcessingService:
 
         async def _bounded(email: InboundEmail) -> DetectedSignal | None:
             async with semaphore:
-                return await self._process(email)
+                try:
+                    return await self._process(email)
+                except Exception:  # noqa: BLE001 - one bad email must not abort the scan
+                    logger.exception("inbox: processing email %r failed", email.message_id)
+                    return None
 
         results = await asyncio.gather(*(_bounded(email) for email in to_process))
         new_count = sum(1 for r in results if r is not None)
@@ -81,26 +90,25 @@ class InboxProcessingService:
         return await self._process(email)
 
     async def _process(self, email: InboundEmail) -> DetectedSignal | None:
+        """Raises on classifier/matcher/repo failure — callers decide how to
+        handle that: `run()`'s `_bounded` wrapper isolates it per email;
+        `ingest_one()` (the webhook) lets it propagate so the caller retries."""
         if await asyncio.to_thread(self._repo.exists_message_id, email.message_id):
             return None
-        try:
-            classification = await self._classifier.classify(email)
-            if not classification.job_related:
-                return None
-            matched_id, proposed = self._matcher.match(classification, self._list_active())
-            signal = DetectedSignal(
-                message_id=email.message_id,
-                from_address=email.from_address,
-                subject=email.subject,
-                received_at=email.received_at,
-                kind=classification.kind,
-                company=classification.company,
-                role=classification.role,
-                confidence=classification.confidence,
-                matched_application_id=matched_id,
-                proposed_status=proposed,
-            )
-            return await asyncio.to_thread(self._repo.add, signal)
-        except Exception:  # noqa: BLE001 - one bad email must not abort the batch/scan
-            logger.exception("inbox: processing email %r failed", email.message_id)
+        classification = await self._classifier.classify(email)
+        if not classification.job_related:
             return None
+        matched_id, proposed = self._matcher.match(classification, self._list_active())
+        signal = DetectedSignal(
+            message_id=email.message_id,
+            from_address=email.from_address,
+            subject=email.subject,
+            received_at=email.received_at,
+            kind=classification.kind,
+            company=classification.company,
+            role=classification.role,
+            confidence=classification.confidence,
+            matched_application_id=matched_id,
+            proposed_status=proposed,
+        )
+        return await asyncio.to_thread(self._repo.add, signal)

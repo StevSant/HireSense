@@ -161,6 +161,86 @@ def test_other_feature_unaffected_by_override() -> None:
     assert other.provider == "anthropic"
 
 
+def test_injects_default_max_tokens_when_admin_has_not_set_one() -> None:
+    row = _FakeSettingsRow(
+        provider="anthropic", model="claude-sonnet-4-6", api_key_encrypted=None, extra_params={}
+    )
+    svc = _service(row, {}, APIKeyCipher(""))
+    config = svc.resolve("seniority_scorer")
+    assert config.extra_params["max_tokens"] == 2048
+
+
+def test_admin_set_max_tokens_in_global_row_wins_over_default() -> None:
+    row = _FakeSettingsRow(
+        provider="anthropic",
+        model="claude-sonnet-4-6",
+        api_key_encrypted=None,
+        extra_params={"max_tokens": 999},
+    )
+    svc = _service(row, {}, APIKeyCipher(""))
+    config = svc.resolve("seniority_scorer")
+    assert config.extra_params["max_tokens"] == 999
+
+
+def test_admin_set_max_tokens_in_override_wins_over_default() -> None:
+    row = _FakeSettingsRow(
+        provider="anthropic", model="claude-sonnet-4-6", api_key_encrypted=None, extra_params={}
+    )
+    overrides = {
+        "seniority_scorer": _FakeOverrideRow(
+            feature_key="seniority_scorer",
+            provider=None,
+            model=None,
+            extra_params={"max_tokens": 777},
+        )
+    }
+    svc = _service(row, overrides, APIKeyCipher(""))
+    config = svc.resolve("seniority_scorer")
+    assert config.extra_params["max_tokens"] == 777
+
+
+def test_classifier_feature_keys_get_the_small_cap() -> None:
+    row = _FakeSettingsRow(
+        provider="anthropic", model="claude-sonnet-4-6", api_key_encrypted=None, extra_params={}
+    )
+    svc = _service(row, {}, APIKeyCipher(""))
+    for feature_key in (
+        "inbox-classification",
+        "job_quality_classifier",
+        "application_skill_extractor",
+        "preference_explanation",
+    ):
+        config = svc.resolve(feature_key)
+        assert config.extra_params["max_tokens"] == 512, feature_key
+
+
+def test_match_quick_scorer_gets_the_default_cap_not_the_classifier_cap() -> None:
+    """match_quick_scorer returns batched per-job JSON for up to
+    match_quick_batch_size jobs in one call — it needs the larger default,
+    not the small classifier cap, even though it is also a "classifier"."""
+    row = _FakeSettingsRow(
+        provider="anthropic", model="claude-sonnet-4-6", api_key_encrypted=None, extra_params={}
+    )
+    svc = _service(row, {}, APIKeyCipher(""))
+    config = svc.resolve("match_quick_scorer")
+    assert config.extra_params["max_tokens"] == 2048
+
+
+def test_custom_default_and_classifier_caps_are_honored() -> None:
+    svc = LLMConfigService(
+        settings_repo=_SettingsRepo(None),
+        override_repo=_OverrideRepo({}),
+        cipher=APIKeyCipher(""),
+        env_provider="anthropic",
+        env_model="claude-sonnet-4-6",
+        env_api_key="env-key",
+        default_max_tokens=4096,
+        classifier_max_tokens=256,
+    )
+    assert svc.resolve("seniority_scorer").extra_params["max_tokens"] == 4096
+    assert svc.resolve("job_quality_classifier").extra_params["max_tokens"] == 256
+
+
 def test_invalidate_clears_cache() -> None:
     """After invalidate(), the next resolve() must re-read the repos."""
     state = {"row": None}

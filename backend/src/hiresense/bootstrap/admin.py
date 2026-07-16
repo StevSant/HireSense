@@ -49,6 +49,8 @@ def build_admin(infra: SharedInfra) -> AdminBuild:
             "match_quick_scorer": s.match_quick_model,
             "match_deep_analyzer": s.match_deep_model,
         },
+        default_max_tokens=s.llm_default_max_tokens,
+        classifier_max_tokens=s.llm_classifier_max_tokens,
     )
     test_runner = LLMTestRunner(factory=factory)
     settings_service = LLMSettingsService(

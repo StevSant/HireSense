@@ -41,3 +41,13 @@ class LLMSettings(BaseSettings):
     match_quick_concurrency: int = 4
     # Per-job description truncation (chars) for the deeper single-job analysis.
     match_deep_job_char_limit: int = 6000
+
+    # Default output token cap applied to any feature whose admin-configured
+    # extra_params don't already set max_tokens. Prevents unbounded LLM output
+    # (and its cost) on features nobody has explicitly tuned.
+    llm_default_max_tokens: int = 2048
+    # Smaller output cap for "classifier" features that return a short verdict
+    # (a label, a confidence, a brief extraction) rather than long-form text.
+    llm_classifier_max_tokens: int = 512
+    # Cap on extracted CV/resume text (chars) passed to the LLM parser prompt.
+    cv_parse_char_limit: int = 20000

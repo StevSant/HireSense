@@ -622,6 +622,53 @@ async def test_rescore_default_runs_llm_on_miss() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Whole-corpus quick-score overlay gating: the pre-pagination global cache-only
+# pass exists purely to fix cross-source RANKING on match-sort (a cached LLM
+# score must be able to outrank the heuristic order to reach page 1). Ordering
+# under any other sort field doesn't depend on match_score, so that pass — a
+# bulk cache read over the WHOLE corpus — must be skipped for non-match sorts.
+# The page-level pass (after pagination) still runs regardless of sort, so
+# displayed values on the visible page stay correct either way.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_non_match_sort_skips_whole_corpus_quick_overlay() -> None:
+    pre = _RecordingPreRanker()
+    quick = _RecordingQuickScoring()
+    app = _make_rescore_app(pre, quick)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get(
+            "/ingestion/jobs",
+            params={"tab": "boards", "sort": "title_asc", "min_score": 0},
+        )
+
+    assert resp.status_code == 200
+    # Only the page-level pass fires (one call) — the whole-corpus global
+    # pre-pagination overlay is skipped entirely for a non-match sort.
+    assert quick.llm_on_miss_calls == [True]
+
+
+@pytest.mark.asyncio
+async def test_match_sort_still_runs_whole_corpus_quick_overlay() -> None:
+    pre = _RecordingPreRanker()
+    quick = _RecordingQuickScoring()
+    app = _make_rescore_app(pre, quick)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get(
+            "/ingestion/jobs",
+            params={"tab": "boards", "sort": "match_desc", "min_score": 0},
+        )
+
+    assert resp.status_code == 200
+    # Both passes fire: the whole-corpus overlay (cache-only) then the
+    # page-level pass (LLM round-trip, rescore defaults True).
+    assert quick.llm_on_miss_calls == [False, True]
+
+
+# ---------------------------------------------------------------------------
 # #76 follow-up — cross-source ranking consistency: a job with a low heuristic
 # score but a HIGH already-cached LLM score must rank to the top GLOBALLY (before
 # pagination), so it isn't buried off page 1 in the all-sources view while

@@ -335,7 +335,19 @@ async def list_jobs(
     # misses are filled by the page-level pass below and improve later rankings.
     # Applied AFTER persist so the persisted row score stays the heuristic blend
     # (the LLM score lives in its own cache); this override is request-scoped.
-    if quick_scoring is not None and (candidate_skills or candidate_summary):
+    #
+    # GATED to match-sort only. This pass exists purely to fix cross-source
+    # RANKING (a cached LLM score must be able to pull a job onto page 1 ahead
+    # of the heuristic order) — for any other sort field, order doesn't depend
+    # on match_score at all, so reading the LLM cache for the WHOLE corpus on
+    # every GET would be pure waste. Non-match sorts still get correct display
+    # values: the page-level pass below (after pagination) overlays quick
+    # scores onto `result.jobs` unconditionally, regardless of sort.
+    if (
+        quick_scoring is not None
+        and (candidate_skills or candidate_summary)
+        and effective_sort.startswith("match_")
+    ):
         cached_quick = await quick_scoring.score_page(
             all_jobs, candidate_skills, candidate_summary, llm_on_miss=False
         )
@@ -354,7 +366,7 @@ async def list_jobs(
         # is the stable heuristic top-K per source (cached members are counted
         # but not re-sent), so once cached this pass costs zero LLM calls.
         champions_k = settings.ingestion_source_champions_per_source if settings is not None else 0
-        if rescore and champions_k > 0 and source is None and effective_sort.startswith("match_"):
+        if rescore and champions_k > 0 and source is None:
             taken: dict[str, int] = {}
             champions: list[NormalizedJob] = []
             for job in sorted(all_jobs, key=lambda j: j.match_score or 0.0, reverse=True):

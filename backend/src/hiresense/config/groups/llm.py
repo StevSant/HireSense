@@ -41,6 +41,11 @@ class LLMSettings(BaseSettings):
     match_quick_concurrency: int = 4
     # Per-job description truncation (chars) for the deeper single-job analysis.
     match_deep_job_char_limit: int = 6000
+    # Default model for the combined 6-dimension scorer (feature key
+    # match_dimension_scorer) — the one-call replacement for the 6 individual
+    # dimension scorers. Admin-overridable in the LLM Settings UI like the
+    # two models above.
+    match_dimension_model: str = "claude-sonnet-4-6"
 
     # Default output token cap applied to any feature whose admin-configured
     # extra_params don't already set max_tokens. Prevents unbounded LLM output

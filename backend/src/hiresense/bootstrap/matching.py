@@ -9,6 +9,7 @@ from hiresense.matching.api.provider import MatchingProvider
 from hiresense.matching.domain import BatchEvaluationService, MatchingOrchestrator
 from hiresense.matching.domain.scorers import (
     ApplicationStrengthScorer,
+    CombinedDimensionScorer,
     CompensationScorer,
     CultureScorer,
     GrowthScorer,
@@ -60,6 +61,13 @@ def build_matching(
             job_char_limit=job_char_limit,
         ),
     ]
+    # Default scoring path: all 6 dimensions in one LLM call. The individual
+    # scorers above stay wired as the fallback when this fails to parse (and
+    # as the explicit override target for the preference nudge flow).
+    combined_scorer = CombinedDimensionScorer(
+        llm=tracked("match_dimension_scorer"),
+        job_char_limit=job_char_limit,
+    )
 
     matching_orchestrator = MatchingOrchestrator(
         llm=tracked("matching_reasoning"),
@@ -67,6 +75,7 @@ def build_matching(
         dimension_scorers=dimension_scorers,
         embedding=infra.embedding,
         preference=preference,
+        combined_scorer=combined_scorer,
     )
     batch_evaluation_service = BatchEvaluationService(
         orchestrator=matching_orchestrator,

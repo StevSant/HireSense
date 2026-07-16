@@ -18,14 +18,23 @@ _SYSTEM_PROMPT = (
 )
 
 
+def truncate_job_text(text: str | None, char_limit: int) -> str:
+    """Cap free-text job content embedded in an LLM prompt.
+
+    Job descriptions are unbounded free text; without a cap a single long
+    posting can blow the per-call token budget. Shared by every dimension
+    scorer (individual and combined) so there is one truncation mechanism,
+    configured from `match_dimension_job_char_limit` via bootstrap.
+    """
+    if not text:
+        return text or ""
+    return text[:char_limit]
+
+
 class BaseLLMScorer(ABC):
     def __init__(self, llm: LLMPort | None, weight: int, job_char_limit: int = 4000) -> None:
         self._llm = llm
         self._weight = weight
-        # Caps how much of a job description each dimension prompt embeds.
-        # Job descriptions are unbounded free text; without this a single
-        # long posting can blow the per-call token budget across all six
-        # dimension scorers. Wired from config via bootstrap.
         self._job_char_limit = job_char_limit
 
     @property
@@ -37,9 +46,7 @@ class BaseLLMScorer(ABC):
         return self._weight
 
     def _truncate(self, text: str | None) -> str:
-        if not text:
-            return text or ""
-        return text[: self._job_char_limit]
+        return truncate_job_text(text, self._job_char_limit)
 
     @abstractmethod
     def _build_prompt(self, job: Any, profile: Any | None = None) -> str: ...

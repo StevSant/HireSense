@@ -16,7 +16,10 @@ logger = logging.getLogger(__name__)
 # `llm_default_max_tokens`. match_quick_scorer is deliberately NOT included
 # here even though it "classifies": it returns batched per-job JSON for up to
 # match_quick_batch_size jobs in a single call, so it needs the larger default
-# to avoid truncating the tail of the batch.
+# to avoid truncating the tail of the batch. match_dimension_scorer is
+# excluded for the same reason: one response carries 6 dimensions, each with
+# a score and a rationale, and truncation would silently drop the tail
+# dimensions rather than just shortening one verdict.
 CLASSIFIER_FEATURE_KEYS: frozenset[str] = frozenset(
     {
         "inbox-classification",

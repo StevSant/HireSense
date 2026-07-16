@@ -48,6 +48,7 @@ def build_admin(infra: SharedInfra) -> AdminBuild:
         feature_default_models={
             "match_quick_scorer": s.match_quick_model,
             "match_deep_analyzer": s.match_deep_model,
+            "match_dimension_scorer": s.match_dimension_model,
         },
         default_max_tokens=s.llm_default_max_tokens,
         classifier_max_tokens=s.llm_classifier_max_tokens,

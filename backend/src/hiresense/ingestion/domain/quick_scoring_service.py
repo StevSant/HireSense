@@ -95,11 +95,17 @@ class QuickScoringService:
         cache_repo: Any,
         batch_size: int = 20,
         job_char_limit: int = 1500,
+        concurrency: int = 4,
     ) -> None:
         self._llm = llm
         self._cache_repo = cache_repo
         self._batch_size = max(1, batch_size)
         self._job_char_limit = job_char_limit
+        # Cap concurrent LLM chunk calls so a large rescore (many cache misses
+        # fanned out over several batch-sized chunks) can't fire one request per
+        # chunk all at once and trip the provider's rate limit. Mirrors
+        # JobQualityClassifier's max_concurrency.
+        self._concurrency = max(1, concurrency)
 
     async def score_page(
         self,
@@ -136,18 +142,22 @@ class QuickScoringService:
 
         level = infer_candidate_level(candidate_summary)
         chunks = [misses[i : i + self._batch_size] for i in range(0, len(misses), self._batch_size)]
-        scored_chunks = await asyncio.gather(
-            *(
-                self._score_chunk(chunk, candidate_skills, candidate_summary, level.value)
-                for chunk in chunks
-            )
-        )
+        sem = asyncio.Semaphore(self._concurrency)
+
+        async def _bounded(chunk: list[NormalizedJob]) -> list[QuickMatchResult]:
+            async with sem:
+                return await self._score_chunk(chunk, candidate_skills, candidate_summary, level.value)
+
+        scored_chunks = await asyncio.gather(*(_bounded(chunk) for chunk in chunks))
 
         results = dict(hits)
+        new_results: list[QuickMatchResult] = []
         for chunk_results in scored_chunks:
             for result in chunk_results:
-                await self._safe_upsert(result, profile_hash)
+                new_results.append(result)
                 results[result.job_id] = result
+        if new_results:
+            await self._safe_upsert_bulk(new_results, profile_hash)
         return results
 
     async def _score_chunk(
@@ -232,8 +242,10 @@ class QuickScoringService:
             return chunk[idx]
         return None
 
-    async def _safe_upsert(self, result: QuickMatchResult, profile_hash: str) -> None:
+    async def _safe_upsert_bulk(self, results: list[QuickMatchResult], profile_hash: str) -> None:
         try:
-            await asyncio.to_thread(self._cache_repo.upsert_quick, result, profile_hash)
+            await asyncio.to_thread(self._cache_repo.upsert_quick_bulk, results, profile_hash)
         except Exception:
-            logger.exception("Quick score cache upsert failed for job %s", result.job_id)
+            # Cache write failure must never fail scoring — the caller already
+            # has the results in hand; only the next request's cache hit is lost.
+            logger.exception("Quick score cache bulk upsert failed for %d results", len(results))

@@ -68,6 +68,40 @@ class JobMatchCacheRepository(SqlRepository):
             row.quick_updated_at = datetime.now(timezone.utc)
             session.commit()
 
+    def upsert_quick_bulk(self, results: list[QuickMatchResult], profile_hash: str) -> None:
+        """Persist a whole batch of quick-scoring results in one round-trip.
+
+        Same per-row shape as `upsert_quick`, but avoids one SELECT+COMMIT per
+        result: a single SELECT finds the existing (job_id, profile_hash) rows
+        for the batch, misses are inserted, hits are mutated in place, then one
+        COMMIT persists everything. Rows are processed in job_id order so
+        concurrent bulk writes over overlapping job sets acquire locks in a
+        single global order (mirrors JobsRepository.bulk_update_scores).
+        """
+        if not results:
+            return
+        ordered = sorted(results, key=lambda r: r.job_id)
+        now = datetime.now(timezone.utc)
+        with self._session_factory() as session:
+            stmt = select(JobMatchCache).where(
+                JobMatchCache.profile_hash == profile_hash,
+                JobMatchCache.job_id.in_([r.job_id for r in ordered]),
+            )
+            existing = {row.job_id: row for row in session.scalars(stmt).all()}
+            for result in ordered:
+                row = existing.get(result.job_id)
+                if row is None:
+                    row = JobMatchCache(job_id=result.job_id, profile_hash=profile_hash)
+                    session.add(row)
+                row.quick_score = result.score
+                row.quick_verdict = result.verdict.value
+                row.quick_payload = {
+                    "reasons": list(result.reasons),
+                    "dealbreakers": list(result.dealbreakers),
+                }
+                row.quick_updated_at = now
+            session.commit()
+
     # ---- Deep (Tier-2) -----------------------------------------------
 
     def get_deep(self, job_id: str, profile_hash: str) -> dict | None:

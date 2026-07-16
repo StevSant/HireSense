@@ -34,5 +34,10 @@ class LLMSettings(BaseSettings):
     match_quick_batch_size: int = 20
     # Per-job description truncation (chars) inside the batched quick prompt.
     match_quick_job_char_limit: int = 1500
+    # Max concurrent quick-scorer LLM chunk calls per request. Bounds fan-out
+    # so a large rescore (many cache misses split into batch_size chunks)
+    # can't fire one request per chunk all at once and trip the provider's
+    # rate limit.
+    match_quick_concurrency: int = 4
     # Per-job description truncation (chars) for the deeper single-job analysis.
     match_deep_job_char_limit: int = 6000

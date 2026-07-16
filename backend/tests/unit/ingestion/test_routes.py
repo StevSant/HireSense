@@ -623,12 +623,18 @@ async def test_rescore_default_runs_llm_on_miss() -> None:
 
 # ---------------------------------------------------------------------------
 # Whole-corpus quick-score overlay gating: the pre-pagination global cache-only
-# pass exists purely to fix cross-source RANKING on match-sort (a cached LLM
-# score must be able to outrank the heuristic order to reach page 1). Ordering
-# under any other sort field doesn't depend on match_score, so that pass — a
-# bulk cache read over the WHOLE corpus — must be skipped for non-match sorts.
-# The page-level pass (after pagination) still runs regardless of sort, so
-# displayed values on the visible page stay correct either way.
+# pass matters on two independent axes:
+#   (a) RANKING on match-sort — a cached LLM score must be able to outrank the
+#       heuristic order to reach page 1.
+#   (b) FILTER MEMBERSHIP on any sort — filter_and_paginate culls by
+#       match_score >= min_score BEFORE the page-level overlay ever runs, so a
+#       job whose cached LLM score clears the threshold but whose heuristic
+#       score doesn't would be wrongly excluded entirely (not just mis-ranked)
+#       if this pass were skipped.
+# The pass is gated on EITHER condition; with neither true (non-match sort,
+# no active min_score) it's pure waste and is skipped. The page-level pass
+# (after pagination) still runs regardless of sort, so displayed values on
+# the visible page stay correct either way.
 # ---------------------------------------------------------------------------
 
 
@@ -665,6 +671,104 @@ async def test_match_sort_still_runs_whole_corpus_quick_overlay() -> None:
     assert resp.status_code == 200
     # Both passes fire: the whole-corpus overlay (cache-only) then the
     # page-level pass (LLM round-trip, rescore defaults True).
+    assert quick.llm_on_miss_calls == [False, True]
+
+
+class _MinScoreQuickScoring:
+    """Cache has 'job-low' at a HIGH score (0.9); its heuristic blend is low (0.1)."""
+
+    def __init__(self) -> None:
+        self.llm_on_miss_calls: list[bool] = []
+
+    async def score_page(self, jobs, skills, summary, *, llm_on_miss=True):
+        from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
+        from hiresense.ingestion.domain.quick_match_verdict import QuickMatchVerdict
+
+        self.llm_on_miss_calls.append(llm_on_miss)
+        ids = {j.id for j in jobs}
+        out = {}
+        if "job-low" in ids:
+            out["job-low"] = QuickMatchResult(
+                job_id="job-low", score=0.9, verdict=QuickMatchVerdict.STRONG
+            )
+        return out
+
+
+@pytest.mark.asyncio
+async def test_non_match_sort_with_active_min_score_still_runs_whole_corpus_overlay() -> None:
+    # job-low: heuristic match_score 0.1 (below the 0.5 threshold) but a
+    # cached LLM quick score of 0.9 (above it). semantic_score must be set
+    # (not None) for filter_and_paginate's min_score gate to actually apply
+    # (jobs without a real semantic score pass through ungated).
+    job_low = NormalizedJob(
+        id="job-low",
+        title="A Engineer",
+        company="Co",
+        description="d",
+        skills=[],
+        source="remotive",
+        source_type="api",
+        language="en",
+        url="https://e.com/low",
+        match_score=0.1,
+        semantic_score=0.5,
+    )
+    job_high = NormalizedJob(
+        id="job-high",
+        title="B Engineer",
+        company="Co",
+        description="d",
+        skills=[],
+        source="remotive",
+        source_type="api",
+        language="en",
+        url="https://e.com/high",
+        match_score=0.8,
+        semantic_score=0.5,
+    )
+
+    class _Orch:
+        async def run(self, filters=None):
+            return []
+
+        def list_jobs(self, criteria=None):
+            return [job_low, job_high]
+
+        def persist_scores(self, *a):
+            pass
+
+        def persist_scores_batch(self, updates):
+            pass
+
+    from hiresense.ingestion.api.dependencies import get_quick_scoring
+
+    quick = _MinScoreQuickScoring()
+    app = FastAPI()
+    app.dependency_overrides[get_ingestion_orchestrator] = lambda: _Orch()
+    app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
+    app.dependency_overrides[get_profile_service] = lambda: FakeProfileSummaryOnly()
+    app.dependency_overrides[get_semantic_scoring] = lambda: None
+    app.dependency_overrides[get_quick_scoring] = lambda: quick
+    app.dependency_overrides[require_auth] = lambda: "test-user"
+    app.include_router(router)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # Non-match sort (title_asc) + an explicit min_score that job-low's
+        # heuristic score fails but its cached LLM score clears.
+        resp = await client.get(
+            "/ingestion/jobs",
+            params={"tab": "boards", "sort": "title_asc", "min_score": 0.5},
+        )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    returned_ids = {j["id"] for j in body["jobs"]}
+    # Without the overlay, job-low's heuristic 0.1 would fail min_score=0.5
+    # and be dropped from the result set entirely. With it (overlay applies
+    # the cached 0.9), it passes the filter -- membership, not just ranking.
+    assert "job-low" in returned_ids
+    # The whole-corpus overlay ran cache-only (min_score_active gate fired
+    # despite the non-match sort), then the page-level pass ran normally.
     assert quick.llm_on_miss_calls == [False, True]
 
 

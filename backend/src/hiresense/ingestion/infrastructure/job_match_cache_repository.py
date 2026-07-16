@@ -54,6 +54,13 @@ class JobMatchCacheRepository(SqlRepository):
             return results
 
     def upsert_quick(self, result: QuickMatchResult, profile_hash: str) -> None:
+        """Persist a single quick-scoring result (one SELECT + one COMMIT).
+
+        Not called by any current production path — `QuickScoringService`
+        writes exclusively through `upsert_quick_bulk` now (one round-trip per
+        page instead of one per result). Kept deliberately as the reference
+        per-row shape `upsert_quick_bulk` mirrors; do not remove as dead code.
+        """
         with self._session_factory() as session:
             row = self._get_row(session, result.job_id, profile_hash)
             if row is None:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING, AsyncIterator
 
 from hiresense.adapters.llm import LangChainLLMAdapter
@@ -32,7 +33,7 @@ class FeatureConfiguredLLMAdapter:
         self._feature_key = feature_key
 
     async def generate(self, prompt: str, *, system: str = "", model: str = "") -> LLMResult:
-        config = self._config_service.resolve(self._feature_key)
+        config = await asyncio.to_thread(self._config_service.resolve, self._feature_key)
         try:
             inner = self._build_inner(config)
             return await inner.generate(prompt, system=system, model=model)
@@ -42,7 +43,7 @@ class FeatureConfiguredLLMAdapter:
             ) from exc
 
     async def stream(self, prompt: str, *, system: str = "") -> AsyncIterator[str]:
-        config = self._config_service.resolve(self._feature_key)
+        config = await asyncio.to_thread(self._config_service.resolve, self._feature_key)
         inner = self._build_inner(config)
         async for chunk in inner.stream(prompt, system=system):
             yield chunk

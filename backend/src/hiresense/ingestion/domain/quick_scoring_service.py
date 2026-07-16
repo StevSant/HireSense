@@ -123,7 +123,9 @@ class QuickScoringService:
         if not jobs:
             return {}
         profile_hash = score_profile_hash(candidate_skills, candidate_summary)
-        hits = self._cache_repo.get_quick_bulk([j.id for j in jobs], profile_hash)
+        hits = await asyncio.to_thread(
+            self._cache_repo.get_quick_bulk, [j.id for j in jobs], profile_hash
+        )
 
         if not llm_on_miss or self._llm is None or (not candidate_skills and not candidate_summary):
             return hits
@@ -144,7 +146,7 @@ class QuickScoringService:
         results = dict(hits)
         for chunk_results in scored_chunks:
             for result in chunk_results:
-                self._safe_upsert(result, profile_hash)
+                await self._safe_upsert(result, profile_hash)
                 results[result.job_id] = result
         return results
 
@@ -230,8 +232,8 @@ class QuickScoringService:
             return chunk[idx]
         return None
 
-    def _safe_upsert(self, result: QuickMatchResult, profile_hash: str) -> None:
+    async def _safe_upsert(self, result: QuickMatchResult, profile_hash: str) -> None:
         try:
-            self._cache_repo.upsert_quick(result, profile_hash)
+            await asyncio.to_thread(self._cache_repo.upsert_quick, result, profile_hash)
         except Exception:
             logger.exception("Quick score cache upsert failed for job %s", result.job_id)

@@ -14,13 +14,16 @@ class SentenceTransformerAdapter:
         self._model_name = model_name
         self._device = device
         self._model: Any = None
+        self._model_lock = asyncio.Lock()
 
     def _load_model(self) -> Any:
         return SentenceTransformer(self._model_name, device=self._device)
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
         if self._model is None:
-            self._model = await asyncio.to_thread(self._load_model)
+            async with self._model_lock:
+                if self._model is None:
+                    self._model = await asyncio.to_thread(self._load_model)
 
         embeddings = await asyncio.to_thread(self._model.encode, texts)
 

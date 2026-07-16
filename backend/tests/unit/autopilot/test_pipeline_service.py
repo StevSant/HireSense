@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 
 import pytest
@@ -112,3 +113,48 @@ async def test_no_digest_returns_empty():
     )
     result = await svc.run()
     assert result.created == 0 and result.drafts == []
+
+
+@pytest.mark.asyncio
+async def test_draft_concurrency_is_bounded():
+    current = 0
+    max_concurrent = 0
+
+    class _ConcurrentDrafter:
+        async def draft(self, job_id):
+            nonlocal current, max_concurrent
+            current += 1
+            max_concurrent = max(max_concurrent, current)
+            await asyncio.sleep(0.01)
+            current -= 1
+            return uuid.uuid4(), DraftStatus.DRAFTED, None
+
+    entries = [_Entry(str(i)) for i in range(6)]
+    svc = AutopilotPipelineService(
+        latest_digest=lambda: _Digest(entries),
+        drafter=_ConcurrentDrafter(),
+        repo=_Repo(),
+        top_n=6,
+        concurrency=2,
+    )
+    result = await svc.run()
+    assert result.created == 6
+    assert max_concurrent == 2
+
+
+@pytest.mark.asyncio
+async def test_run_is_a_noop_while_already_in_flight():
+    """The guard `run()` uses must cover both the scheduler AND a manual
+    run-now — simulate that by claiming the slot out-of-band first."""
+    repo = _Repo()
+    svc = _svc([_Entry("a")], repo, _Drafter())
+
+    assert svc.try_start() is True
+    result = await svc.run()  # a concurrent caller already holds the slot
+    assert result.created == 0
+    assert result.skipped == 0
+    assert repo.added == []
+    assert svc.is_running is True
+
+    svc._finish()
+    assert svc.try_start() is True  # slot free again once released

@@ -156,10 +156,33 @@ DB session factory, embedding, vector store) that every builder receives.
 6. Keep every `__init__.py` re-exporting the package's public symbols (import from the contextual
    package, not the implementation file).
 
+## Scaling constraints
+
+The app runs as **exactly one uvicorn worker**. Several pieces of shared state live in process memory
+and are not safe to duplicate across workers or replicas without externalizing them first:
+
+- **Event bus:** `InMemoryEventBus` (`adapters/event_bus/`) dispatches domain events in-process; a
+  second worker would never see events published by the first.
+- **Rate limiter:** `kernel/rate_limit.py` tracks request counts in-process; a second worker resets
+  the limiter's view of traffic, defeating the limit.
+- **Scheduler:** the `scheduler` module's recurring jobs (autopilot pipeline, revalidation, etc.) run
+  in-process; running them on multiple workers would duplicate every scheduled run.
+- **Embedding model / LRU caches:** the `SentenceTransformerAdapter` and `kernel/lru_cache.py`-backed
+  caches are per-process — each additional worker reloads the model and starts with a cold cache.
+
+Before adding workers (`--workers N`) or horizontally scaling the `app` service, externalize these:
+move the event bus to a real broker, the rate limiter to Redis (or similar shared store), the
+scheduler to a single leader-elected process (or an external cron calling the app's endpoints), and
+accept the embedding model/cache being duplicated per process (or move to a shared inference
+service). Until then, scale vertically (more CPU/memory per instance) rather than horizontally.
+
 ## Known follow-ups
 
-- **pgvector search swap:** job embeddings are now persisted to the `vector_embeddings` table on
-  ingestion (`JobEmbeddingIndexer`), and `PgVectorStore` implements ANN search. The job-list endpoint
-  still ranks via the in-memory `SemanticScoringService`; swapping it to `vector_store.search(...)`
-  is the remaining integration. It was left out here because it can't be validated without a live
-  Postgres+pgvector instance — do it alongside that validation.
+- **Corpus-materialization pushdown:** ANN pre-ranking is wired end-to-end — job embeddings are
+  persisted to the `vector_embeddings` table on ingestion (`JobEmbeddingIndexer`), and the job-list
+  endpoint ranks via `SemanticPreRanker` (`ingestion/domain/semantic_pre_ranker.py`), which calls
+  `PgVectorStore`/`VectorStorePort.search(...)` for ANN cosine ranking. The remaining work is pushing
+  the rest of corpus materialization into SQL: filters and pagination currently applied in Python
+  after the ANN query should move into the SQL query itself, and champions/min_score-exemption
+  handling needs to operate over a bounded candidate window rather than the full corpus. Tracked by
+  issue #132.

@@ -167,32 +167,46 @@ class QuickScoringService:
         candidate_summary: str,
         level: str,
     ) -> list[QuickMatchResult]:
-        prompt = self._build_prompt(chunk, candidate_skills, candidate_summary, level)
+        system_prompt = self._build_system_prompt(candidate_skills, candidate_summary, level)
+        prompt = self._build_prompt(chunk)
         try:
-            response = await self._llm.complete(prompt, system=_SYSTEM_PROMPT)
+            response = await self._llm.complete(prompt, system=system_prompt)
         except Exception:
             logger.exception("Quick scoring batch failed (size=%d)", len(chunk))
             return []
         return self._parse(response, chunk)
 
-    def _build_prompt(
-        self,
-        chunk: list[NormalizedJob],
+    @staticmethod
+    def _build_system_prompt(
         candidate_skills: list[str],
         candidate_summary: str,
         level: str,
     ) -> str:
+        """Static instructions + the CANDIDATE block, as the cached prefix.
+
+        The CANDIDATE block is byte-stable across chunks within one
+        `score_page` call (same candidate_skills/candidate_summary/level are
+        passed to every chunk) and across runs for the same profile_hash, so
+        placing it in the system prompt lets Anthropic prompt caching (see
+        LangChainLLMAdapter) reuse the cached prefix across chunks and calls
+        instead of re-processing it every time. JOBS — which vary per chunk —
+        stay in the user prompt (`_build_prompt`).
+        """
         skills = ", ".join(s for s in candidate_skills if s) or "(none listed)"
         summary = (candidate_summary or "").strip()[:_SUMMARY_CHAR_LIMIT] or "(no summary)"
-        lines = [
-            "CANDIDATE",
-            f"Inferred level: {level}",
-            f"Skills: {skills}",
-            "Experience / summary:",
-            summary,
-            "",
-            "JOBS (score every one; echo its ref number):",
-        ]
+        candidate_block = "\n".join(
+            [
+                "CANDIDATE",
+                f"Inferred level: {level}",
+                f"Skills: {skills}",
+                "Experience / summary:",
+                summary,
+            ]
+        )
+        return f"{_SYSTEM_PROMPT}\n\n{candidate_block}"
+
+    def _build_prompt(self, chunk: list[NormalizedJob]) -> str:
+        lines = ["JOBS (score every one; echo its ref number):"]
         for ref, job in enumerate(chunk, start=1):
             job_skills = ", ".join(s for s in job.skills if s) or "(none listed)"
             desc = (job.description or "").strip()[: self._job_char_limit]

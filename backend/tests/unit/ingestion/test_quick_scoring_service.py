@@ -26,9 +26,11 @@ class StubLLM:
     def __init__(self, response: str) -> None:
         self.response = response
         self.calls: list[str] = []
+        self.systems: list[str] = []
 
     async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
         self.calls.append(prompt)
+        self.systems.append(system)
         return self.response
 
 
@@ -141,6 +143,45 @@ async def test_malformed_response_yields_no_results():
 
     assert results == {}
     assert cache.upserts == []  # nothing cached on parse failure → retried later
+
+
+@pytest.mark.asyncio
+async def test_candidate_block_moves_to_system_prompt_jobs_stay_in_user_prompt():
+    jobs = [_job("a"), _job("b")]
+    llm = StubLLM(json.dumps([{"ref": 1, "score": 0.5}, {"ref": 2, "score": 0.5}]))
+    svc = QuickScoringService(llm=llm, cache_repo=StubCache())
+
+    await svc.score_page(jobs, ["python", "sql"], "Backend engineer with 5 years")
+
+    assert len(llm.systems) == 1
+    system_prompt = llm.systems[0]
+    assert "CANDIDATE" in system_prompt
+    assert "Skills: python, sql" in system_prompt
+    assert "Backend engineer with 5 years" in system_prompt
+    # The static instructions (dealbreaker/gating rules) stay in the system
+    # prompt too, ahead of the candidate block.
+    assert "SENIORITY GATING" in system_prompt
+
+    user_prompt = llm.calls[0]
+    assert "CANDIDATE" not in user_prompt
+    assert "JOBS" in user_prompt
+    assert "Engineer @ Co" in user_prompt
+
+
+@pytest.mark.asyncio
+async def test_candidate_block_is_byte_stable_across_chunks():
+    # 3 jobs, batch_size=1 -> 3 chunks, each scored via a separate LLM call.
+    # The system prompt (static instructions + CANDIDATE block) must be
+    # byte-identical across all of them since it depends only on the shared
+    # candidate_skills/candidate_summary/level, not on the chunk's jobs.
+    jobs = [_job(f"job-{i}") for i in range(3)]
+    llm = StubLLM(json.dumps([{"ref": 1, "score": 0.5}]))
+    svc = QuickScoringService(llm=llm, cache_repo=StubCache(), batch_size=1)
+
+    await svc.score_page(jobs, ["python"], "summary")
+
+    assert len(llm.systems) == 3
+    assert len(set(llm.systems)) == 1  # identical across every chunk
 
 
 @pytest.mark.asyncio

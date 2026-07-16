@@ -14,6 +14,10 @@ class LLMSettings(BaseSettings):
     # encryption-backed persistence; the admin endpoints will refuse to
     # save a new key and the runtime falls back to llm_api_key from env.
     llm_settings_encryption_key: str = ""
+    # Gates Anthropic prompt caching (cache_control on the stable system-prompt
+    # prefix). Only takes effect when the resolved feature config's provider is
+    # "anthropic" — other providers are unaffected regardless of this flag.
+    llm_prompt_cache_enabled: bool = True
     embedding_model: str = "all-mpnet-base-v2"
     embedding_device: str = "cpu"
     # Embedding vector dimension — must match the model above (all-mpnet-base-v2

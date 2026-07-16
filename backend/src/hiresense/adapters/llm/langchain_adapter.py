@@ -17,10 +17,24 @@ class LangChainLLMAdapter:
     values so usage can be attributed to the right provider/model.
     """
 
-    def __init__(self, model: BaseChatModel, *, provider: str = "", model_name: str = "") -> None:
+    def __init__(
+        self,
+        model: BaseChatModel,
+        *,
+        provider: str = "",
+        model_name: str = "",
+        cache_system_prefix: bool = False,
+    ) -> None:
         self._model = model
         self._provider = provider
         self._model_name = model_name
+        # When True, the system prompt is sent as an Anthropic content block
+        # with `cache_control: ephemeral` so a stable prefix (static
+        # instructions + byte-stable candidate block) is cached server-side
+        # across calls. Only meaningful for the Anthropic provider — callers
+        # are responsible for only setting this when config.provider is
+        # "anthropic" (see FeatureConfiguredLLMAdapter).
+        self._cache_system_prefix = cache_system_prefix
 
     async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
         result = await self.generate(prompt, system=system, model=model)
@@ -50,10 +64,19 @@ class LangChainLLMAdapter:
             if chunk.content:
                 yield chunk.content
 
-    @staticmethod
-    def _messages(prompt: str, system: str) -> list[Any]:
+    def _messages(self, prompt: str, system: str) -> list[Any]:
         messages: list[Any] = []
         if system:
-            messages.append(SystemMessage(content=system))
+            messages.append(self._system_message(system))
         messages.append(HumanMessage(content=prompt))
         return messages
+
+    def _system_message(self, system: str) -> SystemMessage:
+        if not self._cache_system_prefix:
+            return SystemMessage(content=system)
+        # Content-block form: langchain_anthropic passes cache_control through
+        # verbatim on system content blocks (see ChatAnthropic._format_messages),
+        # which is what makes the Anthropic API cache this prefix server-side.
+        return SystemMessage(
+            content=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
+        )

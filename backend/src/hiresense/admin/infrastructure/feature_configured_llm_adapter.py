@@ -27,10 +27,17 @@ class FeatureConfiguredLLMAdapter:
         config_service: LLMConfigService,
         factory: LLMFactoryPort,
         feature_key: str,
+        cache_prompt_enabled: bool = True,
     ) -> None:
         self._config_service = config_service
         self._factory = factory
         self._feature_key = feature_key
+        # Master gate for Anthropic prompt caching (settings.llm_prompt_cache_enabled,
+        # threaded in from bootstrap rather than read from settings here). Actually
+        # enabling cache_control on a given call also requires the resolved
+        # config's provider to be "anthropic" — decided per call in _build_inner
+        # since config is re-resolved every time (hot-reload).
+        self._cache_prompt_enabled = cache_prompt_enabled
 
     async def generate(self, prompt: str, *, system: str = "", model: str = "") -> LLMResult:
         config = await asyncio.to_thread(self._config_service.resolve, self._feature_key)
@@ -50,4 +57,10 @@ class FeatureConfiguredLLMAdapter:
 
     def _build_inner(self, config: ResolvedConfig) -> LangChainLLMAdapter:
         chat_model = self._factory.build_chat_model(config)
-        return LangChainLLMAdapter(chat_model, provider=config.provider, model_name=config.model)
+        cache_system_prefix = self._cache_prompt_enabled and config.provider.lower() == "anthropic"
+        return LangChainLLMAdapter(
+            chat_model,
+            provider=config.provider,
+            model_name=config.model,
+            cache_system_prefix=cache_system_prefix,
+        )

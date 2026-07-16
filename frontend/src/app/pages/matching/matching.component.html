@@ -42,22 +42,21 @@
         </div>
       }
 
-      @if (jobs().length > 0) {
-        <div class="job-selector">
-          <label for="job-select">Select a Job</label>
-          <select
-            id="job-select"
-            [ngModel]="selectedJobId()"
-            (ngModelChange)="onJobSelected($event)"
-            name="jobSelect"
-          >
-            <option value="manual">Manual entry</option>
-            @for (job of jobs(); track job.id) {
-              <option [value]="job.id">{{ job.title }} — {{ job.company }}</option>
-            }
-          </select>
-        </div>
-      }
+      <div class="job-selector">
+        <label for="job-select">Select a Job</label>
+        <select
+          id="job-select"
+          [ngModel]="selectedJobId()"
+          (ngModelChange)="onJobSelected($event)"
+          (focus)="ensureJobsLoaded()"
+          name="jobSelect"
+        >
+          <option value="manual">Manual entry</option>
+          @for (job of jobs(); track job.id) {
+            <option [value]="job.id">{{ job.title }} — {{ job.company }}</option>
+          }
+        </select>
+      </div>
 
       <div class="form-row">
         <div class="form-group">

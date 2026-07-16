@@ -11,6 +11,7 @@ import { EvaluationResult } from './models/evaluation-result.model';
 import { MatchResult } from './models/match-result.model';
 import { scoreColor as toScoreColor } from '../../core/utils/score-color';
 import { formatScorePercent } from '../../core/utils/format-score-percent';
+import { mapLlmError } from '../../core/services/llm-error.util';
 
 @Component({
   selector: 'app-matching',
@@ -39,6 +40,9 @@ export class MatchingComponent implements OnInit {
   jobs = signal<NormalizedJob[]>([]);
   selectedJobId = signal<string>('manual');
   profileLoaded = signal(false);
+  // Gates the dropdown's job list fetch so it only fires once, the first
+  // time the select is opened, instead of eagerly on every page load.
+  private jobsRequested = signal(false);
 
   /** Available CV languages from uploaded profiles */
   availableLanguages = computed(() => Object.keys(this.profileService.profiles()));
@@ -76,21 +80,39 @@ export class MatchingComponent implements OnInit {
       this.applyProfile();
     }
 
-    // If no jobs in cache, try fetching from server
-    if (this.jobs().length === 0) {
-      this.ingestionService
-        .queryJobs('boards', 1, 100)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (res) => {
-            this.jobs.set(res.jobs);
-            this.applyJobIdFromQuery();
-          },
-          error: () => {},
-        });
-    } else {
-      this.applyJobIdFromQuery();
-    }
+    // The dropdown's job list is now loaded lazily (see ensureJobsLoaded()),
+    // not eagerly here — this only resolves the ?job_id= deep-link, which
+    // works standalone via the single-job fallback fetch below regardless of
+    // whether the dropdown has been opened yet.
+    this.applyJobIdFromQuery();
+  }
+
+  /**
+   * Lazily loads the dropdown's job list the first time the select is
+   * opened, instead of eagerly on every page load. A small page (25, not
+   * 100) is enough to populate the dropdown; picking an older job is still
+   * possible via manual entry or a job's own "Analyze match" link.
+   */
+  ensureJobsLoaded(): void {
+    if (this.jobsRequested()) return;
+    this.jobsRequested.set(true);
+    this.ingestionService
+      .queryJobs('boards', 1, 25)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          // Preserve a deep-linked job the fallback fetch already prepended
+          // (see applyJobIdFromQuery) if it didn't also come back in this page.
+          const deepLinked = this.jobs().find(
+            (j) => j.id === this.selectedJobId() && !res.jobs.some((r) => r.id === j.id),
+          );
+          this.jobs.set(deepLinked ? [deepLinked, ...res.jobs] : res.jobs);
+        },
+        error: () => {
+          // Allow retry on the next open rather than getting stuck empty.
+          this.jobsRequested.set(false);
+        },
+      });
   }
 
   private applyJobIdFromQuery(): void {
@@ -103,7 +125,7 @@ export class MatchingComponent implements OnInit {
       this.jobSkills.set(job.skills.join(', '));
       return;
     }
-    // Job not in the first 100 — fetch directly
+    // Not in the (possibly not-yet-loaded) dropdown list — fetch directly.
     this.ingestionService
       .getJob(jobId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -204,7 +226,7 @@ export class MatchingComponent implements OnInit {
           this.loading.set(false);
         },
         error: (err) => {
-          this.error.set(err.error?.detail || 'Analysis failed');
+          this.error.set(mapLlmError(err, 'Analysis failed'));
           this.loading.set(false);
         },
       });
@@ -230,7 +252,7 @@ export class MatchingComponent implements OnInit {
           this.evaluating.set(false);
         },
         error: (err) => {
-          this.error.set(err.error?.detail || 'Evaluation failed');
+          this.error.set(mapLlmError(err, 'Evaluation failed'));
           this.evaluating.set(false);
         },
       });

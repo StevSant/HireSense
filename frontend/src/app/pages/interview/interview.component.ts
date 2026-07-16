@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { TitleCasePipe, DatePipe } from '@angular/common';
 import { InterviewService } from '../../core/services/interview.service';
 import { IngestionService } from '../../core/services/ingestion.service';
+import { mapLlmError } from '../../core/services/llm-error.util';
 import { Competency } from './models/competency.model';
 import { InterviewPrep } from './models/interview-prep.model';
 import { Story } from './models/story.model';
@@ -220,7 +221,7 @@ export class InterviewComponent implements OnInit {
           this.preparing.set(false);
         },
         error: (err) => {
-          this.prepError.set(err.error?.detail || 'Failed to generate prep');
+          this.prepError.set(mapLlmError(err, 'Failed to generate prep'));
           this.preparing.set(false);
         },
       });

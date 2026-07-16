@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { ApplicationsService } from './applications.service';
+import { mapLlmError } from './llm-error.util';
 
 /**
  * Long-lived coordinator for CV optimization runs.
@@ -40,7 +41,7 @@ export class CvOptimizationRunnerService {
       },
       error: (err) => {
         this.runningId.set(null);
-        this.lastError.set(err?.error?.detail ?? 'Optimization failed');
+        this.lastError.set(mapLlmError(err, 'Optimization failed'));
         this.completed$.next(applicationId);
       },
     });

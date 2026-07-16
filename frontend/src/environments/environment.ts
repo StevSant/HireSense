@@ -10,4 +10,11 @@ export const environment = {
   // Debounce (ms) before the job list refetches after preference feedback,
   // so rapid clicks coalesce into a single re-rank fetch.
   feedbackRefetchDebounceMs: 2500,
+  // Default HTTP request timeout (see timeout.interceptor.ts). Bounds every
+  // request so a hung backend call can't spin a loading state forever.
+  httpTimeoutMs: 30000,
+  // Longer timeout for LLM-backed endpoints (interview prep, research,
+  // optimization, matching analysis, outreach generation, ...) — external
+  // model latency legitimately exceeds the default budget.
+  httpTimeoutLlmMs: 120000,
 };

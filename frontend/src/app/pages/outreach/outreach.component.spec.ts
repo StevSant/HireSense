@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { OutreachComponent } from './outreach.component';
 import { OutreachService } from '../../core/services/outreach.service';
 import { NetworkService } from '../../core/services/network.service';
@@ -119,6 +119,50 @@ describe('OutreachComponent', () => {
 
     expect(cmp.message()).toBe('');
     expect(cmp.composeNotice()).toBe('Message generation is unavailable — check the LLM settings.');
+  });
+
+  it('keeps a generated message readable from a fresh component instance after the original is destroyed mid-run (survives navigation)', () => {
+    const subject = new Subject<{ message: string }>();
+    const route = {
+      snapshot: { queryParamMap: { get: (key: string) => (key === 'application_id' ? 'app-1' : null) } },
+    };
+    const outreach = {
+      generate: () => subject.asObservable(),
+      record: () => of(makeEvent()),
+      listEvents: () => of([]),
+      dueFollowups: () => of([]),
+    };
+    const applications = { list: () => of([makeApp()]) };
+    const network = { match: () => of({ company_normalized: 'acme corp', contacts: [] }) };
+
+    TestBed.configureTestingModule({
+      imports: [OutreachComponent],
+      providers: [
+        { provide: ActivatedRoute, useValue: route },
+        { provide: OutreachService, useValue: outreach },
+        { provide: ApplicationsService, useValue: applications },
+        { provide: NetworkService, useValue: network },
+      ],
+    });
+
+    const first = TestBed.createComponent(OutreachComponent);
+    first.detectChanges();
+    expect(first.componentInstance.selectedApplicationId()).toBe('app-1');
+    first.componentInstance.generate();
+    expect(first.componentInstance.generating()).toBe(true);
+
+    // Simulate navigating away mid-request.
+    first.destroy();
+
+    subject.next({ message: 'Finished while you were away' });
+    subject.complete();
+
+    // A freshly mounted instance preselects app-1 from the query param
+    // again, which hydrates `message` from the cached run result.
+    const second = TestBed.createComponent(OutreachComponent);
+    second.detectChanges();
+    expect(second.componentInstance.generating()).toBe(false);
+    expect(second.componentInstance.message()).toBe('Finished while you were away');
   });
 
   it("record 'sent' triggers a timeline refresh", () => {

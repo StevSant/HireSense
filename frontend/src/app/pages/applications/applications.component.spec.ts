@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { ApplicationsComponent } from './applications.component';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { TrackingService } from '../../core/services/tracking.service';
@@ -377,6 +377,55 @@ describe('ApplicationsComponent merged pipeline capabilities', () => {
     const { fixture, batchEvaluate } = mount({ list: () => of([]) });
     fixture.componentInstance.evaluateAll();
     expect(batchEvaluate).not.toHaveBeenCalled();
+  });
+
+  it('keeps the leaderboard readable from a fresh component instance after the original is destroyed mid-run (survives navigation)', () => {
+    const item = makeItem();
+    const subject = new Subject<{ total_jobs: number; results: unknown[] }>();
+
+    TestBed.configureTestingModule({
+      imports: [ApplicationsComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ApplicationsService, useValue: { list: () => of([item]), remove: () => of(undefined) } },
+        {
+          provide: TrackingService,
+          useValue: { update: () => of(item), batchEvaluate: () => subject.asObservable() },
+        },
+        { provide: ResearchService, useValue: { research: () => of(makeResearch()) } },
+      ],
+    });
+
+    const first = TestBed.createComponent(ApplicationsComponent);
+    first.detectChanges();
+    first.componentInstance.evaluateAll();
+    expect(first.componentInstance.evaluating()).toBe(true);
+
+    // Simulate navigating away mid-request.
+    first.destroy();
+
+    subject.next({
+      total_jobs: 1,
+      results: [
+        {
+          job_title: 'Eng',
+          company: 'Acme',
+          source: 'tracked',
+          source_id: 'app-1',
+          composite_score: 0.8,
+          dimensions: [],
+          failed: false,
+        },
+      ],
+    });
+    subject.complete();
+
+    // A freshly mounted instance reads the cached leaderboard without
+    // re-triggering evaluateAll().
+    const second = TestBed.createComponent(ApplicationsComponent);
+    second.detectChanges();
+    expect(second.componentInstance.evaluating()).toBe(false);
+    expect(second.componentInstance.leaderboard().length).toBe(1);
   });
 
   it('navigates to the application detail when a tracked leaderboard card is opened', () => {

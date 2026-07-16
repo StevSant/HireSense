@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { MatchingComponent } from './matching.component';
 import { MatchingService } from '../../core/services/matching.service';
 import { ProfileService } from '../../core/services/profile.service';
@@ -148,6 +148,46 @@ describe('MatchingComponent', () => {
     expect(cmp.loading()).toBe(false);
     expect(cmp.result()).toBeNull();
     expect(cmp.error()).toBe('no match');
+  });
+
+  it('keeps an analyze result readable from a fresh component instance after the original is destroyed mid-run (survives navigation)', () => {
+    const subject = new Subject<ReturnType<typeof makeMatchResult>>();
+    const profileService = {
+      profiles: signal<Record<string, unknown>>({ en: makeProfile() }),
+      listProfiles: () => of([]),
+      getCurrentProfile: () => of(makeProfile()),
+    };
+    const ingestion = { queryJobs: () => of({ jobs: [], total: 0 }), getJob: () => of({}) };
+    const matching = { analyze: () => subject.asObservable(), evaluate: () => of({}) };
+    const route = { snapshot: { queryParamMap: { get: () => null } } };
+
+    TestBed.configureTestingModule({
+      imports: [MatchingComponent],
+      providers: [
+        { provide: ProfileService, useValue: profileService },
+        { provide: IngestionService, useValue: ingestion },
+        { provide: MatchingService, useValue: matching },
+        { provide: ActivatedRoute, useValue: route },
+      ],
+    });
+
+    const first = TestBed.createComponent(MatchingComponent);
+    first.detectChanges();
+    first.componentInstance.analyze();
+    expect(first.componentInstance.loading()).toBe(true);
+
+    // Simulate navigating away mid-request.
+    first.destroy();
+
+    subject.next(makeMatchResult({ overall_score: 0.55 }));
+    subject.complete();
+
+    // A freshly mounted instance (as if the user navigated back with the
+    // same job selection, 'manual' by default) reads the cached result.
+    const second = TestBed.createComponent(MatchingComponent);
+    second.detectChanges();
+    expect(second.componentInstance.loading()).toBe(false);
+    expect(second.componentInstance.result()?.overall_score).toBe(0.55);
   });
 
   describe('dropdown lazy load', () => {

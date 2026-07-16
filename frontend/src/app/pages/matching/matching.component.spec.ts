@@ -184,9 +184,7 @@ describe('MatchingComponent', () => {
     });
 
     it('fetches a 25-item page only once the dropdown is first opened', () => {
-      const queryJobs = vi.fn(() =>
-        of({ jobs: [makeJob()], total: 1, page: 1, page_size: 25 }),
-      );
+      const queryJobs = vi.fn(() => of({ jobs: [makeJob()], total: 1, page: 1, page_size: 25 }));
       const { fixture } = mount({ profiles: { en: makeProfile() }, queryJobs });
       const cmp = fixture.componentInstance;
 

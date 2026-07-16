@@ -12,17 +12,23 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    // timeoutInterceptor runs right after auth so its timeout() wraps the
-    // entire downstream chain (error + errorLogging + backend) — a hung
-    // request gets aborted there instead of waiting on it. errorLoggingInterceptor
-    // runs LAST so auth (token attach) and error (401 recovery) interceptors
-    // execute first; it only taps + rethrows.
+    // timeoutInterceptor runs LAST (closest to the backend) so its timeout()
+    // wraps only the raw HTTP call — the abort itself is unaffected by
+    // position, but the synthetic 408 it throws on expiry must still flow
+    // back UP through errorLoggingInterceptor and errorInterceptor's
+    // catchError (interceptors "wrap" the ones after them, seeing whatever
+    // error the inner one produces or synthesizes). Registering it any
+    // earlier — e.g. right after auth — puts it OUTSIDE errorLogging, so a
+    // client-side timeout would never reach ErrorReportingService/telemetry:
+    // errorLogging only observes errors that surface from what it wraps.
+    // errorLoggingInterceptor itself still runs after auth (token attach)
+    // and error (401 recovery); it only taps + rethrows.
     provideHttpClient(
       withInterceptors([
         authInterceptor,
-        timeoutInterceptor,
         errorInterceptor,
         errorLoggingInterceptor,
+        timeoutInterceptor,
       ]),
     ),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },

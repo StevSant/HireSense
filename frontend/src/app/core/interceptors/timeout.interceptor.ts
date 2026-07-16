@@ -34,6 +34,12 @@ function isLlmSlowUrl(url: string): boolean {
  * HttpErrorResponse so the existing `err.error?.detail` / `err.status`
  * handling in components and `mapLlmError` renders it like any other failed
  * request instead of needing a separate TimeoutError code path.
+ *
+ * Must be registered LAST in `withInterceptors([...])` (closest to the
+ * backend) — see the ordering comment in app.config.ts. Any earlier and the
+ * synthetic 408 this throws would bypass errorLoggingInterceptor's
+ * catchError entirely, so client-side timeouts would never reach
+ * ErrorReportingService/telemetry.
  */
 export const timeoutInterceptor: HttpInterceptorFn = (req, next) => {
   const ms = isLlmSlowUrl(req.url) ? environment.httpTimeoutLlmMs : environment.httpTimeoutMs;

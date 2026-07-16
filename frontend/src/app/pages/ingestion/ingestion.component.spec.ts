@@ -119,7 +119,9 @@ describe('IngestionComponent — exactly one initial job request', () => {
   });
 
   function flushPortals(mock: HttpTestingController): void {
-    mock.match((r) => r.url === `${environment.apiUrl}/ingestion/portals`).forEach((r) => r.flush([]));
+    mock
+      .match((r) => r.url === `${environment.apiUrl}/ingestion/portals`)
+      .forEach((r) => r.flush([]));
   }
 
   it('fires exactly one request when no location is stored', () => {

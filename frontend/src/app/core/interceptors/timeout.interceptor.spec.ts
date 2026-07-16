@@ -3,6 +3,8 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { timeoutInterceptor } from './timeout.interceptor';
+import { errorLoggingInterceptor } from './error-logging.interceptor';
+import { ErrorReportingService } from '../services/error-reporting.service';
 import { environment } from '../../../environments/environment';
 
 describe('timeoutInterceptor', () => {
@@ -135,8 +137,88 @@ describe('timeoutInterceptor', () => {
       },
     });
 
-    httpMock.expectOne('/api/ingestion/jobs').flush('nope', { status: 500, statusText: 'Server Error' });
+    httpMock
+      .expectOne('/api/ingestion/jobs')
+      .flush('nope', { status: 500, statusText: 'Server Error' });
 
     expect(captured).toMatchObject({ status: 500 });
+  });
+});
+
+describe('timeoutInterceptor registered before errorLoggingInterceptor (telemetry path)', () => {
+  // Pins the app.config.ts ordering contract: timeoutInterceptor must sit
+  // LAST in withInterceptors([...]) (closest to the backend) so the synthetic
+  // 408 it throws on expiry still flows back up through
+  // errorLoggingInterceptor's catchError and reaches ErrorReportingService.
+  // Reproduces that relative order here: errorLogging wraps timeout, exactly
+  // like in app.config.ts.
+  let http: HttpClient;
+  let httpMock: HttpTestingController;
+  const report = vi.fn();
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    report.mockReset();
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([errorLoggingInterceptor, timeoutInterceptor])),
+        provideHttpClientTesting(),
+        { provide: ErrorReportingService, useValue: { report } },
+      ],
+    });
+    http = TestBed.inject(HttpClient);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+    vi.useRealTimers();
+  });
+
+  it('reports the synthetic 408 to ErrorReportingService when a request times out', () => {
+    let captured: unknown;
+    http.get('/api/ingestion/jobs').subscribe({
+      next: () => {
+        throw new Error('expected the request to time out');
+      },
+      error: (e) => {
+        captured = e;
+      },
+    });
+
+    const req = httpMock.expectOne('/api/ingestion/jobs');
+    vi.advanceTimersByTime(environment.httpTimeoutMs);
+
+    expect(req.cancelled).toBe(true);
+    expect(captured).toMatchObject({ status: 408 });
+    expect(report).toHaveBeenCalledTimes(1);
+    const [reportedErr, context] = report.mock.calls[0];
+    expect(reportedErr).toMatchObject({ status: 408 });
+    expect(context).toMatchObject({
+      source: 'http',
+      url: '/api/ingestion/jobs',
+      status: 408,
+      method: 'GET',
+    });
+  });
+
+  it('still reports normal (non-timeout) HTTP errors', () => {
+    let captured: unknown;
+    http.get('/api/ingestion/jobs').subscribe({
+      next: () => {
+        throw new Error('expected the request to fail');
+      },
+      error: (e) => {
+        captured = e;
+      },
+    });
+
+    httpMock
+      .expectOne('/api/ingestion/jobs')
+      .flush('nope', { status: 500, statusText: 'Server Error' });
+
+    expect(captured).toMatchObject({ status: 500 });
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(report.mock.calls[0][1]).toMatchObject({ status: 500 });
   });
 });

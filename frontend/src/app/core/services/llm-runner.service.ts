@@ -67,8 +67,17 @@ export class LlmRunnerService {
     });
   }
 
-  /** Drops any cached state for `key`, e.g. before starting a fresh run. */
+  /**
+   * Drops any cached state for `key`, e.g. before starting a fresh run.
+   * No-op while `key` is running: clearing mid-flight would drop the
+   * `running` flag out from under the in-flight subscription, which would
+   * let a same-key `run()` call start a second, concurrent request — and
+   * whichever response lands second would silently win, even if it's the
+   * older one. The in-flight run's own completion still updates the cache
+   * normally; callers should clear again afterward if they still want to.
+   */
   clear(key: string): void {
+    if (this.isRunning(key)) return;
     this.states.update((states) => {
       if (!states.has(key)) return states;
       const next = new Map(states);

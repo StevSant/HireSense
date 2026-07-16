@@ -124,7 +124,9 @@ describe('OutreachComponent', () => {
   it('keeps a generated message readable from a fresh component instance after the original is destroyed mid-run (survives navigation)', () => {
     const subject = new Subject<{ message: string }>();
     const route = {
-      snapshot: { queryParamMap: { get: (key: string) => (key === 'application_id' ? 'app-1' : null) } },
+      snapshot: {
+        queryParamMap: { get: (key: string) => (key === 'application_id' ? 'app-1' : null) },
+      },
     };
     const outreach = {
       generate: () => subject.asObservable(),
@@ -163,6 +165,28 @@ describe('OutreachComponent', () => {
     second.detectChanges();
     expect(second.componentInstance.generating()).toBe(false);
     expect(second.componentInstance.message()).toBe('Finished while you were away');
+  });
+
+  it('preserves a hand-edit after reselecting an application whose draft was already generated (no clobber on reselect)', () => {
+    const app2 = makeApp({ id: 'app-2', company: 'Globex' });
+    const { cmp } = mount({
+      appId: 'app-1',
+      applications: { list: vi.fn(() => of([makeApp(), app2])) },
+      outreach: { generate: vi.fn(() => of({ message: 'Generated draft' })) },
+    });
+
+    cmp.generate();
+    expect(cmp.message()).toBe('Generated draft');
+
+    // The user hand-edits the drafted message.
+    cmp.message.set('Hand-edited text');
+
+    // Switch to a different application, then back to app-1.
+    cmp.selectApplication('app-2');
+    cmp.selectApplication('app-1');
+
+    // Reselecting must not overwrite the hand-edit with the cached draft.
+    expect(cmp.message()).toBe('Hand-edited text');
   });
 
   it("record 'sent' triggers a timeline refresh", () => {

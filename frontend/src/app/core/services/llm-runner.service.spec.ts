@@ -78,6 +78,40 @@ describe('LlmRunnerService', () => {
     expect(service.isRunning('clear-key')).toBe(false);
   });
 
+  it('clear() is a no-op while the key is running, so a same-key run() cannot start a second concurrent request', () => {
+    const service = TestBed.inject(LlmRunnerService);
+    const subject = new Subject<{ value: string }>();
+    let subscribeCount = 0;
+    const source = new Observable<{ value: string }>((subscriber) => {
+      subscribeCount++;
+      subject.subscribe(subscriber);
+    });
+
+    service.run('busy-clear-key', source, () => 'err');
+    expect(service.isRunning('busy-clear-key')).toBe(true);
+    expect(subscribeCount).toBe(1);
+
+    // Attempting to clear mid-flight must not drop the running state.
+    service.clear('busy-clear-key');
+    expect(service.isRunning('busy-clear-key')).toBe(true);
+
+    // With running still true, a same-key run() is ignored — no second
+    // subscription, so no concurrent request race.
+    service.run('busy-clear-key', source, () => 'err');
+    expect(subscribeCount).toBe(1);
+
+    // The original run still completes and lands in the cache normally.
+    subject.next({ value: 'first' });
+    subject.complete();
+
+    expect(service.isRunning('busy-clear-key')).toBe(false);
+    expect(service.result<{ value: string }>('busy-clear-key')).toEqual({ value: 'first' });
+
+    // clear() works again now that nothing is running for the key.
+    service.clear('busy-clear-key');
+    expect(service.result('busy-clear-key')).toBeNull();
+  });
+
   it('keeps a run in flight — and later caches its result — after the component that started it is destroyed', () => {
     const service = TestBed.inject(LlmRunnerService);
     const subject = new Subject<{ value: string }>();

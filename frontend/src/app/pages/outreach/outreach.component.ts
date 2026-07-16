@@ -57,6 +57,12 @@ export class OutreachComponent implements OnInit {
   // same application later re-hydrates `message` from the cached result.
   private generateKey = computed(() => `outreach:generate:${this.selectedApplicationId()}`);
   generating = computed(() => this.llmRunner.isRunning(this.generateKey()));
+  // Generate keys whose cached result has already been used to seed
+  // `message` on this component instance — either by a hydration read in
+  // selectApplication() or by generate() itself completing. Seeding is
+  // one-shot per key so reselecting an application the user has already
+  // hand-edited never overwrites the edit with the (unchanged) cached draft.
+  private seededMessageKeys = new Set<string>();
   // Manual guard messages (e.g. "pick an application") merged with the
   // generate run's mapped error, if any, for the current target.
   private manualNotice = signal('');
@@ -120,9 +126,17 @@ export class OutreachComponent implements OnInit {
     this.suggestions.set([]);
     // Pick up a draft generated (and possibly completed) while this page was
     // unmounted — e.g. the user clicked Generate, navigated away, and came
-    // back. Leaves `message` untouched when there's nothing cached yet.
-    const cached = id ? this.llmRunner.result<GenerateResponse>(this.generateKey()) : null;
-    if (cached) this.message.set(cached.message);
+    // back. Only seeds once per key: reselecting an application whose draft
+    // was already surfaced here must never clobber a hand-edit made since,
+    // and leaves `message` untouched when there's nothing cached yet.
+    const key = this.generateKey();
+    if (id && !this.seededMessageKeys.has(key)) {
+      const cached = this.llmRunner.result<GenerateResponse>(key);
+      if (cached) {
+        this.message.set(cached.message);
+        this.seededMessageKeys.add(key);
+      }
+    }
     if (id) {
       this.loadTimeline();
       this.loadSuggestions(id);
@@ -168,15 +182,22 @@ export class OutreachComponent implements OnInit {
     this.manualNotice.set('');
     const contact = this.contactName().trim();
     const channel = this.channel().trim();
+    // Captured once: an explicit Generate click always overwrites `message`
+    // (and (re)marks the key seeded) with whatever this run produces, even
+    // if the selection somehow changes before the response lands.
+    const key = this.generateKey();
     this.llmRunner.run(
-      this.generateKey(),
+      key,
       this.outreach.generate({
         application_id: applicationId,
         ...(contact ? { contact_name: contact } : {}),
         ...(channel ? { channel } : {}),
       }),
       (err) => this.mapGenerateError(err),
-      (res) => this.message.set(res.message),
+      (res) => {
+        this.message.set(res.message);
+        this.seededMessageKeys.add(key);
+      },
     );
   }
 

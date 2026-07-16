@@ -387,7 +387,10 @@ describe('ApplicationsComponent merged pipeline capabilities', () => {
       imports: [ApplicationsComponent],
       providers: [
         provideRouter([]),
-        { provide: ApplicationsService, useValue: { list: () => of([item]), remove: () => of(undefined) } },
+        {
+          provide: ApplicationsService,
+          useValue: { list: () => of([item]), remove: () => of(undefined) },
+        },
         {
           provide: TrackingService,
           useValue: { update: () => of(item), batchEvaluate: () => subject.asObservable() },

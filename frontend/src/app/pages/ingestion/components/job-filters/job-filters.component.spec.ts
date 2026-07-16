@@ -5,9 +5,21 @@ import { JobFilters } from '../../models/job-filters.model';
 describe('JobFiltersComponent', () => {
   beforeEach(async () => {
     localStorage.clear();
+    // detectUserLocation() resolves the host's IANA timezone via Intl, which
+    // varies by machine/CI runner. Pin it to an unmapped zone (see
+    // timezone-country-map.ts) so detection deterministically yields null —
+    // the Angular vitest setup disallows vi.mock on relative imports, so
+    // stubbing the global Intl API is the supported way to control this.
+    vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(
+      () => ({ resolvedOptions: () => ({ timeZone: 'UTC' }) }) as unknown as Intl.DateTimeFormat,
+    );
     await TestBed.configureTestingModule({
       imports: [JobFiltersComponent],
     }).compileComponents();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   function mount(filters: JobFilters = {}, sources: string[] = ['remotive', 'jobicy']) {
@@ -17,6 +29,32 @@ describe('JobFiltersComponent', () => {
     fixture.detectChanges();
     return fixture;
   }
+
+  it('emits its initial (empty) filter state exactly once when nothing is stored', () => {
+    const fixture = TestBed.createComponent(JobFiltersComponent);
+    fixture.componentRef.setInput('sources', ['remotive']);
+    fixture.componentRef.setInput('filters', {});
+    const emitted: JobFilters[] = [];
+    fixture.componentInstance.filtersChange.subscribe((f) => emitted.push(f));
+
+    fixture.detectChanges(); // triggers ngOnInit
+
+    expect(emitted).toEqual([{ user_location: undefined, strict_location: undefined }]);
+  });
+
+  it('emits its initial state exactly once with the restored location when one is stored', () => {
+    localStorage.setItem('hiresense.user_location', 'Chile');
+    localStorage.setItem('hiresense.strict_location_match', 'true');
+    const fixture = TestBed.createComponent(JobFiltersComponent);
+    fixture.componentRef.setInput('sources', ['remotive']);
+    fixture.componentRef.setInput('filters', {});
+    const emitted: JobFilters[] = [];
+    fixture.componentInstance.filtersChange.subscribe((f) => emitted.push(f));
+
+    fixture.detectChanges(); // triggers ngOnInit
+
+    expect(emitted).toEqual([{ user_location: 'Chile', strict_location: true }]);
+  });
 
   it('renders an option per source plus the "All sources" default', () => {
     const fixture = mount({}, ['remotive', 'jobicy']);

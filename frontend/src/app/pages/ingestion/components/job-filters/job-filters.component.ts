@@ -21,6 +21,12 @@ export class JobFiltersComponent implements OnInit {
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // Always emits exactly once, synchronously, even when there's no stored
+  // location — this is the single source of truth for the parent's FIRST
+  // job load (see the comment on IngestionComponent.loadJobs$). Emitting
+  // unconditionally means the parent never needs its own separate initial
+  // loadJobs() call, so there's only ever one request on mount regardless of
+  // whether a location preference is stored.
   ngOnInit(): void {
     let storedLocation = localStorage.getItem(LS_USER_LOCATION);
     if (!storedLocation) {
@@ -31,12 +37,10 @@ export class JobFiltersComponent implements OnInit {
       }
     }
     const storedStrict = localStorage.getItem(LS_STRICT_LOCATION) === 'true';
-    if (storedLocation || storedStrict) {
-      this.emitFilters({
-        user_location: storedLocation || undefined,
-        strict_location: storedStrict || undefined,
-      });
-    }
+    this.emitFilters({
+      user_location: storedLocation || undefined,
+      strict_location: storedStrict || undefined,
+    });
   }
 
   useDetectedLocation(): void {

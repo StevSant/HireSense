@@ -24,7 +24,7 @@ class GrowthScorer(BaseLLMScorer):
             f"Job Title: {title}\n"
             f"Company: {company}\n"
             f"Required Skills: {skills_display}\n"
-            f"Description:\n{description}\n\n"
+            f"Description:\n{self._truncate(description)}\n\n"
             "Evaluate the growth potential of this role. Consider:\n"
             "- Learning and skill development opportunities\n"
             "- Modernity of the tech stack\n"

@@ -35,8 +35,12 @@ Rules:
 
 
 class PDFParser:
-    def __init__(self, llm: LLMPort | None = None) -> None:
+    def __init__(self, llm: LLMPort | None = None, char_limit: int = 20000) -> None:
         self._llm = llm
+        # Caps extracted CV text passed to the LLM extraction prompt — some
+        # PDFs (multi-page portfolios, exported LinkedIn profiles) yield far
+        # more raw text than a CV actually needs for structured extraction.
+        self._char_limit = char_limit
 
     def extract_text(self, file_bytes: bytes) -> str:
         doc = pymupdf.open(stream=file_bytes, filetype="pdf")
@@ -53,7 +57,9 @@ class PDFParser:
             )
             return ParsedCV(name="", raw_tex=raw_text)
 
-        prompt = f"Extract structured information from this CV:\n\n{raw_text}"
+        prompt = (
+            f"Extract structured information from this CV:\n\n{raw_text[: self._char_limit]}"
+        )
         response = await self._llm.complete(prompt, system=_EXTRACTION_SYSTEM_PROMPT)
 
         return self._parse_llm_response(response, raw_text)

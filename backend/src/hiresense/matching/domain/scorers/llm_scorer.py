@@ -19,9 +19,14 @@ _SYSTEM_PROMPT = (
 
 
 class BaseLLMScorer(ABC):
-    def __init__(self, llm: LLMPort | None, weight: int) -> None:
+    def __init__(self, llm: LLMPort | None, weight: int, job_char_limit: int = 4000) -> None:
         self._llm = llm
         self._weight = weight
+        # Caps how much of a job description each dimension prompt embeds.
+        # Job descriptions are unbounded free text; without this a single
+        # long posting can blow the per-call token budget across all six
+        # dimension scorers. Wired from config via bootstrap.
+        self._job_char_limit = job_char_limit
 
     @property
     @abstractmethod
@@ -30,6 +35,11 @@ class BaseLLMScorer(ABC):
     @property
     def weight(self) -> int:
         return self._weight
+
+    def _truncate(self, text: str | None) -> str:
+        if not text:
+            return text or ""
+        return text[: self._job_char_limit]
 
     @abstractmethod
     def _build_prompt(self, job: Any, profile: Any | None = None) -> str: ...

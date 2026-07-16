@@ -189,7 +189,7 @@ def create_app() -> FastAPI:
     )
 
     # --- Optimization ---
-    optimization = build_optimization(tracked)
+    optimization = build_optimization(infra, tracked)
     app.state.optimization = optimization.provider
     app.include_router(optimization_router)
 

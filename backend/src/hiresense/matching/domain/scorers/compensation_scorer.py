@@ -32,7 +32,7 @@ class CompensationScorer(BaseLLMScorer):
             f"Company: {company}\n"
             f"Location: {location}\n"
             f"Salary Range: {salary_display}\n"
-            f"Description:\n{description}\n\n"
+            f"Description:\n{self._truncate(description)}\n\n"
             "Evaluate the compensation competitiveness of this role. "
             "Consider the salary range against market rates for the location and role level. "
             "If no salary is specified, infer from company size, role, and location. "

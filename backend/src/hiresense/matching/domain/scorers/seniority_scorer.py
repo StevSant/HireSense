@@ -34,6 +34,6 @@ class SeniorityScorer(BaseLLMScorer):
             "Score 0.0 (terrible fit) to 1.0 (perfect fit).\n"
             'Return JSON: {"score": <float>, "rationale": "<1-2 sentences>"}\n\n'
             f"Title: {title}\nCompany: {company}\n"
-            f"Description: {description[:2000]}"
+            f"Description: {self._truncate(description)}"
             f"{profile_context}"
         )

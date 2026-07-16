@@ -27,18 +27,37 @@ def build_matching(
     infra: SharedInfra, tracked: Callable[[str], Any], preference: Any | None = None
 ) -> MatchingBuild:
     s = infra.settings
+    job_char_limit = s.match_dimension_job_char_limit
     dimension_scorers = [
-        SeniorityScorer(llm=tracked("seniority_scorer"), weight=s.weight_seniority),
-        CompensationScorer(llm=tracked("compensation_scorer"), weight=s.weight_compensation),
-        GrowthScorer(llm=tracked("growth_scorer"), weight=s.weight_growth),
-        CultureScorer(llm=tracked("culture_scorer"), weight=s.weight_culture),
+        SeniorityScorer(
+            llm=tracked("seniority_scorer"),
+            weight=s.weight_seniority,
+            job_char_limit=job_char_limit,
+        ),
+        CompensationScorer(
+            llm=tracked("compensation_scorer"),
+            weight=s.weight_compensation,
+            job_char_limit=job_char_limit,
+        ),
+        GrowthScorer(
+            llm=tracked("growth_scorer"),
+            weight=s.weight_growth,
+            job_char_limit=job_char_limit,
+        ),
+        CultureScorer(
+            llm=tracked("culture_scorer"),
+            weight=s.weight_culture,
+            job_char_limit=job_char_limit,
+        ),
         ApplicationStrengthScorer(
             llm=tracked("application_strength_scorer"),
             weight=s.weight_application,
+            job_char_limit=job_char_limit,
         ),
         InterviewReadinessScorer(
             llm=tracked("interview_readiness_scorer"),
             weight=s.weight_interview,
+            job_char_limit=job_char_limit,
         ),
     ]
 

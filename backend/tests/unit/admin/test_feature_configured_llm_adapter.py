@@ -46,7 +46,9 @@ class _FakeFactory:
 
 
 def _config(provider: str) -> ResolvedConfig:
-    return ResolvedConfig(provider=provider, model="m", api_key="k", extra_params={}, source="global")
+    return ResolvedConfig(
+        provider=provider, model="m", api_key="k", extra_params={}, source="global"
+    )
 
 
 @pytest.mark.asyncio

@@ -146,7 +146,9 @@ class QuickScoringService:
 
         async def _bounded(chunk: list[NormalizedJob]) -> list[QuickMatchResult]:
             async with sem:
-                return await self._score_chunk(chunk, candidate_skills, candidate_summary, level.value)
+                return await self._score_chunk(
+                    chunk, candidate_skills, candidate_summary, level.value
+                )
 
         scored_chunks = await asyncio.gather(*(_bounded(chunk) for chunk in chunks))
 

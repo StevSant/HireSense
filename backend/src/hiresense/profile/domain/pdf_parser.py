@@ -57,9 +57,7 @@ class PDFParser:
             )
             return ParsedCV(name="", raw_tex=raw_text)
 
-        prompt = (
-            f"Extract structured information from this CV:\n\n{raw_text[: self._char_limit]}"
-        )
+        prompt = f"Extract structured information from this CV:\n\n{raw_text[: self._char_limit]}"
         response = await self._llm.complete(prompt, system=_EXTRACTION_SYSTEM_PROMPT)
 
         return self._parse_llm_response(response, raw_text)

@@ -63,7 +63,9 @@ def test_record_tags_tokens_and_duration_with_feature_label(monkeypatch) -> None
 
     recorder.record(**_record_kwargs(feature_key="cv_parser"))
 
-    assert all(attrs.get("feature") == "cv_parser" for _, attrs in fake_metrics.llm_tokens_total.calls)
+    assert all(
+        attrs.get("feature") == "cv_parser" for _, attrs in fake_metrics.llm_tokens_total.calls
+    )
     assert all(
         attrs.get("feature") == "cv_parser" for _, attrs in fake_metrics.llm_call_duration_ms.calls
     )

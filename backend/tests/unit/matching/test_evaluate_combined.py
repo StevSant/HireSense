@@ -126,9 +126,7 @@ async def test_combined_scorer_exception_falls_back_to_fan_out() -> None:
 @pytest.mark.asyncio
 async def test_no_combined_scorer_configured_uses_fan_out_directly() -> None:
     fan_out_scorers = [FakeScorer("a", 0.8, 60), FakeScorer("b", 0.4, 40)]
-    o = MatchingOrchestrator(
-        llm=None, event_bus=FakeEventBus(), dimension_scorers=fan_out_scorers
-    )
+    o = MatchingOrchestrator(llm=None, event_bus=FakeEventBus(), dimension_scorers=fan_out_scorers)
     result = await o.evaluate(job=_JOB)
 
     assert all(s.calls == 1 for s in fan_out_scorers)

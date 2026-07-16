@@ -6,12 +6,14 @@ from typing import Any
 
 from sqlalchemy import bindparam, text
 
+from hiresense.observability import get_tracer
 from hiresense.ports.vector_store import ScoredResult
 
 # Default table name for the generic vector store. Kept off the ORM models so
 # the heavy `vector` column type never reaches the sqlite-backed unit tests;
 # the table is created by an Alembic migration and queried here via raw SQL.
 _TABLE = "vector_embeddings"
+_tracer = get_tracer("hiresense.vector_store")
 
 
 def _vector_literal(embedding: list[float]) -> str:
@@ -71,7 +73,13 @@ class PgVectorStore:
         top_k: int = 10,
         filters: dict[str, Any] | None = None,
     ) -> list[ScoredResult]:
-        return await asyncio.to_thread(self._search_sync, query_embedding, top_k, filters)
+        # Span wraps the to_thread call (not the sync body) so timing includes
+        # threadpool queueing, not just ANN query execution.
+        with _tracer.start_as_current_span("vector.search") as span:
+            span.set_attribute("top_k", top_k)
+            results = await asyncio.to_thread(self._search_sync, query_embedding, top_k, filters)
+            span.set_attribute("result_count", len(results))
+            return results
 
     def _search_sync(
         self,

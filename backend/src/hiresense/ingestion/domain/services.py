@@ -82,10 +82,21 @@ class IngestionOrchestrator:
                         logger.warning("No normalizer for source: %s", source_name)
                         continue
 
-                    try:
-                        raw_jobs = await source.fetch_jobs(filters)
-                    except Exception:
-                        logger.exception("Failed to fetch from %s", source_name)
+                    fetch_started = time.perf_counter()
+                    with _tracer.start_as_current_span("ingestion.source.fetch") as fetch_span:
+                        fetch_span.set_attribute("source", source_name)
+                        try:
+                            raw_jobs = await source.fetch_jobs(filters)
+                        except Exception:
+                            fetch_span.set_status(trace.Status(trace.StatusCode.ERROR))
+                            logger.exception("Failed to fetch from %s", source_name)
+                            raw_jobs = None
+                        finally:
+                            _metrics.source_fetch_duration_ms.record(
+                                (time.perf_counter() - fetch_started) * 1000.0,
+                                {"source": source_name},
+                            )
+                    if raw_jobs is None:
                         continue  # bad fetch: skip disappearance for this source this run
 
                     fetched_count = len(raw_jobs)

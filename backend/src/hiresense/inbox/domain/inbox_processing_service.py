@@ -12,6 +12,11 @@ from hiresense.inbox.domain.ports import DetectedSignalRepository, InboxReaderPo
 
 logger = logging.getLogger(__name__)
 
+# Bounds concurrent classify+match+store work per inbox scan (each email chains
+# an LLM classification call). Module-level constant — a config knob isn't
+# warranted here, unlike autopilot's LLM-heavier per-draft concurrency.
+_PROCESSING_CONCURRENCY = 3
+
 
 class InboxProcessingService:
     """Orchestrates one inbox scan: read → classify → match → store pending
@@ -40,11 +45,31 @@ class InboxProcessingService:
         except Exception:  # noqa: BLE001 - inbox read is best-effort; a scan must never raise
             logger.exception("inbox: fetch_unseen failed")
             return 0
-        new_count = 0
+
+        # Dedup BEFORE the concurrent gather: two bounded tasks racing on the
+        # same message_id could both pass an exists check before either had
+        # inserted. All emails come from one fetch, so filtering the batch by
+        # already-stored ids + an in-batch id set up front is enough — no two
+        # tasks below ever end up processing the same message_id.
+        to_process: list[InboundEmail] = []
+        seen_in_batch: set[str] = set()
         for email in emails:
-            signal = await self._process(email)
-            if signal is not None:
-                new_count += 1
+            if email.message_id in seen_in_batch:
+                continue
+            seen_in_batch.add(email.message_id)
+            if await asyncio.to_thread(self._repo.exists_message_id, email.message_id):
+                continue
+            to_process.append(email)
+
+        semaphore = asyncio.Semaphore(_PROCESSING_CONCURRENCY)
+
+        async def _bounded(email: InboundEmail) -> DetectedSignal | None:
+            async with semaphore:
+                return await self._process(email)
+
+        results = await asyncio.gather(*(_bounded(email) for email in to_process))
+        new_count = sum(1 for r in results if r is not None)
+
         if new_count and self._notifier is not None:
             try:
                 await self._notifier.notify_inbox_signals(new_count)
@@ -56,22 +81,26 @@ class InboxProcessingService:
         return await self._process(email)
 
     async def _process(self, email: InboundEmail) -> DetectedSignal | None:
-        if self._repo.exists_message_id(email.message_id):
+        if await asyncio.to_thread(self._repo.exists_message_id, email.message_id):
             return None
-        classification = await self._classifier.classify(email)
-        if not classification.job_related:
+        try:
+            classification = await self._classifier.classify(email)
+            if not classification.job_related:
+                return None
+            matched_id, proposed = self._matcher.match(classification, self._list_active())
+            signal = DetectedSignal(
+                message_id=email.message_id,
+                from_address=email.from_address,
+                subject=email.subject,
+                received_at=email.received_at,
+                kind=classification.kind,
+                company=classification.company,
+                role=classification.role,
+                confidence=classification.confidence,
+                matched_application_id=matched_id,
+                proposed_status=proposed,
+            )
+            return await asyncio.to_thread(self._repo.add, signal)
+        except Exception:  # noqa: BLE001 - one bad email must not abort the batch/scan
+            logger.exception("inbox: processing email %r failed", email.message_id)
             return None
-        matched_id, proposed = self._matcher.match(classification, self._list_active())
-        signal = DetectedSignal(
-            message_id=email.message_id,
-            from_address=email.from_address,
-            subject=email.subject,
-            received_at=email.received_at,
-            kind=classification.kind,
-            company=classification.company,
-            role=classification.role,
-            confidence=classification.confidence,
-            matched_application_id=matched_id,
-            proposed_status=proposed,
-        )
-        return self._repo.add(signal)

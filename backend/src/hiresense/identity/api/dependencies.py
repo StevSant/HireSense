@@ -108,3 +108,15 @@ def require_admin(
     if payload.get("role") != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin role required")
     return payload
+
+
+def require_admin_actor(
+    payload: Annotated[dict[str, Any], Depends(require_admin)],
+) -> str:
+    """The admin username (token `sub`) for audit fields.
+
+    Depends on `require_admin` so the admin gate still applies, but returns just
+    the subject: audit columns (e.g. LLM-settings `updated_by`) must record the
+    username, not the whole decoded token payload.
+    """
+    return payload["sub"]

@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 _DATA_OPEN = "<untrusted_email>"
 _DATA_CLOSE = "</untrusted_email>"
 
+
 def _neutralize(text: str) -> str:
     """Strip the fence markers from untrusted text so a crafted email can't
     inject a closing tag and break out of the data block (case-insensitive)."""
@@ -66,13 +67,7 @@ class EmailClassifier:
         from_address = _neutralize(email.from_address)
         subject = _neutralize(email.subject)
         body = _neutralize(email.body[:4000])
-        return (
-            f"{_DATA_OPEN}\n"
-            f"From: {from_address}\n"
-            f"Subject: {subject}\n\n"
-            f"{body}\n"
-            f"{_DATA_CLOSE}"
-        )
+        return f"{_DATA_OPEN}\nFrom: {from_address}\nSubject: {subject}\n\n{body}\n{_DATA_CLOSE}"
 
     @staticmethod
     def _parse(raw: str) -> EmailClassification:

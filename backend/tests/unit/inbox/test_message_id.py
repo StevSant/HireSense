@@ -26,6 +26,7 @@ def test_distinct_content_yields_distinct_ids():
     assert synthesize_message_id(**_args(from_address="other@acme.com")) != base
     assert synthesize_message_id(**_args(subject="Different")) != base
     assert synthesize_message_id(**_args(body="Different body")) != base
-    assert synthesize_message_id(
-        **_args(received_at=datetime(2026, 7, 6, 12, 0, tzinfo=timezone.utc))
-    ) != base
+    assert (
+        synthesize_message_id(**_args(received_at=datetime(2026, 7, 6, 12, 0, tzinfo=timezone.utc)))
+        != base
+    )

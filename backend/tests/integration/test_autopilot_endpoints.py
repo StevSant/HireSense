@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 
 import pytest
@@ -39,11 +40,25 @@ class _Drafter:
         return uuid.uuid4(), DraftStatus.DRAFTED, None
 
 
-def _build_app():
+class _GatedDrafter:
+    """Blocks inside draft() until `release` is set, so a test can hold a run
+    open long enough to exercise the concurrent-run-now rejection."""
+
+    def __init__(self):
+        self.release = asyncio.Event()
+        self.entered = asyncio.Event()
+
+    async def draft(self, job_id):
+        self.entered.set()
+        await self.release.wait()
+        return uuid.uuid4(), DraftStatus.DRAFTED, None
+
+
+def _build_app(drafter=None):
     repo = _Repo()
     service = AutopilotPipelineService(
         latest_digest=lambda: type("D", (), {"entries": [_Entry("j1")]})(),
-        drafter=_Drafter(),
+        drafter=drafter or _Drafter(),
         repo=repo,
         top_n=3,
     )
@@ -54,17 +69,54 @@ def _build_app():
         service=service, repo=repo
     )
     app.include_router(autopilot_router)
-    return app, repo
+    return app, repo, service
 
 
 @pytest.mark.asyncio
-async def test_run_then_list():
-    app, repo = _build_app()
+async def test_run_now_returns_202_and_drafts_in_background():
+    app, repo, service = _build_app()
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as client:
         run = await client.post("/autopilot/run")
-        assert run.status_code == 200
-        assert run.json()["created"] == 1
+        assert run.status_code == 202
+        assert run.json() == {"status": "started"}
+
+        # The background task was scheduled via create_task, not awaited by
+        # the request; give the event loop turns so it can run to completion
+        # (the stub drafter never awaits anything real, so this is fast).
+        for _ in range(50):
+            if repo.added:
+                break
+            await asyncio.sleep(0.01)
+        assert repo.added, "background run never completed"
+        assert not service.is_running
+
         lst = await client.get("/autopilot/drafts")
         assert lst.status_code == 200
         assert len(lst.json()) == 1
         assert lst.json()[0]["status"] == "drafted"
+
+
+@pytest.mark.asyncio
+async def test_run_now_rejects_concurrent_second_call():
+    drafter = _GatedDrafter()
+    app, repo, service = _build_app(drafter=drafter)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as client:
+        first = await client.post("/autopilot/run")
+        assert first.status_code == 202
+
+        await drafter.entered.wait()  # first run is now genuinely in flight
+
+        second = await client.post("/autopilot/run")
+        assert second.status_code == 409
+        assert second.json() == {"status": "already_running"}
+
+        drafter.release.set()
+        for _ in range(50):
+            if repo.added:
+                break
+            await asyncio.sleep(0.01)
+        assert len(repo.added) == 1
+
+        # Once the first run has finished, the guard is free again.
+        third = await client.post("/autopilot/run")
+        assert third.status_code in (202, 409)

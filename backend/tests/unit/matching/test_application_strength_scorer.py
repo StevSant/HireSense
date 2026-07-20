@@ -85,3 +85,13 @@ async def test_application_strength_scorer_without_profile_does_not_call_llm() -
 async def test_application_strength_scorer_dimension_name() -> None:
     scorer = ApplicationStrengthScorer(llm=None, weight=20)
     assert scorer.dimension_name == "application_strength"
+
+
+@pytest.mark.asyncio
+async def test_application_strength_scorer_truncates_long_description() -> None:
+    llm = FakeLLM('{"score": 0.5, "rationale": "ok"}')
+    scorer = ApplicationStrengthScorer(llm=llm, weight=20)
+    profile = FakeProfile()
+    job = {**JOB, "description": "x" * 50_000}
+    await scorer.score(job, profile)
+    assert len(llm.last_prompt) < 10_000

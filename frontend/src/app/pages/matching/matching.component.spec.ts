@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { MatchingComponent } from './matching.component';
 import { MatchingService } from '../../core/services/matching.service';
 import { ProfileService } from '../../core/services/profile.service';
@@ -148,5 +148,175 @@ describe('MatchingComponent', () => {
     expect(cmp.loading()).toBe(false);
     expect(cmp.result()).toBeNull();
     expect(cmp.error()).toBe('no match');
+  });
+
+  it('keeps an analyze result readable from a fresh component instance after the original is destroyed mid-run (survives navigation)', () => {
+    const subject = new Subject<ReturnType<typeof makeMatchResult>>();
+    const profileService = {
+      profiles: signal<Record<string, unknown>>({ en: makeProfile() }),
+      listProfiles: () => of([]),
+      getCurrentProfile: () => of(makeProfile()),
+    };
+    const ingestion = { queryJobs: () => of({ jobs: [], total: 0 }), getJob: () => of({}) };
+    const matching = { analyze: () => subject.asObservable(), evaluate: () => of({}) };
+    const route = { snapshot: { queryParamMap: { get: () => null } } };
+
+    TestBed.configureTestingModule({
+      imports: [MatchingComponent],
+      providers: [
+        { provide: ProfileService, useValue: profileService },
+        { provide: IngestionService, useValue: ingestion },
+        { provide: MatchingService, useValue: matching },
+        { provide: ActivatedRoute, useValue: route },
+      ],
+    });
+
+    const first = TestBed.createComponent(MatchingComponent);
+    first.detectChanges();
+    first.componentInstance.analyze();
+    expect(first.componentInstance.loading()).toBe(true);
+
+    // Simulate navigating away mid-request.
+    first.destroy();
+
+    subject.next(makeMatchResult({ overall_score: 0.55 }));
+    subject.complete();
+
+    // A freshly mounted instance (as if the user navigated back with the
+    // same job selection, 'manual' by default) reads the cached result.
+    const second = TestBed.createComponent(MatchingComponent);
+    second.detectChanges();
+    expect(second.componentInstance.loading()).toBe(false);
+    expect(second.componentInstance.result()?.overall_score).toBe(0.55);
+  });
+
+  describe('dropdown lazy load', () => {
+    function makeJob(over: Partial<Record<string, unknown>> = {}) {
+      return {
+        id: 'job-1',
+        title: 'Engineer',
+        company: 'Acme',
+        description: 'Build things.',
+        skills: ['python'],
+        location: 'Remote',
+        salary_range: null,
+        source: 'remotive',
+        source_type: 'feed',
+        platform: null,
+        categories: [],
+        department: null,
+        url: 'https://example.com/job-1',
+        posted_date: null,
+        match_score: null,
+        llm_score: null,
+        verdict: null,
+        reasons: [],
+        dealbreakers: [],
+        ...over,
+      };
+    }
+
+    it('does not fetch the job list on init', () => {
+      const queryJobs = vi.fn(() => of({ jobs: [], total: 0, page: 1, page_size: 25 }));
+      mount({ profiles: { en: makeProfile() }, queryJobs });
+
+      expect(queryJobs).not.toHaveBeenCalled();
+    });
+
+    it('fetches a 25-item page only once the dropdown is first opened', () => {
+      const queryJobs = vi.fn(() => of({ jobs: [makeJob()], total: 1, page: 1, page_size: 25 }));
+      const { fixture } = mount({ profiles: { en: makeProfile() }, queryJobs });
+      const cmp = fixture.componentInstance;
+
+      cmp.ensureJobsLoaded();
+
+      expect(queryJobs).toHaveBeenCalledWith('boards', 1, 25);
+      expect(cmp.jobs().map((j) => j.id)).toEqual(['job-1']);
+    });
+
+    it('does not refetch on a second dropdown open', () => {
+      const queryJobs = vi.fn(() => of({ jobs: [makeJob()], total: 1, page: 1, page_size: 25 }));
+      const { fixture } = mount({ profiles: { en: makeProfile() }, queryJobs });
+      const cmp = fixture.componentInstance;
+
+      cmp.ensureJobsLoaded();
+      cmp.ensureJobsLoaded();
+
+      expect(queryJobs).toHaveBeenCalledTimes(1);
+    });
+
+    it('allows a retry on the next open after a failed load', () => {
+      const queryJobs = vi
+        .fn()
+        .mockReturnValueOnce(throwError(() => ({ error: { detail: 'boom' } })))
+        .mockReturnValueOnce(of({ jobs: [makeJob()], total: 1, page: 1, page_size: 25 }));
+      const { fixture } = mount({ profiles: { en: makeProfile() }, queryJobs });
+      const cmp = fixture.componentInstance;
+
+      cmp.ensureJobsLoaded();
+      cmp.ensureJobsLoaded();
+
+      expect(queryJobs).toHaveBeenCalledTimes(2);
+      expect(cmp.jobs().map((j) => j.id)).toEqual(['job-1']);
+    });
+
+    it('prefills from ?job_id= via the single-job fallback without waiting on the dropdown list', () => {
+      const queryJobs = vi.fn(() => of({ jobs: [], total: 0, page: 1, page_size: 25 }));
+      const getJob = vi.fn(() => of(makeJob({ id: 'job-42', title: 'Deep linked' })));
+      TestBed.configureTestingModule({
+        imports: [MatchingComponent],
+        providers: [
+          {
+            provide: ProfileService,
+            useValue: { profiles: signal<Record<string, unknown>>({}), listProfiles: () => of([]) },
+          },
+          { provide: IngestionService, useValue: { queryJobs, getJob } },
+          { provide: MatchingService, useValue: { analyze: () => of(makeMatchResult()) } },
+          {
+            provide: ActivatedRoute,
+            useValue: { snapshot: { queryParamMap: { get: () => 'job-42' } } },
+          },
+        ],
+      });
+      const fixture = TestBed.createComponent(MatchingComponent);
+      fixture.detectChanges();
+      const cmp = fixture.componentInstance;
+
+      expect(getJob).toHaveBeenCalledWith('job-42');
+      expect(cmp.selectedJobId()).toBe('job-42');
+      expect(cmp.jobDescription()).toBe('Build things.');
+      // The dropdown list itself is still lazy — untouched until first open.
+      expect(queryJobs).not.toHaveBeenCalled();
+    });
+
+    it('keeps the deep-linked job visible after a later dropdown load that omits it', () => {
+      const queryJobs = vi.fn(() =>
+        of({ jobs: [makeJob({ id: 'job-9' })], total: 1, page: 1, page_size: 25 }),
+      );
+      const getJob = vi.fn(() => of(makeJob({ id: 'job-42', title: 'Deep linked' })));
+      TestBed.configureTestingModule({
+        imports: [MatchingComponent],
+        providers: [
+          {
+            provide: ProfileService,
+            useValue: { profiles: signal<Record<string, unknown>>({}), listProfiles: () => of([]) },
+          },
+          { provide: IngestionService, useValue: { queryJobs, getJob } },
+          { provide: MatchingService, useValue: { analyze: () => of(makeMatchResult()) } },
+          {
+            provide: ActivatedRoute,
+            useValue: { snapshot: { queryParamMap: { get: () => 'job-42' } } },
+          },
+        ],
+      });
+      const fixture = TestBed.createComponent(MatchingComponent);
+      fixture.detectChanges();
+      const cmp = fixture.componentInstance;
+
+      cmp.ensureJobsLoaded();
+
+      expect(cmp.jobs().map((j) => j.id)).toEqual(['job-42', 'job-9']);
+      expect(cmp.selectedJobId()).toBe('job-42');
+    });
   });
 });

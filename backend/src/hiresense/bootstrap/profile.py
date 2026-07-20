@@ -26,7 +26,7 @@ class ProfileBuild:
 def build_profile(infra: SharedInfra, tracked: Callable[[str], Any]) -> ProfileBuild:
     profile_repo = ProfileRepository(session_factory=infra.sync_session_factory)
     latex_parser = LaTeXParser()
-    pdf_parser = PDFParser(llm=tracked("cv_parser"))
+    pdf_parser = PDFParser(llm=tracked("cv_parser"), char_limit=infra.settings.cv_parse_char_limit)
     skill_extractor = SkillExtractor()
     translator = CVTranslator(llm=tracked("cv_translator"))
     latex_compiler = LatexCompiler(

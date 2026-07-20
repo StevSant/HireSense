@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { TitleCasePipe, DatePipe } from '@angular/common';
 import { InterviewService } from '../../core/services/interview.service';
 import { IngestionService } from '../../core/services/ingestion.service';
+import { LlmRunnerService } from '../../core/services/llm-runner.service';
+import { mapLlmError } from '../../core/services/llm-error.util';
 import { Competency } from './models/competency.model';
 import { InterviewPrep } from './models/interview-prep.model';
 import { Story } from './models/story.model';
@@ -79,9 +81,13 @@ export class InterviewComponent implements OnInit {
   prepJobTitle = signal('');
   prepCompany = signal('');
   prepDescription = signal('');
-  preparing = signal(false);
-  prepError = signal('');
-  prepResult = signal<InterviewPrep | null>(null);
+  // Keyed by the deep-linked job id when present, else a constant — see
+  // applyJobIdFromQuery(). The run itself lives in LlmRunnerService so it
+  // survives navigating away from this page mid-generation.
+  private prepKey = signal('interview:manual');
+  preparing = computed(() => this.llmRunner.isRunning(this.prepKey()));
+  prepError = computed(() => this.llmRunner.error(this.prepKey()));
+  prepResult = computed(() => this.llmRunner.result<InterviewPrep>(this.prepKey()));
 
   readonly competencyOptions: Competency[] = [
     'leadership',
@@ -95,6 +101,7 @@ export class InterviewComponent implements OnInit {
   ];
 
   private ingestionService = inject(IngestionService);
+  private llmRunner = inject(LlmRunnerService);
   private route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -108,6 +115,7 @@ export class InterviewComponent implements OnInit {
   private applyJobIdFromQuery(): void {
     const jobId = this.route.snapshot.queryParamMap.get('job_id');
     if (!jobId) return;
+    this.prepKey.set(`interview:prep:${jobId}`);
     this.ingestionService
       .getJob(jobId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -207,23 +215,12 @@ export class InterviewComponent implements OnInit {
     if (!job_title || !company || !description) {
       return;
     }
-    this.preparing.set(true);
-    this.prepError.set('');
-    this.prepResult.set(null);
-
-    this.interviewService
-      .prepare({ job_title, company, description })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (prep) => {
-          this.prepResult.set(prep);
-          this.preparing.set(false);
-        },
-        error: (err) => {
-          this.prepError.set(err.error?.detail || 'Failed to generate prep');
-          this.preparing.set(false);
-        },
-      });
+    this.llmRunner.clear(this.prepKey());
+    this.llmRunner.run(
+      this.prepKey(),
+      this.interviewService.prepare({ job_title, company, description }),
+      (err) => mapLlmError(err, 'Failed to generate prep'),
+    );
   }
 
   onNewTitleInput(event: Event): void {

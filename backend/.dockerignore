@@ -1,0 +1,21 @@
+# Local env files — secrets must never enter the build context.
+.env
+.env.*
+
+# Python virtualenv / bytecode caches — rebuilt in the image via `uv sync`.
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# VCS
+.git/
+
+# Runtime/personal data — CVs and CSV job imports are not build inputs.
+cvs/
+csv_imports/
+
+# Coverage artifacts
+.coverage
+htmlcov/

@@ -311,6 +311,7 @@ def build_ingestion(
         cache_repo=match_cache_repo,
         batch_size=s.match_quick_batch_size,
         job_char_limit=s.match_quick_job_char_limit,
+        concurrency=s.match_quick_concurrency,
     )
     deep_analysis = DeepAnalysisService(
         llm=tracked("match_deep_analyzer"),

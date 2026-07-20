@@ -19,6 +19,10 @@ class MatchingSettings(BaseSettings):
     # are ~3 KB each; profile entries are one per distinct profile text.
     semantic_job_cache_size: int = 2000
     semantic_profile_cache_size: int = 8
+    # Per-job description truncation (chars) inside each of the six LLM
+    # dimension-scorer prompts (seniority, compensation, growth, culture,
+    # application strength, interview readiness).
+    match_dimension_job_char_limit: int = 4000
 
     # Matching weights (must sum to 100)
     weight_semantic: int = 15

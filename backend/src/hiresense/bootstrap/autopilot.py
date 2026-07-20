@@ -37,6 +37,7 @@ def build_autopilot(
         drafter=drafter,
         repo=repo,
         top_n=s.autopilot_pipeline_top_n,
+        concurrency=s.autopilot_draft_concurrency,
         notifier=notification_service,
     )
     return AutopilotBuild(provider=AutopilotProvider(service=service, repo=repo), service=service)

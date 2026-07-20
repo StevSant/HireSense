@@ -38,7 +38,7 @@ class InterviewReadinessScorer(BaseLLMScorer):
             f"Job Title: {title}\n"
             f"Company: {company}\n"
             f"Required Skills: {job_skills_display}\n"
-            f"Job Description:\n{description}\n\n"
+            f"Job Description:\n{self._truncate(description)}\n\n"
             f"Candidate Skills: {candidate_skills_display}\n"
             f"CV Sections:{sections_text}\n"
             "Evaluate this candidate's interview readiness for the role. Consider:\n"

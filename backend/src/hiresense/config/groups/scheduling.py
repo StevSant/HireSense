@@ -23,6 +23,9 @@ class SchedulingSettings(BaseSettings):
     autopilot_pipeline_top_n: int = 3
     # Cron for the autopilot_pipeline job (after autohunt's 0 9 * * * so a digest exists).
     autopilot_pipeline_schedule: str = "0 10 * * *"
+    # Max drafts run concurrently within one autopilot_pipeline run (each draft
+    # chains several LLM calls) — bounds per-run LLM concurrency, not spend.
+    autopilot_draft_concurrency: int = 3
 
     # --- Scheduler (in-app cadence driver; Autopilot Phase 1) ---
     # Master switch. MUST be true on exactly one process (the app self-drives

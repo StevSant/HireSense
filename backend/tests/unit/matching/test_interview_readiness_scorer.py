@@ -85,3 +85,13 @@ async def test_interview_readiness_scorer_no_llm_fallback() -> None:
     result = await scorer.score(JOB, profile)
     assert result.score == 0.5
     assert "not configured" in result.rationale.lower()
+
+
+@pytest.mark.asyncio
+async def test_interview_readiness_scorer_truncates_long_description() -> None:
+    llm = FakeLLM('{"score": 0.5, "rationale": "ok"}')
+    scorer = InterviewReadinessScorer(llm=llm, weight=20)
+    profile = FakeProfile()
+    job = {**JOB, "description": "x" * 50_000}
+    await scorer.score(job, profile)
+    assert len(llm.last_prompt) < 10_000

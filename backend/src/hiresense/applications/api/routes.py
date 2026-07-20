@@ -31,7 +31,7 @@ from hiresense.applications.domain.application_service import ApplicationService
 from hiresense.applications.domain.apply_service import ApplyService
 from hiresense.applications.domain.autofill_plan_view import AutofillPlanView
 from hiresense.applications.domain.artifact_service import ArtifactService
-from hiresense.identity.api.dependencies import require_auth
+from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 
@@ -185,7 +185,12 @@ async def regenerate_skills(
 # -------- artifact generation -----------------------------------------
 
 
-@router.post("/{application_id}/match", response_model=MatchView, status_code=201)
+@router.post(
+    "/{application_id}/match",
+    response_model=MatchView,
+    status_code=201,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
+)
 async def generate_match(
     application_id: uuid_mod.UUID,
     request: GenerateMatchRequest,
@@ -199,7 +204,12 @@ async def generate_match(
         raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
 
-@router.post("/{application_id}/optimize", response_model=CvOptimizationView, status_code=201)
+@router.post(
+    "/{application_id}/optimize",
+    response_model=CvOptimizationView,
+    status_code=201,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
+)
 async def generate_optimization(
     application_id: uuid_mod.UUID,
     request: GenerateOptimizationRequest,
@@ -221,6 +231,7 @@ async def generate_optimization(
     "/{application_id}/interview-prep",
     response_model=InterviewPrepView,
     status_code=201,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
 )
 async def generate_interview_prep(
     application_id: uuid_mod.UUID,
@@ -239,6 +250,7 @@ async def generate_interview_prep(
     "/{application_id}/cover-letter",
     response_model=CoverLetterView,
     status_code=201,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
 )
 async def generate_cover_letter(
     application_id: uuid_mod.UUID,

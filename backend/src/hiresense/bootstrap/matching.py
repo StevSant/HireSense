@@ -9,6 +9,7 @@ from hiresense.matching.api.provider import MatchingProvider
 from hiresense.matching.domain import BatchEvaluationService, MatchingOrchestrator
 from hiresense.matching.domain.scorers import (
     ApplicationStrengthScorer,
+    CombinedDimensionScorer,
     CompensationScorer,
     CultureScorer,
     GrowthScorer,
@@ -27,20 +28,46 @@ def build_matching(
     infra: SharedInfra, tracked: Callable[[str], Any], preference: Any | None = None
 ) -> MatchingBuild:
     s = infra.settings
+    job_char_limit = s.match_dimension_job_char_limit
     dimension_scorers = [
-        SeniorityScorer(llm=tracked("seniority_scorer"), weight=s.weight_seniority),
-        CompensationScorer(llm=tracked("compensation_scorer"), weight=s.weight_compensation),
-        GrowthScorer(llm=tracked("growth_scorer"), weight=s.weight_growth),
-        CultureScorer(llm=tracked("culture_scorer"), weight=s.weight_culture),
+        SeniorityScorer(
+            llm=tracked("seniority_scorer"),
+            weight=s.weight_seniority,
+            job_char_limit=job_char_limit,
+        ),
+        CompensationScorer(
+            llm=tracked("compensation_scorer"),
+            weight=s.weight_compensation,
+            job_char_limit=job_char_limit,
+        ),
+        GrowthScorer(
+            llm=tracked("growth_scorer"),
+            weight=s.weight_growth,
+            job_char_limit=job_char_limit,
+        ),
+        CultureScorer(
+            llm=tracked("culture_scorer"),
+            weight=s.weight_culture,
+            job_char_limit=job_char_limit,
+        ),
         ApplicationStrengthScorer(
             llm=tracked("application_strength_scorer"),
             weight=s.weight_application,
+            job_char_limit=job_char_limit,
         ),
         InterviewReadinessScorer(
             llm=tracked("interview_readiness_scorer"),
             weight=s.weight_interview,
+            job_char_limit=job_char_limit,
         ),
     ]
+    # Default scoring path: all 6 dimensions in one LLM call. The individual
+    # scorers above stay wired as the fallback when this fails to parse (and
+    # as the explicit override target for the preference nudge flow).
+    combined_scorer = CombinedDimensionScorer(
+        llm=tracked("match_dimension_scorer"),
+        job_char_limit=job_char_limit,
+    )
 
     matching_orchestrator = MatchingOrchestrator(
         llm=tracked("matching_reasoning"),
@@ -48,6 +75,7 @@ def build_matching(
         dimension_scorers=dimension_scorers,
         embedding=infra.embedding,
         preference=preference,
+        combined_scorer=combined_scorer,
     )
     batch_evaluation_service = BatchEvaluationService(
         orchestrator=matching_orchestrator,

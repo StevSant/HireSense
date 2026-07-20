@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { timeoutInterceptor } from './core/interceptors/timeout.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { errorLoggingInterceptor } from './core/interceptors/error-logging.interceptor';
 import { GlobalErrorHandler } from './core/error-handler';
@@ -11,10 +12,24 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    // errorLoggingInterceptor runs LAST so auth (token attach) and error
-    // (401 recovery) interceptors execute first; it only taps + rethrows.
+    // timeoutInterceptor runs LAST (closest to the backend) so its timeout()
+    // wraps only the raw HTTP call — the abort itself is unaffected by
+    // position, but the synthetic 408 it throws on expiry must still flow
+    // back UP through errorLoggingInterceptor and errorInterceptor's
+    // catchError (interceptors "wrap" the ones after them, seeing whatever
+    // error the inner one produces or synthesizes). Registering it any
+    // earlier — e.g. right after auth — puts it OUTSIDE errorLogging, so a
+    // client-side timeout would never reach ErrorReportingService/telemetry:
+    // errorLogging only observes errors that surface from what it wraps.
+    // errorLoggingInterceptor itself still runs after auth (token attach)
+    // and error (401 recovery); it only taps + rethrows.
     provideHttpClient(
-      withInterceptors([authInterceptor, errorInterceptor, errorLoggingInterceptor]),
+      withInterceptors([
+        authInterceptor,
+        errorInterceptor,
+        errorLoggingInterceptor,
+        timeoutInterceptor,
+      ]),
     ),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],

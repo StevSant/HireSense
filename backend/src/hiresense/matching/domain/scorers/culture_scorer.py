@@ -24,7 +24,7 @@ class CultureScorer(BaseLLMScorer):
             f"Job Title: {title}\n"
             f"Company: {company}\n"
             f"Location / Work Mode: {location}\n"
-            f"Description:\n{description}\n\n"
+            f"Description:\n{self._truncate(description)}\n\n"
             "Evaluate the culture fit of this role. Consider:\n"
             "- Remote, hybrid, or on-site flexibility\n"
             "- Work-life balance signals in the description\n"

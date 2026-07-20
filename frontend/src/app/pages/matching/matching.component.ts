@@ -11,6 +11,8 @@ import { EvaluationResult } from './models/evaluation-result.model';
 import { MatchResult } from './models/match-result.model';
 import { scoreColor as toScoreColor } from '../../core/utils/score-color';
 import { formatScorePercent } from '../../core/utils/format-score-percent';
+import { mapLlmError } from '../../core/services/llm-error.util';
+import { LlmRunnerService } from '../../core/services/llm-runner.service';
 
 @Component({
   selector: 'app-matching',
@@ -23,6 +25,7 @@ export class MatchingComponent implements OnInit {
   private matchingService = inject(MatchingService);
   private profileService = inject(ProfileService);
   private ingestionService = inject(IngestionService);
+  private llmRunner = inject(LlmRunnerService);
   private route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -30,15 +33,27 @@ export class MatchingComponent implements OnInit {
   jobSkills = signal('');
   cvSummary = signal('');
   cvSkills = signal('');
-  result = signal<MatchResult | null>(null);
-  loading = signal(false);
-  error = signal('');
-  evaluationResult = signal<EvaluationResult | null>(null);
-  evaluating = signal(false);
+
+  // Keyed by the selected job id (or 'manual') + operation, so analyze and
+  // evaluate runs for different jobs never clash. Both live in
+  // LlmRunnerService so they survive navigating away from this page.
+  private analyzeKey = computed(() => `matching:analyze:${this.selectedJobId()}`);
+  private evaluateKey = computed(() => `matching:evaluate:${this.selectedJobId()}`);
+
+  result = computed(() => this.llmRunner.result<MatchResult>(this.analyzeKey()));
+  loading = computed(() => this.llmRunner.isRunning(this.analyzeKey()));
+  evaluationResult = computed(() => this.llmRunner.result<EvaluationResult>(this.evaluateKey()));
+  evaluating = computed(() => this.llmRunner.isRunning(this.evaluateKey()));
+  error = computed(
+    () => this.llmRunner.error(this.analyzeKey()) || this.llmRunner.error(this.evaluateKey()),
+  );
 
   jobs = signal<NormalizedJob[]>([]);
   selectedJobId = signal<string>('manual');
   profileLoaded = signal(false);
+  // Gates the dropdown's job list fetch so it only fires once, the first
+  // time the select is opened, instead of eagerly on every page load.
+  private jobsRequested = signal(false);
 
   /** Available CV languages from uploaded profiles */
   availableLanguages = computed(() => Object.keys(this.profileService.profiles()));
@@ -76,21 +91,39 @@ export class MatchingComponent implements OnInit {
       this.applyProfile();
     }
 
-    // If no jobs in cache, try fetching from server
-    if (this.jobs().length === 0) {
-      this.ingestionService
-        .queryJobs('boards', 1, 100)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (res) => {
-            this.jobs.set(res.jobs);
-            this.applyJobIdFromQuery();
-          },
-          error: () => {},
-        });
-    } else {
-      this.applyJobIdFromQuery();
-    }
+    // The dropdown's job list is now loaded lazily (see ensureJobsLoaded()),
+    // not eagerly here — this only resolves the ?job_id= deep-link, which
+    // works standalone via the single-job fallback fetch below regardless of
+    // whether the dropdown has been opened yet.
+    this.applyJobIdFromQuery();
+  }
+
+  /**
+   * Lazily loads the dropdown's job list the first time the select is
+   * opened, instead of eagerly on every page load. A small page (25, not
+   * 100) is enough to populate the dropdown; picking an older job is still
+   * possible via manual entry or a job's own "Analyze match" link.
+   */
+  ensureJobsLoaded(): void {
+    if (this.jobsRequested()) return;
+    this.jobsRequested.set(true);
+    this.ingestionService
+      .queryJobs('boards', 1, 25)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          // Preserve a deep-linked job the fallback fetch already prepended
+          // (see applyJobIdFromQuery) if it didn't also come back in this page.
+          const deepLinked = this.jobs().find(
+            (j) => j.id === this.selectedJobId() && !res.jobs.some((r) => r.id === j.id),
+          );
+          this.jobs.set(deepLinked ? [deepLinked, ...res.jobs] : res.jobs);
+        },
+        error: () => {
+          // Allow retry on the next open rather than getting stuck empty.
+          this.jobsRequested.set(false);
+        },
+      });
   }
 
   private applyJobIdFromQuery(): void {
@@ -103,7 +136,7 @@ export class MatchingComponent implements OnInit {
       this.jobSkills.set(job.skills.join(', '));
       return;
     }
-    // Job not in the first 100 — fetch directly
+    // Not in the (possibly not-yet-loaded) dropdown list — fetch directly.
     this.ingestionService
       .getJob(jobId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -179,8 +212,6 @@ export class MatchingComponent implements OnInit {
   }
 
   analyze(): void {
-    this.loading.set(true);
-    this.error.set('');
     const payload = {
       job_id: this.selectedJobId() !== 'manual' ? this.selectedJobId() : 'manual',
       cv_id: 'manual',
@@ -195,23 +226,12 @@ export class MatchingComponent implements OnInit {
         .map((s) => s.trim())
         .filter(Boolean),
     };
-    this.matchingService
-      .analyze(payload)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.result.set(res);
-          this.loading.set(false);
-        },
-        error: (err) => {
-          this.error.set(err.error?.detail || 'Analysis failed');
-          this.loading.set(false);
-        },
-      });
+    this.llmRunner.run(this.analyzeKey(), this.matchingService.analyze(payload), (err) =>
+      mapLlmError(err, 'Analysis failed'),
+    );
   }
 
   evaluate(): void {
-    this.evaluating.set(true);
     const req: EvaluateRequest = {
       job_title: this.jobDescription().split('\n')[0] || 'Unknown',
       company: 'Unknown',
@@ -221,19 +241,15 @@ export class MatchingComponent implements OnInit {
         .map((s) => s.trim())
         .filter(Boolean),
     };
-    this.matchingService
-      .evaluate(req)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.evaluationResult.set(res);
-          this.evaluating.set(false);
-        },
-        error: (err) => {
-          this.error.set(err.error?.detail || 'Evaluation failed');
-          this.evaluating.set(false);
-        },
-      });
+    this.llmRunner.run(this.evaluateKey(), this.matchingService.evaluate(req), (err) =>
+      mapLlmError(err, 'Evaluation failed'),
+    );
+  }
+
+  /** Clears both cached runs for the current job so the form reappears. */
+  startNewAnalysis(): void {
+    this.llmRunner.clear(this.analyzeKey());
+    this.llmRunner.clear(this.evaluateKey());
   }
 
   dimensionLabel(dimension: string): string {

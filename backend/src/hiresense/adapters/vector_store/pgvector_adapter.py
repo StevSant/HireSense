@@ -1,16 +1,19 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any
 
 from sqlalchemy import bindparam, text
 
+from hiresense.observability import get_tracer
 from hiresense.ports.vector_store import ScoredResult
 
 # Default table name for the generic vector store. Kept off the ORM models so
 # the heavy `vector` column type never reaches the sqlite-backed unit tests;
 # the table is created by an Alembic migration and queried here via raw SQL.
 _TABLE = "vector_embeddings"
+_tracer = get_tracer("hiresense.vector_store")
 
 
 def _vector_literal(embedding: list[float]) -> str:
@@ -30,10 +33,11 @@ class PgVectorStore:
     """VectorStorePort backed by Postgres + pgvector.
 
     Stores `(id, embedding, metadata)` rows in a dedicated `vector_embeddings`
-    table and ranks by cosine distance (`<=>`). The async port methods run the
-    sync query inline, matching the rest of the persistence layer's
-    sync-session-in-async-handler pattern. Vectors are bound as text and cast to
-    `vector` so no driver-level pgvector type registration is required.
+    table and ranks by cosine distance (`<=>`). Each async port method offloads
+    its sync SQLAlchemy session work to a worker thread via `asyncio.to_thread`,
+    keeping the blocking query/commit off the event loop. Vectors are bound as
+    text and cast to `vector` so no driver-level pgvector type registration is
+    required.
     """
 
     def __init__(self, session_factory: Any, *, dim: int, table: str = _TABLE) -> None:
@@ -42,6 +46,9 @@ class PgVectorStore:
         self._table = table
 
     async def upsert(self, id: str, embedding: list[float], metadata: dict[str, Any]) -> None:
+        await asyncio.to_thread(self._upsert_sync, id, embedding, metadata)
+
+    def _upsert_sync(self, id: str, embedding: list[float], metadata: dict[str, Any]) -> None:
         stmt = text(
             f"INSERT INTO {self._table} (id, embedding, metadata) "
             "VALUES (:id, CAST(:embedding AS vector), CAST(:metadata AS jsonb)) "
@@ -65,6 +72,20 @@ class PgVectorStore:
         *,
         top_k: int = 10,
         filters: dict[str, Any] | None = None,
+    ) -> list[ScoredResult]:
+        # Span wraps the to_thread call (not the sync body) so timing includes
+        # threadpool queueing, not just ANN query execution.
+        with _tracer.start_as_current_span("vector.search") as span:
+            span.set_attribute("top_k", top_k)
+            results = await asyncio.to_thread(self._search_sync, query_embedding, top_k, filters)
+            span.set_attribute("result_count", len(results))
+            return results
+
+    def _search_sync(
+        self,
+        query_embedding: list[float],
+        top_k: int,
+        filters: dict[str, Any] | None,
     ) -> list[ScoredResult]:
         params: dict[str, Any] = {
             "q": _vector_literal(query_embedding),
@@ -97,6 +118,9 @@ class PgVectorStore:
         ]
 
     async def get_vector(self, id: str) -> list[float] | None:
+        return await asyncio.to_thread(self._get_vector_sync, id)
+
+    def _get_vector_sync(self, id: str) -> list[float] | None:
         stmt = text(f"SELECT embedding FROM {self._table} WHERE id = :id")
         with self._session_factory() as session:
             row = session.execute(stmt, {"id": id}).first()
@@ -107,6 +131,9 @@ class PgVectorStore:
     async def delete(self, ids: list[str]) -> None:
         if not ids:
             return
+        await asyncio.to_thread(self._delete_sync, ids)
+
+    def _delete_sync(self, ids: list[str]) -> None:
         stmt = text(f"DELETE FROM {self._table} WHERE id IN :ids").bindparams(
             bindparam("ids", expanding=True)
         )

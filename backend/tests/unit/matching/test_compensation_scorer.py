@@ -73,3 +73,12 @@ async def test_compensation_scorer_no_llm_fallback() -> None:
 async def test_compensation_scorer_dimension_name() -> None:
     scorer = CompensationScorer(llm=None, weight=20)
     assert scorer.dimension_name == "compensation"
+
+
+@pytest.mark.asyncio
+async def test_compensation_scorer_truncates_long_description() -> None:
+    llm = FakeLLM('{"score": 0.5, "rationale": "ok"}')
+    scorer = CompensationScorer(llm=llm, weight=20)
+    job = {**JOB, "description": "x" * 50_000}
+    await scorer.score(job)
+    assert len(llm.last_prompt) < 10_000

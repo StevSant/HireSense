@@ -65,6 +65,16 @@ class DomainMetrics:
             unit="1",
             description="Domain event handler failures",
         )
+        self.embedding_encode_duration_ms = meter.create_histogram(
+            "hiresense.embedding_encode_duration_ms",
+            unit="ms",
+            description="Sentence-transformer encode() latency (queue + execution)",
+        )
+        self.source_fetch_duration_ms = meter.create_histogram(
+            "hiresense.source_fetch_duration_ms",
+            unit="ms",
+            description="Per-source job fetch duration during an ingestion run",
+        )
 
 
 _INSTANCE: DomainMetrics | None = None

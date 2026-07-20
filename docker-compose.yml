@@ -52,6 +52,12 @@ services:
       LOG_FORMAT: json
       # Self-drive the recurring pipeline in the containerized deployment.
       SCHEDULER_ENABLED: "true"
+      # `environment:` overrides `env_file`, so this wins over backend/.env's
+      # HF_HUB_OFFLINE=1 (correct for local dev with a warm cache). A fresh
+      # container has no baked model and no HF cache volume until first run,
+      # so it must be allowed to download the sentence-transformers model on
+      # first use — otherwise semantic scoring fails at first request.
+      HF_HUB_OFFLINE: "0"
     depends_on:
       db:
         condition: service_healthy
@@ -59,6 +65,19 @@ services:
         condition: service_started
     volumes:
       - ./cvs:/app/cvs
+      - hf-cache:/root/.cache/huggingface
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=3).status==200 else 1)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     deploy:
       resources:
         limits:
@@ -70,7 +89,8 @@ services:
     ports:
       - "${FRONTEND_PORT:-4200}:80"
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -80,3 +100,4 @@ services:
 volumes:
   pgdata:
   lgtm:
+  hf-cache:

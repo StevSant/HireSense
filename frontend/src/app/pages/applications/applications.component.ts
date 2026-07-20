@@ -5,10 +5,12 @@ import { DatePipe, TitleCasePipe } from '@angular/common';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { TrackingService } from '../../core/services/tracking.service';
 import { ResearchService } from '../../core/services/research.service';
+import { LlmRunnerService } from '../../core/services/llm-runner.service';
 import { ApplicationListItem } from './models/application-list-item.model';
 import { ApplicationCreateDialogComponent } from './components/application-create-dialog.component';
 import { ApplicationStatus } from '../../core/models/application-status.model';
 import { UpdateApplicationRequest } from '../tracking/models/update-application-request.model';
+import { BatchEvaluationResponse } from '../tracking/models/batch-evaluation-response.model';
 import { BatchResult } from '../tracking/models/batch-result.model';
 import { CompanyResearch } from '../tracking/models/company-research.model';
 import { scoreColor as toScoreColor } from '../../core/utils/score-color';
@@ -55,13 +57,17 @@ export class ApplicationsComponent implements OnInit {
   private service = inject(ApplicationsService);
   private trackingService = inject(TrackingService);
   private researchService = inject(ResearchService);
+  private llmRunner = inject(LlmRunnerService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
   applications = signal<ApplicationListItem[]>([]);
   loading = signal(false);
-  error = signal('');
+  // Shared error banner for this page's non-LLM actions (load/delete/status
+  // update/research); merged with the batch-evaluate run's mapped error.
+  private manualError = signal('');
+  error = computed(() => this.manualError() || this.llmRunner.error(this.batchEvaluateKey));
   // Dismissible notice shown when the detail page bounced us here (e.g. a
   // stale/deleted application id produced a 404).
   notice = signal('');
@@ -83,9 +89,14 @@ export class ApplicationsComponent implements OnInit {
     'rejected',
   ];
 
-  // Evaluate-all leaderboard state.
-  leaderboard = signal<BatchResult[]>([]);
-  evaluating = signal(false);
+  // Evaluate-all leaderboard state. Constant key — only one batch evaluation
+  // run makes sense per page — run lives in LlmRunnerService so it survives
+  // navigating away mid-evaluation.
+  private readonly batchEvaluateKey = 'applications:batch-evaluate';
+  leaderboard = computed(
+    () => this.llmRunner.result<BatchEvaluationResponse>(this.batchEvaluateKey)?.results ?? [],
+  );
+  evaluating = computed(() => this.llmRunner.isRunning(this.batchEvaluateKey));
   expandedResultId = signal<string | null>(null);
 
   // Per-company research state (keyed by application id).
@@ -171,7 +182,7 @@ export class ApplicationsComponent implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    this.error.set('');
+    this.manualError.set('');
     this.service
       .list()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -181,7 +192,7 @@ export class ApplicationsComponent implements OnInit {
           this.loading.set(false);
         },
         error: (err) => {
-          this.error.set(err?.error?.detail ?? 'Failed to load applications');
+          this.manualError.set(err?.error?.detail ?? 'Failed to load applications');
           this.loading.set(false);
         },
       });
@@ -229,7 +240,7 @@ export class ApplicationsComponent implements OnInit {
           );
         },
         error: (err) => {
-          this.error.set(err?.error?.detail ?? 'Failed to update status');
+          this.manualError.set(err?.error?.detail ?? 'Failed to update status');
           select.value = app.status;
         },
       });
@@ -255,7 +266,7 @@ export class ApplicationsComponent implements OnInit {
           this.deletingId.set(null);
         },
         error: (err) => {
-          this.error.set(err?.error?.detail ?? 'Failed to delete application');
+          this.manualError.set(err?.error?.detail ?? 'Failed to delete application');
           this.deletingId.set(null);
         },
       });
@@ -265,22 +276,13 @@ export class ApplicationsComponent implements OnInit {
   evaluateAll(): void {
     const apps = this.applications();
     if (apps.length === 0) return;
-    this.evaluating.set(true);
-    this.leaderboard.set([]);
     const ids = apps.map((a) => a.id);
-    this.trackingService
-      .batchEvaluate(ids)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.leaderboard.set(res.results);
-          this.evaluating.set(false);
-        },
-        error: (err) => {
-          this.error.set(err?.error?.detail ?? 'Batch evaluation failed');
-          this.evaluating.set(false);
-        },
-      });
+    this.llmRunner.clear(this.batchEvaluateKey);
+    this.llmRunner.run(
+      this.batchEvaluateKey,
+      this.trackingService.batchEvaluate(ids),
+      (err) => err?.error?.detail ?? 'Batch evaluation failed',
+    );
   }
 
   toggleExpand(sourceId: string, event: Event): void {
@@ -322,7 +324,7 @@ export class ApplicationsComponent implements OnInit {
           this.expandedResearchId.set(app.id);
         },
         error: (err) => {
-          this.error.set(err?.error?.detail ?? 'Research failed');
+          this.manualError.set(err?.error?.detail ?? 'Research failed');
           this.researchingCompany.set(null);
         },
       });
@@ -339,7 +341,7 @@ export class ApplicationsComponent implements OnInit {
           this.researchingCompany.set(null);
         },
         error: (err) => {
-          this.error.set(err?.error?.detail ?? 'Research refresh failed');
+          this.manualError.set(err?.error?.detail ?? 'Research refresh failed');
           this.researchingCompany.set(null);
         },
       });

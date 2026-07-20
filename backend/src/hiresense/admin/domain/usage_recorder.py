@@ -14,11 +14,14 @@ class UsageRecorder:
 
     The DB write is dispatched to a background task so a slow insert never
     blocks the response. Failures are logged but never raised — losing a
-    usage row is preferable to failing the user's LLM call.
+    usage row is preferable to failing the user's LLM call. Task references
+    are retained in a set until each completes so concurrent bursts aren't
+    garbage-collected mid-flight.
     """
 
     def __init__(self, repo: LLMUsageLogRepositoryPort) -> None:
         self._repo = repo
+        self._background_tasks: set[asyncio.Task[None]] = set()
 
     def record(
         self,
@@ -37,10 +40,14 @@ class UsageRecorder:
     ) -> None:
         try:
             m = get_domain_metrics()
-            m.llm_tokens_total.add(input_tokens, {"type": "input", "model": model})
-            m.llm_tokens_total.add(output_tokens, {"type": "output", "model": model})
+            m.llm_tokens_total.add(
+                input_tokens, {"type": "input", "model": model, "feature": feature_key}
+            )
+            m.llm_tokens_total.add(
+                output_tokens, {"type": "output", "model": model, "feature": feature_key}
+            )
             m.llm_cost_usd_total.add(cost_usd, {"model": model, "feature": feature_key})
-            m.llm_call_duration_ms.record(latency_ms, {"model": model})
+            m.llm_call_duration_ms.record(latency_ms, {"model": model, "feature": feature_key})
             if not success:
                 m.llm_errors_total.add(1, {"model": model, "feature": feature_key})
         except Exception:  # pragma: no cover - telemetry must never break recording
@@ -67,7 +74,9 @@ class UsageRecorder:
 
         try:
             loop = asyncio.get_running_loop()
-            loop.create_task(_persist())
+            task = loop.create_task(_persist())
+            self._background_tasks.add(task)
+            task.add_done_callback(self._background_tasks.discard)
         except RuntimeError:
             # No running loop (e.g., sync test path). Write inline.
             try:

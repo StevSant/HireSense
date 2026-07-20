@@ -20,6 +20,7 @@ from hiresense.applications.domain.aggregate import (
 )
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
+from hiresense.kernel import SlidingWindowRateLimiter
 
 
 class FakeOrchestrator:
@@ -284,3 +285,30 @@ def test_generate_interview_prep(client: TestClient):
     resp = client.post(f"/applications/{app_id}/interview-prep")
     assert resp.status_code == 201, resp.text
     assert resp.json()["competencies_to_probe"] == ["leadership"]
+
+
+def test_artifact_routes_are_rate_limited_when_hammered(
+    application_service: FakeApplicationService, artifact_service: FakeArtifactService
+):
+    """The four LLM artifact routes (match/optimize/interview-prep/cover-letter)
+    share the same expensive-operation limiter as optimization/matching."""
+    app = FastAPI()
+    app.include_router(router)
+    app.dependency_overrides[require_auth] = lambda: True
+    app.dependency_overrides[get_application_service] = lambda: application_service
+    app.dependency_overrides[get_artifact_service] = lambda: artifact_service
+    app.dependency_overrides[get_ingestion_orchestrator] = lambda: FakeOrchestrator()
+    app.state.rate_limiter = SlidingWindowRateLimiter(max_requests=1, window_seconds=60.0)
+    limited_client = TestClient(app)
+
+    resp = limited_client.post(
+        "/applications", json={"title": "X", "company": "Y", "description": "Z"}
+    )
+    app_id = resp.json()["id"]
+
+    first = limited_client.post(f"/applications/{app_id}/match", json={"cv_language": "en"})
+    assert first.status_code == 201, first.text
+
+    second = limited_client.post(f"/applications/{app_id}/match", json={"cv_language": "en"})
+    assert second.status_code == 429
+    assert "Retry-After" in second.headers

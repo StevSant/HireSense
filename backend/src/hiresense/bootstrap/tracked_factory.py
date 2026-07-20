@@ -34,6 +34,7 @@ def make_tracked(
             config_service=config_service,
             factory=factory,
             feature_key=feature_key,
+            cache_prompt_enabled=settings.llm_prompt_cache_enabled,
         )
         return UsageTrackingLLMAdapter(configured, recorder=recorder, feature_key=feature_key)
 

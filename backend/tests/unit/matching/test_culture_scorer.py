@@ -64,3 +64,12 @@ async def test_culture_scorer_no_llm_fallback() -> None:
 async def test_culture_scorer_dimension_name() -> None:
     scorer = CultureScorer(llm=None, weight=15)
     assert scorer.dimension_name == "culture_fit"
+
+
+@pytest.mark.asyncio
+async def test_culture_scorer_truncates_long_description() -> None:
+    llm = FakeLLM('{"score": 0.5, "rationale": "ok"}')
+    scorer = CultureScorer(llm=llm, weight=15)
+    job = {**JOB, "description": "x" * 50_000}
+    await scorer.score(job)
+    assert len(llm.last_prompt) < 10_000

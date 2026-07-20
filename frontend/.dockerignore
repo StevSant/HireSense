@@ -1,0 +1,18 @@
+# Local env files
+.env
+.env.*
+
+# VCS
+.git/
+
+# Dependencies — reinstalled via `npm ci` in the image; a host node_modules/
+# copied in via `COPY . .` would clobber it with possibly non-Linux binaries.
+node_modules/
+
+# Build output — regenerated via `ng build` in the image.
+dist/
+.angular/
+
+# Test/coverage artifacts
+coverage/
+test-results/

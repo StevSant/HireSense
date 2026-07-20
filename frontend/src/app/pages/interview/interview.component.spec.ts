@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { InterviewComponent } from './interview.component';
 import { InterviewService } from '../../core/services/interview.service';
 import { IngestionService } from '../../core/services/ingestion.service';
@@ -140,6 +140,55 @@ describe('InterviewComponent', () => {
     expect(cmp.preparing()).toBe(false);
     expect(cmp.prepResult()).toBeNull();
     expect(cmp.prepError()).toBe('prep failed');
+  });
+
+  it('keeps a prep result readable from a fresh component instance after the original is destroyed mid-run (survives navigation)', () => {
+    const subject = new Subject<ReturnType<typeof makePrep>>();
+    const interview = {
+      listStories: () => of([]),
+      createStory: () => of(makeStory()),
+      deleteStory: () => of(undefined),
+      prepare: () => subject.asObservable(),
+    };
+    const ingestion = { getJob: () => of({ title: 'X', company: 'Y', description: 'Z' }) };
+    const route = { snapshot: { queryParamMap: { get: () => null } } };
+
+    // One TestBed configuration shared by both fixtures, so both component
+    // instances resolve the same root-scoped LlmRunnerService — the way two
+    // navigations to the same page would in the real app.
+    TestBed.configureTestingModule({
+      imports: [InterviewComponent],
+      providers: [
+        { provide: InterviewService, useValue: interview },
+        { provide: IngestionService, useValue: ingestion },
+        { provide: ActivatedRoute, useValue: route },
+        { provide: ApplicationsService, useValue: { list: () => of([]) } },
+        { provide: Router, useValue: { navigate: () => {} } },
+      ],
+    });
+
+    const first = TestBed.createComponent(InterviewComponent);
+    first.detectChanges();
+    first.componentInstance.prepJobTitle.set('Engineer');
+    first.componentInstance.prepCompany.set('Globex');
+    first.componentInstance.prepDescription.set('Build things');
+    first.componentInstance.generatePrep();
+    expect(first.componentInstance.preparing()).toBe(true);
+
+    // Simulate navigating away: the component is destroyed while the
+    // request is still in flight.
+    first.destroy();
+
+    // The request completes after the originating component is gone.
+    subject.next(makePrep({ company: 'Globex' }));
+    subject.complete();
+
+    // A newly mounted instance (as if the user navigated back) reads the
+    // cached result without re-triggering generatePrep().
+    const second = TestBed.createComponent(InterviewComponent);
+    second.detectChanges();
+    expect(second.componentInstance.preparing()).toBe(false);
+    expect(second.componentInstance.prepResult()?.company).toBe('Globex');
   });
 });
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any, Callable
 
@@ -23,29 +24,79 @@ class AutopilotPipelineService:
         drafter: ApplicationDrafter,
         repo: DraftRepository,
         top_n: int,
+        concurrency: int = 3,
         notifier: Any | None = None,
     ) -> None:
         self._latest_digest = latest_digest
         self._drafter = drafter
         self._repo = repo
         self._top_n = top_n
+        self._concurrency = concurrency
         self._notifier = notifier
+        # Guards against a scheduled run and a manual run-now overlapping —
+        # both paths end up calling into this same service instance.
+        self._running = False
+
+    @property
+    def is_running(self) -> bool:
+        return self._running
+
+    def try_start(self) -> bool:
+        """Synchronously claim the in-flight slot. Returns False if a run is
+        already active. Has no `await` inside, so the check-and-set is atomic
+        under cooperative scheduling — callers (the run-now route) can use it
+        to reject a concurrent request before scheduling any work."""
+        if self._running:
+            return False
+        self._running = True
+        return True
+
+    def _finish(self) -> None:
+        self._running = False
 
     async def run(self) -> PipelineResult:
+        """Guarded entry point used by the scheduler. Best-effort: never raises
+        into the caller. If a run is already in flight — scheduled or started
+        manually via the run-now endpoint — this is a no-op so the two can
+        never overlap."""
+        if not self.try_start():
+            logger.info("autopilot: run() skipped, a run is already in flight")
+            return PipelineResult()
+        return await self.run_claimed()
+
+    async def run_claimed(self) -> PipelineResult:
+        """Execute the pipeline for a caller that already claimed the in-flight
+        slot via `try_start()` (the run-now route's background task). Always
+        releases the slot when done, success or failure."""
+        try:
+            return await self._execute()
+        finally:
+            self._finish()
+
+    async def _execute(self) -> PipelineResult:
         digest = self._latest_digest()
         entries = list(getattr(digest, "entries", []) or [])[: self._top_n]
-        created = 0
+
+        # Dedup BEFORE the concurrent gather: entries are distinct jobs, so a
+        # sequential existence check up front keeps dedup correct without
+        # needing a lock inside the bounded draft path below.
+        to_draft: list[Any] = []
         skipped = 0
-        drafts: list[AutopilotDraft] = []
         for entry in entries:
-            job_id = entry.job_id
-            if self._repo.exists_for_job(job_id):
+            if await asyncio.to_thread(self._repo.exists_for_job, entry.job_id):
                 skipped += 1
                 continue
-            draft = await self._draft_one(entry)
-            drafts.append(draft)
-            if draft.status is not DraftStatus.FAILED:
-                created += 1
+            to_draft.append(entry)
+
+        semaphore = asyncio.Semaphore(self._concurrency)
+
+        async def _bounded_draft(entry: Any) -> AutopilotDraft:
+            async with semaphore:
+                return await self._draft_one(entry)
+
+        drafts = list(await asyncio.gather(*(_bounded_draft(entry) for entry in to_draft)))
+        created = sum(1 for d in drafts if d.status is not DraftStatus.FAILED)
+
         if created and self._notifier is not None:
             try:
                 await self._notifier.notify_pipeline_drafts(created)
@@ -68,4 +119,4 @@ class AutopilotPipelineService:
             status=status,
             detail=detail,
         )
-        return self._repo.add(draft)
+        return await asyncio.to_thread(self._repo.add, draft)

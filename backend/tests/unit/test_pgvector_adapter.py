@@ -8,6 +8,7 @@ extension behaviour must be validated against a real pgvector instance.
 from __future__ import annotations
 
 import json
+import threading
 
 import pytest
 
@@ -22,21 +23,33 @@ class _Row:
         self.score = score
 
 
+class _VectorRow:
+    def __init__(self, embedding: str | None) -> None:
+        self.embedding = embedding
+
+
 class _FakeResult:
-    def __init__(self, rows: list[_Row]) -> None:
+    def __init__(self, rows: list) -> None:
         self._rows = rows
 
-    def all(self) -> list[_Row]:
+    def all(self) -> list:
         return self._rows
+
+    def first(self):
+        return self._rows[0] if self._rows else None
 
 
 class _FakeSession:
-    def __init__(self, rows: list[_Row] | None = None) -> None:
+    def __init__(self, rows: list | None = None) -> None:
         self.executed: list[tuple[str, dict]] = []
         self.commits = 0
+        # Thread identity each `execute()` call ran on — used to prove the
+        # sync SQLAlchemy work is offloaded off the event-loop thread.
+        self.threads: list[int] = []
         self._rows = rows or []
 
     def execute(self, stmt, params=None):
+        self.threads.append(threading.get_ident())
         self.executed.append((str(stmt), params or {}))
         return _FakeResult(self._rows)
 
@@ -112,3 +125,82 @@ async def test_delete_issues_in_clause() -> None:
     assert "DELETE FROM vector_embeddings" in sql
     assert params["ids"] == ["a", "b"]
     assert factory.session.commits == 1
+
+
+@pytest.mark.asyncio
+async def test_get_vector_returns_parsed_embedding() -> None:
+    factory = _FakeSessionFactory([_VectorRow("[0.1,0.2,0.3]")])
+    store = PgVectorStore(factory, dim=3)
+
+    result = await store.get_vector("job-1")
+
+    assert result == [0.1, 0.2, 0.3]
+    sql, params = factory.session.executed[0]
+    assert "SELECT embedding FROM vector_embeddings" in sql
+    assert params["id"] == "job-1"
+
+
+@pytest.mark.asyncio
+async def test_get_vector_returns_none_when_missing() -> None:
+    factory = _FakeSessionFactory([])
+    store = PgVectorStore(factory, dim=3)
+
+    result = await store.get_vector("missing")
+
+    assert result is None
+
+
+# --- Event-loop offloading -------------------------------------------------
+#
+# Each port method must run its sync SQLAlchemy session work in a worker
+# thread (via asyncio.to_thread), not inline on the event-loop thread. The
+# fake session records the thread identity each `execute()` runs on so these
+# assertions actually distinguish "ran on a worker thread" from "ran inline".
+
+
+@pytest.mark.asyncio
+async def test_upsert_runs_off_the_event_loop_thread() -> None:
+    factory = _FakeSessionFactory()
+    store = PgVectorStore(factory, dim=3)
+    loop_thread_id = threading.get_ident()
+
+    await store.upsert("job-1", [0.1, 0.2, 0.3], {})
+
+    assert factory.session.threads
+    assert all(t != loop_thread_id for t in factory.session.threads)
+
+
+@pytest.mark.asyncio
+async def test_search_runs_off_the_event_loop_thread() -> None:
+    factory = _FakeSessionFactory([_Row("job-1", {}, 0.5)])
+    store = PgVectorStore(factory, dim=3)
+    loop_thread_id = threading.get_ident()
+
+    await store.search([0.1, 0.2, 0.3])
+
+    assert factory.session.threads
+    assert all(t != loop_thread_id for t in factory.session.threads)
+
+
+@pytest.mark.asyncio
+async def test_get_vector_runs_off_the_event_loop_thread() -> None:
+    factory = _FakeSessionFactory([_VectorRow("[0.1]")])
+    store = PgVectorStore(factory, dim=3)
+    loop_thread_id = threading.get_ident()
+
+    await store.get_vector("job-1")
+
+    assert factory.session.threads
+    assert all(t != loop_thread_id for t in factory.session.threads)
+
+
+@pytest.mark.asyncio
+async def test_delete_runs_off_the_event_loop_thread() -> None:
+    factory = _FakeSessionFactory()
+    store = PgVectorStore(factory, dim=3)
+    loop_thread_id = threading.get_ident()
+
+    await store.delete(["a"])
+
+    assert factory.session.threads
+    assert all(t != loop_thread_id for t in factory.session.threads)

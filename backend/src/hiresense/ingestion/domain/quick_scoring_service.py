@@ -225,11 +225,18 @@ class QuickScoringService:
             logger.warning("Quick scoring: unparseable response: %s", str(response)[:200])
             return []
 
+        # Positional fallback is only sound when the model returned exactly one
+        # object per job — a shorter/longer array means the Nth object no longer
+        # lines up with the Nth job, so binding by position would attribute a
+        # score to the wrong job (#143). When the count differs we trust the
+        # per-item `ref` alone and drop any item without a usable one.
+        positional_ok = len(data) == len(chunk)
+
         results: list[QuickMatchResult] = []
         for idx, item in enumerate(data):
             if not isinstance(item, dict):
                 continue
-            job = self._resolve_job(item, idx, chunk)
+            job = self._resolve_job(item, idx, chunk, positional_ok=positional_ok)
             if job is None or "score" not in item:
                 continue
             try:
@@ -249,12 +256,20 @@ class QuickScoringService:
         return results
 
     @staticmethod
-    def _resolve_job(item: dict, idx: int, chunk: list[NormalizedJob]) -> NormalizedJob | None:
+    def _resolve_job(
+        item: dict,
+        idx: int,
+        chunk: list[NormalizedJob],
+        *,
+        positional_ok: bool,
+    ) -> NormalizedJob | None:
         ref = item.get("ref")
         if isinstance(ref, (int, float)) and 1 <= int(ref) <= len(chunk):
             return chunk[int(ref) - 1]
-        # Positional fallback when the model omits/garbles the ref.
-        if idx < len(chunk):
+        # Positional fallback when the model omits/garbles the ref — but ONLY
+        # when the returned array is 1:1 with the chunk, so position N reliably
+        # maps to job N. Otherwise drop the item rather than guess (#143).
+        if positional_ok and idx < len(chunk):
             return chunk[idx]
         return None
 

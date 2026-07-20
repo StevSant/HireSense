@@ -78,9 +78,9 @@ class AutopilotPipelineService:
         digest = self._latest_digest()
         entries = list(getattr(digest, "entries", []) or [])[: self._top_n]
 
-        # Dedup BEFORE the concurrent gather: entries are distinct jobs, so a
-        # sequential existence check up front keeps dedup correct without
-        # needing a lock inside the bounded draft path below.
+        # Cheap pre-filter for jobs already drafted in a PRIOR run, so we don't
+        # attempt a doomed reservation insert for them every run. The per-job
+        # `claim` below is the real guard against a *concurrent* duplicate.
         to_draft: list[Any] = []
         skipped = 0
         for entry in entries:
@@ -91,11 +91,15 @@ class AutopilotPipelineService:
 
         semaphore = asyncio.Semaphore(self._concurrency)
 
-        async def _bounded_draft(entry: Any) -> AutopilotDraft:
+        async def _bounded_draft(entry: Any) -> AutopilotDraft | None:
             async with semaphore:
                 return await self._draft_one(entry)
 
-        drafts = list(await asyncio.gather(*(_bounded_draft(entry) for entry in to_draft)))
+        results = list(await asyncio.gather(*(_bounded_draft(entry) for entry in to_draft)))
+        # A None result means another run reserved the job first (lost the race);
+        # it produced no draft here, so it counts as skipped, not created.
+        drafts = [d for d in results if d is not None]
+        skipped += sum(1 for d in results if d is None)
         created = sum(1 for d in drafts if d.status is not DraftStatus.FAILED)
 
         if created and self._notifier is not None:
@@ -105,20 +109,29 @@ class AutopilotPipelineService:
                 logger.exception("autopilot: draft notification failed")
         return PipelineResult(created=created, skipped=skipped, drafts=drafts)
 
-    async def _draft_one(self, entry: Any) -> AutopilotDraft:
+    async def _draft_one(self, entry: Any) -> AutopilotDraft | None:
         job_id = entry.job_id
+        # Reserve the job BEFORE any expensive drafting. If a concurrent run
+        # already reserved it, `claim` returns None and we skip — no duplicate
+        # application, no wasted LLM spend on artifacts.
+        reservation = AutopilotDraft(
+            job_id=job_id,
+            job_title=getattr(entry, "title", None),
+            company=getattr(entry, "company", None),
+            status=DraftStatus.PENDING,
+        )
+        reserved = await asyncio.to_thread(self._repo.claim, reservation)
+        if reserved is None:
+            logger.info("autopilot: job %r already reserved by another run, skipping", job_id)
+            return None
+
         try:
             application_id, status, detail = await self._drafter.draft(job_id)
         except Exception as exc:  # noqa: BLE001 - one bad job must not abort the batch
             logger.exception("autopilot: drafting job %r failed", job_id)
             get_domain_metrics().automation_failures_total.add(1, {"component": "autopilot_draft"})
             application_id, status, detail = None, DraftStatus.FAILED, str(exc)
-        draft = AutopilotDraft(
-            job_id=job_id,
-            application_id=application_id,
-            job_title=getattr(entry, "title", None),
-            company=getattr(entry, "company", None),
-            status=status,
-            detail=detail,
+        finalized = reserved.model_copy(
+            update={"application_id": application_id, "status": status, "detail": detail}
         )
-        return await asyncio.to_thread(self._repo.add, draft)
+        return await asyncio.to_thread(self._repo.finalize, finalized)

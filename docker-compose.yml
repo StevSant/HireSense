@@ -2,15 +2,23 @@ services:
   db:
     image: pgvector/pgvector:pg16
     environment:
-      POSTGRES_USER: hiresense
-      POSTGRES_PASSWORD: hiresense
-      POSTGRES_DB: hiresense
+      # Credentials come from the compose env (shell or the repo-root .env — see
+      # .env.example). POSTGRES_PASSWORD has no committed default: `:?` fails the
+      # command loudly if it is unset, so a production-labeled stack never ships
+      # guessable static credentials.
+      POSTGRES_USER: ${POSTGRES_USER:-hiresense}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (copy .env.example to .env and set it)}
+      POSTGRES_DB: ${POSTGRES_DB:-hiresense}
     ports:
-      - "5432:5432"
+      # Bound to loopback by default: the app reaches the DB over the compose
+      # network (db:5432), so the host publish is only for local tooling (psql,
+      # the opt-in pgvector tests on localhost:5432). Override DB_HOST_PORT with
+      # e.g. 0.0.0.0:5432 only if external access is genuinely required.
+      - "${DB_HOST_PORT:-127.0.0.1:5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hiresense"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-hiresense}"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -46,9 +54,14 @@ services:
       # Compose is a real deployment: fail loudly on missing config.
       APP_MODE: production
       # In-network overrides: .env is host-oriented (localhost); inside the
-      # compose network the app must address services by name.
-      DATABASE_URL: postgresql+asyncpg://hiresense:hiresense@db:5432/hiresense
+      # compose network the app must address services by name. Credentials reuse
+      # the same POSTGRES_* compose vars as the db service so they stay in sync.
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hiresense}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (copy .env.example to .env and set it)}@db:5432/${POSTGRES_DB:-hiresense}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4317
+      # Compose ships telemetry over plaintext gRPC inside the compose network
+      # (otel-lgtm is a sibling service). The code default is now secure (False),
+      # so opt into insecure explicitly here.
+      OTEL_EXPORTER_INSECURE: "true"
       LOG_FORMAT: json
       # Self-drive the recurring pipeline in the containerized deployment.
       SCHEDULER_ENABLED: "true"

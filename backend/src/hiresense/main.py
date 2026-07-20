@@ -42,7 +42,11 @@ from hiresense.observability import setup_telemetry
 from hiresense.ports import LLMTimeoutError
 from hiresense.cover_letter_templates.api import router as cover_letter_templates_router
 from hiresense.identity.api import router as auth_router
-from hiresense.kernel import SecurityHeadersMiddleware, SlidingWindowRateLimiter
+from hiresense.kernel import (
+    SecurityHeadersMiddleware,
+    SlidingWindowRateLimiter,
+    register_domain_exception_handlers,
+)
 from hiresense.ingestion.api import router as ingestion_router
 from hiresense.interview.api import router as interview_router
 from hiresense.interview.domain import InterviewPrepError
@@ -111,6 +115,11 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(SecurityHeadersMiddleware)
 
+    # Map typed domain errors (NotFoundError/ConflictError/ValidationError) to
+    # HTTP statuses in one place, so routers derive status from exception type
+    # rather than substring-matching messages.
+    register_domain_exception_handlers(app)
+
     # A stalled LLM provider call is aborted by the per-call timeout (issue #139)
     # and raises LLMTimeoutError; map it to 504 Gateway Timeout so the client
     # gets a clean error instead of the request hanging on the async worker.
@@ -152,6 +161,19 @@ def create_app() -> FastAPI:
             window_seconds=settings.rate_limit_window_seconds,
         )
         if settings.rate_limit_enabled
+        else None
+    )
+
+    # Dedicated, stricter per-client-IP limiter for POST /auth/login (see
+    # enforce_login_rate_limit), separate from the expensive bucket so brute-force
+    # throttling of the admin credential can't be loosened by other traffic. None
+    # disables enforcement.
+    app.state.login_rate_limiter = (
+        SlidingWindowRateLimiter(
+            max_requests=settings.login_rate_limit_max_requests,
+            window_seconds=settings.login_rate_limit_window_seconds,
+        )
+        if settings.login_rate_limit_enabled
         else None
     )
 

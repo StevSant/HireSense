@@ -20,7 +20,8 @@ from hiresense.applications.domain.aggregate import (
 )
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
-from hiresense.kernel import SlidingWindowRateLimiter
+from hiresense.kernel import SlidingWindowRateLimiter, register_domain_exception_handlers
+from hiresense.kernel.exceptions import ConflictError, NotFoundError, ValidationError
 
 
 class FakeOrchestrator:
@@ -96,7 +97,7 @@ class FakeApplicationService:
         return agg
 
     async def create_from_ingested(self, job_id):
-        raise ValueError(f"Job {job_id} not found")
+        raise NotFoundError(f"Job {job_id} not found")
 
     def get(self, application_id):
         agg = self._store.get(application_id)
@@ -148,7 +149,7 @@ class FakeArtifactService:
         )
 
     async def generate_optimization(self, application_id, cv_language, match_id):
-        raise ValueError("No match found")
+        raise ValidationError("No match found")
 
     async def generate_interview_prep(self, application_id):
         return InterviewPrepView(
@@ -176,6 +177,7 @@ def client(
     application_service: FakeApplicationService, artifact_service: FakeArtifactService
 ) -> TestClient:
     app = FastAPI()
+    register_domain_exception_handlers(app)
     app.include_router(router)
     app.dependency_overrides[require_auth] = lambda: True
     app.dependency_overrides[get_application_service] = lambda: application_service
@@ -264,6 +266,23 @@ def test_create_with_unknown_job_id_returns_404(client: TestClient):
     assert resp.status_code == 404
 
 
+def test_create_with_already_tracked_job_returns_409(
+    client: TestClient, application_service: FakeApplicationService
+):
+    """A ConflictError from the service maps to 409 via the shared handler
+    (type-based), not by matching an 'already tracked' substring."""
+
+    async def _raise_conflict(job_id):
+        raise ConflictError("This job is already tracked")
+
+    application_service.create_from_ingested = _raise_conflict  # type: ignore[assignment]
+
+    resp = client.post("/applications", json={"job_id": str(uuid_mod.uuid4())})
+
+    assert resp.status_code == 409
+    assert resp.json()["detail"] == "This job is already tracked"
+
+
 def test_generate_match(client: TestClient):
     resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
     app_id = resp.json()["id"]
@@ -293,6 +312,7 @@ def test_artifact_routes_are_rate_limited_when_hammered(
     """The four LLM artifact routes (match/optimize/interview-prep/cover-letter)
     share the same expensive-operation limiter as optimization/matching."""
     app = FastAPI()
+    register_domain_exception_handlers(app)
     app.include_router(router)
     app.dependency_overrides[require_auth] = lambda: True
     app.dependency_overrides[get_application_service] = lambda: application_service

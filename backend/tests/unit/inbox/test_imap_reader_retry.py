@@ -29,6 +29,7 @@ def _reader(max_retries: int = 2) -> ImapInboxReader:
         password="p",
         folder="INBOX",
         use_ssl=True,
+        timeout=5.0,
         max_retries=max_retries,
         retry_base_delay=0.01,
     )

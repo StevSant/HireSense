@@ -14,6 +14,7 @@ from hiresense.applications.domain.models import (
     ApplicationMatch,
 )
 from hiresense.applications.ports import ApplicationRepositoryPort
+from hiresense.kernel.exceptions import NotFoundError, ValidationError
 from hiresense.matching.domain import SkillMatcher
 
 
@@ -41,11 +42,11 @@ class ArtifactService:
     ) -> MatchView:
         snapshot = self._repo.get_snapshot(application_id)
         if snapshot is None:
-            raise ValueError(f"Snapshot for {application_id} not found")
+            raise NotFoundError(f"Snapshot for {application_id} not found")
 
         profile = self._profiles.get_for_language(cv_language)
         if profile is None:
-            raise ValueError(f"Profile for language '{cv_language}' not found")
+            raise NotFoundError(f"Profile for language '{cv_language}' not found")
 
         cv_summary = getattr(profile, "summary", "") or ""
         cv_skills = list(getattr(profile, "skills", []) or [])
@@ -111,18 +112,18 @@ class ArtifactService:
     ) -> CvOptimizationView:
         snapshot = self._repo.get_snapshot(application_id)
         if snapshot is None:
-            raise ValueError(f"Snapshot for {application_id} not found")
+            raise NotFoundError(f"Snapshot for {application_id} not found")
 
         if match_id is None:
             match = self._repo.get_latest_match(application_id)
         else:
             match = self._repo.get_match(match_id)
         if match is None:
-            raise ValueError("No match found - run a match before optimizing")
+            raise ValidationError("No match found - run a match before optimizing")
 
         profile = self._profiles.get_for_language(cv_language)
         if profile is None:
-            raise ValueError(f"Profile for language '{cv_language}' not found")
+            raise NotFoundError(f"Profile for language '{cv_language}' not found")
 
         original_tex = getattr(profile, "raw_tex", "") or ""
 
@@ -167,7 +168,7 @@ class ArtifactService:
     ) -> InterviewPrepView:
         snapshot = self._repo.get_snapshot(application_id)
         if snapshot is None:
-            raise ValueError(f"Snapshot for {application_id} not found")
+            raise NotFoundError(f"Snapshot for {application_id} not found")
         if self._tracking is None:
             raise RuntimeError("tracking_service not wired into ArtifactService")
         tracked = self._tracking.get(application_id)

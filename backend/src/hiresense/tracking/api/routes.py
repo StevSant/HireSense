@@ -13,6 +13,7 @@ from hiresense.tracking.api.schemas import (
     TrackedApplicationResponse,
     UpdateApplicationRequest,
 )
+from hiresense.tracking.domain import InvalidStatusTransitionError
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 from hiresense.tracking.domain.services import TrackingService
 
@@ -45,25 +46,17 @@ def create_application(
     service: TrackingService = Depends(get_tracking_service),
     orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
 ) -> TrackedApplicationResponse:
-    try:
-        if request.job_id is not None:
-            app = service.track_from_ingestion(str(request.job_id))
-        else:
-            if request.title is None or request.company is None:
-                raise HTTPException(status_code=422, detail="title and company are required")
-            app = service.track_job(
-                title=request.title,
-                company=request.company,
-                url=request.url,
-                notes=request.notes,
-            )
-    except ValueError as exc:
-        msg = str(exc).lower()
-        if "not found" in msg:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
-        if "already tracked" in msg:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if request.job_id is not None:
+        app = service.track_from_ingestion(str(request.job_id))
+    else:
+        if request.title is None or request.company is None:
+            raise HTTPException(status_code=422, detail="title and company are required")
+        app = service.track_job(
+            title=request.title,
+            company=request.company,
+            url=request.url,
+            notes=request.notes,
+        )
     return _enrich(app, orchestrator)
 
 
@@ -104,6 +97,8 @@ async def update_application(
             app = service.update_notes(id, request.notes)
         else:
             app = service.get(id)
+    except InvalidStatusTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return _enrich(app, orchestrator)

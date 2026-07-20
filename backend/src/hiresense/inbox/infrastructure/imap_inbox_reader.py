@@ -3,11 +3,12 @@ from __future__ import annotations
 import email as email_lib
 import imaplib
 import logging
+import ssl
 import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
-from hiresense.inbox.domain import InboundEmail
+from hiresense.inbox.domain import InboundEmail, synthesize_message_id
 from hiresense.observability import get_domain_metrics
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,8 @@ class ImapInboxReader:
         password: str,
         folder: str,
         use_ssl: bool,
+        timeout: float,
+        allow_insecure: bool = False,
         max_retries: int = 0,
         retry_base_delay: float = 1.0,
     ) -> None:
@@ -41,6 +44,8 @@ class ImapInboxReader:
         self._password = password
         self._folder = folder
         self._use_ssl = use_ssl
+        self._timeout = timeout
+        self._allow_insecure = allow_insecure
         # Bounded retry for transient connection errors (issue #163). 0 disables
         # retrying; a fetch that still fails is counted and degrades to [].
         self._max_retries = max_retries
@@ -78,10 +83,19 @@ class ImapInboxReader:
         get_domain_metrics().automation_failures_total.add(1, {"component": "inbox_fetch"})
 
     def _fetch(self) -> list[InboundEmail]:
+        if not self._use_ssl and self._username and not self._allow_insecure:
+            logger.warning(
+                "inbox: refusing IMAP login over a non-SSL connection (credentials "
+                "would be sent in plaintext); enable IMAP_USE_SSL, or set "
+                "IMAP_ALLOW_INSECURE=true for a trusted local/dev server"
+            )
+            return []
         client = (
-            imaplib.IMAP4_SSL(self._host, self._port)
+            imaplib.IMAP4_SSL(
+                self._host, self._port, ssl_context=self._ssl_context(), timeout=self._timeout
+            )
             if self._use_ssl
-            else imaplib.IMAP4(self._host, self._port)
+            else imaplib.IMAP4(self._host, self._port, timeout=self._timeout)
         )
         out: list[InboundEmail] = []
         try:
@@ -103,18 +117,36 @@ class ImapInboxReader:
                 pass
         return out
 
+    def _ssl_context(self) -> ssl.SSLContext:
+        context = ssl.create_default_context()
+        if self._allow_insecure:
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        return context
+
     @staticmethod
     def _parse(raw: bytes) -> InboundEmail | None:
         try:
             msg = email_lib.message_from_bytes(raw)
             body = ImapInboxReader._extract_body(msg)
             received = parsedate_to_datetime(msg.get("Date")) if msg.get("Date") else None
-            return InboundEmail(
-                message_id=msg.get("Message-ID") or "",
-                from_address=msg.get("From") or "",
-                subject=msg.get("Subject") or "",
+            from_address = msg.get("From") or ""
+            subject = msg.get("Subject") or ""
+            received_at = received or datetime.now(timezone.utc)
+            # A missing Message-ID must not collapse every header-less email onto
+            # the same empty dedup key — synthesize a stable one from the content.
+            message_id = msg.get("Message-ID") or synthesize_message_id(
+                from_address=from_address,
+                subject=subject,
+                received_at=received_at,
                 body=body,
-                received_at=received or datetime.now(timezone.utc),
+            )
+            return InboundEmail(
+                message_id=message_id,
+                from_address=from_address,
+                subject=subject,
+                body=body,
+                received_at=received_at,
             )
         except Exception:  # noqa: BLE001
             logger.warning("inbox: could not parse an email")

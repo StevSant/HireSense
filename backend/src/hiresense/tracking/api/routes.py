@@ -46,25 +46,17 @@ def create_application(
     service: TrackingService = Depends(get_tracking_service),
     orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
 ) -> TrackedApplicationResponse:
-    try:
-        if request.job_id is not None:
-            app = service.track_from_ingestion(str(request.job_id))
-        else:
-            if request.title is None or request.company is None:
-                raise HTTPException(status_code=422, detail="title and company are required")
-            app = service.track_job(
-                title=request.title,
-                company=request.company,
-                url=request.url,
-                notes=request.notes,
-            )
-    except ValueError as exc:
-        msg = str(exc).lower()
-        if "not found" in msg:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
-        if "already tracked" in msg:
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if request.job_id is not None:
+        app = service.track_from_ingestion(str(request.job_id))
+    else:
+        if request.title is None or request.company is None:
+            raise HTTPException(status_code=422, detail="title and company are required")
+        app = service.track_job(
+            title=request.title,
+            company=request.company,
+            url=request.url,
+            notes=request.notes,
+        )
     return _enrich(app, orchestrator)
 
 

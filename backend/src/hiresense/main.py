@@ -40,7 +40,11 @@ from hiresense.config import Settings
 from hiresense.observability import setup_telemetry
 from hiresense.cover_letter_templates.api import router as cover_letter_templates_router
 from hiresense.identity.api import router as auth_router
-from hiresense.kernel import SecurityHeadersMiddleware, SlidingWindowRateLimiter
+from hiresense.kernel import (
+    SecurityHeadersMiddleware,
+    SlidingWindowRateLimiter,
+    register_domain_exception_handlers,
+)
 from hiresense.ingestion.api import router as ingestion_router
 from hiresense.interview.api import router as interview_router
 from hiresense.matching.api import router as matching_router
@@ -106,6 +110,11 @@ def create_app() -> FastAPI:
         allow_headers=settings.cors_allow_headers,
     )
     app.add_middleware(SecurityHeadersMiddleware)
+
+    # Map typed domain errors (NotFoundError/ConflictError/ValidationError) to
+    # HTTP statuses in one place, so routers derive status from exception type
+    # rather than substring-matching messages.
+    register_domain_exception_handlers(app)
 
     app.state.settings = settings
 

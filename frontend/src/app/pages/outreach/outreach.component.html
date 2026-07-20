@@ -49,6 +49,11 @@
       </select>
     </div>
 
+    @if (applicationsError()) {
+      <div class="alert alert-error">{{ applicationsError() }}</div>
+      <button type="button" class="btn-secondary" (click)="loadApplications()">Retry</button>
+    }
+
     <div class="field-row">
       <div class="field">
         <label for="contact">Contact name (optional)</label>

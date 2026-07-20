@@ -114,6 +114,12 @@ class FakeRepo:
     def get_latest_interview_prep(self, application_id):
         return None
 
+    def get_latest_cover_letter(self, application_id):
+        return None
+
+    def list_cover_letters(self, application_id):
+        return []
+
 
 class FakeSkillExtractor:
     def __init__(self, skills: list[str]) -> None:

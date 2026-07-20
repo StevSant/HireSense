@@ -1,5 +1,6 @@
 from hiresense.profile.domain.apply_prefill import build_prefill
 from hiresense.profile.domain.apply_profile import ApplyProfile
+from hiresense.profile.domain.contact_info import ContactInfo
 from hiresense.profile.domain.cv_translator import CVTranslator
 from hiresense.profile.domain.latex_parser import LaTeXParser
 from hiresense.profile.domain.models import CandidateProfile, CVSection
@@ -14,6 +15,7 @@ __all__ = [
     "CVSection",
     "CVTranslator",
     "CandidateProfile",
+    "ContactInfo",
     "LaTeXParser",
     "PDFParser",
     "ProfileService",

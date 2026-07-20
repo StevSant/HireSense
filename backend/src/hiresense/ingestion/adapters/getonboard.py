@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -20,6 +21,7 @@ class GetOnBoardAdapter:
         http_client: Any,
         base_url: str,
         categories: list[str] | None = None,
+        company_concurrency: int = 8,
         profile_sink: CompanyProfileSinkPort | None = None,
         profile_char_limit: int = DEFAULT_PROFILE_CHAR_LIMIT,
     ) -> None:
@@ -30,6 +32,7 @@ class GetOnBoardAdapter:
         # company id → name, resolved lazily and reused across the run so we
         # never fetch the same company twice (see _resolve_company_names).
         self._company_cache: dict[str, str] = {}
+        self._company_concurrency = max(1, company_concurrency)
         # Optional sink for the company profile carried on the same
         # /companies/{id} payload — captured once here instead of discarded.
         self._profile_sink = profile_sink
@@ -81,11 +84,33 @@ class GetOnBoardAdapter:
 
         getonbrd's job listings carry only a company *id*
         (``attributes.company.data.id``), not the name, so without this the
-        company column renders blank. We resolve each id via ``/companies/{id}``
-        (cached per run) and stash the result under ``attributes.company_name``,
-        which the normalizer already reads. Failures degrade to a blank company
-        rather than breaking the whole fetch.
+        company column renders blank. We resolve the DISTINCT ids concurrently
+        via ``/companies/{id}`` under a bounded semaphore (one round-trip per
+        distinct company instead of a serial loop over every job), cache the
+        results, and stash each name under ``attributes.company_name``, which
+        the normalizer already reads. Failures degrade to a blank company rather
+        than breaking the whole fetch.
         """
+        # Distinct, resolution-order-preserving ids still needing a name.
+        pending: dict[str, None] = {}
+        for raw in jobs:
+            attrs = raw.raw_data.get("attributes", {})
+            if attrs.get("company_name"):
+                continue
+            company_id = (attrs.get("company") or {}).get("data", {}).get("id")
+            if company_id is not None:
+                pending.setdefault(str(company_id), None)
+        if not pending:
+            return
+
+        sem = asyncio.Semaphore(self._company_concurrency)
+
+        async def _resolve(company_id: str) -> tuple[str, str]:
+            async with sem:
+                return company_id, await self._company_name(company_id)
+
+        resolved = dict(await asyncio.gather(*(_resolve(cid) for cid in pending)))
+
         for raw in jobs:
             attrs = raw.raw_data.get("attributes", {})
             if attrs.get("company_name"):
@@ -93,7 +118,7 @@ class GetOnBoardAdapter:
             company_id = (attrs.get("company") or {}).get("data", {}).get("id")
             if company_id is None:
                 continue
-            name = await self._company_name(str(company_id))
+            name = resolved.get(str(company_id))
             if name:
                 attrs["company_name"] = name
 

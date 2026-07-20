@@ -98,7 +98,23 @@ describe('OutreachComponent', () => {
 
     expect(cmp.applications().length).toBe(1);
     expect(cmp.selectedApplicationId()).toBe('app-1');
+    expect(cmp.applicationsError()).toBe('');
     expect(outreach.listEvents).toHaveBeenCalledWith('app-1');
+  });
+
+  it('surfaces an error state when loading applications fails', () => {
+    const list = vi.fn(() => throwError(() => ({ error: { detail: 'nope' } })));
+    const { cmp } = mount({ applications: { list } });
+
+    expect(cmp.applications().length).toBe(0);
+    expect(cmp.applicationsError()).toBe('nope');
+  });
+
+  it('falls back to a generic applications-load message when the error has no detail', () => {
+    const list = vi.fn(() => throwError(() => ({})));
+    const { cmp } = mount({ applications: { list } });
+
+    expect(cmp.applicationsError()).toBe('Could not load your applications.');
   });
 
   it('generate happy path fills the message signal', () => {

@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { CoverLetterRunnerService } from '../../../core/services/cover-letter-runner.service';
+import { openExternalUrl } from '../../../core/utils/open-external-url';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
 import { CoverLetterTone } from '../models/cover-letter-tone.model';
 
@@ -128,8 +129,10 @@ export class ApplyTabComponent {
 
   openJobAndMarkApplied(): void {
     const url = this.aggregate().url;
+    // The job URL is ingested (attacker-influenceable); openExternalUrl only
+    // opens it when it is a safe http(s) scheme, blocking javascript:/data: sinks.
     if (url) {
-      window.open(url, '_blank', 'noopener');
+      openExternalUrl(url);
     }
     this.markApplied();
   }

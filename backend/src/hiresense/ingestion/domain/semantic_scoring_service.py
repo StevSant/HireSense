@@ -1,32 +1,15 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import logging
 from typing import Any
 
+from hiresense.ingestion.domain.embedding_text import embed_profile_cached, job_text
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.kernel import LRUCache
 from hiresense.matching.domain.semantic_scorer import SemanticScorer
 
 logger = logging.getLogger(__name__)
-
-_JOB_TEXT_CHAR_LIMIT = 4000
-_PROFILE_TEXT_CHAR_LIMIT = 4000
-
-
-def _job_text(job: NormalizedJob) -> str:
-    parts = [job.title, " ".join(job.skills), job.description]
-    return "\n".join(p for p in parts if p)[:_JOB_TEXT_CHAR_LIMIT]
-
-
-def _profile_text(skills: list[str], summary: str) -> str:
-    return f"{' '.join(skills)}\n{summary}"[:_PROFILE_TEXT_CHAR_LIMIT]
-
-
-def _profile_key(skills: list[str], summary: str) -> str:
-    raw = _profile_text(skills, summary).encode("utf-8")
-    return hashlib.sha256(raw).hexdigest()
 
 
 class SemanticScoringService:
@@ -69,7 +52,9 @@ class SemanticScoringService:
             return jobs
 
         async with self._lock:
-            profile_vec = await self._get_profile_embedding(candidate_skills, candidate_summary)
+            profile_vec = await embed_profile_cached(
+                self._embedding, self._profile_cache, candidate_skills, candidate_summary
+            )
             if profile_vec is None:
                 return jobs
 
@@ -82,29 +67,11 @@ class SemanticScoringService:
             result.append(job.model_copy(update={"semantic_score": score}))
         return result
 
-    async def _get_profile_embedding(self, skills: list[str], summary: str) -> list[float] | None:
-        key = _profile_key(skills, summary)
-        cached = self._profile_cache.get(key)
-        if cached is not None:
-            return cached
-        text = _profile_text(skills, summary)
-        if not text.strip():
-            return None
-        try:
-            vectors = await self._embedding.embed([text])
-        except Exception:
-            logger.exception("Profile embedding failed")
-            return None
-        if not vectors:
-            return None
-        self._profile_cache[key] = vectors[0]
-        return vectors[0]
-
     async def _populate_job_cache(self, jobs: list[NormalizedJob]) -> None:
         missing = [j for j in jobs if j.id not in self._job_cache]
         if not missing:
             return
-        texts = [_job_text(j) for j in missing]
+        texts = [job_text(j) for j in missing]
         try:
             vectors = await self._embedding.embed(texts)
         except Exception:

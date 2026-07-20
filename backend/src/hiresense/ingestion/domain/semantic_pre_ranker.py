@@ -25,20 +25,15 @@ for one embed call.
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import logging
 from typing import Any
 
+from hiresense.ingestion.domain.embedding_text import embed_profile_cached
 from hiresense.ingestion.domain.job_scorer import combine_fit_score
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.kernel import LRUCache
 
 logger = logging.getLogger(__name__)
-
-
-def _profile_key(skills: list[str], summary: str) -> str:
-    raw = f"{' '.join(skills)}\n{summary}".encode("utf-8")
-    return hashlib.sha256(raw).hexdigest()
 
 
 class SemanticPreRanker:
@@ -184,24 +179,11 @@ class SemanticPreRanker:
         return rescored + unindexed
 
     async def _get_profile_embedding(self, skills: list[str], summary: str) -> list[float] | None:
-        key = _profile_key(skills, summary)
         async with self._lock:
-            cached = self._profile_cache.get(key)
-            if cached is not None:
-                return cached
-            text = f"{' '.join(skills)}\n{summary}".strip()
-            if not text:
-                return None
-            try:
-                vectors = await self._embedding.embed([text])
-            except Exception:
-                logger.exception("SemanticPreRanker: profile embedding failed — passthrough")
-                return None
-            if not vectors:
-                return None
-            vec = vectors[0]
-            if not vec:
-                # Port returned an empty vector — treat as "no embedding"
-                return None
-            self._profile_cache[key] = vec
-            return vec
+            return await embed_profile_cached(
+                self._embedding,
+                self._profile_cache,
+                skills,
+                summary,
+                log_label="SemanticPreRanker: profile embedding failed — passthrough",
+            )

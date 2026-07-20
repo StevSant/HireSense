@@ -15,7 +15,9 @@ class AutopilotDraftOrm(Base):
     __tablename__ = "autopilot_drafts"
 
     id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
-    job_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    # Unique so a reserved draft is the idempotency guard: two concurrent runs
+    # racing on the same job can never both insert a row (see DraftRepositoryImpl.claim).
+    job_id: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True)
     application_id: Mapped[uuid_mod.UUID | None] = mapped_column(Uuid, nullable=True)
     job_title: Mapped[str | None] = mapped_column(String(512), nullable=True)
     company: Mapped[str | None] = mapped_column(String(256), nullable=True)

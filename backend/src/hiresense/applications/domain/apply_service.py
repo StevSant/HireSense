@@ -9,6 +9,7 @@ from typing import Any
 import logging
 
 from hiresense.ports import LatexCompileError, LatexCompilerPort
+from hiresense.kernel.exceptions import NotFoundError
 from hiresense.applications.domain.aggregate import CoverLetterView
 from hiresense.applications.domain.ats_field_map import build_autofill_plan
 from hiresense.applications.domain.autofill_plan_view import AutofillPlanView
@@ -20,6 +21,12 @@ from hiresense.profile.domain import build_prefill
 from hiresense.tracking.domain.models import ApplicationStatus
 
 logger = logging.getLogger(__name__)
+
+# Cover letters are rendered in English for now; contact details are read from
+# the candidate's English profile variant.
+COVER_LETTER_LANGUAGE = "en"
+# Letterhead fallback so the LaTeX still compiles before any profile is uploaded.
+PLACEHOLDER_CANDIDATE_NAME = "Candidate"
 
 
 class ApplyService:
@@ -48,11 +55,11 @@ class ApplyService:
     ) -> CoverLetterView:
         snapshot = self._repo.get_snapshot(application_id)
         if snapshot is None:
-            raise ValueError(f"Snapshot for {application_id} not found")
+            raise NotFoundError(f"Snapshot for {application_id} not found")
         tracked = self._tracking.get(application_id)
         profile = self._profiles.get_for_language(cv_language)
         if profile is None:
-            raise ValueError(f"Profile for language '{cv_language}' not found")
+            raise NotFoundError(f"Profile for language '{cv_language}' not found")
 
         latest_match = self._repo.get_latest_match(application_id)
         pros = list(latest_match.pros) if latest_match else []
@@ -145,16 +152,19 @@ class ApplyService:
         if letter is None:
             raise ValueError("No cover letter found — generate one first")
         tracked = self._tracking.get(application_id)
-        profile = self._profiles.get_for_language("en")  # cover letter is always English for now
 
-        # Pull name/contact from the underlying CandidateProfile via the latest profile lookup.
-        candidate_info = self._candidate_info(profile)
+        # Letterhead contact details come from the candidate's English profile
+        # via the profile service's public port. Fall back to a placeholder name
+        # so the LaTeX still compiles when no profile exists yet.
+        contact = self._profiles.get_contact_info(COVER_LETTER_LANGUAGE)
 
         tex_source = self._latex.render_cover_letter_tex(
             body=letter.body,
-            candidate_name=candidate_info["name"],
-            candidate_email=candidate_info["email"],
-            candidate_phone=candidate_info["phone"],
+            candidate_name=(
+                contact.name if contact and contact.name else PLACEHOLDER_CANDIDATE_NAME
+            ),
+            candidate_email=contact.email if contact else None,
+            candidate_phone=contact.phone if contact else None,
             company=tracked.company,
             date_str=datetime.now().strftime("%B %d, %Y"),
         )
@@ -197,21 +207,3 @@ class ApplyService:
             application_id,
             ApplicationStatus.APPLIED,
         )
-
-    # ---- internal ----------------------------------------------------
-
-    def _candidate_info(self, profile: Any) -> dict[str, str | None]:
-        # ProfileLanguageView doesn't carry name/email/phone; pull from the
-        # underlying repo through profile_service if exposed. Fall back to
-        # placeholders so the LaTeX still compiles.
-        name = "Candidate"
-        email: str | None = None
-        phone: str | None = None
-        latest = getattr(self._profiles, "_get_latest_for_language_sync", None)
-        if latest is not None and profile is not None:
-            full = latest(profile.language)
-            if full is not None:
-                name = full.name or name
-                email = full.email
-                phone = full.phone
-        return {"name": name, "email": email, "phone": phone}

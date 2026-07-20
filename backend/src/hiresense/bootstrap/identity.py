@@ -12,4 +12,6 @@ def build_identity(settings: Settings) -> IdentityProvider:
         role=settings.auth_role,
         password_hash=settings.auth_password_hash,
         expiry_hours=settings.jwt_expiry_hours,
+        issuer=settings.jwt_issuer,
+        audience=settings.jwt_audience,
     )

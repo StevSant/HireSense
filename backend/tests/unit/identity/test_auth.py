@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+from jose import jwt
+
 from hiresense.identity.domain import AuthService, hash_password
 
 
@@ -110,3 +112,47 @@ def test_login_handles_non_ascii_input_without_error() -> None:
     # clean auth failure (None), not propagate an exception (500).
     service = AuthService(username="admin", password="secret", jwt_secret="key")
     assert service.login("admín", "sécret") is None
+
+
+def test_issued_token_carries_configured_issuer_and_audience() -> None:
+    service = AuthService(
+        username="admin",
+        password="secret",
+        jwt_secret="key",
+        issuer="acme",
+        audience="acme-api",
+    )
+    token = service.login("admin", "secret")
+    assert token is not None
+    payload = service.validate_token(token)
+    assert payload is not None
+    assert payload["iss"] == "acme"
+    assert payload["aud"] == "acme-api"
+
+
+def test_validate_rejects_token_from_a_different_issuer() -> None:
+    issuer = AuthService(username="admin", password="secret", jwt_secret="key", issuer="acme")
+    validator = AuthService(username="admin", password="secret", jwt_secret="key", issuer="other")
+    token = issuer.login("admin", "secret")
+    assert token is not None
+    # Signature/secret are identical; only the issuer differs.
+    assert validator.validate_token(token) is None
+
+
+def test_validate_rejects_token_for_a_different_audience() -> None:
+    issuer = AuthService(username="admin", password="secret", jwt_secret="key", audience="app-a")
+    validator = AuthService(username="admin", password="secret", jwt_secret="key", audience="app-b")
+    token = issuer.login("admin", "secret")
+    assert token is not None
+    assert validator.validate_token(token) is None
+
+
+def test_validate_rejects_token_missing_exp() -> None:
+    service = AuthService(username="admin", password="secret", jwt_secret="key")
+    # Hand-craft a token with the right signature/iss/aud but no exp claim.
+    forged = jwt.encode(
+        {"sub": "admin", "role": "admin", "iss": "hiresense", "aud": "hiresense-api"},
+        "key",
+        algorithm="HS256",
+    )
+    assert service.validate_token(forged) is None

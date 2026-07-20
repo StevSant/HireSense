@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -41,6 +42,31 @@ async def test_embed_lazy_loads_model() -> None:
 
         mock_cls.assert_called_once_with("all-mpnet-base-v2", device="cpu")
         assert adapter._model is mock_instance
+
+
+@pytest.mark.asyncio
+async def test_concurrent_first_calls_load_model_exactly_once() -> None:
+    # Two concurrent cold `embed()` calls must not each load the ~420MB
+    # model — the asyncio.Lock double-checked load must serialize them so
+    # the second waiter observes the already-loaded model.
+    load_calls = 0
+
+    class _FakeModel:
+        def encode(self, texts):
+            return [[0.1] for _ in texts]
+
+    def fake_load():
+        nonlocal load_calls
+        load_calls += 1
+        return _FakeModel()
+
+    adapter = SentenceTransformerAdapter(model_name="all-mpnet-base-v2")
+    adapter._load_model = fake_load
+
+    results = await asyncio.gather(adapter.embed(["a"]), adapter.embed(["b"]))
+
+    assert load_calls == 1
+    assert results == [[[0.1]], [[0.1]]]
 
 
 @pytest.mark.asyncio

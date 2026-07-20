@@ -14,6 +14,10 @@ class LLMSettings(BaseSettings):
     # encryption-backed persistence; the admin endpoints will refuse to
     # save a new key and the runtime falls back to llm_api_key from env.
     llm_settings_encryption_key: str = ""
+    # Gates Anthropic prompt caching (cache_control on the stable system-prompt
+    # prefix). Only takes effect when the resolved feature config's provider is
+    # "anthropic" — other providers are unaffected regardless of this flag.
+    llm_prompt_cache_enabled: bool = True
     embedding_model: str = "all-mpnet-base-v2"
     embedding_device: str = "cpu"
     # Embedding vector dimension — must match the model above (all-mpnet-base-v2
@@ -34,5 +38,25 @@ class LLMSettings(BaseSettings):
     match_quick_batch_size: int = 20
     # Per-job description truncation (chars) inside the batched quick prompt.
     match_quick_job_char_limit: int = 1500
+    # Max concurrent quick-scorer LLM chunk calls per request. Bounds fan-out
+    # so a large rescore (many cache misses split into batch_size chunks)
+    # can't fire one request per chunk all at once and trip the provider's
+    # rate limit.
+    match_quick_concurrency: int = 4
     # Per-job description truncation (chars) for the deeper single-job analysis.
     match_deep_job_char_limit: int = 6000
+    # Default model for the combined 6-dimension scorer (feature key
+    # match_dimension_scorer) — the one-call replacement for the 6 individual
+    # dimension scorers. Admin-overridable in the LLM Settings UI like the
+    # two models above.
+    match_dimension_model: str = "claude-sonnet-4-6"
+
+    # Default output token cap applied to any feature whose admin-configured
+    # extra_params don't already set max_tokens. Prevents unbounded LLM output
+    # (and its cost) on features nobody has explicitly tuned.
+    llm_default_max_tokens: int = 2048
+    # Smaller output cap for "classifier" features that return a short verdict
+    # (a label, a confidence, a brief extraction) rather than long-form text.
+    llm_classifier_max_tokens: int = 512
+    # Cap on extracted CV/resume text (chars) passed to the LLM parser prompt.
+    cv_parse_char_limit: int = 20000

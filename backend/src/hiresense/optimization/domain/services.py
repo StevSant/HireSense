@@ -19,8 +19,13 @@ def _strip_markdown_fence(text: str) -> str:
 
 
 class CVOptimizer:
-    def __init__(self, llm: Any) -> None:
+    def __init__(self, llm: Any, job_char_limit: int = 6000) -> None:
         self._llm = llm
+        # Caps job_description in the prompt (unbounded free text). Reuses
+        # the existing match_deep_job_char_limit value, wired from bootstrap.
+        # original_tex is NEVER truncated — _apply_changes() replaces exact
+        # substrings against it, so truncating would break that anchor match.
+        self._job_char_limit = job_char_limit
 
     async def optimize(
         self,
@@ -78,7 +83,7 @@ class CVOptimizer:
     ) -> dict[str, Any]:
         prompt = (
             "You are optimizing a LaTeX CV to better match a specific job.\n\n"
-            f"Job Description: {job_description}\n"
+            f"Job Description: {job_description[: self._job_char_limit]}\n"
             f"Required Skills: {', '.join(job_skills)}\n"
             f"Missing Skills: {', '.join(missing_skills)}\n"
             f"Recommendations: {', '.join(recommendations)}\n\n"

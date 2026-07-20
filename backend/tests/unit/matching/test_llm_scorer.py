@@ -86,3 +86,29 @@ async def test_llm_scorer_extracts_json_from_markdown() -> None:
     result = await scorer.score({"title": "SWE"})
     assert result.score == 0.6
     assert result.rationale == "Decent"
+
+
+def test_truncate_defaults_to_4000_chars() -> None:
+    scorer = ConcreteLLMScorer(llm=None, weight=10)
+    text = "x" * 50_000
+    truncated = scorer._truncate(text)
+    assert len(truncated) == 4000
+    assert truncated == "x" * 4000
+
+
+def test_truncate_honors_custom_job_char_limit() -> None:
+    scorer = ConcreteLLMScorer(llm=None, weight=10, job_char_limit=100)
+    text = "y" * 50_000
+    truncated = scorer._truncate(text)
+    assert len(truncated) == 100
+
+
+def test_truncate_leaves_short_text_untouched() -> None:
+    scorer = ConcreteLLMScorer(llm=None, weight=10)
+    assert scorer._truncate("short description") == "short description"
+
+
+def test_truncate_handles_none_and_empty() -> None:
+    scorer = ConcreteLLMScorer(llm=None, weight=10)
+    assert scorer._truncate(None) == ""
+    assert scorer._truncate("") == ""

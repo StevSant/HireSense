@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { CoverLetterTone } from '../../pages/applications/models/cover-letter-tone.model';
 import { ApplicationsService } from './applications.service';
+import { mapLlmError } from './llm-error.util';
 
 /**
  * Long-lived coordinator for cover-letter generation runs.
@@ -35,7 +36,7 @@ export class CoverLetterRunnerService {
       },
       error: (err) => {
         this.runningId.set(null);
-        this.lastError.set(err?.error?.detail ?? 'Cover letter generation failed');
+        this.lastError.set(mapLlmError(err, 'Cover letter generation failed'));
         this.completed$.next(applicationId);
       },
     });

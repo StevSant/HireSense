@@ -66,6 +66,16 @@ FEATURE_REGISTRY: tuple[FeatureDescriptor, ...] = (
         description="Scores how prepared the candidate is for interviews.",
     ),
     FeatureDescriptor(
+        key="match_dimension_scorer",
+        name="Combined Dimension Scorer",
+        description=(
+            "Scores seniority, compensation, growth, culture, application "
+            "strength, and interview readiness in a single call. Default path "
+            "for per-job dimension scoring; the 6 individual scorers above are "
+            "the fallback when this response fails to parse."
+        ),
+    ),
+    FeatureDescriptor(
         key="llm_scorer",
         name="LLM Match Scorer",
         description="Holistic LLM-driven match scoring.",

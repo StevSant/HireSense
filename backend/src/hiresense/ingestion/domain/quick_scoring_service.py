@@ -95,11 +95,17 @@ class QuickScoringService:
         cache_repo: Any,
         batch_size: int = 20,
         job_char_limit: int = 1500,
+        concurrency: int = 4,
     ) -> None:
         self._llm = llm
         self._cache_repo = cache_repo
         self._batch_size = max(1, batch_size)
         self._job_char_limit = job_char_limit
+        # Cap concurrent LLM chunk calls so a large rescore (many cache misses
+        # fanned out over several batch-sized chunks) can't fire one request per
+        # chunk all at once and trip the provider's rate limit. Mirrors
+        # JobQualityClassifier's max_concurrency.
+        self._concurrency = max(1, concurrency)
 
     async def score_page(
         self,
@@ -123,7 +129,9 @@ class QuickScoringService:
         if not jobs:
             return {}
         profile_hash = score_profile_hash(candidate_skills, candidate_summary)
-        hits = self._cache_repo.get_quick_bulk([j.id for j in jobs], profile_hash)
+        hits = await asyncio.to_thread(
+            self._cache_repo.get_quick_bulk, [j.id for j in jobs], profile_hash
+        )
 
         if not llm_on_miss or self._llm is None or (not candidate_skills and not candidate_summary):
             return hits
@@ -134,18 +142,24 @@ class QuickScoringService:
 
         level = infer_candidate_level(candidate_summary)
         chunks = [misses[i : i + self._batch_size] for i in range(0, len(misses), self._batch_size)]
-        scored_chunks = await asyncio.gather(
-            *(
-                self._score_chunk(chunk, candidate_skills, candidate_summary, level.value)
-                for chunk in chunks
-            )
-        )
+        sem = asyncio.Semaphore(self._concurrency)
+
+        async def _bounded(chunk: list[NormalizedJob]) -> list[QuickMatchResult]:
+            async with sem:
+                return await self._score_chunk(
+                    chunk, candidate_skills, candidate_summary, level.value
+                )
+
+        scored_chunks = await asyncio.gather(*(_bounded(chunk) for chunk in chunks))
 
         results = dict(hits)
+        new_results: list[QuickMatchResult] = []
         for chunk_results in scored_chunks:
             for result in chunk_results:
-                self._safe_upsert(result, profile_hash)
+                new_results.append(result)
                 results[result.job_id] = result
+        if new_results:
+            await self._safe_upsert_bulk(new_results, profile_hash)
         return results
 
     async def _score_chunk(
@@ -155,32 +169,46 @@ class QuickScoringService:
         candidate_summary: str,
         level: str,
     ) -> list[QuickMatchResult]:
-        prompt = self._build_prompt(chunk, candidate_skills, candidate_summary, level)
+        system_prompt = self._build_system_prompt(candidate_skills, candidate_summary, level)
+        prompt = self._build_prompt(chunk)
         try:
-            response = await self._llm.complete(prompt, system=_SYSTEM_PROMPT)
+            response = await self._llm.complete(prompt, system=system_prompt)
         except Exception:
             logger.exception("Quick scoring batch failed (size=%d)", len(chunk))
             return []
         return self._parse(response, chunk)
 
-    def _build_prompt(
-        self,
-        chunk: list[NormalizedJob],
+    @staticmethod
+    def _build_system_prompt(
         candidate_skills: list[str],
         candidate_summary: str,
         level: str,
     ) -> str:
+        """Static instructions + the CANDIDATE block, as the cached prefix.
+
+        The CANDIDATE block is byte-stable across chunks within one
+        `score_page` call (same candidate_skills/candidate_summary/level are
+        passed to every chunk) and across runs for the same profile_hash, so
+        placing it in the system prompt lets Anthropic prompt caching (see
+        LangChainLLMAdapter) reuse the cached prefix across chunks and calls
+        instead of re-processing it every time. JOBS — which vary per chunk —
+        stay in the user prompt (`_build_prompt`).
+        """
         skills = ", ".join(s for s in candidate_skills if s) or "(none listed)"
         summary = (candidate_summary or "").strip()[:_SUMMARY_CHAR_LIMIT] or "(no summary)"
-        lines = [
-            "CANDIDATE",
-            f"Inferred level: {level}",
-            f"Skills: {skills}",
-            "Experience / summary:",
-            summary,
-            "",
-            "JOBS (score every one; echo its ref number):",
-        ]
+        candidate_block = "\n".join(
+            [
+                "CANDIDATE",
+                f"Inferred level: {level}",
+                f"Skills: {skills}",
+                "Experience / summary:",
+                summary,
+            ]
+        )
+        return f"{_SYSTEM_PROMPT}\n\n{candidate_block}"
+
+    def _build_prompt(self, chunk: list[NormalizedJob]) -> str:
+        lines = ["JOBS (score every one; echo its ref number):"]
         for ref, job in enumerate(chunk, start=1):
             job_skills = ", ".join(s for s in job.skills if s) or "(none listed)"
             desc = (job.description or "").strip()[: self._job_char_limit]
@@ -230,8 +258,10 @@ class QuickScoringService:
             return chunk[idx]
         return None
 
-    def _safe_upsert(self, result: QuickMatchResult, profile_hash: str) -> None:
+    async def _safe_upsert_bulk(self, results: list[QuickMatchResult], profile_hash: str) -> None:
         try:
-            self._cache_repo.upsert_quick(result, profile_hash)
+            await asyncio.to_thread(self._cache_repo.upsert_quick_bulk, results, profile_hash)
         except Exception:
-            logger.exception("Quick score cache upsert failed for job %s", result.job_id)
+            # Cache write failure must never fail scoring — the caller already
+            # has the results in hand; only the next request's cache hit is lost.
+            logger.exception("Quick score cache bulk upsert failed for %d results", len(results))

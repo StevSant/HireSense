@@ -39,7 +39,7 @@ class ApplicationStrengthScorer(BaseLLMScorer):
             f"Job Title: {title}\n"
             f"Company: {company}\n"
             f"Required Skills: {job_skills_display}\n"
-            f"Job Description:\n{description}\n\n"
+            f"Job Description:\n{self._truncate(description)}\n\n"
             f"Candidate Skills: {candidate_skills_display}\n"
             f"Candidate Experience:\n{experience_content}\n\n"
             "Evaluate how well this candidate's CV positions them for the role. Consider:\n"

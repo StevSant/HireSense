@@ -41,6 +41,7 @@ describe('IngestionComponent — connections badge', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [IngestionComponent],
       providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
@@ -59,12 +60,12 @@ describe('IngestionComponent — connections badge', () => {
       .match((r) => r.url === `${environment.apiUrl}/ingestion/portals`)
       .forEach((r) => r.flush([]));
 
-    // ngOnInit issues one request; the child filters component restoring its
-    // location filter may issue a second, which switchMap cancels (the live one
-    // always wins). Only the non-cancelled request can be flushed.
+    // <app-job-filters>'s guaranteed single initial emission is the only
+    // source of the first load (see the loadJobs$ comment in
+    // ingestion.component.ts) — exactly one request, nothing to cancel.
     const jobReqs = httpMock.match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`);
-    expect(jobReqs.length).toBeGreaterThanOrEqual(1);
-    jobReqs.filter((r) => !r.cancelled).forEach((r) => r.flush(jobsPayload({ 'job-1': 3 })));
+    expect(jobReqs.length).toBe(1);
+    jobReqs[0].flush(jobsPayload({ 'job-1': 3 }));
 
     fixture.detectChanges();
 
@@ -82,11 +83,8 @@ describe('IngestionComponent — connections badge', () => {
     httpMock
       .match((r) => r.url === `${environment.apiUrl}/ingestion/portals`)
       .forEach((r) => r.flush([]));
-    // Drain whatever ngOnInit + the filter restore issued (flush only live ones).
-    httpMock
-      .match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`)
-      .filter((r) => !r.cancelled)
-      .forEach((r) => r.flush(jobsPayload()));
+    // Drain the single initial load issued by <app-job-filters>'s emission.
+    httpMock.match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`)[0].flush(jobsPayload());
 
     // Two rapid loads: the first must be cancelled by switchMap, the second wins.
     component.loadJobs();
@@ -100,5 +98,116 @@ describe('IngestionComponent — connections badge', () => {
     fixture.detectChanges();
     expect(component.jobs().length).toBe(1);
     expect(component.loading()).toBe(false);
+  });
+});
+
+describe('IngestionComponent — exactly one initial job request', () => {
+  let httpMock: HttpTestingController;
+
+  beforeEach(async () => {
+    localStorage.clear();
+    await TestBed.configureTestingModule({
+      imports: [IngestionComponent],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    httpMock.verify();
+  });
+
+  function flushPortals(mock: HttpTestingController): void {
+    mock
+      .match((r) => r.url === `${environment.apiUrl}/ingestion/portals`)
+      .forEach((r) => r.flush([]));
+  }
+
+  it('fires exactly one request when no location is stored', () => {
+    const fixture = TestBed.createComponent(IngestionComponent);
+    fixture.detectChanges();
+    flushPortals(httpMock);
+
+    const jobReqs = httpMock.match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`);
+    expect(jobReqs.length).toBe(1);
+    expect(jobReqs[0].cancelled).toBeFalsy();
+    jobReqs[0].flush(jobsPayload());
+  });
+
+  it('fires exactly one request, carrying the restored filter, when a location is stored', () => {
+    localStorage.setItem('hiresense.user_location', 'Chile');
+    localStorage.setItem('hiresense.strict_location_match', 'true');
+
+    const fixture = TestBed.createComponent(IngestionComponent);
+    fixture.detectChanges();
+    flushPortals(httpMock);
+
+    const jobReqs = httpMock.match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`);
+    expect(jobReqs.length).toBe(1);
+    expect(jobReqs[0].cancelled).toBeFalsy();
+    expect(jobReqs[0].request.params.get('user_location')).toBe('Chile');
+    expect(jobReqs[0].request.params.get('strict_location')).toBe('true');
+    jobReqs[0].flush(jobsPayload());
+  });
+});
+
+describe('IngestionComponent — visibility-gated revalidation poll', () => {
+  let httpMock: HttpTestingController;
+  let originalVisibility: PropertyDescriptor | undefined;
+
+  beforeEach(async () => {
+    localStorage.clear();
+    vi.useFakeTimers();
+    originalVisibility = Object.getOwnPropertyDescriptor(document, 'visibilityState');
+    await TestBed.configureTestingModule({
+      imports: [IngestionComponent],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+    vi.useRealTimers();
+    if (originalVisibility) {
+      Object.defineProperty(document, 'visibilityState', originalVisibility);
+    }
+  });
+
+  function setVisibility(state: 'visible' | 'hidden'): void {
+    Object.defineProperty(document, 'visibilityState', { value: state, configurable: true });
+  }
+
+  function jobsReqs(mock: HttpTestingController) {
+    return mock.match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`);
+  }
+
+  it('skips poll ticks while the tab is hidden and resumes once visible', () => {
+    const fixture = TestBed.createComponent(IngestionComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    httpMock
+      .match((r) => r.url === `${environment.apiUrl}/ingestion/portals`)
+      .forEach((r) => r.flush([]));
+    jobsReqs(httpMock)[0].flush(jobsPayload());
+
+    component.revalidate();
+    httpMock
+      .expectOne(`${environment.apiUrl}/ingestion/revalidate`)
+      .flush({ started: true, closed: 0, closed_ids: [] });
+    // revalidate()'s own immediate reload of the visible page.
+    jobsReqs(httpMock)[0].flush(jobsPayload());
+
+    setVisibility('hidden');
+    vi.advanceTimersByTime(15000);
+    expect(jobsReqs(httpMock).length).toBe(0);
+
+    setVisibility('visible');
+    vi.advanceTimersByTime(15000);
+    const polled = jobsReqs(httpMock);
+    expect(polled.length).toBe(1);
+    polled[0].flush(jobsPayload());
   });
 });

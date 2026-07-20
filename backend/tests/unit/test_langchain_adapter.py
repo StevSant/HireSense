@@ -55,6 +55,50 @@ async def test_complete_without_system_prompt() -> None:
 
 
 @pytest.mark.asyncio
+async def test_cache_system_prefix_adds_cache_control_block() -> None:
+    mock_model = AsyncMock()
+    mock_model.ainvoke.return_value = AIMessage(content="response")
+
+    adapter = LangChainLLMAdapter(model=mock_model, cache_system_prefix=True)
+    await adapter.complete("prompt", system="You are a helpful assistant")
+
+    call_args = mock_model.ainvoke.call_args[0][0]
+    system_message = call_args[0]
+    assert system_message.content == [
+        {
+            "type": "text",
+            "text": "You are a helpful assistant",
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_cache_system_prefix_disabled_by_default() -> None:
+    mock_model = AsyncMock()
+    mock_model.ainvoke.return_value = AIMessage(content="response")
+
+    adapter = LangChainLLMAdapter(model=mock_model)
+    await adapter.complete("prompt", system="You are a helpful assistant")
+
+    call_args = mock_model.ainvoke.call_args[0][0]
+    system_message = call_args[0]
+    assert system_message.content == "You are a helpful assistant"
+
+
+@pytest.mark.asyncio
+async def test_cache_system_prefix_true_but_no_system_prompt_sends_no_system_message() -> None:
+    mock_model = AsyncMock()
+    mock_model.ainvoke.return_value = AIMessage(content="response")
+
+    adapter = LangChainLLMAdapter(model=mock_model, cache_system_prefix=True)
+    await adapter.complete("prompt")
+
+    call_args = mock_model.ainvoke.call_args[0][0]
+    assert len(call_args) == 1  # only the human message
+
+
+@pytest.mark.asyncio
 async def test_stream_yields_chunks() -> None:
     mock_model = AsyncMock()
 

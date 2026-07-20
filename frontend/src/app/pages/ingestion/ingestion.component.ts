@@ -16,7 +16,7 @@ import { JobDetailPanelComponent } from './components/job-detail-panel/job-detai
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { of, Subject, timer } from 'rxjs';
-import { catchError, debounceTime, map, switchMap, take } from 'rxjs/operators';
+import { catchError, debounceTime, filter, map, switchMap, take } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { FeedbackControlsComponent } from './components/feedback-controls/feedback-controls.component';
 import { PreferenceTuningComponent } from './components/preference-tuning/preference-tuning.component';
@@ -114,11 +114,18 @@ export class IngestionComponent implements OnInit {
   private feedbackRefetch$ = new Subject<void>();
 
   // Every job-list request is funneled through this subject and run via
-  // switchMap so a newer request CANCELS the in-flight one (#race). Without it,
-  // the initial empty-filter load in ngOnInit and the localStorage-restored
-  // location filter emitted by <app-job-filters> raced — two uncancelled
-  // requests whose last-to-resolve won, so the same page rendered differently
-  // on navigation vs refresh. The payload is the `rescore` flag for that call.
+  // switchMap so a newer request CANCELS the in-flight one (e.g. a filter
+  // change while a load is still in flight). The payload is the `rescore`
+  // flag for that call.
+  //
+  // The FIRST load is intentionally not fired here in ngOnInit. Instead
+  // <app-job-filters> always emits its (possibly empty) initial filter state
+  // exactly once, synchronously, from its own ngOnInit — see the comment on
+  // JobFiltersComponent.ngOnInit — and that emission's onFiltersChange()
+  // handler below is what issues the first loadJobs() call. This guarantees
+  // exactly one initial request whether or not a location preference is
+  // stored, instead of two racing requests where switchMap silently cancels
+  // one of them.
   private loadJobs$ = new Subject<boolean>();
 
   // Sort — clickable column headers, default Match descending.
@@ -185,7 +192,9 @@ export class IngestionComponent implements OnInit {
       .subscribe(() => this.loadJobs());
     this.loadPortals();
     this.applyKeywordFromQueryParam();
-    this.loadJobs();
+    // No loadJobs() here — <app-job-filters>'s guaranteed initial emission
+    // (see the loadJobs$ comment above) drives onFiltersChange(), which
+    // issues the first load.
     this.openDetailFromQueryParam();
   }
 
@@ -263,7 +272,14 @@ export class IngestionComponent implements OnInit {
             `Closed ${res.closed} job(s) on this page. Still scanning the rest of your jobs for closed listings in the background — more may drop off shortly.`,
           );
           timer(15000, 15000)
-            .pipe(take(8), takeUntilDestroyed(this.destroyRef))
+            .pipe(
+              // Skip ticks while the tab is backgrounded — no point burning a
+              // request (and the user's attention budget) on a poll they
+              // can't see; it resumes polling on the next visible tick.
+              filter(() => document.visibilityState === 'visible'),
+              take(8),
+              takeUntilDestroyed(this.destroyRef),
+            )
             .subscribe({
               next: () => this.loadJobs(false),
               complete: () => this.revalidateNotice.set(''),

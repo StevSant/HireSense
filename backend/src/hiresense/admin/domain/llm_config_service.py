@@ -10,6 +10,25 @@ from hiresense.admin.ports import LLMFeatureOverrideRepositoryPort, LLMSettingsR
 
 logger = logging.getLogger(__name__)
 
+# Feature keys whose output is a short verdict — a label, a confidence score,
+# a brief extraction — rather than long-form or batched generation. These get
+# the smaller `llm_classifier_max_tokens` default instead of
+# `llm_default_max_tokens`. match_quick_scorer is deliberately NOT included
+# here even though it "classifies": it returns batched per-job JSON for up to
+# match_quick_batch_size jobs in a single call, so it needs the larger default
+# to avoid truncating the tail of the batch. match_dimension_scorer is
+# excluded for the same reason: one response carries 6 dimensions, each with
+# a score and a rationale, and truncation would silently drop the tail
+# dimensions rather than just shortening one verdict.
+CLASSIFIER_FEATURE_KEYS: frozenset[str] = frozenset(
+    {
+        "inbox-classification",
+        "job_quality_classifier",
+        "application_skill_extractor",
+        "preference_explanation",
+    }
+)
+
 
 class LLMConfigService:
     """Resolves the effective LLM config for any feature_key.
@@ -31,6 +50,8 @@ class LLMConfigService:
         env_model: str,
         env_api_key: str,
         feature_default_models: dict[str, str] | None = None,
+        default_max_tokens: int = 2048,
+        classifier_max_tokens: int = 512,
     ) -> None:
         self._settings_repo = settings_repo
         self._override_repo = override_repo
@@ -38,6 +59,10 @@ class LLMConfigService:
         self._env_provider = env_provider
         self._env_model = env_model
         self._env_api_key = env_api_key
+        # Injected as ints from bootstrap (which reads config) so this domain
+        # class never imports the settings module directly.
+        self._default_max_tokens = default_max_tokens
+        self._classifier_max_tokens = classifier_max_tokens
         # Per-feature default model used only when there is no admin override
         # and no global settings row (i.e. the .env fallback path). Lets a
         # feature ship with a different default model than the global env one
@@ -89,6 +114,17 @@ class LLMConfigService:
             if override_params:
                 extra_params = {**extra_params, **override_params}
                 source = "override"
+
+        # Inject a default output token cap only when nobody (global settings
+        # row or feature override) has already set one — an explicit
+        # admin-set max_tokens always wins.
+        if "max_tokens" not in extra_params:
+            default = (
+                self._classifier_max_tokens
+                if feature_key in CLASSIFIER_FEATURE_KEYS
+                else self._default_max_tokens
+            )
+            extra_params = {**extra_params, "max_tokens": default}
 
         return ResolvedConfig(
             provider=provider,

@@ -335,7 +335,29 @@ async def list_jobs(
     # misses are filled by the page-level pass below and improve later rankings.
     # Applied AFTER persist so the persisted row score stays the heuristic blend
     # (the LLM score lives in its own cache); this override is request-scoped.
-    if quick_scoring is not None and (candidate_skills or candidate_summary):
+    #
+    # GATED to match-sort OR an active min_score filter — this pass matters on
+    # two independent axes, either one is enough to require it:
+    #  (a) RANKING on match-sort: a cached LLM score must be able to pull a
+    #      job onto page 1 ahead of the heuristic order.
+    #  (b) FILTER MEMBERSHIP on any sort: `filter_and_paginate` below culls
+    #      `all_jobs` by `match_score >= min_score` BEFORE the page-level
+    #      overlay ever runs. Skipping this pass means that filter reads the
+    #      stale heuristic score, so a job whose cached LLM score clears the
+    #      threshold but whose heuristic score doesn't gets wrongly excluded
+    #      from the result set entirely — not just mis-ranked.
+    # With neither condition true (non-match sort, no min_score), order
+    # doesn't depend on match_score and nothing gets filtered by it, so
+    # reading the LLM cache for the WHOLE corpus on every GET would be pure
+    # waste — skipped. Display values stay correct regardless: the page-level
+    # pass below (after pagination) overlays quick scores onto `result.jobs`
+    # unconditionally, regardless of sort.
+    min_score_active = min_score is not None and min_score > 0
+    if (
+        quick_scoring is not None
+        and (candidate_skills or candidate_summary)
+        and (effective_sort.startswith("match_") or min_score_active)
+    ):
         cached_quick = await quick_scoring.score_page(
             all_jobs, candidate_skills, candidate_summary, llm_on_miss=False
         )
@@ -353,6 +375,9 @@ async def list_jobs(
         # a full rescore of the unfiltered match-sorted view. The champion set
         # is the stable heuristic top-K per source (cached members are counted
         # but not re-sent), so once cached this pass costs zero LLM calls.
+        # Match-sort only (unlike the outer gate): champions exist to fix
+        # RANKING fairness, which is meaningless under a non-match sort even
+        # if min_score is what triggered the outer pass.
         champions_k = settings.ingestion_source_champions_per_source if settings is not None else 0
         if rescore and champions_k > 0 and source is None and effective_sort.startswith("match_"):
             taken: dict[str, int] = {}

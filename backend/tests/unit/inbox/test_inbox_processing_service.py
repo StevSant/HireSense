@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from datetime import datetime, timezone
 
@@ -11,6 +12,7 @@ from hiresense.inbox.domain import (
     InboxProcessingService,
     SignalState,
 )
+from hiresense.inbox.domain.inbox_processing_service import _PROCESSING_CONCURRENCY
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 
 
@@ -147,3 +149,89 @@ async def test_ingest_one_returns_none_when_not_job_related():
         _Reader([]), _Repo(), EmailClassification(job_related=False)
     ).ingest_one(_email())
     assert result is None
+
+
+class _AlwaysRaisingClassifier:
+    async def classify(self, email):
+        raise RuntimeError("boom")
+
+
+@pytest.mark.asyncio
+async def test_ingest_one_propagates_classifier_failure():
+    """Unlike run()'s batch path, ingest_one() (the webhook) must NOT swallow
+    a processing failure — the message_id was never persisted, so silently
+    returning None would look identical to "not job-related" and the caller
+    (the ingest-email route) would respond 204 instead of 500, telling the
+    sender the email was handled when it wasn't."""
+    repo = _Repo()
+    svc = InboxProcessingService(
+        reader=_Reader([]),
+        repo=repo,
+        classifier=_AlwaysRaisingClassifier(),
+        matcher=ApplicationMatcher(min_confidence=0.5),
+        list_active=lambda: [],
+    )
+    with pytest.raises(RuntimeError, match="boom"):
+        await svc.ingest_one(_email())
+    assert repo.signals == []
+
+
+class _RaisingClassifier:
+    """Fails classification for one specific message_id; succeeds for others."""
+
+    def __init__(self, fail_message_id, result):
+        self._fail_message_id = fail_message_id
+        self._result = result
+
+    async def classify(self, email):
+        if email.message_id == self._fail_message_id:
+            raise RuntimeError("boom")
+        return self._result
+
+
+@pytest.mark.asyncio
+async def test_run_isolates_a_failing_email_from_the_rest_of_the_batch():
+    repo = _Repo()
+    classification = EmailClassification(
+        job_related=True, kind=EmailSignalKind.REJECTION, company="Acme", role="Dev", confidence=0.9
+    )
+    svc = InboxProcessingService(
+        reader=_Reader([_email("bad"), _email("good")]),
+        repo=repo,
+        classifier=_RaisingClassifier("bad", classification),
+        matcher=ApplicationMatcher(min_confidence=0.5),
+        list_active=lambda: [],
+    )
+    count = await svc.run()
+    assert count == 1
+    assert [s.message_id for s in repo.signals] == ["good"]
+
+
+@pytest.mark.asyncio
+async def test_run_bounds_concurrency():
+    current = 0
+    max_concurrent = 0
+    classification = EmailClassification(
+        job_related=True, kind=EmailSignalKind.REJECTION, company="Acme", role="Dev", confidence=0.9
+    )
+
+    class _ConcurrentClassifier:
+        async def classify(self, email):
+            nonlocal current, max_concurrent
+            current += 1
+            max_concurrent = max(max_concurrent, current)
+            await asyncio.sleep(0.01)
+            current -= 1
+            return classification
+
+    emails = [_email(f"m{i}") for i in range(_PROCESSING_CONCURRENCY * 3)]
+    svc = InboxProcessingService(
+        reader=_Reader(emails),
+        repo=_Repo(),
+        classifier=_ConcurrentClassifier(),
+        matcher=ApplicationMatcher(min_confidence=0.5),
+        list_active=lambda: [],
+    )
+    count = await svc.run()
+    assert count == len(emails)
+    assert max_concurrent == _PROCESSING_CONCURRENCY

@@ -109,6 +109,63 @@ async def test_optimizer_parses_markdown_fenced_json() -> None:
 
 
 @pytest.mark.asyncio
+async def test_optimizer_truncates_job_description_in_prompt() -> None:
+    class CapturingLLM:
+        def __init__(self) -> None:
+            self.last_prompt = ""
+
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            self.last_prompt = prompt
+            return '{"changes": [], "improvement_summary": "none"}'
+
+    llm = CapturingLLM()
+    optimizer = CVOptimizer(llm=llm, job_char_limit=100)
+    await optimizer.optimize(
+        match_id="match-cap",
+        job_id="job-cap",
+        cv_id="cv-cap",
+        original_tex="\\section*{SUMMARY}\nSome text",
+        job_description="d" * 50_000,
+        job_skills=[],
+        missing_skills=[],
+        recommendations=[],
+    )
+    prefix = "Job Description: "
+    start = llm.last_prompt.index(prefix) + len(prefix)
+    end = llm.last_prompt.index("\n", start)
+    assert llm.last_prompt[start:end] == "d" * 100
+
+
+@pytest.mark.asyncio
+async def test_optimizer_does_not_truncate_original_tex() -> None:
+    """original_tex must stay intact — _apply_changes() replaces exact
+    substrings against it, so truncating would break the anchor match."""
+
+    class CapturingLLM:
+        def __init__(self) -> None:
+            self.last_prompt = ""
+
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            self.last_prompt = prompt
+            return '{"changes": [], "improvement_summary": "none"}'
+
+    llm = CapturingLLM()
+    long_tex = "\\section*{SUMMARY}\n" + ("t" * 50_000)
+    optimizer = CVOptimizer(llm=llm, job_char_limit=100)
+    await optimizer.optimize(
+        match_id="match-tex",
+        job_id="job-tex",
+        cv_id="cv-tex",
+        original_tex=long_tex,
+        job_description="short",
+        job_skills=[],
+        missing_skills=[],
+        recommendations=[],
+    )
+    assert long_tex in llm.last_prompt
+
+
+@pytest.mark.asyncio
 async def test_optimizer_handles_llm_failure() -> None:
     class BrokenLLM:
         async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:

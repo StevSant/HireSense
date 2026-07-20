@@ -84,6 +84,13 @@ class CoreSettings(BaseSettings):
     # the browser evicts the cookie in lock-step with token expiry.
     jwt_expiry_hours: int = 24
 
+    # JWT iss/aud claims (RFC 8725), set on issued tokens and enforced on
+    # validation. The same service issues and validates, so stable identifier
+    # defaults are safe (no per-deploy secret); override to scope tokens to a
+    # deployment or to reject tokens minted for a different service.
+    jwt_issuer: str = "hiresense"
+    jwt_audience: str = "hiresense-api"
+
     # Session cookie (httpOnly) that carries the JWT for the SPA. The token is
     # never exposed to JavaScript (XSS can't exfiltrate it); the browser attaches
     # the cookie automatically on same-origin requests. The `Authorization:
@@ -111,6 +118,15 @@ class CoreSettings(BaseSettings):
     rate_limit_enabled: bool = True
     rate_limit_max_requests: int = 30
     rate_limit_window_seconds: float = 60.0
+
+    # --- Login rate limiting (dedicated, stricter) ---
+    # Separate sliding-window limiter for POST /auth/login so brute-forcing the
+    # single admin credential is throttled independently of the expensive bucket
+    # (auth no longer contends with ingestion/matching traffic). Keyed by client
+    # IP. Defaults: 5 attempts / 15 min (OWASP ASVS V2.2.1, CWE-307).
+    login_rate_limit_enabled: bool = True
+    login_rate_limit_max_requests: int = 5
+    login_rate_limit_window_seconds: float = 900.0
 
     # Upload
     max_upload_bytes: int = 10 * 1024 * 1024  # 10 MB

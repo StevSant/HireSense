@@ -4,7 +4,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from hiresense.admin.api.dependencies import get_llm_settings_service, require_admin
+from hiresense.admin.api.dependencies import (
+    get_llm_settings_service,
+    require_admin,
+    require_admin_actor,
+)
 from hiresense.admin.api.schemas import (
     FeatureOverrideRequest,
     FeatureOverrideTestRequest,
@@ -44,7 +48,7 @@ def get_settings(
 async def update_settings(
     body: LLMSettingsUpdateRequest,
     service: Annotated[LLMSettingsService, Depends(get_llm_settings_service)],
-    actor: Annotated[str, Depends(require_admin)],
+    actor: Annotated[str, Depends(require_admin_actor)],
 ) -> LLMSettingsView:
     try:
         view = await service.update_global_config(
@@ -103,7 +107,7 @@ async def upsert_override(
     feature_key: str,
     body: FeatureOverrideRequest,
     service: Annotated[LLMSettingsService, Depends(get_llm_settings_service)],
-    actor: Annotated[str, Depends(require_admin)],
+    actor: Annotated[str, Depends(require_admin_actor)],
 ) -> FeatureView:
     try:
         view = await service.set_override(
@@ -123,7 +127,7 @@ async def upsert_override(
 def clear_override(
     feature_key: str,
     service: Annotated[LLMSettingsService, Depends(get_llm_settings_service)],
-    actor: Annotated[str, Depends(require_admin)],
+    actor: Annotated[str, Depends(require_admin_actor)],
 ) -> FeatureView:
     try:
         view = service.clear_override(feature_key=feature_key, actor=actor)

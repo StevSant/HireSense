@@ -6,7 +6,7 @@ import logging
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
-from hiresense.inbox.domain import InboundEmail
+from hiresense.inbox.domain import InboundEmail, synthesize_message_id
 
 logger = logging.getLogger(__name__)
 
@@ -74,12 +74,23 @@ class ImapInboxReader:
             msg = email_lib.message_from_bytes(raw)
             body = ImapInboxReader._extract_body(msg)
             received = parsedate_to_datetime(msg.get("Date")) if msg.get("Date") else None
-            return InboundEmail(
-                message_id=msg.get("Message-ID") or "",
-                from_address=msg.get("From") or "",
-                subject=msg.get("Subject") or "",
+            from_address = msg.get("From") or ""
+            subject = msg.get("Subject") or ""
+            received_at = received or datetime.now(timezone.utc)
+            # A missing Message-ID must not collapse every header-less email onto
+            # the same empty dedup key — synthesize a stable one from the content.
+            message_id = msg.get("Message-ID") or synthesize_message_id(
+                from_address=from_address,
+                subject=subject,
+                received_at=received_at,
                 body=body,
-                received_at=received or datetime.now(timezone.utc),
+            )
+            return InboundEmail(
+                message_id=message_id,
+                from_address=from_address,
+                subject=subject,
+                body=body,
+                received_at=received_at,
             )
         except Exception:  # noqa: BLE001
             logger.warning("inbox: could not parse an email")

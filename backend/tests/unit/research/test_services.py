@@ -267,3 +267,79 @@ async def test_get_or_create_generates_and_persists_when_not_cached() -> None:
     assert llm.call_count == 1
     assert len(repo.created) == 1
     assert result.company_name == "Anthropic"
+
+
+class _FixedFirmographics:
+    def __init__(self, firmographics) -> None:
+        self._firmographics = firmographics
+
+    async def fetch(self, company_name: str):
+        return self._firmographics
+
+
+@pytest.mark.asyncio
+async def test_source_profile_grounds_the_prompt() -> None:
+    from hiresense.research.domain import Firmographics
+
+    llm = FakeLLM(_LLM_RESPONSE)
+    firmographics = _FixedFirmographics(
+        Firmographics(description="Somos una consultora de TI", headquarters="Chile")
+    )
+    service = CompanyResearchService(repository=FakeRepo(), llm=llm, firmographics=firmographics)
+
+    await service.research("BC Tecnología")
+
+    assert "Somos una consultora de TI" in llm.last_prompt
+    assert "ground truth" in llm.last_prompt.lower()
+    assert "do not claim insufficient" in llm.last_prompt.lower()
+
+
+@pytest.mark.asyncio
+async def test_source_description_surfaced_on_fresh_research() -> None:
+    from hiresense.research.domain import Firmographics
+
+    firmographics = _FixedFirmographics(Firmographics(description="Consultora de TI"))
+    service = CompanyResearchService(
+        repository=FakeRepo(), llm=FakeLLM(_LLM_RESPONSE), firmographics=firmographics
+    )
+
+    result = await service.research("BC Tecnología")
+
+    assert result.description == "Consultora de TI"
+
+
+@pytest.mark.asyncio
+async def test_source_description_surfaced_without_llm() -> None:
+    from hiresense.research.domain import Firmographics
+
+    firmographics = _FixedFirmographics(
+        Firmographics(description="Consultora de TI", website="https://bc.cl")
+    )
+    repo = FakeRepo()
+    service = CompanyResearchService(repository=repo, llm=None, firmographics=firmographics)
+
+    result = await service.research("BC Tecnología")
+
+    # About text + firmographics surface even with no LLM configured...
+    assert result.description == "Consultora de TI"
+    assert result.website == "https://bc.cl"
+    # ...while the generated fields still report the not-configured sentinel and
+    # nothing is persisted.
+    assert result.funding_stage == "LLM not configured"
+    assert len(repo.created) == 0
+
+
+@pytest.mark.asyncio
+async def test_firmographics_failure_does_not_break_research() -> None:
+    class _BoomFirmographics:
+        async def fetch(self, company_name: str):
+            raise RuntimeError("provider down")
+
+    service = CompanyResearchService(
+        repository=FakeRepo(), llm=FakeLLM(_LLM_RESPONSE), firmographics=_BoomFirmographics()
+    )
+
+    result = await service.research("Anthropic")
+
+    assert result.funding_stage == "Series D"
+    assert result.description is None

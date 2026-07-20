@@ -4,6 +4,7 @@ import json
 import re
 from typing import Any
 
+from hiresense.research.domain.firmographics import Firmographics
 from hiresense.research.domain.models import CompanyResearch
 from hiresense.research.ports import CompanyResearchRepositoryPort
 
@@ -38,23 +39,24 @@ class CompanyResearchService:
         return self._repo.get_by_company_name(company_name)
 
     async def _do_research(self, company_name: str, job_description: str) -> CompanyResearch:
-        if self._llm is None:
-            return self._make_fallback(company_name, _FALLBACK_LLM_NOT_CONFIGURED)
+        # Fetch source firmographics up front so they can both ground the prompt
+        # and be surfaced even when no LLM is configured.
+        firmographics = await self._fetch_firmographics(company_name)
+        description = firmographics.description if firmographics is not None else None
 
-        prompt = self._build_prompt(company_name, job_description)
+        if self._llm is None:
+            return self._make_fallback(company_name, _FALLBACK_LLM_NOT_CONFIGURED, firmographics)
+
+        prompt = self._build_prompt(company_name, job_description, firmographics)
         try:
             response = await self._llm.complete(
                 prompt, system="You are a company research analyst. Return only valid JSON."
             )
             data = self._parse_response(response)
 
-            external = None
-            if self._firmographics is not None:
-                external = await self._firmographics.fetch(company_name)
-
             def _pick(field: str):
-                if external is not None:
-                    val = getattr(external, field)
+                if firmographics is not None:
+                    val = getattr(firmographics, field)
                     if val:
                         return val
                 return data.get(field)
@@ -73,7 +75,7 @@ class CompanyResearchService:
                 existing.headquarters = _pick("headquarters")
                 existing.website = _pick("website")
                 existing.raw_llm_response = response
-                return self._repo.save(existing)
+                return self._with_description(self._repo.save(existing), description)
             record = CompanyResearch(
                 company_name=company_name.strip(),
                 funding_stage=data["funding_stage"],
@@ -89,15 +91,36 @@ class CompanyResearchService:
                 website=_pick("website"),
                 raw_llm_response=response,
             )
-            return self._repo.create(record)
+            return self._with_description(self._repo.create(record), description)
         except Exception:
-            return self._make_fallback(company_name, _FALLBACK_RESEARCH_UNAVAILABLE)
+            return self._make_fallback(company_name, _FALLBACK_RESEARCH_UNAVAILABLE, firmographics)
 
-    def _build_prompt(self, company_name: str, job_description: str) -> str:
+    async def _fetch_firmographics(self, company_name: str) -> Firmographics | None:
+        """Firmographics are enrichment — a provider failure must never fail
+        research, so swallow errors and proceed without them."""
+        if self._firmographics is None:
+            return None
+        try:
+            return await self._firmographics.fetch(company_name)
+        except Exception:
+            return None
+
+    @staticmethod
+    def _with_description(record: CompanyResearch, description: str | None) -> CompanyResearch:
+        """Re-attach the transient source description dropped by persistence."""
+        record.description = description
+        return record
+
+    def _build_prompt(
+        self, company_name: str, job_description: str, firmographics: Firmographics | None = None
+    ) -> str:
         prompt = (
             "You are a company research analyst.\n\n"
             f"Research the following company: {company_name}\n"
         )
+        profile_block = self._format_profile(firmographics)
+        if profile_block:
+            prompt += profile_block
         if job_description:
             prompt += f"\nJob Description Context:\n{job_description[:2000]}\n"
         prompt += (
@@ -120,6 +143,35 @@ class CompanyResearchService:
         )
         return prompt
 
+    @staticmethod
+    def _format_profile(firmographics: Firmographics | None) -> str:
+        """Render captured source facts as a grounding block, or '' if none.
+
+        A verified profile from the job board is the antidote to the LLM branding
+        small/non-US companies as shells for lack of parametric recall — so it is
+        stated as ground truth with an explicit instruction not to claim
+        insufficient information when a profile is present.
+        """
+        if firmographics is None:
+            return ""
+        facts = [
+            ("About", firmographics.description),
+            ("Industry", firmographics.industry),
+            ("Company size", firmographics.company_size),
+            ("Headquarters", firmographics.headquarters),
+            ("Website", firmographics.website),
+        ]
+        lines = [f"{label}: {value}" for label, value in facts if value]
+        if not lines:
+            return ""
+        body = "\n".join(lines)
+        return (
+            "\nKnown company profile from the job-board source (verified — may be "
+            "in Spanish or another language). Treat this as ground truth and base "
+            "your assessment on it; do NOT claim insufficient public information "
+            f"or infer a lack of public presence when a profile is provided:\n{body}\n"
+        )
+
     def _parse_response(self, response: str) -> dict:
         try:
             return json.loads(response)
@@ -131,8 +183,10 @@ class CompanyResearchService:
         raise ValueError("Could not parse LLM response as JSON")
 
     @staticmethod
-    def _make_fallback(company_name: str, reason: str) -> CompanyResearch:
-        return CompanyResearch(
+    def _make_fallback(
+        company_name: str, reason: str, firmographics: Firmographics | None = None
+    ) -> CompanyResearch:
+        record = CompanyResearch(
             company_name=company_name.strip(),
             funding_stage=reason,
             tech_stack=reason,
@@ -143,3 +197,12 @@ class CompanyResearchService:
             cons=reason,
             raw_llm_response="{}",
         )
+        if firmographics is not None:
+            # Surface whatever the source gave us even without an LLM: the About
+            # text and firmographic facts don't depend on generation.
+            record.industry = firmographics.industry
+            record.company_size = firmographics.company_size
+            record.headquarters = firmographics.headquarters
+            record.website = firmographics.website
+            record.description = firmographics.description
+        return record

@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid as uuid_mod
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from hiresense.infrastructure import SqlRepository
 from hiresense.inbox.domain import DetectedSignal, EmailSignalKind, SignalState
@@ -28,7 +29,11 @@ def _to_domain(row: DetectedSignalOrm) -> DetectedSignal:
 
 
 class DetectedSignalRepositoryImpl(SqlRepository):
-    def add(self, signal: DetectedSignal) -> DetectedSignal:
+    def add(self, signal: DetectedSignal) -> DetectedSignal | None:
+        """Insert a signal, or return None when its message_id is already
+        stored. The pre-insert `exists_message_id` check covers the common case;
+        catching the unique-constraint violation here closes the TOCTOU window
+        so a concurrent duplicate is skipped rather than raising."""
         row = DetectedSignalOrm(
             message_id=signal.message_id,
             from_address=signal.from_address,
@@ -42,7 +47,15 @@ class DetectedSignalRepositoryImpl(SqlRepository):
             proposed_status=signal.proposed_status,
             state=signal.state.value,
         )
-        return self._insert(row, _to_domain)
+        with self._session_factory() as session:
+            session.add(row)
+            try:
+                session.commit()
+            except IntegrityError:
+                session.rollback()
+                return None
+            session.refresh(row)
+            return _to_domain(row)
 
     def list(self, state: SignalState | None = None) -> list[DetectedSignal]:
         stmt = select(DetectedSignalOrm).order_by(DetectedSignalOrm.received_at.desc())

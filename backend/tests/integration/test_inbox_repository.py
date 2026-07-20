@@ -45,3 +45,14 @@ def test_add_list_get_setstate_dedup():
     updated = repo.set_state(added.id, SignalState.APPLIED)
     assert updated.state is SignalState.APPLIED
     assert repo.get(added.id).state is SignalState.APPLIED
+
+
+def test_add_duplicate_message_id_is_skipped_not_raised():
+    """A concurrent insert that loses the unique-constraint race must be
+    skipped (returns None), not raise IntegrityError (issue #150)."""
+    repo = DetectedSignalRepositoryImpl(session_factory=_factory())
+    first = repo.add(_signal("dup"))
+    assert first is not None
+    # Second insert with the same message_id returns None rather than raising.
+    assert repo.add(_signal("dup")) is None
+    assert len(repo.list()) == 1

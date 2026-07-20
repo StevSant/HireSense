@@ -52,7 +52,7 @@ class _FakeTracking:
     def __init__(self, apps: list[TrackedApplication]) -> None:
         self._apps = apps
 
-    def list(self, status=None) -> list[TrackedApplication]:
+    def list(self, status=None, *, limit=None, offset=None) -> list[TrackedApplication]:
         return self._apps
 
 

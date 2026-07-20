@@ -102,3 +102,12 @@ class CoreSettings(BaseSettings):
 
     # Batch processing
     batch_concurrency: int = 3
+
+    # Pagination (list endpoints: applications, cover letters, tracking)
+    # Default page size when the client omits ?limit — generous so existing
+    # single-page consumers keep seeing their whole list; clients may request a
+    # smaller page explicitly.
+    default_page_size: int = 100
+    # Hard cap on ?limit for those endpoints: a single request can never pull
+    # more than this many rows, bounding response size and query cost.
+    max_page_size: int = 500

@@ -107,8 +107,22 @@ class FakeApplicationService:
             raise ValueError(f"Application {application_id} not found")
         return agg
 
-    def list(self, status=None):
-        return list(self._store.values())
+    def list(self, status=None, *, limit=None, offset=None):
+        apps = list(self._store.values())
+        if offset:
+            apps = apps[offset:]
+        if limit is not None:
+            apps = apps[:limit]
+        return apps
+
+    def count(self, status=None):
+        return len(self._store)
+
+    def list_all_cover_letters(self, *, limit=None, offset=None):
+        return []
+
+    def count_all_cover_letters(self):
+        return 0
 
     def remove(self, application_id):
         if application_id not in self._store:
@@ -214,6 +228,24 @@ def test_list_returns_artifact_flags(client: TestClient):
     # Pipeline-view enrichment fields folded in from the former Tracking page.
     assert {"job_id", "location", "salary_range", "source", "posted_date"} <= row.keys()
     assert row["has_match"] is False
+
+
+def test_list_paginates_and_reports_total(client: TestClient):
+    for i in range(3):
+        client.post("/applications", json={"title": f"T{i}", "company": "Y", "description": "Z"})
+    resp = client.get("/applications", params={"limit": 2, "offset": 0})
+    assert resp.status_code == 200
+    assert len(resp.json()) == 2
+    assert resp.headers["X-Total-Count"] == "3"
+
+    page2 = client.get("/applications", params={"limit": 2, "offset": 2})
+    assert len(page2.json()) == 1
+    assert page2.headers["X-Total-Count"] == "3"
+
+
+def test_list_rejects_invalid_pagination(client: TestClient):
+    assert client.get("/applications", params={"limit": 0}).status_code == 422
+    assert client.get("/applications", params={"offset": -1}).status_code == 422
 
 
 def test_get_returns_aggregate(client: TestClient):

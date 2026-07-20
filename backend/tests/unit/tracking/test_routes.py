@@ -57,11 +57,27 @@ class FakeTrackingService:
             raise ValueError(f"Application {id} not found")
         return app
 
-    def list(self, status: ApplicationStatus | None = None) -> list[TrackedApplication]:
+    def list(
+        self,
+        status: ApplicationStatus | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[TrackedApplication]:
         apps = list(self._store.values())
         if status is not None:
             apps = [a for a in apps if a.status == status.value]
+        if offset:
+            apps = apps[offset:]
+        if limit is not None:
+            apps = apps[:limit]
         return apps
+
+    def count(self, status: ApplicationStatus | None = None) -> int:
+        apps = list(self._store.values())
+        if status is not None:
+            apps = [a for a in apps if a.status == status.value]
+        return len(apps)
 
     async def update_status(
         self,
@@ -140,6 +156,22 @@ def test_list_applications() -> None:
     assert resp.status_code == 200
     data = resp.json()
     assert len(data) == 2
+
+
+def test_list_applications_paginates_and_reports_total() -> None:
+    fake = FakeTrackingService()
+    for i in range(3):
+        fake.track_job(title=f"Job {i}", company="Co")
+    client = TestClient(make_app(fake))
+
+    first = client.get("/tracking", params={"limit": 2, "offset": 0})
+    assert first.status_code == 200
+    assert len(first.json()) == 2
+    assert first.headers["X-Total-Count"] == "3"
+
+    second = client.get("/tracking", params={"limit": 2, "offset": 2})
+    assert len(second.json()) == 1
+    assert second.headers["X-Total-Count"] == "3"
 
 
 def test_get_application() -> None:

@@ -30,8 +30,13 @@ class ApplicationService:
         self._ingestion = ingestion_orchestrator
         self._extractor = skill_extractor
 
-    def list_all_cover_letters(self) -> list[dict[str, Any]]:
-        return self._repo.list_all_cover_letters_with_context()
+    def list_all_cover_letters(
+        self, *, limit: int | None = None, offset: int | None = None
+    ) -> list[dict[str, Any]]:
+        return self._repo.list_all_cover_letters_with_context(limit=limit, offset=offset)
+
+    def count_all_cover_letters(self) -> int:
+        return self._repo.count_all_cover_letters()
 
     async def create_from_ingested(self, job_id: str) -> ApplicationAggregate:
         job = self._ingestion.get_job_by_id(job_id)
@@ -81,9 +86,18 @@ class ApplicationService:
         tracked = self._tracking.get(application_id)
         return self._build_aggregate(tracked)
 
-    def list(self, status: ApplicationStatus | None = None) -> list[ApplicationAggregate]:
-        tracked_list = self._tracking.list(status=status)
+    def list(
+        self,
+        status: ApplicationStatus | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[ApplicationAggregate]:
+        tracked_list = self._tracking.list(status=status, limit=limit, offset=offset)
         return self._build_aggregates(tracked_list)
+
+    def count(self, status: ApplicationStatus | None = None) -> int:
+        return self._tracking.count(status=status)
 
     def remove(self, application_id: uuid.UUID) -> None:
         self._tracking.remove(application_id)

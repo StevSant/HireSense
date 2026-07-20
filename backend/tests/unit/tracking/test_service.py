@@ -67,11 +67,27 @@ class FakeRepository:
                 return app
         return None
 
-    def list_all(self, status: ApplicationStatus | None = None) -> list[TrackedApplication]:
+    def list_all(
+        self,
+        status: ApplicationStatus | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[TrackedApplication]:
         apps = list(self._store.values())
         if status is not None:
             apps = [a for a in apps if a.status == status.value]
+        if offset:
+            apps = apps[offset:]
+        if limit is not None:
+            apps = apps[:limit]
         return apps
+
+    def count_all(self, status: ApplicationStatus | None = None) -> int:
+        apps = list(self._store.values())
+        if status is not None:
+            apps = [a for a in apps if a.status == status.value]
+        return len(apps)
 
     def save(self, app: TrackedApplication) -> TrackedApplication:
         app.updated_at = datetime.now(timezone.utc)

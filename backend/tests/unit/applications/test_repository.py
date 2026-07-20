@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from hiresense.applications.domain.models import (
+    ApplicationCoverLetter,
     ApplicationCvOptimization,
     ApplicationInterviewPrep,
     ApplicationJobSnapshot,
@@ -109,3 +110,23 @@ def test_create_and_get_latest_interview_prep(repo, tracked_app):
     latest = repo.get_latest_interview_prep(tracked_app.id)
     assert latest is not None
     assert latest.competencies_to_probe == ["leadership"]
+
+
+def test_list_all_cover_letters_paginates_and_counts(repo, tracked_app):
+    for i in range(3):
+        repo.create_cover_letter(
+            ApplicationCoverLetter(
+                application_id=tracked_app.id, body=f"body {i}", tone="professional"
+            )
+        )
+
+    assert repo.count_all_cover_letters() == 3
+
+    first = repo.list_all_cover_letters_with_context(limit=2, offset=0)
+    second = repo.list_all_cover_letters_with_context(limit=2, offset=2)
+    assert len(first) == 2
+    assert len(second) == 1
+
+    # Stable, non-overlapping pages (id tiebreaker on equal created_at).
+    ids = {row["id"] for row in first} | {row["id"] for row in second}
+    assert len(ids) == 3

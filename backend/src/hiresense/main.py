@@ -104,6 +104,9 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=settings.cors_allow_methods,
         allow_headers=settings.cors_allow_headers,
+        # Pagination total on list endpoints travels in a response header; it
+        # must be allow-listed or the browser can't read it cross-origin.
+        expose_headers=["X-Total-Count"],
     )
     app.add_middleware(SecurityHeadersMiddleware)
 

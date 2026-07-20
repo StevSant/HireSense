@@ -4,7 +4,7 @@ import uuid
 from collections import defaultdict
 from typing import Any, Callable, TypeVar
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from hiresense.applications.domain.models import (
     ApplicationCoverLetter,
@@ -203,8 +203,13 @@ class ApplicationRepository(SqlRepository):
             ApplicationCoverLetter.model_validate,
         )
 
-    def list_all_cover_letters_with_context(self) -> list[dict[str, Any]]:
-        """Cross-application listing for the Cover Letter Library view."""
+    def list_all_cover_letters_with_context(
+        self, *, limit: int | None = None, offset: int | None = None
+    ) -> list[dict[str, Any]]:
+        """Cross-application listing for the Cover Letter Library view.
+
+        Ordered newest-first with an id tiebreaker so pagination is stable even
+        when several letters share a created_at (second-precision default)."""
         with self._session_factory() as session:
             stmt = (
                 select(
@@ -221,8 +226,12 @@ class ApplicationRepository(SqlRepository):
                     TrackedApplicationOrm,
                     TrackedApplicationOrm.id == ApplicationCoverLetterOrm.application_id,
                 )
-                .order_by(ApplicationCoverLetterOrm.created_at.desc())
+                .order_by(ApplicationCoverLetterOrm.created_at.desc(), ApplicationCoverLetterOrm.id)
             )
+            if offset:
+                stmt = stmt.offset(offset)
+            if limit is not None:
+                stmt = stmt.limit(limit)
             rows = session.execute(stmt).all()
             return [
                 {
@@ -237,6 +246,11 @@ class ApplicationRepository(SqlRepository):
                 }
                 for row in rows
             ]
+
+    def count_all_cover_letters(self) -> int:
+        stmt = select(func.count()).select_from(ApplicationCoverLetterOrm)
+        with self._session_factory() as session:
+            return int(session.scalar(stmt) or 0)
 
     # ---- batch loaders (list view: one query per child type) ----------
 

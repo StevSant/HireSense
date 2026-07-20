@@ -104,6 +104,15 @@ class CoreSettings(BaseSettings):
     rate_limit_max_requests: int = 30
     rate_limit_window_seconds: float = 60.0
 
+    # --- Login rate limiting (dedicated, stricter) ---
+    # Separate sliding-window limiter for POST /auth/login so brute-forcing the
+    # single admin credential is throttled independently of the expensive bucket
+    # (auth no longer contends with ingestion/matching traffic). Keyed by client
+    # IP. Defaults: 5 attempts / 15 min (OWASP ASVS V2.2.1, CWE-307).
+    login_rate_limit_enabled: bool = True
+    login_rate_limit_max_requests: int = 5
+    login_rate_limit_window_seconds: float = 900.0
+
     # Upload
     max_upload_bytes: int = 10 * 1024 * 1024  # 10 MB
 

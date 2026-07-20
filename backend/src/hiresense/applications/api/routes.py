@@ -36,6 +36,7 @@ from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, re
 from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.tracking.domain import InvalidStatusTransitionError
 
 router = APIRouter(
     prefix="/applications",
@@ -376,5 +377,9 @@ async def mark_applied(
     try:
         await apply_service.mark_applied(application_id)
         return app_service.get(application_id)
+    except InvalidStatusTransitionError as exc:
+        # e.g. the tracked application is already terminal (accepted/rejected):
+        # a conflict with its current state, not a missing resource.
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

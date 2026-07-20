@@ -1,12 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { JobRun, ScheduledJob } from '../models/scheduler.model';
 
 @Injectable({ providedIn: 'root' })
 export class SchedulerService {
   private readonly http = inject(HttpClient);
-  private readonly base = '/api/scheduler';
+  private readonly base = `${environment.apiUrl}/scheduler`;
 
   listJobs(): Observable<ScheduledJob[]> {
     return this.http.get<ScheduledJob[]>(`${this.base}/jobs`);

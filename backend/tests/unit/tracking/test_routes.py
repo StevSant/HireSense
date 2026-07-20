@@ -8,6 +8,8 @@ from fastapi.testclient import TestClient
 
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
+from hiresense.kernel import register_domain_exception_handlers
+from hiresense.kernel.exceptions import ConflictError, NotFoundError
 from hiresense.tracking.api.dependencies import get_tracking_service
 from hiresense.tracking.api.routes import router
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
@@ -49,7 +51,7 @@ class FakeTrackingService:
         return self._make(title=title, company=company, url=url, notes=notes)
 
     def track_from_ingestion(self, job_id: str) -> TrackedApplication:
-        raise ValueError(f"Job {job_id} not found")
+        raise NotFoundError(f"Job {job_id} not found")
 
     def get(self, id: uuid_mod.UUID) -> TrackedApplication:
         app = self._store.get(id)
@@ -95,6 +97,7 @@ class FakeTrackingService:
 
 def make_app(fake: FakeTrackingService) -> FastAPI:
     app = FastAPI()
+    register_domain_exception_handlers(app)
     app.dependency_overrides[get_tracking_service] = lambda: fake
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: FakeOrchestrator()
     app.dependency_overrides[require_auth] = lambda: "test-user"
@@ -127,6 +130,21 @@ def test_create_from_ingestion_not_found() -> None:
     resp = client.post("/tracking", json={"job_id": str(uuid_mod.uuid4())})
 
     assert resp.status_code == 404
+
+
+def test_create_from_ingestion_already_tracked_returns_409() -> None:
+    """A ConflictError from the service maps to HTTP 409 via the shared handler,
+    with no message-substring inspection in the router."""
+    fake = FakeTrackingService()
+    fake.track_from_ingestion = lambda job_id: (_ for _ in ()).throw(  # type: ignore[assignment]
+        ConflictError("This job is already tracked")
+    )
+    client = TestClient(make_app(fake))
+
+    resp = client.post("/tracking", json={"job_id": str(uuid_mod.uuid4())})
+
+    assert resp.status_code == 409
+    assert resp.json()["detail"] == "This job is already tracked"
 
 
 def test_list_applications() -> None:

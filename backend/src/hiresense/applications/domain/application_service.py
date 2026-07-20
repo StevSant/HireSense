@@ -14,6 +14,7 @@ from hiresense.applications.domain.aggregate import (
 from hiresense.applications.domain.models import ApplicationJobSnapshot, JobSnapshotSource
 from hiresense.applications.domain.skill_extractor import SkillExtractor
 from hiresense.applications.ports import ApplicationRepositoryPort
+from hiresense.kernel.exceptions import NotFoundError
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 
 
@@ -36,7 +37,7 @@ class ApplicationService:
     async def create_from_ingested(self, job_id: str) -> ApplicationAggregate:
         job = self._ingestion.get_job_by_id(job_id)
         if job is None:
-            raise ValueError(f"Job {job_id} not found")
+            raise NotFoundError(f"Job {job_id} not found")
         tracked = self._tracking.track_from_ingestion(job_id)
         description = getattr(job, "description", "") or ""
         skills = list(getattr(job, "skills", []) or [])
@@ -96,7 +97,7 @@ class ApplicationService:
     ) -> ApplicationAggregate:
         snap = self._repo.get_snapshot(application_id)
         if snap is None:
-            raise ValueError(f"Snapshot for {application_id} not found")
+            raise NotFoundError(f"Snapshot for {application_id} not found")
         if description is not None:
             snap.description = description
         if required_skills is not None:
@@ -108,7 +109,7 @@ class ApplicationService:
     async def regenerate_skills(self, application_id: uuid.UUID) -> ApplicationAggregate:
         snap = self._repo.get_snapshot(application_id)
         if snap is None:
-            raise ValueError(f"Snapshot for {application_id} not found")
+            raise NotFoundError(f"Snapshot for {application_id} not found")
         snap.required_skills = await self._extractor.extract(snap.description)
         if snap.required_skills:
             snap.source = JobSnapshotSource.LLM_EXTRACTED.value
@@ -183,11 +184,7 @@ class ApplicationService:
             else None
         )
 
-        latest_letter = (
-            self._repo.get_latest_cover_letter(tracked.id)
-            if hasattr(self._repo, "get_latest_cover_letter")
-            else None
-        )
+        latest_letter = self._repo.get_latest_cover_letter(tracked.id)
         letter_view = (
             CoverLetterView(
                 id=latest_letter.id,
@@ -199,11 +196,7 @@ class ApplicationService:
             if latest_letter is not None
             else None
         )
-        cover_letter_count = (
-            len(self._repo.list_cover_letters(tracked.id))
-            if hasattr(self._repo, "list_cover_letters")
-            else 0
-        )
+        cover_letter_count = len(self._repo.list_cover_letters(tracked.id))
 
         return ApplicationAggregate(
             id=tracked.id,

@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
-from hiresense.identity.api.dependencies import require_auth
+from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.inbox.api.dependencies import get_inbox_provider
 from hiresense.inbox.api.provider import InboxProvider
 from hiresense.inbox.domain import DetectedSignal, InboundEmail, SignalState
@@ -26,7 +26,12 @@ class IngestEmailRequest(BaseModel):
     received_at: datetime | None = None
 
 
-@router.post("/tracking/ingest-email", response_model=None, status_code=201)
+@router.post(
+    "/tracking/ingest-email",
+    response_model=None,
+    status_code=201,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
+)
 async def ingest_email(
     body: IngestEmailRequest,
     provider: Annotated[InboxProvider, Depends(get_inbox_provider)],

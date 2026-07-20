@@ -65,6 +65,22 @@ class CoreSettings(BaseSettings):
     # set to a non-admin value to genuinely exercise the admin gate.
     auth_role: str = "admin"
 
+    # Session token lifetime (hours). Also drives the session cookie max-age so
+    # the browser evicts the cookie in lock-step with token expiry.
+    jwt_expiry_hours: int = 24
+
+    # Session cookie (httpOnly) that carries the JWT for the SPA. The token is
+    # never exposed to JavaScript (XSS can't exfiltrate it); the browser attaches
+    # the cookie automatically on same-origin requests. The `Authorization:
+    # Bearer` header is still accepted as a fallback for API tooling and tests.
+    session_cookie_name: str = "hs_session"
+    # Secure flag is mode-aware: None → resolved by APP_MODE (on in production,
+    # off for local http dev) in config.mode.apply_mode. Set true/false to force.
+    session_cookie_secure: bool | None = None
+    # SameSite=strict is the CSRF mitigation for the cookie: the browser never
+    # sends it on cross-site requests, so forged requests carry no session.
+    session_cookie_samesite: str = "strict"
+
     # Language
     supported_languages: list[str] = ["en", "es"]
     default_language: str = "en"

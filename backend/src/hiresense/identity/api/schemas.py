@@ -16,3 +16,7 @@ class TokenResponse(BaseModel):
 class MeResponse(BaseModel):
     username: str
     role: str
+
+
+class LogoutResponse(BaseModel):
+    detail: str = "logged out"

@@ -161,9 +161,10 @@ export class AdminUsageComponent implements OnInit {
       feature_key: this.filterFeature() || undefined,
       days: 90,
     });
-    // The CSV endpoint is auth-gated; the auth interceptor only runs on Angular's
-    // HttpClient, not on plain anchor navigation. We fetch with the interceptor
-    // and trigger a download via a blob URL.
+    // The CSV endpoint is auth-gated. Session auth is a same-origin httpOnly
+    // cookie, so the browser attaches it automatically to this navigation — no
+    // interceptor needed (unlike the old bearer header, which couldn't ride a
+    // plain window.open).
     window.open(url, '_blank');
   }
 

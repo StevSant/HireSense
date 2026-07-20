@@ -1,5 +1,6 @@
 import pytest
-from hiresense.optimization.domain.services import CVOptimizer
+from hiresense.optimization.domain import CVOptimizer, OptimizationError
+from hiresense.ports import LLMTimeoutError
 
 
 class FakeLLM:
@@ -166,21 +167,89 @@ async def test_optimizer_does_not_truncate_original_tex() -> None:
 
 
 @pytest.mark.asyncio
-async def test_optimizer_handles_llm_failure() -> None:
+async def test_optimizer_raises_on_llm_failure() -> None:
+    # A failing LLM must NOT return the original CV as a fake success (#142) —
+    # it raises OptimizationError so the API can surface a 503.
     class BrokenLLM:
         async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
             raise RuntimeError("LLM is down")
 
     optimizer = CVOptimizer(llm=BrokenLLM())
+    with pytest.raises(OptimizationError):
+        await optimizer.optimize(
+            match_id="match-3",
+            job_id="job-3",
+            cv_id="cv-3",
+            original_tex="\\section*{SUMMARY}\nSome text",
+            job_description="Any",
+            job_skills=[],
+            missing_skills=[],
+            recommendations=[],
+        )
+
+
+@pytest.mark.asyncio
+async def test_optimizer_raises_on_non_json_response() -> None:
+    class BabblingLLM:
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            return "Sorry, I can't help with that."
+
+    optimizer = CVOptimizer(llm=BabblingLLM())
+    with pytest.raises(OptimizationError):
+        await optimizer.optimize(
+            match_id="match-4",
+            job_id="job-4",
+            cv_id="cv-4",
+            original_tex="\\section*{SUMMARY}\nSome text",
+            job_description="Any",
+            job_skills=[],
+            missing_skills=[],
+            recommendations=[],
+        )
+
+
+@pytest.mark.asyncio
+async def test_optimizer_no_changes_is_a_success_not_a_failure() -> None:
+    # A successful call that suggests no edits returns identical text but with an
+    # empty change list — distinguishable from a failure, which raises.
+    class NoChangesLLM:
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            return '{"changes": [], "improvement_summary": "already well tailored"}'
+
+    optimizer = CVOptimizer(llm=NoChangesLLM())
+    original = "\\section*{SUMMARY}\nSome text"
     result = await optimizer.optimize(
-        match_id="match-3",
-        job_id="job-3",
-        cv_id="cv-3",
-        original_tex="\\section*{SUMMARY}\nSome text",
+        match_id="match-5",
+        job_id="job-5",
+        cv_id="cv-5",
+        original_tex=original,
         job_description="Any",
         job_skills=[],
         missing_skills=[],
         recommendations=[],
     )
     assert result.changes == []
-    assert result.optimized_tex == "\\section*{SUMMARY}\nSome text"
+    assert result.optimized_tex == original
+    assert result.improvement_summary == "already well tailored"
+
+
+@pytest.mark.asyncio
+async def test_optimizer_propagates_llm_timeout() -> None:
+    # A timeout must surface as-is (mapped to 504 upstream), not be folded into a
+    # generic OptimizationError (503).
+    class TimingOutLLM:
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            raise LLMTimeoutError(timeout=1.0, provider="anthropic")
+
+    optimizer = CVOptimizer(llm=TimingOutLLM())
+    with pytest.raises(LLMTimeoutError):
+        await optimizer.optimize(
+            match_id="match-6",
+            job_id="job-6",
+            cv_id="cv-6",
+            original_tex="\\section*{SUMMARY}\nSome text",
+            job_description="Any",
+            job_skills=[],
+            missing_skills=[],
+            recommendations=[],
+        )

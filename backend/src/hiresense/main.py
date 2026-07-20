@@ -47,6 +47,7 @@ from hiresense.ingestion.api import router as ingestion_router
 from hiresense.interview.api import router as interview_router
 from hiresense.matching.api import router as matching_router
 from hiresense.optimization.api import router as optimization_router
+from hiresense.optimization.domain import OptimizationError
 from hiresense.outreach.api import router as outreach_router
 from hiresense.network.api import router as network_router
 from hiresense.autopilot.api import router as autopilot_router
@@ -121,6 +122,13 @@ def create_app() -> FastAPI:
             exc.model,
         )
         return JSONResponse(status_code=504, content={"detail": "LLM request timed out"})
+
+    # CV optimization failed (LLM error / non-JSON / bad change shape). Surface a
+    # 503 instead of silently persisting the unoptimized CV as a success (#142).
+    @app.exception_handler(OptimizationError)
+    async def _optimization_error_handler(_request: Request, exc: OptimizationError) -> JSONResponse:
+        logging.getLogger(__name__).warning("CV optimization failed: %s", exc)
+        return JSONResponse(status_code=503, content={"detail": "CV optimization failed"})
 
     app.state.settings = settings
 

@@ -8,6 +8,7 @@ from hiresense.autopilot.domain.autopilot_draft import AutopilotDraft
 from hiresense.autopilot.domain.draft_status import DraftStatus
 from hiresense.autopilot.domain.pipeline_result import PipelineResult
 from hiresense.autopilot.domain.ports import ApplicationDrafter, DraftRepository
+from hiresense.observability import get_domain_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +111,9 @@ class AutopilotPipelineService:
             application_id, status, detail = await self._drafter.draft(job_id)
         except Exception as exc:  # noqa: BLE001 - one bad job must not abort the batch
             logger.exception("autopilot: drafting job %r failed", job_id)
+            get_domain_metrics().automation_failures_total.add(
+                1, {"component": "autopilot_draft"}
+            )
             application_id, status, detail = None, DraftStatus.FAILED, str(exc)
         draft = AutopilotDraft(
             job_id=job_id,

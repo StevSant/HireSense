@@ -97,6 +97,33 @@ async def test_drafter_exception_records_failed_and_continues():
 
 
 @pytest.mark.asyncio
+async def test_drafter_exception_increments_metric(monkeypatch):
+    # A swallowed per-job draft failure must be observable, not just logged (#163).
+    class _Counter:
+        def __init__(self):
+            self.calls = []
+
+        def add(self, value, attributes=None):
+            self.calls.append((value, attributes or {}))
+
+    class _Metrics:
+        def __init__(self):
+            self.automation_failures_total = _Counter()
+
+    metrics = _Metrics()
+    monkeypatch.setattr(
+        "hiresense.autopilot.domain.autopilot_pipeline_service.get_domain_metrics",
+        lambda: metrics,
+    )
+    repo, drafter = _Repo(), _Drafter(raise_on="a")
+    result = await _svc([_Entry("a"), _Entry("b")], repo, drafter).run()
+    assert result.created == 1  # b still drafted; the batch is not aborted
+    assert len(metrics.automation_failures_total.calls) == 1
+    _, attrs = metrics.automation_failures_total.calls[0]
+    assert attrs.get("component") == "autopilot_draft"
+
+
+@pytest.mark.asyncio
 async def test_notifies_only_when_created():
     notifier = _Notifier()
     await _svc([_Entry("a")], _Repo(), _Drafter(), notifier=notifier).run()

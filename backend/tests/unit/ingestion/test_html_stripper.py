@@ -1,4 +1,4 @@
-from hiresense.ingestion.domain.html_stripper import strip_html
+from hiresense.ingestion.domain.html_stripper import MAX_HTML_CHARS, strip_html
 
 
 def test_strips_basic_tags() -> None:
@@ -32,3 +32,17 @@ def test_strips_nested_tags() -> None:
 def test_decodes_html_entities() -> None:
     html = "<p>Salary &gt; $100k &amp; benefits</p>"
     assert strip_html(html) == "Salary > $100k & benefits"
+
+
+def test_caps_input_to_max_chars() -> None:
+    # Content beyond the cap is never parsed (bounds CPU/memory on huge input).
+    keep = "<p>keep</p>"
+    html = keep + "<p>DROP</p>" * 100
+    result = strip_html(html, max_chars=len(keep))
+    assert "keep" in result
+    assert "DROP" not in result
+
+
+def test_default_cap_truncates_oversized_input() -> None:
+    oversized = ("a" * MAX_HTML_CHARS) + "SENTINEL_PAST_CAP"
+    assert "SENTINEL_PAST_CAP" not in strip_html(oversized)

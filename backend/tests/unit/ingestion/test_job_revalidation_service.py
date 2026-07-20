@@ -9,10 +9,40 @@ from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.infrastructure import InMemoryJobsRepository
 
 
+def _allow_all(_url: str) -> bool:
+    """Permissive SSRF guard for tests that aren't exercising the guard itself
+    (keeps the suite offline — the real guard resolves DNS)."""
+    return True
+
+
 class _Resp:
-    def __init__(self, code: int, text: str = "") -> None:
+    def __init__(self, code: int, text: str = "", location: str | None = None) -> None:
         self.status_code = code
         self.text = text
+        self._body = text.encode()
+        self.headers: dict[str, str] = {"location": location} if location else {}
+        self.encoding = "utf-8"
+
+    async def aiter_bytes(self, chunk_size: int = 65536):
+        for i in range(0, len(self._body), chunk_size):
+            yield self._body[i : i + chunk_size]
+
+
+class _StreamCtx:
+    def __init__(self, client: _Client, url: str, headers: dict[str, str]) -> None:
+        self._client = client
+        self._url = url
+        self._headers = headers
+
+    async def __aenter__(self) -> _Resp:
+        self._client.requested.append(self._url)
+        self._client.headers_seen.append(self._headers or {})
+        if self._url in self._client._raise:
+            raise RuntimeError("timeout")
+        return self._client._by_url[self._url]
+
+    async def __aexit__(self, *exc: object) -> bool:
+        return False
 
 
 class _Client:
@@ -22,12 +52,8 @@ class _Client:
         self.requested: list[str] = []
         self.headers_seen: list[dict[str, str]] = []
 
-    async def get(self, url: str, **kwargs) -> _Resp:
-        self.requested.append(url)
-        self.headers_seen.append(kwargs.get("headers") or {})
-        if url in self._raise:
-            raise RuntimeError("timeout")
-        return self._by_url[url]
+    def stream(self, method: str, url: str, **kwargs) -> _StreamCtx:
+        return _StreamCtx(self, url, kwargs.get("headers") or {})
 
 
 class _Indexer:
@@ -74,6 +100,7 @@ async def test_sweep_closes_404_keeps_200_and_marks_checked() -> None:
         batch=10,
         concurrency=2,
         delay=0.0,
+        url_guard=_allow_all,
     )
 
     closed = await svc.sweep()
@@ -102,6 +129,7 @@ async def test_sweep_closes_on_content_marker() -> None:
         batch=10,
         concurrency=2,
         delay=0.0,
+        url_guard=_allow_all,
     )
     closed = await svc.sweep()
     assert closed == ["b"]
@@ -121,6 +149,7 @@ async def test_sweep_request_error_is_unknown_not_closed() -> None:
         batch=10,
         concurrency=1,
         delay=0.0,
+        url_guard=_allow_all,
     )
     closed = await svc.sweep()
     assert closed == []  # a network error must NOT close the job
@@ -163,6 +192,7 @@ async def test_probe_url_builder_overrides_listing_url_per_source() -> None:
         batch=10,
         concurrency=2,
         delay=0.0,
+        url_guard=_allow_all,
         probe_url_builders={
             "linkedin": lambda job: (
                 f"https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{job.source_id}"
@@ -198,6 +228,7 @@ async def test_sweep_covers_whole_corpus_across_chunks() -> None:
         batch=2,
         concurrency=2,
         delay=0.0,
+        url_guard=_allow_all,
     )
 
     closed = await svc.sweep()
@@ -244,6 +275,7 @@ async def test_revalidate_ids_probes_only_requested_probeable_open_jobs() -> Non
         batch=10,
         concurrency=2,
         delay=0.0,
+        url_guard=_allow_all,
     )
 
     closed = await svc.revalidate_ids(["dead", "alive", "hn"])
@@ -272,6 +304,7 @@ async def test_probe_forwards_configured_user_agent_header() -> None:
         batch=10,
         concurrency=2,
         delay=0.0,
+        url_guard=_allow_all,
         user_agent="TestUA/1.0",
     )
 
@@ -296,6 +329,7 @@ async def test_probe_sends_no_headers_without_configured_user_agent() -> None:
         batch=10,
         concurrency=2,
         delay=0.0,
+        url_guard=_allow_all,
     )
 
     await svc.sweep()
@@ -346,6 +380,7 @@ async def test_sweep_closes_expired_jobs_without_probing() -> None:
         batch=10,
         concurrency=2,
         delay=0.0,
+        url_guard=_allow_all,
         clock=lambda: now,
     )
 
@@ -371,6 +406,163 @@ async def test_sweep_empty_when_no_open_jobs() -> None:
         batch=10,
         concurrency=1,
         delay=0.0,
+        url_guard=_allow_all,
     )
     assert await svc.sweep() == []
     assert client.requested == []
+
+
+# --- SSRF hardening (#134) ---
+
+
+@pytest.mark.asyncio
+async def test_probe_blocks_private_target_pre_request_and_leaves_open() -> None:
+    """A job whose URL resolves to a private address is refused BEFORE any
+    request — the fake is never hit — and the job stays open (UNKNOWN)."""
+    repo = InMemoryJobsRepository()
+    internal = _job("internal", "http://169.254.169.254/latest/meta-data/")
+    repo.upsert(internal)
+    client = _Client({internal.url: _Resp(404)})  # would close IF ever probed
+
+    def guard(url: str) -> bool:
+        return "169.254.169.254" not in url
+
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=[],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
+        url_guard=guard,
+    )
+
+    closed = await svc.sweep()
+
+    assert closed == []  # blocked probe is UNKNOWN, never a closure
+    assert {j.id: j.status for j in repo.list_all()}["internal"] == "open"
+    assert client.requested == []  # refused before the HTTP call
+
+
+@pytest.mark.asyncio
+async def test_probe_blocks_redirect_to_private_target() -> None:
+    """An allowlisted host that 302s to an internal address is refused on the
+    redirect hop — the internal target is never fetched and the job stays open."""
+    repo = InMemoryJobsRepository()
+    job = _job("j", "https://public.example/listing")
+    repo.upsert(job)
+    internal = "http://10.0.0.5/admin"
+    client = _Client(
+        {
+            job.url: _Resp(302, location=internal),
+            internal: _Resp(404),  # a closure signal IF the hop were followed
+        }
+    )
+
+    def guard(url: str) -> bool:
+        return "10.0.0.5" not in url
+
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=[],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
+        max_redirects=5,
+        url_guard=guard,
+    )
+
+    closed = await svc.sweep()
+
+    assert closed == []  # the internal 404 must not close the job
+    assert {j.id: j.status for j in repo.list_all()}["j"] == "open"
+    assert job.url in client.requested  # the public hop was fetched
+    assert internal not in client.requested  # the internal hop was refused
+
+
+@pytest.mark.asyncio
+async def test_probe_follows_allowed_redirect_to_closure() -> None:
+    """A redirect to another PUBLIC target is followed and its closure signal
+    (404) applied — manual redirect handling still detects closures."""
+    repo = InMemoryJobsRepository()
+    job = _job("j", "https://public.example/old")
+    repo.upsert(job)
+    moved = "https://public.example/new"
+    client = _Client({job.url: _Resp(301, location=moved), moved: _Resp(404)})
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=[],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
+        max_redirects=5,
+        url_guard=_allow_all,
+    )
+
+    closed = await svc.sweep()
+
+    assert closed == ["j"]
+    assert moved in client.requested
+
+
+@pytest.mark.asyncio
+async def test_probe_redirect_loop_exceeding_cap_is_unknown() -> None:
+    """A redirect chain longer than max_redirects is refused (UNKNOWN), never
+    followed forever."""
+    repo = InMemoryJobsRepository()
+    job = _job("j", "https://public.example/a")
+    repo.upsert(job)
+    client = _Client({job.url: _Resp(302, location=job.url)})  # self-redirect loop
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=[],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
+        max_redirects=2,
+        url_guard=_allow_all,
+    )
+
+    closed = await svc.sweep()
+
+    assert closed == []  # loop capped → UNKNOWN → stays open
+    assert {j.id: j.status for j in repo.list_all()}["j"] == "open"
+
+
+@pytest.mark.asyncio
+async def test_probe_body_read_is_capped() -> None:
+    """A closure marker positioned beyond max_probe_bytes is NOT seen — the body
+    read is truncated, so an adversarial huge page can't exhaust memory (and a
+    marker past the cap can't drive a false closure)."""
+    repo, a, b = _seed()
+    # Marker sits after 20 filler bytes; the cap reads only the first 5.
+    body = "x" * 20 + "this job is closed"
+    client = _Client({a.url: _Resp(200, "ok"), b.url: _Resp(200, body)})
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["this job is closed"],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
+        max_probe_bytes=5,
+        url_guard=_allow_all,
+    )
+
+    closed = await svc.sweep()
+
+    assert closed == []  # marker beyond the cap was never read
+    assert all(j.status == "open" for j in repo.list_all())

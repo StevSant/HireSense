@@ -81,25 +81,15 @@ async def create_application(
     request: CreateApplicationRequest,
     service: ApplicationService = Depends(get_application_service),
 ) -> ApplicationAggregate:
-    try:
-        if request.job_id is not None:
-            return await service.create_from_ingested(str(request.job_id))
-        return await service.create_from_manual(
-            title=request.title or "",
-            company=request.company or "",
-            description=request.description or "",
-            url=request.url,
-            notes=request.notes,
-        )
-    except ValueError as exc:
-        msg = str(exc).lower()
-        if "not found" in msg:
-            status_code = 404
-        elif "already tracked" in msg:
-            status_code = 409
-        else:
-            status_code = 400
-        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+    if request.job_id is not None:
+        return await service.create_from_ingested(str(request.job_id))
+    return await service.create_from_manual(
+        title=request.title or "",
+        company=request.company or "",
+        description=request.description or "",
+        url=request.url,
+        notes=request.notes,
+    )
 
 
 @router.get("", response_model=list[ApplicationListItemResponse])
@@ -228,12 +218,7 @@ async def generate_match(
     request: GenerateMatchRequest,
     service: ArtifactService = Depends(get_artifact_service),
 ) -> MatchView:
-    try:
-        return await service.generate_match(application_id, cv_language=request.cv_language)
-    except ValueError as exc:
-        msg = str(exc).lower()
-        status_code = 404 if "not found" in msg else 400
-        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+    return await service.generate_match(application_id, cv_language=request.cv_language)
 
 
 @router.post(
@@ -247,16 +232,11 @@ async def generate_optimization(
     request: GenerateOptimizationRequest,
     service: ArtifactService = Depends(get_artifact_service),
 ) -> CvOptimizationView:
-    try:
-        return await service.generate_optimization(
-            application_id,
-            cv_language=request.cv_language,
-            match_id=request.match_id,
-        )
-    except ValueError as exc:
-        msg = str(exc).lower()
-        status_code = 404 if "not found" in msg else 400
-        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+    return await service.generate_optimization(
+        application_id,
+        cv_language=request.cv_language,
+        match_id=request.match_id,
+    )
 
 
 @router.post(
@@ -295,10 +275,6 @@ async def generate_cover_letter(
             cv_language=request.cv_language,
             tone=request.tone,
         )
-    except ValueError as exc:
-        msg = str(exc).lower()
-        status_code = 404 if "not found" in msg else 400
-        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
     except RuntimeError as exc:
         # LLM not configured
         raise HTTPException(status_code=503, detail=str(exc)) from exc

@@ -28,6 +28,18 @@ class _Repo:
         self.added.append(d)
         return d
 
+    def claim(self, d):
+        if any(x.job_id == d.job_id for x in self.added):
+            return None
+        return self.add(d)
+
+    def finalize(self, d):
+        for i, x in enumerate(self.added):
+            if x.id == d.id:
+                self.added[i] = d
+                return d
+        raise RuntimeError(f"draft {d.id} was never claimed")
+
     def list(self, limit):
         return self.added[:limit]
 
@@ -81,13 +93,19 @@ async def test_run_now_returns_202_and_drafts_in_background():
         assert run.json() == {"status": "started"}
 
         # The background task was scheduled via create_task, not awaited by
-        # the request; give the event loop turns so it can run to completion
-        # (the stub drafter never awaits anything real, so this is fast).
+        # the request; give the event loop turns so it can run to completion.
+        # The claim-first flow inserts a PENDING reservation before drafting,
+        # so wait for the row to be finalized, not merely present.
         for _ in range(50):
-            if repo.added:
+            if (
+                repo.added
+                and repo.added[0].status is not DraftStatus.PENDING
+                and not service.is_running
+            ):
                 break
             await asyncio.sleep(0.01)
         assert repo.added, "background run never completed"
+        assert repo.added[0].status is DraftStatus.DRAFTED
         assert not service.is_running
 
         lst = await client.get("/autopilot/drafts")

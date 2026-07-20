@@ -130,6 +130,14 @@ class FakeRepo:
     def list_cover_letters_for(self, application_ids):
         return {}
 
+    # Single-item accessors still declared on the port (used by apply/artifact
+    # services); the aggregate builder no longer calls them.
+    def get_latest_cover_letter(self, application_id):
+        return None
+
+    def list_cover_letters(self, application_id):
+        return []
+
 
 class FakeSkillExtractor:
     def __init__(self, skills: list[str]) -> None:

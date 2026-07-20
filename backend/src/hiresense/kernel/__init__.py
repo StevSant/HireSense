@@ -1,4 +1,5 @@
 from hiresense.kernel.email_message import EmailMessage
+from hiresense.kernel.exception_handlers import register_domain_exception_handlers
 from hiresense.kernel.lru_cache import LRUCache
 from hiresense.kernel.pagination import resolve_page_limit
 from hiresense.kernel.rate_limit import SlidingWindowRateLimiter
@@ -13,5 +14,6 @@ __all__ = [
     "SecurityHeadersMiddleware",
     "SlidingWindowRateLimiter",
     "normalize_skill",
+    "register_domain_exception_handlers",
     "resolve_page_limit",
 ]

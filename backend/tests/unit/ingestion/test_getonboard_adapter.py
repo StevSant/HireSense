@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from hiresense.ingestion.adapters import GetOnBoardAdapter
@@ -96,3 +98,45 @@ async def test_getonboard_company_unresolved_leaves_blank() -> None:
     assert "company_name" not in jobs[0].raw_data["attributes"]
     out = GetOnBoardNormalizer().normalize(jobs[0])
     assert out["company"] == ""
+
+
+class _ConcurrencyTrackingClient:
+    """Records the peak number of concurrent /companies/{id} calls in flight."""
+
+    def __init__(self, jobs_page: dict, company_names: dict[str, str]) -> None:
+        self._jobs_page = jobs_page
+        self._company_names = company_names
+        self.inflight = 0
+        self.max_inflight = 0
+        self.company_calls = 0
+
+    async def get(self, url: str, **kwargs) -> FakeResponse:
+        if "/companies/" not in url:
+            return FakeResponse(self._jobs_page)
+        self.company_calls += 1
+        self.inflight += 1
+        self.max_inflight = max(self.max_inflight, self.inflight)
+        try:
+            await asyncio.sleep(0.02)  # hold the slot so overlap is observable
+        finally:
+            self.inflight -= 1
+        cid = url.rsplit("/", 1)[1]
+        return FakeResponse(
+            {"data": {"id": cid, "attributes": {"name": self._company_names.get(cid, "")}}}
+        )
+
+
+@pytest.mark.asyncio
+async def test_getonboard_resolves_companies_concurrently_within_bound() -> None:
+    names = {str(cid): f"Company {cid}" for cid in (1, 2, 3, 4)}
+    http = _ConcurrencyTrackingClient(_jobs_page(1, 2, 3, 4), names)
+    adapter = GetOnBoardAdapter(
+        http_client=http, base_url="https://api", categories=None, company_concurrency=2
+    )
+
+    jobs = await adapter.fetch_jobs()
+
+    # One round-trip per DISTINCT company, run in parallel but capped at 2.
+    assert http.company_calls == 4
+    assert http.max_inflight == 2  # concurrent (>1) yet never above the bound
+    assert {j.raw_data["attributes"]["company_name"] for j in jobs} == set(names.values())

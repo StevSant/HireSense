@@ -5,7 +5,9 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
 from hiresense.kernel.events import TrackingStatusChangedEvent
+from hiresense.kernel.exceptions import ConflictError, NotFoundError
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
+from hiresense.tracking.domain.status_transition_policy import ensure_valid_transition
 
 if TYPE_CHECKING:
     from hiresense.tracking.ports import TrackingRepositoryPort
@@ -38,11 +40,11 @@ class TrackingService:
     def track_from_ingestion(self, job_id: str) -> TrackedApplication:
         job = self._ingestion.get_job_by_id(job_id)
         if job is None:
-            raise ValueError(f"Job {job_id} not found")
+            raise NotFoundError(f"Job {job_id} not found")
         job_uuid = uuid_mod.UUID(job_id)
         existing = self._repo.get_by_job_id(job_uuid)
         if existing is not None:
-            raise ValueError("This job is already tracked")
+            raise ConflictError("This job is already tracked")
         app = TrackedApplication(
             job_id=job_uuid,
             title=job.title,
@@ -55,7 +57,7 @@ class TrackingService:
     def get(self, id: uuid_mod.UUID) -> TrackedApplication:
         app = self._repo.get_by_id(id)
         if app is None:
-            raise ValueError(f"Application {id} not found")
+            raise NotFoundError(f"Application {id} not found")
         return app
 
     def list(
@@ -78,6 +80,7 @@ class TrackingService:
     ) -> TrackedApplication:
         app = self.get(id)
         previous = app.status
+        ensure_valid_transition(previous, status.value)
         app.status = status.value
         if status == ApplicationStatus.APPLIED and app.applied_at is None:
             app.applied_at = datetime.now(timezone.utc)
@@ -101,4 +104,4 @@ class TrackingService:
     def remove(self, id: uuid_mod.UUID) -> None:
         deleted = self._repo.delete(id)
         if not deleted:
-            raise ValueError(f"Application {id} not found")
+            raise NotFoundError(f"Application {id} not found")

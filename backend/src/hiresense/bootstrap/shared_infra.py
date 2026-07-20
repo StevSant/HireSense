@@ -25,10 +25,17 @@ class SharedInfra:
     sync_session_factory: Any
     embedding: Any
     vector_store: Any
+    # In-process CompanyProfileStore: ingestion adapters record source-provided
+    # company profiles here, the research service reads them to ground its
+    # prompt. Shared cross-module state, like the event bus and caches.
+    company_profile_store: Any
 
 
 def build_shared_infra(settings: Settings, http_client: httpx.AsyncClient) -> SharedInfra:
+    from hiresense.research.domain import CompanyProfileStore
+
     event_bus = InMemoryEventBus()
+    company_profile_store = CompanyProfileStore()
 
     # Wrap the raw client with retry/backoff so transient transport errors and
     # retryable status codes no longer abort an entire source fetch. The raw
@@ -78,4 +85,5 @@ def build_shared_infra(settings: Settings, http_client: httpx.AsyncClient) -> Sh
         sync_session_factory=sync_session_factory,
         embedding=embedding,
         vector_store=vector_store,
+        company_profile_store=company_profile_store,
     )

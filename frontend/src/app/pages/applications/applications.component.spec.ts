@@ -46,6 +46,7 @@ function makeResearch(over: Partial<CompanyResearch> = {}): CompanyResearch {
     company_size: null,
     headquarters: null,
     website: null,
+    description: null,
     logo_url: null,
     created_at: null,
     updated_at: null,

@@ -16,6 +16,7 @@ const research: CompanyResearch = {
   company_size: '51-200',
   headquarters: 'Santiago, CL',
   website: 'https://bc.cl',
+  description: null,
   logo_url: null,
   created_at: null,
   updated_at: null,
@@ -66,6 +67,26 @@ describe('CompanyIntelComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelectorAll('.intel-sections section').length).toBe(0);
     expect(el.textContent ?? '').toContain("isn't configured");
+  });
+
+  it('shows the source About text even when the LLM is not configured', () => {
+    const withAbout: CompanyResearch = {
+      ...research,
+      funding_stage: 'LLM not configured',
+      tech_stack: 'LLM not configured',
+      culture_summary: 'LLM not configured',
+      growth_trajectory: 'LLM not configured',
+      pros: 'LLM not configured',
+      cons: 'LLM not configured',
+      description: 'Somos una consultora de TI.',
+    };
+    const fixture = mount(withAbout);
+    const el = fixture.nativeElement as HTMLElement;
+    // About renders independent of the generated (sentinel) sections.
+    expect(el.querySelector('.intel-about')?.textContent ?? '').toContain(
+      'Somos una consultora de TI.',
+    );
+    expect(el.querySelectorAll('.intel-sections section').length).toBe(0);
   });
 
   it('shows a transient-unavailable message (not the no-LLM one) for the "Research unavailable" sentinel', () => {

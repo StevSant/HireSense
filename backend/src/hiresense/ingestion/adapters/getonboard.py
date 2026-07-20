@@ -3,12 +3,15 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from hiresense.ingestion.domain.html_stripper import strip_html
 from hiresense.ingestion.domain.models import RawJobListing
+from hiresense.ingestion.ports import CompanyProfileSinkPort
 from hiresense.kernel.value_objects import SourceType
 
 logger = logging.getLogger(__name__)
 
 MAX_PAGES = 10
+DEFAULT_PROFILE_CHAR_LIMIT = 1500
 
 
 class GetOnBoardAdapter:
@@ -17,6 +20,8 @@ class GetOnBoardAdapter:
         http_client: Any,
         base_url: str,
         categories: list[str] | None = None,
+        profile_sink: CompanyProfileSinkPort | None = None,
+        profile_char_limit: int = DEFAULT_PROFILE_CHAR_LIMIT,
     ) -> None:
         self._http = http_client
         self._base_url = base_url
@@ -25,6 +30,10 @@ class GetOnBoardAdapter:
         # company id → name, resolved lazily and reused across the run so we
         # never fetch the same company twice (see _resolve_company_names).
         self._company_cache: dict[str, str] = {}
+        # Optional sink for the company profile carried on the same
+        # /companies/{id} payload — captured once here instead of discarded.
+        self._profile_sink = profile_sink
+        self._profile_char_limit = profile_char_limit
 
     def supports_snapshot_closure(self) -> bool:
         return False
@@ -96,11 +105,49 @@ class GetOnBoardAdapter:
             response = await self._http.get(f"{self._base_url}/companies/{company_id}")
             response.raise_for_status()
             data = response.json().get("data", {}) or {}
-            name = ((data.get("attributes") or {}).get("name") or "").strip()
+            attrs = data.get("attributes") or {}
+            name = (attrs.get("name") or "").strip()
+            if name:
+                self._record_profile(name, attrs)
         except Exception:
             logger.warning("getonboard: failed to resolve company %s", company_id, exc_info=True)
         self._company_cache[company_id] = name
         return name
+
+    def _record_profile(self, name: str, attrs: dict[str, Any]) -> None:
+        """Hand the source-provided company profile to the sink (if wired).
+
+        Everything here rides on the ``/companies/{id}`` response we already
+        fetched to resolve the name, so this adds no HTTP. Grounds the company
+        intel with real data instead of the LLM's parametric recall (#178).
+        """
+        if self._profile_sink is None:
+            return
+        self._profile_sink.record(
+            company_name=name,
+            source=self.source_name(),
+            description=self._profile_description(attrs),
+            website=(attrs.get("web") or "").strip() or None,
+            headquarters=(attrs.get("country") or "").strip() or None,
+        )
+
+    def _profile_description(self, attrs: dict[str, Any]) -> str | None:
+        """Plain-text About blurb from the short + long descriptions.
+
+        ``long_description`` is HTML (and often Spanish); strip it to plain text
+        so it is safe to surface and to feed the prompt. Bounded to keep the
+        in-process store and the prompt small.
+        """
+        parts = [
+            strip_html(attrs.get("description") or ""),
+            strip_html(attrs.get("long_description") or ""),
+        ]
+        text = "\n\n".join(p for p in parts if p).strip()
+        if not text:
+            return None
+        if len(text) > self._profile_char_limit:
+            text = text[: self._profile_char_limit].rstrip() + "…"
+        return text
 
     async def _fetch_endpoint(
         self,

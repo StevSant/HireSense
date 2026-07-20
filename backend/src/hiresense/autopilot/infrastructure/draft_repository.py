@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from hiresense.autopilot.domain import AutopilotDraft, DraftStatus
 from hiresense.autopilot.infrastructure.autopilot_draft_orm import AutopilotDraftOrm
@@ -20,17 +21,43 @@ def _to_domain(row: AutopilotDraftOrm) -> AutopilotDraft:
     )
 
 
+def _new_orm(draft: AutopilotDraft) -> AutopilotDraftOrm:
+    return AutopilotDraftOrm(
+        job_id=draft.job_id,
+        application_id=draft.application_id,
+        job_title=draft.job_title,
+        company=draft.company,
+        status=draft.status.value,
+        detail=draft.detail,
+    )
+
+
 class DraftRepositoryImpl(SqlRepository):
     def add(self, draft: AutopilotDraft) -> AutopilotDraft:
-        row = AutopilotDraftOrm(
-            job_id=draft.job_id,
-            application_id=draft.application_id,
-            job_title=draft.job_title,
-            company=draft.company,
-            status=draft.status.value,
-            detail=draft.detail,
+        return self._insert(_new_orm(draft), _to_domain)
+
+    def claim(self, draft: AutopilotDraft) -> AutopilotDraft | None:
+        """Insert a reservation row for ``draft.job_id``; return ``None`` if the
+        unique constraint rejects it (another run already reserved this job)."""
+        try:
+            return self._insert(_new_orm(draft), _to_domain)
+        except IntegrityError:
+            return None
+
+    def finalize(self, draft: AutopilotDraft) -> AutopilotDraft:
+        updated = self._update_by_pk(
+            AutopilotDraftOrm,
+            draft.id,
+            {
+                "application_id": draft.application_id,
+                "status": draft.status.value,
+                "detail": draft.detail,
+            },
+            _to_domain,
         )
-        return self._insert(row, _to_domain)
+        if updated is None:  # pragma: no cover - the claimed row always exists
+            raise RuntimeError(f"autopilot draft {draft.id} vanished before finalize")
+        return updated
 
     def list(self, limit: int) -> list[AutopilotDraft]:
         stmt = select(AutopilotDraftOrm).order_by(AutopilotDraftOrm.created_at.desc()).limit(limit)

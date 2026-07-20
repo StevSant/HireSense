@@ -76,6 +76,17 @@ class IngestionSettings(BaseSettings):
     # Concurrent URL probes + per-request delay (seconds) for politeness.
     job_revalidation_concurrency: int = 2
     job_revalidation_delay: float = 1.0
+    # SSRF hardening for the URL-probe sweep. probe_url derives from ingested,
+    # attacker-influenceable data (job board / HN / CSV), so each probe target
+    # (and every redirect hop) is validated to be http/https resolving to a
+    # globally-routable address before the request; internal/loopback/link-local
+    # (incl. 169.254.169.254 metadata) targets are refused → UNKNOWN (never
+    # close a job on a blocked probe). The response body is streamed and read at
+    # most this many bytes to bound memory against an adversarial huge page.
+    job_revalidation_max_probe_bytes: int = 262144
+    # Max redirect hops followed per probe; each hop is re-validated. 0 = don't
+    # follow redirects at all.
+    job_revalidation_max_redirects: int = 5
     # User-Agent sent on revalidation probes. The shared httpx client defaults to
     # `python-httpx/...`, which some listing hosts (e.g. weworkremotely) reject
     # with 403 — turning a live/closed signal into UNKNOWN. A realistic browser

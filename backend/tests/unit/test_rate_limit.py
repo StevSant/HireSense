@@ -29,6 +29,33 @@ def test_window_expiry_frees_slots(monkeypatch: pytest.MonkeyPatch) -> None:
     assert limiter.allow("client") is True
 
 
+def test_idle_keys_are_evicted_after_a_window(monkeypatch: pytest.MonkeyPatch) -> None:
+    clock = {"now": 1000.0}
+    monkeypatch.setattr("hiresense.kernel.rate_limit.time.monotonic", lambda: clock["now"])
+    limiter = SlidingWindowRateLimiter(max_requests=5, window_seconds=10.0)
+    for ip in ("a", "b", "c"):
+        assert limiter.allow(ip) is True
+    assert len(limiter._events) == 3
+    # After a full window elapses, the next call sweeps the now-idle keys so the
+    # map shrinks instead of leaking one deque per distinct IP forever.
+    clock["now"] += 11.0
+    assert limiter.allow("d") is True
+    assert set(limiter._events) == {"d"}
+
+
+def test_sweep_keeps_still_active_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    clock = {"now": 1000.0}
+    monkeypatch.setattr("hiresense.kernel.rate_limit.time.monotonic", lambda: clock["now"])
+    limiter = SlidingWindowRateLimiter(max_requests=5, window_seconds=10.0)
+    assert limiter.allow("idle") is True
+    clock["now"] += 6.0
+    assert limiter.allow("active") is True  # recent, must survive the next sweep
+    clock["now"] += 5.0  # 'idle' is now >window old; 'active' is only 5s old
+    assert limiter.allow("trigger") is True  # crosses the sweep threshold
+    assert "idle" not in limiter._events
+    assert "active" in limiter._events
+
+
 def _app_with_limiter(limiter: SlidingWindowRateLimiter | None) -> FastAPI:
     app = FastAPI()
     app.state.rate_limiter = limiter

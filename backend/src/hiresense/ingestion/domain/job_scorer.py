@@ -36,16 +36,38 @@ def combine_fit_score(
     via ``skill_weight`` / ``semantic_weight``; the defaults reproduce the
     previous hardcoded 0.4/0.6 behaviour so existing call sites are unaffected.
 
-    Falls back gracefully when either input is missing: a single non-None
-    signal is returned as-is regardless of weight values.
+    Single-signal contract (#160): when only one signal is present the blend is
+    renormalized over the *present* weights — the lone signal's weight is scaled
+    up to 1.0 — so the result stays on the same [0, 1] scale as a two-signal
+    blend and jobs rank consistently no matter how many signals they carry
+    (the pre-ranker only sets semantic on ANN-indexed jobs, so the corpus is a
+    mix of one- and two-signal jobs). Concretely a skill-only job scores its raw
+    skill value (``skill_weight*skill / skill_weight``) instead of an arbitrary
+    down-weight, and likewise for a semantic-only job. With both signals present
+    and default weights that sum to 1.0 this is the plain weighted average, so
+    existing behaviour is unchanged.
+
+    Returns None when neither signal is present, or when the present weights sum
+    to zero (no basis on which to blend).
     """
-    if skill_score is None and semantic_score is None:
+    weighted: list[tuple[float, float]] = []
+    if skill_score is not None:
+        weighted.append((skill_weight, skill_score))
+    if semantic_score is not None:
+        weighted.append((semantic_weight, semantic_score))
+    if not weighted:
         return None
-    if skill_score is None:
-        return semantic_score
-    if semantic_score is None:
-        return skill_score
-    return skill_weight * skill_score + semantic_weight * semantic_score
+    if len(weighted) == 1:
+        # Single-signal case: renormalizing over one present weight scales it to
+        # 1.0, i.e. the result IS the raw score. Return it directly so the value
+        # is exact (a `w*s/w` division would introduce float drift), and drop it
+        # to None when that lone signal carries zero weight (no basis to rank).
+        weight, score = weighted[0]
+        return score if weight > 0 else None
+    total_weight = sum(weight for weight, _ in weighted)
+    if total_weight <= 0:
+        return None
+    return sum(weight * score for weight, score in weighted) / total_weight
 
 
 def _text_mention_score(text: str, candidate_skills: set[str]) -> float | None:

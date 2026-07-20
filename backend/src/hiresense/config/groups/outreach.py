@@ -22,6 +22,10 @@ class OutreachSettings(BaseSettings):
     smtp_password: str = ""
     smtp_use_tls: bool = True
     outreach_from_email: str = ""
+    # Recipient-domain allowlist for POST /outreach/send. Empty (default) allows
+    # any syntactically valid address; set to constrain sends and blunt the
+    # authenticated open-relay/cost surface, e.g. ["example.com","gmail.com"].
+    outreach_allowed_recipient_domains: list[str] = []
 
     # --- Notifications (Autopilot Phase 2: digest + failure-alert email) ---
     # Recipient for scheduler digest/failure emails. BLANK disables notifications

@@ -1,4 +1,7 @@
 import logging
+import shutil
+import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -71,3 +74,48 @@ async def test_compile_failure_is_logged(
             await compiler.compile_to_pdf("plain text, not latex")
 
     assert any("LaTeX compilation failed" in record.message for record in caplog.records)
+
+
+def test_run_once_disables_shell_escape_and_file_access(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Untrusted LaTeX (raw user CVs and LLM-spliced optimized CVs) both flow
+    # through this single argv, so asserting the flags here covers both paths.
+    captured: dict[str, object] = {}
+
+    def _fake_run(argv: list[str], **kwargs: object):
+        captured["argv"] = argv
+        captured["env"] = kwargs.get("env")
+
+        class _Result:
+            returncode = 0
+
+        return _Result()
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+
+    compiler = LatexCompiler()
+    compiler._run_once(Path("/tmp/work"), Path("/tmp/work/doc.tex"))
+
+    argv = captured["argv"]
+    assert "-no-shell-escape" in argv  # type: ignore[operator]
+    env = captured["env"]
+    assert isinstance(env, dict)
+    assert env["openin_any"] == "p"
+    assert env["openout_any"] == "p"
+
+
+@pytest.mark.parametrize(
+    "malicious",
+    [
+        r"\documentclass{article}\begin{document}\write18{echo pwned}\end{document}",
+        r"\documentclass{article}\begin{document}\input{/etc/passwd}\end{document}",
+    ],
+)
+@pytest.mark.skipif(shutil.which("xelatex") is None, reason="xelatex not installed")
+@pytest.mark.asyncio
+async def test_real_compile_rejects_shell_escape_and_abs_input(malicious: str) -> None:
+    # Real-compile guard: with -no-shell-escape and openin_any=p, \write18 and
+    # absolute \input must fail the compile rather than execute / read the file.
+    with pytest.raises(LatexCompileError):
+        await LatexCompiler().compile_to_pdf(malicious)

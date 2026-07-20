@@ -10,11 +10,17 @@ from sqlalchemy.pool import StaticPool
 
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.infrastructure.database import Base
+from hiresense.kernel import SlidingWindowRateLimiter
 from hiresense.outreach.api import router as outreach_router
 from hiresense.outreach.api.dependencies import get_outreach_service
 from hiresense.outreach.domain import OutreachMessageGenerator, OutreachService
 from hiresense.outreach.infrastructure import OutreachRepository
 from hiresense.outreach.infrastructure.orm import OutreachEventOrm  # noqa: F401
+
+
+class _StubSender:
+    def send(self, message) -> None:  # matches EmailSender port
+        return None
 
 
 class _FakeLLM:
@@ -63,7 +69,7 @@ def _factory():
     return sessionmaker(bind=engine, expire_on_commit=False), engine
 
 
-def _build_app(app_id, factory):
+def _build_app(app_id, factory, *, limiter=None):
     repo = OutreachRepository(session_factory=factory)
     service = OutreachService(
         tracking_service=_Tracking([_App(app_id)]),
@@ -75,8 +81,10 @@ def _build_app(app_id, factory):
         followup_cadence_days=7,
         max_chars=500,
         language="en",
+        sender=_StubSender(),
     )
     app = FastAPI()
+    app.state.rate_limiter = limiter
     app.dependency_overrides[require_auth] = lambda: "test-user"
     app.dependency_overrides[get_outreach_service] = lambda: service
     app.include_router(outreach_router)
@@ -136,3 +144,40 @@ async def test_nudge_surfaces_then_clears():
         await c.post("/outreach/record", json={"application_id": str(app_id), "kind": "replied"})
         cleared = await c.post("/outreach/nudge")
         assert cleared.json() == []
+
+
+@pytest.mark.asyncio
+async def test_send_rejects_invalid_email_recipient():
+    factory, _ = _factory()
+    app_id = uuid_mod.uuid4()
+    app = _build_app(app_id, factory)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
+        resp = await c.post(
+            "/outreach/send",
+            json={
+                "application_id": str(app_id),
+                "to": "not-an-email",
+                "subject": "Hello",
+                "message": "Body",
+            },
+        )
+        assert resp.status_code == 422  # EmailStr validation rejects malformed recipient
+
+
+@pytest.mark.asyncio
+async def test_send_is_rate_limited():
+    factory, _ = _factory()
+    app_id = uuid_mod.uuid4()
+    limiter = SlidingWindowRateLimiter(max_requests=1, window_seconds=60.0)
+    app = _build_app(app_id, factory, limiter=limiter)
+    payload = {
+        "application_id": str(app_id),
+        "to": "recruiter@acme.com",
+        "subject": "Hello",
+        "message": "Body",
+    }
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
+        first = await c.post("/outreach/send", json=payload)
+        assert first.status_code == 201
+        second = await c.post("/outreach/send", json=payload)
+        assert second.status_code == 429

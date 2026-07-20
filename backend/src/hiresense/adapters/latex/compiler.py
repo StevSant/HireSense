@@ -76,11 +76,19 @@ class LatexCompiler:
             return pdf_path.read_bytes()
 
     def _run_once(self, working_dir: Path, source: Path):
+        import os
         import subprocess
 
+        # Untrusted LaTeX reaches this compiler (raw user CVs, LLM-spliced
+        # optimized CVs). Disable shell-escape entirely so `\write18{...}` can
+        # never spawn a subprocess (RCE), and set openin_any/openout_any to
+        # "paranoid" so `\input{/etc/passwd}` and friends cannot read/write
+        # files outside the compilation temp dir.
+        env = {**os.environ, "openin_any": "p", "openout_any": "p"}
         return subprocess.run(
             [
                 self._compiler,
+                "-no-shell-escape",
                 "-interaction=nonstopmode",
                 "-halt-on-error",
                 "-output-directory",
@@ -90,6 +98,7 @@ class LatexCompiler:
             cwd=working_dir,
             capture_output=True,
             timeout=self._timeout,
+            env=env,
         )
 
     @staticmethod

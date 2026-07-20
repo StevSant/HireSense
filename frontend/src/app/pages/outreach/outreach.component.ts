@@ -43,6 +43,7 @@ export class OutreachComponent implements OnInit {
 
   // Target picker
   applications = signal<ApplicationListItem[]>([]);
+  applicationsError = signal('');
   selectedApplicationId = signal('');
 
   // Compose
@@ -104,7 +105,8 @@ export class OutreachComponent implements OnInit {
     this.loadNudges();
   }
 
-  private loadApplications(): void {
+  loadApplications(): void {
+    this.applicationsError.set('');
     this.applicationsService
       .list()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -115,6 +117,9 @@ export class OutreachComponent implements OnInit {
           if (fromQuery && apps.some((a) => a.id === fromQuery)) {
             this.selectApplication(fromQuery);
           }
+        },
+        error: (err: HttpErrorResponse) => {
+          this.applicationsError.set(err?.error?.detail ?? 'Could not load your applications.');
         },
       });
   }

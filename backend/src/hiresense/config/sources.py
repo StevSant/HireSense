@@ -13,6 +13,7 @@ class _CommaSeparatedMixin:
             "getonboard_categories",
             "job_closed_markers",
             "http_retry_status_codes",
+            "cors_origins",
             "cors_allow_methods",
             "cors_allow_headers",
             "portfolio_sources",

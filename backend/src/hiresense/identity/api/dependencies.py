@@ -63,22 +63,38 @@ def get_current_user(
     return _authenticate(request, credentials, auth_service)
 
 
-def enforce_expensive_rate_limit(request: Request) -> None:
-    """Per-client-IP sliding-window limit for LLM/network-heavy endpoints.
+def _enforce_rate_limit(request: Request, state_attr: str, detail: str) -> None:
+    """Apply a per-client-IP sliding-window limiter wired on app.state.
 
-    No-ops when no limiter is wired on app.state (bare test apps, or
-    RATE_LIMIT_ENABLED=false).
+    No-ops when the named limiter is absent (bare test apps, or the limiter
+    disabled via config). Raises 429 with a Retry-After header when exhausted.
     """
-    limiter = getattr(request.app.state, "rate_limiter", None)
+    limiter = getattr(request.app.state, state_attr, None)
     if limiter is None:
         return
     key = request.client.host if request.client else "unknown"
     if not limiter.allow(key):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Rate limit exceeded for expensive operations",
+            detail=detail,
             headers={"Retry-After": str(int(limiter.window_seconds))},
         )
+
+
+def enforce_expensive_rate_limit(request: Request) -> None:
+    """Per-client-IP sliding-window limit for LLM/network-heavy endpoints."""
+    _enforce_rate_limit(request, "rate_limiter", "Rate limit exceeded for expensive operations")
+
+
+def enforce_login_rate_limit(request: Request) -> None:
+    """Dedicated, stricter per-client-IP limit for POST /auth/login.
+
+    Independent of the expensive bucket so brute-forcing the admin credential is
+    throttled without contending with (or being loosened by) ingestion/matching
+    traffic. No-ops when no login limiter is wired (bare test apps, or
+    LOGIN_RATE_LIMIT_ENABLED=false).
+    """
+    _enforce_rate_limit(request, "login_rate_limiter", "Too many login attempts")
 
 
 def require_admin(
@@ -90,3 +106,15 @@ def require_admin(
     if payload.get("role") != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin role required")
     return payload
+
+
+def require_admin_actor(
+    payload: Annotated[dict[str, Any], Depends(require_admin)],
+) -> str:
+    """The admin username (token `sub`) for audit fields.
+
+    Depends on `require_admin` so the admin gate still applies, but returns just
+    the subject: audit columns (e.g. LLM-settings `updated_by`) must record the
+    username, not the whole decoded token payload.
+    """
+    return payload["sub"]

@@ -38,6 +38,7 @@ from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner, ScanFilters, ScanResult
 from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
 from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
+from hiresense.ingestion.domain.score_change_filter import changed_score_updates
 from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
 from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
 from hiresense.ingestion.domain.seniority import SeniorityLevel
@@ -271,6 +272,11 @@ async def list_jobs(
     all_jobs = await asyncio.to_thread(
         orchestrator.list_jobs if tab == "boards" else scanner.list_jobs, criteria
     )
+    # Snapshot the persisted scores so the corpus-wide persist below only writes
+    # rows whose score actually changed this request (#132) — otherwise every GET
+    # (including plain pagination / sort-only reloads) issues a full-corpus
+    # UPDATE, N times over for the several concurrent list calls the UI fires.
+    original_scores = {job.id: (job.match_score, job.semantic_score) for job in all_jobs}
 
     candidate_skills, candidate_summary = await _gather_profile(
         profile_service, portfolio_enrichment
@@ -313,10 +319,9 @@ async def list_jobs(
         )
 
     if candidate_skills:
-        await asyncio.to_thread(
-            persist_scores_batch,
-            [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in all_jobs],
-        )
+        score_updates = changed_score_updates(all_jobs, original_scores)
+        if score_updates:
+            await asyncio.to_thread(persist_scores_batch, score_updates)
 
     # GLOBAL apply of already-cached Tier-1 LLM scores BEFORE pagination. The
     # LLM quick score is the accurate, displayed match value, but it was only
@@ -509,7 +514,11 @@ async def analyze_job(
     force: bool = False,
 ) -> DeepAnalysisResult:
     """Deep, single-job match analysis (advanced model, cached, on demand)."""
-    job = orchestrator.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
+    # Offload the sync SQLAlchemy lookups to a worker thread so the query
+    # duration doesn't block the event loop (matches the list endpoint) (#157).
+    job = await asyncio.to_thread(
+        lambda: orchestrator.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
+    )
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
     if deep_analysis is None:
@@ -531,7 +540,11 @@ async def get_job(
     ],
     quick_scoring: Annotated[QuickScoringService | None, Depends(get_quick_scoring)],
 ) -> NormalizedJob:
-    job = orchestrator.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
+    # Offload the sync SQLAlchemy lookups to a worker thread so the query
+    # duration doesn't block the event loop (matches the list endpoint) (#157).
+    job = await asyncio.to_thread(
+        lambda: orchestrator.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
+    )
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
     # Overlay the cached Tier-1 LLM quick score so the detail header opens at the

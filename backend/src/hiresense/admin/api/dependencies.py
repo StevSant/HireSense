@@ -5,7 +5,7 @@ from fastapi import Depends, Request
 from hiresense.admin.api.provider import AdminProvider
 from hiresense.admin.domain.llm_settings_service import LLMSettingsService
 from hiresense.admin.domain.usage_aggregator import UsageAggregator
-from hiresense.identity.api.dependencies import require_admin
+from hiresense.identity.api.dependencies import require_admin, require_admin_actor
 
 
 def _get_provider(request: Request) -> AdminProvider:
@@ -29,9 +29,11 @@ def get_usage_aggregator(
 
 # Admin gate (#38): re-exported from identity so the admin routers keep
 # depending on this stable name, now enforcing the token's "role" claim
-# (403 for non-admin, 401 for an invalid token).
+# (403 for non-admin, 401 for an invalid token). `require_admin_actor` is the
+# same gate but yields the admin username (token `sub`) for audit fields (#138).
 __all__ = [
     "get_llm_settings_service",
     "get_usage_aggregator",
     "require_admin",
+    "require_admin_actor",
 ]

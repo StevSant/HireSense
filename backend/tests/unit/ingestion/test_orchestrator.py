@@ -7,7 +7,7 @@ import pytest
 from hiresense.adapters.event_bus.in_memory_bus import InMemoryEventBus
 from hiresense.ingestion.domain.job_embedding_indexer import JobEmbeddingIndexer
 from hiresense.ingestion.domain.models import NormalizedJob, RawJobListing
-from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.ingestion.domain.services import IngestionCooldownError, IngestionOrchestrator
 from hiresense.ingestion.infrastructure import InMemoryJobsRepository
 from hiresense.kernel.events import DomainEvent
 from hiresense.kernel.value_objects import SourceType
@@ -323,3 +323,102 @@ async def test_prune_without_orphans_does_not_call_delete() -> None:
 
     assert len(repo.list_all()) == 1
     assert store.deletes == []
+
+
+# --- #159: cooldown check-then-set race + fail-fast cooldown consumption ---
+
+
+class _GatedSource:
+    """A source that blocks inside fetch_jobs until released, so two run()
+    coroutines can be held genuinely in flight at the same time."""
+
+    def __init__(self, started: asyncio.Event, release: asyncio.Event) -> None:
+        self._started = started
+        self._release = release
+        self.fetch_calls = 0
+
+    def source_name(self) -> str:
+        return "fake"
+
+    def source_type(self) -> SourceType:
+        return SourceType.API
+
+    def supports_snapshot_closure(self) -> bool:
+        return False
+
+    async def fetch_jobs(self, filters=None) -> list[RawJobListing]:
+        self.fetch_calls += 1
+        self._started.set()
+        await self._release.wait()
+        return []
+
+
+@pytest.mark.asyncio
+async def test_concurrent_runs_do_not_double_run() -> None:
+    started = asyncio.Event()
+    release = asyncio.Event()
+    source = _GatedSource(started, release)
+    orch = IngestionOrchestrator(
+        sources=[source],
+        normalizers={"fake": FakeNormalizer()},
+        event_bus=InMemoryEventBus(),
+        repository=InMemoryJobsRepository(),
+        cooldown_seconds=300,
+    )
+
+    first = asyncio.create_task(orch.run())
+    await started.wait()  # first pass is mid-fetch, holding the in-flight guard
+
+    # A second concurrent trigger must be rejected, not run a parallel pass.
+    with pytest.raises(IngestionCooldownError):
+        await orch.run()
+
+    release.set()
+    await first
+    assert source.fetch_calls == 1  # the pass ran exactly once
+
+
+class _BoomRepository(InMemoryJobsRepository):
+    """Fails the upsert step on every run, so a pass never completes — used to
+    prove a failed run neither starts the cooldown nor sticks the in-flight
+    guard (a stuck guard would surface as IngestionCooldownError on retry)."""
+
+    def bulk_upsert(self, jobs):
+        raise RuntimeError("db down")
+
+
+@pytest.mark.asyncio
+async def test_failed_run_does_not_consume_cooldown() -> None:
+    orch = IngestionOrchestrator(
+        sources=[FakeJobSource()],
+        normalizers={"fake": FakeNormalizer()},
+        event_bus=InMemoryEventBus(),
+        repository=_BoomRepository(),
+        cooldown_seconds=300,
+    )
+
+    # The first pass raises before completing, so it must neither start the
+    # cooldown nor leave the in-flight guard stuck set.
+    with pytest.raises(RuntimeError):
+        await orch.run()
+
+    # The retry therefore reaches the work again (and fails the same way) rather
+    # than being throttled with IngestionCooldownError.
+    with pytest.raises(RuntimeError):
+        await orch.run()
+
+
+@pytest.mark.asyncio
+async def test_successful_run_starts_cooldown() -> None:
+    orch = IngestionOrchestrator(
+        sources=[FakeJobSource()],
+        normalizers={"fake": FakeNormalizer()},
+        event_bus=InMemoryEventBus(),
+        repository=InMemoryJobsRepository(),
+        cooldown_seconds=300,
+    )
+
+    await orch.run()  # completes successfully -> cooldown starts
+
+    with pytest.raises(IngestionCooldownError):
+        await orch.run()

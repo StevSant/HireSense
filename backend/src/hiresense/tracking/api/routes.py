@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import uuid as uuid_mod
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
 from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.kernel import resolve_page_limit
 from hiresense.tracking.api.dependencies import get_tracking_service
 from hiresense.tracking.api.schemas import (
     CreateApplicationRequest,
@@ -18,6 +19,11 @@ from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplicati
 from hiresense.tracking.domain.services import TrackingService
 
 router = APIRouter(prefix="/tracking", tags=["tracking"], dependencies=[Depends(require_auth)])
+
+# Fallbacks when the router is mounted without app.state.settings (bare-app unit
+# tests). Match the config defaults in config/groups/core.py.
+_DEFAULT_PAGE_SIZE = 100
+_MAX_PAGE_SIZE = 500
 
 
 def _enrich(
@@ -62,11 +68,22 @@ def create_application(
 
 @router.get("", response_model=list[TrackedApplicationResponse])
 def list_applications(
+    request: Request,
+    response: Response,
     status: ApplicationStatus | None = None,
+    limit: int | None = Query(None, ge=1),
+    offset: int = Query(0, ge=0),
     service: TrackingService = Depends(get_tracking_service),
     orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
 ) -> list[TrackedApplicationResponse]:
-    apps = service.list(status=status)
+    settings = getattr(request.app.state, "settings", None)
+    page = resolve_page_limit(
+        limit,
+        default=settings.default_page_size if settings is not None else _DEFAULT_PAGE_SIZE,
+        maximum=settings.max_page_size if settings is not None else _MAX_PAGE_SIZE,
+    )
+    apps = service.list(status=status, limit=page, offset=offset)
+    response.headers["X-Total-Count"] = str(service.count(status=status))
     return [_enrich(a, orchestrator) for a in apps]
 
 

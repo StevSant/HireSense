@@ -114,6 +114,24 @@ class FakeRepo:
     def get_latest_interview_prep(self, application_id):
         return None
 
+    # Batch loaders used by the aggregate builder.
+    def get_snapshots_for(self, application_ids):
+        return {aid: self.snapshots[aid] for aid in application_ids if aid in self.snapshots}
+
+    def list_matches_for(self, application_ids):
+        return {}
+
+    def list_optimizations_for(self, application_ids):
+        return {}
+
+    def list_interview_preps_for(self, application_ids):
+        return {}
+
+    def list_cover_letters_for(self, application_ids):
+        return {}
+
+    # Single-item accessors still declared on the port (used by apply/artifact
+    # services); the aggregate builder no longer calls them.
     def get_latest_cover_letter(self, application_id):
         return None
 

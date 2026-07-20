@@ -60,8 +60,17 @@ class TrackingService:
             raise NotFoundError(f"Application {id} not found")
         return app
 
-    def list(self, status: ApplicationStatus | None = None) -> list[TrackedApplication]:
-        return self._repo.list_all(status=status)
+    def list(
+        self,
+        status: ApplicationStatus | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[TrackedApplication]:
+        return self._repo.list_all(status=status, limit=limit, offset=offset)
+
+    def count(self, status: ApplicationStatus | None = None) -> int:
+        return self._repo.count_all(status=status)
 
     async def update_status(
         self,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from hiresense.infrastructure import SqlRepository
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
@@ -31,11 +31,32 @@ class TrackingRepository(SqlRepository):
         stmt = select(TrackedApplicationOrm).where(TrackedApplicationOrm.job_id == job_id)
         return self._select_one(stmt, _to_domain)
 
-    def list_all(self, status: ApplicationStatus | None = None) -> list[TrackedApplication]:
+    def list_all(
+        self,
+        status: ApplicationStatus | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[TrackedApplication]:
         stmt = select(TrackedApplicationOrm)
         if status is not None:
             stmt = stmt.where(TrackedApplicationOrm.status == status.value)
+        # Deterministic order for stable pagination. created_at alone is not
+        # enough: its server default (func.now) has second-level precision on
+        # SQLite, so rows created in the same second tie — break ties by id.
+        stmt = stmt.order_by(TrackedApplicationOrm.created_at.desc(), TrackedApplicationOrm.id)
+        if offset:
+            stmt = stmt.offset(offset)
+        if limit is not None:
+            stmt = stmt.limit(limit)
         return self._select_all(stmt, _to_domain)
+
+    def count_all(self, status: ApplicationStatus | None = None) -> int:
+        stmt = select(func.count()).select_from(TrackedApplicationOrm)
+        if status is not None:
+            stmt = stmt.where(TrackedApplicationOrm.status == status.value)
+        with self._session_factory() as session:
+            return int(session.scalar(stmt) or 0)
 
     def create(self, application: TrackedApplication) -> TrackedApplication:
         with self._session_factory() as session:

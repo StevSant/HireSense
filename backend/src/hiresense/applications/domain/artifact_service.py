@@ -64,14 +64,20 @@ class ArtifactService:
 
         # Fallback when the orchestrator returns no skill verdict: use the same
         # normalization + evidence logic so the result stays consistent with
-        # what analyze() produces (no divergent exact-string set math).
-        fallback = SkillMatcher().match(
-            cv_skills,
-            list(snapshot.required_skills or []),
-            evidence_text="\n".join(filter(None, [cv_summary, cv_text])),
-        )
-        matched = fallback.matched
-        missing = fallback.missing
+        # what analyze() produces (no divergent exact-string set math). Computed
+        # lazily — only when a verdict field is actually missing — so a fully
+        # populated result skips the normalization + set math entirely.
+        if result.matched_skills and result.missing_skills:
+            matched = list(result.matched_skills)
+            missing = list(result.missing_skills)
+        else:
+            fallback = SkillMatcher().match(
+                cv_skills,
+                list(snapshot.required_skills or []),
+                evidence_text="\n".join(filter(None, [cv_summary, cv_text])),
+            )
+            matched = list(result.matched_skills) if result.matched_skills else fallback.matched
+            missing = list(result.missing_skills) if result.missing_skills else fallback.missing
 
         row = ApplicationMatch(
             application_id=application_id,
@@ -80,8 +86,8 @@ class ArtifactService:
             skill_score=result.breakdown.skill_score,
             experience_score=result.breakdown.experience_score,
             language_score=result.breakdown.language_score,
-            matched_skills=list(result.matched_skills) if result.matched_skills else matched,
-            missing_skills=list(result.missing_skills) if result.missing_skills else missing,
+            matched_skills=matched,
+            missing_skills=missing,
             pros=list(result.pros or []),
             cons=list(result.cons or []),
             recommendations=list(result.recommendations or []),

@@ -11,7 +11,15 @@ class TrackingRepositoryPort(Protocol):
 
     def get_by_job_id(self, job_id: uuid.UUID) -> TrackedApplication | None: ...
 
-    def list_all(self, status: ApplicationStatus | None = None) -> list[TrackedApplication]: ...
+    def list_all(
+        self,
+        status: ApplicationStatus | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[TrackedApplication]: ...
+
+    def count_all(self, status: ApplicationStatus | None = None) -> int: ...
 
     def save(self, application: TrackedApplication) -> TrackedApplication: ...
 

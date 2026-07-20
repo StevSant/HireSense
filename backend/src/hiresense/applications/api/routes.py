@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import uuid as uuid_mod
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import StreamingResponse
 
+from hiresense.kernel import resolve_page_limit
 from hiresense.ports import LatexCompileError
 from hiresense.applications.api.dependencies import (
     get_application_service,
@@ -33,6 +34,7 @@ from hiresense.applications.domain.autofill_plan_view import AutofillPlanView
 from hiresense.applications.domain.artifact_service import ArtifactService
 from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
+from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 
 router = APIRouter(
@@ -41,16 +43,37 @@ router = APIRouter(
     dependencies=[Depends(require_auth)],
 )
 
+# Fallbacks when the router is mounted without app.state.settings (bare-app unit
+# tests). Match the config defaults in config/groups/core.py.
+_DEFAULT_PAGE_SIZE = 100
+_MAX_PAGE_SIZE = 500
+
+
+def _page_size(request: Request, limit: int | None) -> int:
+    settings = getattr(request.app.state, "settings", None)
+    return resolve_page_limit(
+        limit,
+        default=settings.default_page_size if settings is not None else _DEFAULT_PAGE_SIZE,
+        maximum=settings.max_page_size if settings is not None else _MAX_PAGE_SIZE,
+    )
+
 
 # -------- application CRUD --------------------------------------------
 
 
 @router.get("/cover-letters", response_model=list[CoverLetterLibraryItem])
 def list_all_cover_letters(
+    request: Request,
+    response: Response,
+    limit: int | None = Query(None, ge=1),
+    offset: int = Query(0, ge=0),
     service: ApplicationService = Depends(get_application_service),
 ) -> list[CoverLetterLibraryItem]:
     """Cross-application cover letter library — one row per generated letter."""
-    return [CoverLetterLibraryItem(**row) for row in service.list_all_cover_letters()]
+    page = _page_size(request, limit)
+    rows = service.list_all_cover_letters(limit=page, offset=offset)
+    response.headers["X-Total-Count"] = str(service.count_all_cover_letters())
+    return [CoverLetterLibraryItem(**row) for row in rows]
 
 
 @router.post("", response_model=ApplicationAggregate, status_code=201)
@@ -71,25 +94,34 @@ async def create_application(
 
 @router.get("", response_model=list[ApplicationListItemResponse])
 def list_applications(
+    request: Request,
+    response: Response,
+    limit: int | None = Query(None, ge=1),
+    offset: int = Query(0, ge=0),
     service: ApplicationService = Depends(get_application_service),
     orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
 ) -> list[ApplicationListItemResponse]:
-    aggregates = service.list()
-    return [_to_list_item(a, orchestrator) for a in aggregates]
+    page = _page_size(request, limit)
+    aggregates = service.list(limit=page, offset=offset)
+    response.headers["X-Total-Count"] = str(service.count())
+    job_ids = [str(a.job_id) for a in aggregates if a.job_id is not None]
+    jobs_by_id = orchestrator.get_jobs_by_ids(job_ids) if job_ids else {}
+    return [_to_list_item(a, jobs_by_id) for a in aggregates]
 
 
 def _to_list_item(
     a: ApplicationAggregate,
-    orchestrator: IngestionOrchestrator,
+    jobs_by_id: dict[str, NormalizedJob],
 ) -> ApplicationListItemResponse:
     """Shape an aggregate into the list row, enriching pipeline fields
-    (location/salary/source/posted) from the linked ingested job when present."""
+    (location/salary/source/posted) from the linked ingested job when present.
+    The job map is resolved once per list request (batched), not per row."""
     location: str | None = None
     salary_range: str | None = None
     source: str | None = None
     posted_date = None
     if a.job_id is not None:
-        job = orchestrator.get_job_by_id(str(a.job_id))
+        job = jobs_by_id.get(str(a.job_id))
         if job is not None:
             location = job.location or None
             salary_range = job.salary_range

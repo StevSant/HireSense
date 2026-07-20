@@ -28,6 +28,7 @@ class FeatureConfiguredLLMAdapter:
         factory: LLMFactoryPort,
         feature_key: str,
         cache_prompt_enabled: bool = True,
+        timeout: float | None = None,
     ) -> None:
         self._config_service = config_service
         self._factory = factory
@@ -38,6 +39,9 @@ class FeatureConfiguredLLMAdapter:
         # config's provider to be "anthropic" — decided per call in _build_inner
         # since config is re-resolved every time (hot-reload).
         self._cache_prompt_enabled = cache_prompt_enabled
+        # Per-call LLM timeout (settings.llm_timeout), passed to the inner
+        # LangChainLLMAdapter so every completion is bounded. See issue #139.
+        self._timeout = timeout
 
     async def generate(self, prompt: str, *, system: str = "", model: str = "") -> LLMResult:
         config = await asyncio.to_thread(self._config_service.resolve, self._feature_key)
@@ -63,4 +67,5 @@ class FeatureConfiguredLLMAdapter:
             provider=config.provider,
             model_name=config.model,
             cache_system_prefix=cache_system_prefix,
+            timeout=self._timeout,
         )

@@ -4,12 +4,19 @@ import email as email_lib
 import imaplib
 import logging
 import ssl
+import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
 from hiresense.inbox.domain import InboundEmail, synthesize_message_id
+from hiresense.observability import get_domain_metrics
 
 logger = logging.getLogger(__name__)
+
+# Connection-level IMAP failures that are safe to retry (server dropped the
+# connection, socket timeout/reset). imaplib.IMAP4.error (protocol/auth) is a
+# permanent failure and deliberately excluded.
+_RETRYABLE_IMAP_ERRORS = (imaplib.IMAP4.abort, OSError)
 
 
 class ImapInboxReader:
@@ -28,6 +35,8 @@ class ImapInboxReader:
         use_ssl: bool,
         timeout: float,
         allow_insecure: bool = False,
+        max_retries: int = 0,
+        retry_base_delay: float = 1.0,
     ) -> None:
         self._host = host
         self._port = port
@@ -37,15 +46,41 @@ class ImapInboxReader:
         self._use_ssl = use_ssl
         self._timeout = timeout
         self._allow_insecure = allow_insecure
+        # Bounded retry for transient connection errors (issue #163). 0 disables
+        # retrying; a fetch that still fails is counted and degrades to [].
+        self._max_retries = max_retries
+        self._retry_base_delay = retry_base_delay
 
     def fetch_unseen(self) -> list[InboundEmail]:
         if not self._host:
             return []
-        try:
-            return self._fetch()
-        except Exception:  # noqa: BLE001 - inbox read is best-effort
-            logger.exception("inbox: IMAP fetch failed")
-            return []
+        for attempt in range(self._max_retries + 1):
+            try:
+                return self._fetch()
+            except _RETRYABLE_IMAP_ERRORS as exc:
+                if attempt < self._max_retries:
+                    delay = self._retry_base_delay * (2**attempt)
+                    logger.warning(
+                        "inbox: IMAP fetch failed (attempt %d/%d), retrying in %.2fs: %s",
+                        attempt + 1,
+                        self._max_retries,
+                        delay,
+                        exc,
+                    )
+                    time.sleep(delay)
+                    continue
+                logger.exception("inbox: IMAP fetch failed after %d retries", self._max_retries)
+                self._record_failure()
+                return []
+            except Exception:  # noqa: BLE001 - non-transient (auth/protocol); don't retry
+                logger.exception("inbox: IMAP fetch failed")
+                self._record_failure()
+                return []
+        return []  # pragma: no cover - the loop always returns before exhausting
+
+    @staticmethod
+    def _record_failure() -> None:
+        get_domain_metrics().automation_failures_total.add(1, {"component": "inbox_fetch"})
 
     def _fetch(self) -> list[InboundEmail]:
         if not self._use_ssl and self._username and not self._allow_insecure:

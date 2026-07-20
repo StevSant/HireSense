@@ -6,7 +6,9 @@ import re
 import uuid
 from typing import Any
 
+from hiresense.optimization.domain.errors import OptimizationError
 from hiresense.optimization.domain.models import OptimizationResult, SectionChange
+from hiresense.ports.llm import LLMTimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -44,27 +46,31 @@ class CVOptimizer:
                 original_tex, job_description, job_skills, missing_skills, recommendations
             )
             changes = [SectionChange(**c) for c in llm_response.get("changes", [])]
-            optimized_tex = self._apply_changes(original_tex, changes)
-            return OptimizationResult(
-                id=opt_id,
-                match_id=match_id,
-                job_id=job_id,
-                cv_id=cv_id,
-                changes=changes,
-                original_tex=original_tex,
-                optimized_tex=optimized_tex,
-                improvement_summary=llm_response.get("improvement_summary"),
-            )
-        except Exception:
+        except LLMTimeoutError:
+            # Let the timeout surface as a 504 (issue #139) rather than folding
+            # it into a generic optimization failure.
+            raise
+        except Exception as exc:
+            # Do NOT fall back to returning the original CV byte-for-byte — that
+            # persists a fake "success" the user reads as a tailored CV (issue
+            # #142). Raise so the API returns a 503.
             logger.exception("CV optimization failed")
-            return OptimizationResult(
-                id=opt_id,
-                match_id=match_id,
-                job_id=job_id,
-                cv_id=cv_id,
-                original_tex=original_tex,
-                optimized_tex=original_tex,
-            )
+            raise OptimizationError("CV optimization failed") from exc
+
+        # A successful call with an empty change list is a legitimate outcome
+        # ("no changes suggested"): optimized_tex == original_tex but changes==[]
+        # distinguishes it from a failure, which raises above.
+        optimized_tex = self._apply_changes(original_tex, changes)
+        return OptimizationResult(
+            id=opt_id,
+            match_id=match_id,
+            job_id=job_id,
+            cv_id=cv_id,
+            changes=changes,
+            original_tex=original_tex,
+            optimized_tex=optimized_tex,
+            improvement_summary=llm_response.get("improvement_summary"),
+        )
 
     def _apply_changes(self, tex: str, changes: list[SectionChange]) -> str:
         result = tex

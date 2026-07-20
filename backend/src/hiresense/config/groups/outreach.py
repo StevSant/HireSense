@@ -60,6 +60,14 @@ class OutreachSettings(BaseSettings):
     # credentials) and verify the server certificate. Set true ONLY for a trusted
     # local/dev server: it permits plaintext auth and disables TLS verification.
     imap_allow_insecure: bool = False
+    # Bounded retry for transient IMAP fetch errors (dropped connection, socket
+    # timeout). Retries with exponential backoff (delay = base_delay * 2**attempt),
+    # up to imap_max_retries extra attempts; 0 disables retrying. Auth/protocol
+    # errors are permanent and never retried. A fetch that still fails is logged,
+    # counted (automation_failures_total{component=inbox_fetch}), and degrades to
+    # an empty scan.
+    imap_max_retries: int = 2
+    imap_retry_base_delay: float = 1.0
     # Cron cadence for the scheduler 'inbox_scan' job (read by the scheduler).
     inbox_scan_schedule: str = "0 */2 * * *"
     # Classifications below this confidence get no proposed status (cannot be

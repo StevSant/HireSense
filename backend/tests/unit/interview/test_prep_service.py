@@ -5,7 +5,8 @@ import uuid
 
 import pytest
 
-from hiresense.interview.domain.services import InterviewPrepService
+from hiresense.interview.domain import InterviewPrepError, InterviewPrepService
+from hiresense.ports import LLMTimeoutError
 
 
 class FakeLLM:
@@ -90,11 +91,35 @@ async def test_prepare_no_llm():
 
 
 @pytest.mark.asyncio
-async def test_prepare_llm_failure():
+async def test_prepare_raises_on_llm_failure():
+    # A failing LLM must NOT return a benign placeholder that gets persisted as
+    # real prep (#147) — it raises InterviewPrepError so the API returns 503.
     class FailingLLM:
         async def complete(self, prompt, *, system="", model=""):
             raise RuntimeError("API down")
 
     service = InterviewPrepService(llm=FailingLLM(), story_repo=FakeStoryRepo())
-    result = await service.prepare({"title": "SWE", "company": "X", "description": ""})
-    assert "unavailable" in result.negotiation_points[0].lower()
+    with pytest.raises(InterviewPrepError):
+        await service.prepare({"title": "SWE", "company": "X", "description": ""})
+
+
+@pytest.mark.asyncio
+async def test_prepare_raises_on_unparseable_response():
+    service = InterviewPrepService(
+        llm=FakeLLM("this is not json at all"), story_repo=FakeStoryRepo()
+    )
+    with pytest.raises(InterviewPrepError):
+        await service.prepare({"title": "SWE", "company": "X", "description": ""})
+
+
+@pytest.mark.asyncio
+async def test_prepare_propagates_llm_timeout():
+    # A timeout must surface as-is (mapped to 504 upstream), not be folded into a
+    # generic InterviewPrepError (503).
+    class TimingOutLLM:
+        async def complete(self, prompt, *, system="", model=""):
+            raise LLMTimeoutError(timeout=1.0, provider="anthropic")
+
+    service = InterviewPrepService(llm=TimingOutLLM(), story_repo=FakeStoryRepo())
+    with pytest.raises(LLMTimeoutError):
+        await service.prepare({"title": "SWE", "company": "X", "description": ""})

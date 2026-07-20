@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Any, AsyncIterator
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from hiresense.ports.llm import LLMResult
+from hiresense.ports.llm import LLMResult, LLMTimeoutError
 
 
 class LangChainLLMAdapter:
@@ -24,10 +25,17 @@ class LangChainLLMAdapter:
         provider: str = "",
         model_name: str = "",
         cache_system_prefix: bool = False,
+        timeout: float | None = None,
     ) -> None:
         self._model = model
         self._provider = provider
         self._model_name = model_name
+        # Hard per-call ceiling (seconds) enforced with asyncio.wait_for around
+        # ainvoke. None disables it. Provider-agnostic and total (unlike a
+        # provider's own read timeout): a stalled connection can't tie up the
+        # async worker indefinitely. Threaded in from settings.llm_timeout via
+        # FeatureConfiguredLLMAdapter; on expiry generate() raises LLMTimeoutError.
+        self._timeout = timeout
         # When True, the system prompt is sent as an Anthropic content block
         # with `cache_control: ephemeral` so a stable prefix (static
         # instructions + byte-stable candidate block) is cached server-side
@@ -43,7 +51,7 @@ class LangChainLLMAdapter:
     async def generate(self, prompt: str, *, system: str = "", model: str = "") -> LLMResult:
         messages = self._messages(prompt, system)
         target = self._model.bind(model=model) if model else self._model
-        response = await target.ainvoke(messages)
+        response = await self._ainvoke(target, messages, model=model)
 
         usage = getattr(response, "usage_metadata", None) or {}
         input_tokens = int(usage.get("input_tokens", 0))
@@ -57,6 +65,18 @@ class LangChainLLMAdapter:
             output_tokens=output_tokens,
             total_tokens=total_tokens,
         )
+
+    async def _ainvoke(self, target: Any, messages: list[Any], *, model: str) -> Any:
+        if self._timeout is None:
+            return await target.ainvoke(messages)
+        try:
+            return await asyncio.wait_for(target.ainvoke(messages), timeout=self._timeout)
+        except asyncio.TimeoutError as exc:
+            raise LLMTimeoutError(
+                timeout=self._timeout,
+                provider=self._provider,
+                model=model or self._model_name,
+            ) from exc
 
     async def stream(self, prompt: str, *, system: str = "") -> AsyncIterator[str]:
         messages = self._messages(prompt, system)

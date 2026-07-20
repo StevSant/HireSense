@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import uuid as uuid_mod
 
 from pydantic import BaseModel
 
+from hiresense.interview.domain.errors import InterviewPrepError
 from hiresense.interview.domain.models import Competency, Story
 from hiresense.interview.ports import StoryRepositoryPort
+from hiresense.ports.llm import LLMTimeoutError
+
+logger = logging.getLogger(__name__)
 
 
 class StoryMatch(BaseModel):
@@ -141,12 +146,13 @@ class InterviewPrepService:
                 technical_topics=data.get("technical_topics", []),
                 negotiation_points=data.get("negotiation_points", []),
             )
-        except Exception:
-            return InterviewPrep(
-                job_title=title,
-                company=company,
-                matched_stories=[],
-                competencies_to_probe=[],
-                technical_topics=[],
-                negotiation_points=["Interview preparation is temporarily unavailable"],
-            )
+        except LLMTimeoutError:
+            # Let the timeout surface as a 504 (issue #139) rather than a generic
+            # prep failure.
+            raise
+        except Exception as exc:
+            # Do NOT return a benign placeholder — it gets persisted as real prep
+            # and hides genuine bugs/outages (issue #147). Log with context and
+            # raise so the API returns a 503.
+            logger.exception("Interview prep generation failed for %r at %r", title, company)
+            raise InterviewPrepError("interview prep generation failed") from exc

@@ -4,8 +4,9 @@ import logging
 from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from hiresense.admin.api import router as admin_router
 from hiresense.analytics.api import router as analytics_router
@@ -38,6 +39,7 @@ from hiresense.bootstrap import (
 )
 from hiresense.config import Settings
 from hiresense.observability import setup_telemetry
+from hiresense.ports import LLMTimeoutError
 from hiresense.cover_letter_templates.api import router as cover_letter_templates_router
 from hiresense.identity.api import router as auth_router
 from hiresense.kernel import SecurityHeadersMiddleware, SlidingWindowRateLimiter
@@ -106,6 +108,19 @@ def create_app() -> FastAPI:
         allow_headers=settings.cors_allow_headers,
     )
     app.add_middleware(SecurityHeadersMiddleware)
+
+    # A stalled LLM provider call is aborted by the per-call timeout (issue #139)
+    # and raises LLMTimeoutError; map it to 504 Gateway Timeout so the client
+    # gets a clean error instead of the request hanging on the async worker.
+    @app.exception_handler(LLMTimeoutError)
+    async def _llm_timeout_handler(_request: Request, exc: LLMTimeoutError) -> JSONResponse:
+        logging.getLogger(__name__).warning(
+            "LLM call timed out after %.1fs (provider=%s model=%s)",
+            exc.timeout,
+            exc.provider,
+            exc.model,
+        )
+        return JSONResponse(status_code=504, content={"detail": "LLM request timed out"})
 
     app.state.settings = settings
 

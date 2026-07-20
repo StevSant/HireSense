@@ -48,3 +48,20 @@ class LLMInvocationError(RuntimeError):
         self.model = model
         self.cause = cause
         super().__init__(str(cause))
+
+
+class LLMTimeoutError(RuntimeError):
+    """Raised when an LLM completion exceeds the configured timeout.
+
+    A dedicated type (not a bare asyncio.TimeoutError) so the API layer can map a
+    stalled provider call to a clean 504 instead of letting the request hang on the
+    async worker. Carries the exceeded timeout and the resolved provider/model for
+    logging/telemetry. Kept alongside LLMInvocationError so callers can catch and
+    re-raise it distinctly from ordinary generation failures.
+    """
+
+    def __init__(self, *, timeout: float, provider: str = "", model: str = "") -> None:
+        self.timeout = timeout
+        self.provider = provider
+        self.model = model
+        super().__init__(f"LLM call exceeded {timeout:.1f}s timeout")

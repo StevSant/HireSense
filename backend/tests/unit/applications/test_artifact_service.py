@@ -177,6 +177,94 @@ async def test_generate_match_uses_snapshot_and_profile() -> None:
 
 
 @pytest.mark.asyncio
+async def test_generate_match_skips_fallback_when_result_has_skill_verdict(monkeypatch) -> None:
+    """When analyze() already returns matched + missing skills, the SkillMatcher
+    fallback (normalization + set math) must not run at all."""
+    import hiresense.applications.domain.artifact_service as artifact_module
+
+    calls = {"instantiated": 0}
+
+    class SpyMatcher:
+        def __init__(self) -> None:
+            calls["instantiated"] += 1
+
+        def match(self, *args, **kwargs):  # pragma: no cover - must never run
+            raise AssertionError("SkillMatcher.match should not be called")
+
+    monkeypatch.setattr(artifact_module, "SkillMatcher", SpyMatcher)
+
+    app_id = uuid.uuid4()
+    snap = ApplicationJobSnapshot(
+        application_id=app_id,
+        description="job desc",
+        required_skills=["python", "k8s"],
+        source=JobSnapshotSource.MANUAL.value,
+    )
+    service = ArtifactService(
+        repository=FakeRepo(snapshot=snap),
+        matching_orchestrator=FakeMatchingOrchestrator(),  # returns matched+missing
+        cv_optimizer=None,
+        interview_prep_service=None,
+        profile_service=FakeProfileService(FakeProfile("en", "s", ["python"])),
+    )
+
+    result = await service.generate_match(app_id, cv_language="en")
+
+    assert calls["instantiated"] == 0
+    assert result.matched_skills == ["python"]
+    assert result.missing_skills == ["k8s"]
+
+
+@pytest.mark.asyncio
+async def test_generate_match_runs_fallback_when_verdict_missing(monkeypatch) -> None:
+    """When analyze() returns no skill verdict, the fallback is computed once."""
+    import hiresense.applications.domain.artifact_service as artifact_module
+
+    calls = {"instantiated": 0}
+
+    class SpyResult:
+        matched = ["python"]
+        missing = ["k8s"]
+
+    class SpyMatcher:
+        def __init__(self) -> None:
+            calls["instantiated"] += 1
+
+        def match(self, cv_skills, job_skills, evidence_text=""):
+            return SpyResult()
+
+    class EmptyVerdictOrchestrator:
+        async def analyze(self, **kwargs):
+            r = FakeMatchResult()
+            r.matched_skills = []
+            r.missing_skills = []
+            return r
+
+    monkeypatch.setattr(artifact_module, "SkillMatcher", SpyMatcher)
+
+    app_id = uuid.uuid4()
+    snap = ApplicationJobSnapshot(
+        application_id=app_id,
+        description="job desc",
+        required_skills=["python", "k8s"],
+        source=JobSnapshotSource.MANUAL.value,
+    )
+    service = ArtifactService(
+        repository=FakeRepo(snapshot=snap),
+        matching_orchestrator=EmptyVerdictOrchestrator(),
+        cv_optimizer=None,
+        interview_prep_service=None,
+        profile_service=FakeProfileService(FakeProfile("en", "s", ["python"])),
+    )
+
+    result = await service.generate_match(app_id, cv_language="en")
+
+    assert calls["instantiated"] == 1
+    assert result.matched_skills == ["python"]
+    assert result.missing_skills == ["k8s"]
+
+
+@pytest.mark.asyncio
 async def test_generate_match_passes_cv_text_as_evidence() -> None:
     app_id = uuid.uuid4()
     snap = ApplicationJobSnapshot(

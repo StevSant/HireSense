@@ -69,6 +69,13 @@ class CoreSettings(BaseSettings):
     # the browser evicts the cookie in lock-step with token expiry.
     jwt_expiry_hours: int = 24
 
+    # JWT iss/aud claims (RFC 8725), set on issued tokens and enforced on
+    # validation. The same service issues and validates, so stable identifier
+    # defaults are safe (no per-deploy secret); override to scope tokens to a
+    # deployment or to reject tokens minted for a different service.
+    jwt_issuer: str = "hiresense"
+    jwt_audience: str = "hiresense-api"
+
     # Session cookie (httpOnly) that carries the JWT for the SPA. The token is
     # never exposed to JavaScript (XSS can't exfiltrate it); the browser attaches
     # the cookie automatically on same-origin requests. The `Authorization:

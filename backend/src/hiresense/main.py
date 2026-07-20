@@ -45,6 +45,7 @@ from hiresense.identity.api import router as auth_router
 from hiresense.kernel import SecurityHeadersMiddleware, SlidingWindowRateLimiter
 from hiresense.ingestion.api import router as ingestion_router
 from hiresense.interview.api import router as interview_router
+from hiresense.interview.domain import InterviewPrepError
 from hiresense.matching.api import router as matching_router
 from hiresense.optimization.api import router as optimization_router
 from hiresense.optimization.domain import OptimizationError
@@ -129,6 +130,17 @@ def create_app() -> FastAPI:
     async def _optimization_error_handler(_request: Request, exc: OptimizationError) -> JSONResponse:
         logging.getLogger(__name__).warning("CV optimization failed: %s", exc)
         return JSONResponse(status_code=503, content={"detail": "CV optimization failed"})
+
+    # Interview prep generation failed. Surface a 503 instead of persisting the
+    # "temporarily unavailable" placeholder as if it were real prep (#147).
+    @app.exception_handler(InterviewPrepError)
+    async def _interview_prep_error_handler(
+        _request: Request, exc: InterviewPrepError
+    ) -> JSONResponse:
+        logging.getLogger(__name__).warning("Interview prep generation failed: %s", exc)
+        return JSONResponse(
+            status_code=503, content={"detail": "Interview prep generation failed"}
+        )
 
     app.state.settings = settings
 

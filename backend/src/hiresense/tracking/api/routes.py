@@ -13,6 +13,7 @@ from hiresense.tracking.api.schemas import (
     TrackedApplicationResponse,
     UpdateApplicationRequest,
 )
+from hiresense.tracking.domain import InvalidStatusTransitionError
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 from hiresense.tracking.domain.services import TrackingService
 
@@ -104,6 +105,8 @@ async def update_application(
             app = service.update_notes(id, request.notes)
         else:
             app = service.get(id)
+    except InvalidStatusTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return _enrich(app, orchestrator)

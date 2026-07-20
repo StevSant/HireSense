@@ -137,3 +137,36 @@ def test_send_uses_unverified_ssl_context_when_insecure(monkeypatch):
     assert isinstance(ctx, ssl.SSLContext)
     assert ctx.check_hostname is False
     assert ctx.verify_mode == ssl.CERT_NONE
+
+
+# --- #148: reject CRLF in to/subject; set the envelope recipient explicitly ---
+
+
+def test_send_rejects_crlf_in_to(monkeypatch):
+    created = _install_fake_smtp(monkeypatch)
+
+    with pytest.raises(ValueError):
+        _sender().send(
+            EmailMessage(to="r@example.com\r\nBcc: evil@x.com", subject="Hi", body="Body")
+        )
+
+    assert created == []  # rejected before any connection was opened
+
+
+def test_send_rejects_crlf_in_subject(monkeypatch):
+    created = _install_fake_smtp(monkeypatch)
+
+    with pytest.raises(ValueError):
+        _sender().send(
+            EmailMessage(to="r@example.com", subject="Hi\nInjected: header", body="Body")
+        )
+
+    assert created == []
+
+
+def test_send_sets_explicit_envelope_recipient(monkeypatch):
+    created = _install_fake_smtp(monkeypatch)
+
+    _sender().send(EmailMessage(to="r@example.com", subject="Hi", body="Body"))
+
+    assert created[0].sent["to_addrs"] == ["r@example.com"]

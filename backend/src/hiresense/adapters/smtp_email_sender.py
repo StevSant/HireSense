@@ -46,6 +46,8 @@ class SmtpEmailSender:
                 "sent in plaintext. Enable SMTP_USE_TLS, or set SMTP_ALLOW_INSECURE=true "
                 "for a trusted local/dev server."
             )
+        self._reject_header_injection("to", message.to)
+        self._reject_header_injection("subject", message.subject)
         mime = MimeEmailMessage()
         mime["From"] = self._from_email
         mime["To"] = message.to
@@ -56,7 +58,17 @@ class SmtpEmailSender:
                 smtp.starttls(context=self._ssl_context())
             if self._username:
                 smtp.login(self._username, self._password)
-            smtp.send_message(mime)
+            # Set the envelope recipient explicitly instead of letting smtplib derive
+            # it from the (untrusted) To header.
+            smtp.send_message(mime, to_addrs=[message.to])
+
+    @staticmethod
+    def _reject_header_injection(field: str, value: str) -> None:
+        """Defense-in-depth against CRLF header injection (CWE-93). EmailMessage
+        with policy=default already refolds/validates headers, but the outreach
+        relay feeds these from caller-controlled values, so guard explicitly."""
+        if "\r" in value or "\n" in value:
+            raise ValueError(f"Email {field} must not contain CR or LF characters")
 
     def _ssl_context(self) -> ssl.SSLContext:
         context = ssl.create_default_context()

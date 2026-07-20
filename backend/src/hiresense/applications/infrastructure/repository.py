@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from collections import defaultdict
+from typing import Any, Callable, TypeVar
 
 from sqlalchemy import select
 
@@ -56,6 +57,9 @@ _PREP_FIELDS = (
 )
 
 
+_ChildT = TypeVar("_ChildT")
+
+
 def _orm_kwargs(model: Any, fields: tuple[str, ...]) -> dict[str, Any]:
     return {field: getattr(model, field) for field in fields}
 
@@ -101,8 +105,13 @@ class ApplicationRepository(SqlRepository):
         return self._select_all(stmt, ApplicationMatch.model_validate)
 
     def get_latest_match(self, application_id: uuid.UUID) -> ApplicationMatch | None:
-        matches = self.list_matches(application_id)
-        return matches[0] if matches else None
+        stmt = (
+            select(ApplicationMatchOrm)
+            .where(ApplicationMatchOrm.application_id == application_id)
+            .order_by(ApplicationMatchOrm.created_at.desc())
+            .limit(1)
+        )
+        return self._select_one(stmt, ApplicationMatch.model_validate)
 
     def get_match(self, match_id: uuid.UUID) -> ApplicationMatch | None:
         return self._get_by_pk(ApplicationMatchOrm, match_id, ApplicationMatch.model_validate)
@@ -124,8 +133,13 @@ class ApplicationRepository(SqlRepository):
     def get_latest_optimization(
         self, application_id: uuid.UUID
     ) -> ApplicationCvOptimization | None:
-        opts = self.list_optimizations(application_id)
-        return opts[0] if opts else None
+        stmt = (
+            select(ApplicationCvOptimizationOrm)
+            .where(ApplicationCvOptimizationOrm.application_id == application_id)
+            .order_by(ApplicationCvOptimizationOrm.created_at.desc())
+            .limit(1)
+        )
+        return self._select_one(stmt, ApplicationCvOptimization.model_validate)
 
     def get_optimization(self, optimization_id: uuid.UUID) -> ApplicationCvOptimization | None:
         return self._get_by_pk(
@@ -151,8 +165,13 @@ class ApplicationRepository(SqlRepository):
     def get_latest_interview_prep(
         self, application_id: uuid.UUID
     ) -> ApplicationInterviewPrep | None:
-        preps = self.list_interview_preps(application_id)
-        return preps[0] if preps else None
+        stmt = (
+            select(ApplicationInterviewPrepOrm)
+            .where(ApplicationInterviewPrepOrm.application_id == application_id)
+            .order_by(ApplicationInterviewPrepOrm.created_at.desc())
+            .limit(1)
+        )
+        return self._select_one(stmt, ApplicationInterviewPrep.model_validate)
 
     # ---- cover letters -----------------------------------------------
 
@@ -169,8 +188,13 @@ class ApplicationRepository(SqlRepository):
         return self._select_all(stmt, ApplicationCoverLetter.model_validate)
 
     def get_latest_cover_letter(self, application_id: uuid.UUID) -> ApplicationCoverLetter | None:
-        letters = self.list_cover_letters(application_id)
-        return letters[0] if letters else None
+        stmt = (
+            select(ApplicationCoverLetterOrm)
+            .where(ApplicationCoverLetterOrm.application_id == application_id)
+            .order_by(ApplicationCoverLetterOrm.created_at.desc())
+            .limit(1)
+        )
+        return self._select_one(stmt, ApplicationCoverLetter.model_validate)
 
     def get_cover_letter(self, cover_letter_id: uuid.UUID) -> ApplicationCoverLetter | None:
         return self._get_by_pk(
@@ -213,3 +237,69 @@ class ApplicationRepository(SqlRepository):
                 }
                 for row in rows
             ]
+
+    # ---- batch loaders (list view: one query per child type) ----------
+
+    def _children_for(
+        self,
+        orm_cls: type[Any],
+        map_row: Callable[[Any], _ChildT],
+        application_ids: list[uuid.UUID],
+    ) -> dict[uuid.UUID, list[_ChildT]]:
+        """Load every child row for the given application ids in one query,
+        grouped by application_id and ordered newest-first within each group
+        (so ``[0]`` is the latest and ``len(...)`` is the count)."""
+        if not application_ids:
+            return {}
+        stmt = (
+            select(orm_cls)
+            .where(orm_cls.application_id.in_(application_ids))
+            .order_by(orm_cls.created_at.desc())
+        )
+        grouped: dict[uuid.UUID, list[_ChildT]] = defaultdict(list)
+        with self._session_factory() as session:
+            for row in session.scalars(stmt).all():
+                grouped[row.application_id].append(map_row(row))
+        return dict(grouped)
+
+    def get_snapshots_for(
+        self, application_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, ApplicationJobSnapshot]:
+        if not application_ids:
+            return {}
+        stmt = select(ApplicationJobSnapshotOrm).where(
+            ApplicationJobSnapshotOrm.application_id.in_(application_ids)
+        )
+        with self._session_factory() as session:
+            return {
+                row.application_id: ApplicationJobSnapshot.model_validate(row)
+                for row in session.scalars(stmt).all()
+            }
+
+    def list_matches_for(
+        self, application_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, list[ApplicationMatch]]:
+        return self._children_for(
+            ApplicationMatchOrm, ApplicationMatch.model_validate, application_ids
+        )
+
+    def list_optimizations_for(
+        self, application_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, list[ApplicationCvOptimization]]:
+        return self._children_for(
+            ApplicationCvOptimizationOrm, ApplicationCvOptimization.model_validate, application_ids
+        )
+
+    def list_interview_preps_for(
+        self, application_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, list[ApplicationInterviewPrep]]:
+        return self._children_for(
+            ApplicationInterviewPrepOrm, ApplicationInterviewPrep.model_validate, application_ids
+        )
+
+    def list_cover_letters_for(
+        self, application_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, list[ApplicationCoverLetter]]:
+        return self._children_for(
+            ApplicationCoverLetterOrm, ApplicationCoverLetter.model_validate, application_ids
+        )

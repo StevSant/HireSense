@@ -83,7 +83,7 @@ class ApplicationService:
 
     def list(self, status: ApplicationStatus | None = None) -> list[ApplicationAggregate]:
         tracked_list = self._tracking.list(status=status)
-        return [self._build_aggregate(t) for t in tracked_list]
+        return self._build_aggregates(tracked_list)
 
     def remove(self, application_id: uuid.UUID) -> None:
         self._tracking.remove(application_id)
@@ -119,20 +119,58 @@ class ApplicationService:
     # ----- internal ----------------------------------------------------
 
     def _build_aggregate(self, tracked: TrackedApplication) -> ApplicationAggregate:
-        snap_orm = self._repo.get_snapshot(tracked.id)
+        return self._build_aggregates([tracked])[0]
+
+    def _build_aggregates(
+        self, tracked_list: list[TrackedApplication]
+    ) -> list[ApplicationAggregate]:
+        """Assemble aggregates for many tracked applications with a fixed number
+        of queries — one batch load per child type — instead of ~10 queries per
+        application. Each ``*_for`` call groups its rows by application_id and
+        orders them newest-first, so ``[0]`` is the latest and ``len(...)`` the
+        count without a second round-trip."""
+        if not tracked_list:
+            return []
+        ids = [t.id for t in tracked_list]
+        snapshots = self._repo.get_snapshots_for(ids)
+        matches = self._repo.list_matches_for(ids)
+        optimizations = self._repo.list_optimizations_for(ids)
+        preps = self._repo.list_interview_preps_for(ids)
+        letters = self._repo.list_cover_letters_for(ids)
+        return [
+            self._assemble(
+                tracked,
+                snapshots.get(tracked.id),
+                matches.get(tracked.id, []),
+                optimizations.get(tracked.id, []),
+                preps.get(tracked.id, []),
+                letters.get(tracked.id, []),
+            )
+            for tracked in tracked_list
+        ]
+
+    @staticmethod
+    def _assemble(
+        tracked: TrackedApplication,
+        snap: Any,
+        matches: list[Any],
+        optimizations: list[Any],
+        preps: list[Any],
+        letters: list[Any],
+    ) -> ApplicationAggregate:
         snap_view = (
             JobSnapshotView(
-                id=snap_orm.id,
-                description=snap_orm.description,
-                required_skills=list(snap_orm.required_skills or []),
-                source=snap_orm.source,
-                updated_at=snap_orm.updated_at,
+                id=snap.id,
+                description=snap.description,
+                required_skills=list(snap.required_skills or []),
+                source=snap.source,
+                updated_at=snap.updated_at,
             )
-            if snap_orm is not None
+            if snap is not None
             else None
         )
 
-        latest_match = self._repo.get_latest_match(tracked.id)
+        latest_match = matches[0] if matches else None
         match_view = (
             MatchView(
                 id=latest_match.id,
@@ -153,7 +191,7 @@ class ApplicationService:
             else None
         )
 
-        latest_opt = self._repo.get_latest_optimization(tracked.id)
+        latest_opt = optimizations[0] if optimizations else None
         opt_view = (
             CvOptimizationView(
                 id=latest_opt.id,
@@ -169,7 +207,7 @@ class ApplicationService:
             else None
         )
 
-        latest_prep = self._repo.get_latest_interview_prep(tracked.id)
+        latest_prep = preps[0] if preps else None
         prep_view = (
             InterviewPrepView(
                 id=latest_prep.id,
@@ -183,11 +221,7 @@ class ApplicationService:
             else None
         )
 
-        latest_letter = (
-            self._repo.get_latest_cover_letter(tracked.id)
-            if hasattr(self._repo, "get_latest_cover_letter")
-            else None
-        )
+        latest_letter = letters[0] if letters else None
         letter_view = (
             CoverLetterView(
                 id=latest_letter.id,
@@ -198,11 +232,6 @@ class ApplicationService:
             )
             if latest_letter is not None
             else None
-        )
-        cover_letter_count = (
-            len(self._repo.list_cover_letters(tracked.id))
-            if hasattr(self._repo, "list_cover_letters")
-            else 0
         )
 
         return ApplicationAggregate(
@@ -221,8 +250,8 @@ class ApplicationService:
             latest_optimization=opt_view,
             latest_interview_prep=prep_view,
             latest_cover_letter=letter_view,
-            match_count=len(self._repo.list_matches(tracked.id)),
-            optimization_count=len(self._repo.list_optimizations(tracked.id)),
-            interview_prep_count=len(self._repo.list_interview_preps(tracked.id)),
-            cover_letter_count=cover_letter_count,
+            match_count=len(matches),
+            optimization_count=len(optimizations),
+            interview_prep_count=len(preps),
+            cover_letter_count=len(letters),
         )

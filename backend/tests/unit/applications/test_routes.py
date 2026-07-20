@@ -29,6 +29,9 @@ class FakeOrchestrator:
     def get_job_by_id(self, job_id: str):
         return None
 
+    def get_jobs_by_ids(self, job_ids):
+        return {}
+
 
 def _make_aggregate(
     *,

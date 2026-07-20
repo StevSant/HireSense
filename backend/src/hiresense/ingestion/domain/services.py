@@ -201,6 +201,11 @@ class IngestionOrchestrator:
     def get_job_by_id(self, job_id: str) -> NormalizedJob | None:
         return self._repository.get_by_id(job_id)
 
+    def get_jobs_by_ids(self, job_ids: list[str]) -> dict[str, NormalizedJob]:
+        """Batch job enrichment: resolve many ids in one query (avoids the
+        per-row ``get_job_by_id`` N+1 when shaping list responses)."""
+        return self._repository.get_by_ids(job_ids)
+
     def list_jobs(self, criteria: JobListCriteria | None = None) -> list[NormalizedJob]:
         """Full corpus, or — given criteria — only rows matching the cheap
         selective predicates (filtered DB-side by the SQL repository)."""

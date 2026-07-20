@@ -341,6 +341,16 @@ class JobsRepository(SqlRepository):
                 return None
             return _to_domain(row)
 
+    def get_by_ids(self, job_ids: list[str]) -> dict[str, NormalizedJob]:
+        if not job_ids:
+            return {}
+        stmt = select(IngestedJob).where(
+            IngestedJob.id.in_(job_ids),
+            IngestedJob.bucket == self._bucket,
+        )
+        with self._session_factory() as session:
+            return {row.id: _to_domain(row) for row in session.scalars(stmt).all()}
+
     def update_scores(
         self,
         job_id: str,

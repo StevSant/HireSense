@@ -61,6 +61,21 @@ class CoreSettings(BaseSettings):
             )
         return value
 
+    @field_validator("cors_origins")
+    @classmethod
+    def _reject_wildcard_cors_origin(cls, value: list[str]) -> list[str]:
+        # CORS is registered with allow_credentials=True (main.create_app). With
+        # a wildcard origin, Starlette reflects any Origin back alongside
+        # Access-Control-Allow-Credentials — a credentialed any-origin grant
+        # (CWE-942). Refuse it at config load instead of shipping the footgun.
+        if "*" in value:
+            raise ValueError(
+                "cors_origins must not contain '*': credentials are allowed, so a "
+                "wildcard origin would grant credentialed access to any site. List "
+                "explicit origins in CORS_ORIGINS instead."
+            )
+        return value
+
     # Role embedded in issued tokens. A single-user instance is admin by default;
     # set to a non-admin value to genuinely exercise the admin gate.
     auth_role: str = "admin"

@@ -221,6 +221,8 @@ def build_ingestion(
         batch=s.job_revalidation_batch,
         concurrency=s.job_revalidation_concurrency,
         delay=s.job_revalidation_delay,
+        max_probe_bytes=s.job_revalidation_max_probe_bytes,
+        max_redirects=s.job_revalidation_max_redirects,
         probe_url_builders={"linkedin": _linkedin_probe_url},
         user_agent=s.job_revalidation_user_agent,
     )

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 from hiresense.outreach.domain import OutreachEvent, OutreachEventKind, OutreachNudge
 
@@ -27,7 +27,7 @@ class RecordRequest(BaseModel):
 
 class SendRequest(BaseModel):
     application_id: uuid.UUID
-    to: str
+    to: EmailStr
     subject: str
     message: str
     contact_name: str | None = None

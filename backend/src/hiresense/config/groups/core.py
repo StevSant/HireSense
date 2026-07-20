@@ -37,6 +37,11 @@ class CoreSettings(BaseSettings):
     # creds, see config.mode.apply_mode); required in production.
     auth_username: str = ""
     auth_password: str = ""
+    # Optional scrypt hash of the admin password (scrypt$n$r$p$salt$hash). When
+    # set it takes precedence over AUTH_PASSWORD and the plaintext is never
+    # retained by the auth service. Generate with:
+    #   python -c "from hiresense.identity.domain import hash_password; print(hash_password('pw'))"
+    auth_password_hash: str = ""
     jwt_secret_key: str = ""
 
     @field_validator("app_mode", mode="before")

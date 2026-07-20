@@ -7,6 +7,7 @@ from hiresense.outreach.domain import (
     EmailMessage,
     EmailUnavailableError,
     OutreachEventKind,
+    RecipientNotAllowedError,
 )
 from hiresense.outreach.domain.outreach_service import OutreachService
 
@@ -52,7 +53,7 @@ class _Sender:
         self.sent.append(message)
 
 
-def _svc(tracking, repo, sender):
+def _svc(tracking, repo, sender, allowed_recipient_domains=()):
     return OutreachService(
         tracking_service=tracking,
         profile_service=None,
@@ -64,6 +65,7 @@ def _svc(tracking, repo, sender):
         max_chars=500,
         language="en",
         sender=sender,
+        allowed_recipient_domains=allowed_recipient_domains,
     )
 
 
@@ -111,3 +113,29 @@ async def test_send_propagates_unavailable_and_records_nothing():
         await svc.send(app_id, to="x@y.com", subject="s", message="m")
 
     assert repo.added == []  # failed send must not be recorded as SENT
+
+
+@pytest.mark.asyncio
+async def test_send_rejects_recipient_outside_allowlist_and_records_nothing():
+    app_id = uuid_mod.uuid4()
+    repo = _Repo()
+    sender = _Sender()
+    svc = _svc(_Tracking([_App(app_id)]), repo, sender, allowed_recipient_domains=("acme.com",))
+
+    with pytest.raises(RecipientNotAllowedError):
+        await svc.send(app_id, to="attacker@evil.test", subject="s", message="m")
+
+    assert sender.sent == []  # blocked before dispatch
+    assert repo.added == []
+
+
+@pytest.mark.asyncio
+async def test_send_allows_recipient_in_allowlist_case_insensitively():
+    app_id = uuid_mod.uuid4()
+    repo = _Repo()
+    sender = _Sender()
+    svc = _svc(_Tracking([_App(app_id)]), repo, sender, allowed_recipient_domains=("Acme.com",))
+
+    await svc.send(app_id, to="recruiter@ACME.com", subject="s", message="m")
+
+    assert len(sender.sent) == 1

@@ -23,6 +23,7 @@ def build_notifications(settings: Any) -> NotificationBuild:
         from_email=settings.notification_from_email or settings.smtp_username,
         use_tls=settings.smtp_use_tls,
         timeout=settings.smtp_timeout,
+        allow_insecure=settings.smtp_allow_insecure,
     )
     service = NotificationService(sender=sender, to_email=settings.notification_email)
     return NotificationBuild(provider=NotificationProvider(service), service=service)

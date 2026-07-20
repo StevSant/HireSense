@@ -24,6 +24,11 @@ class OutreachSettings(BaseSettings):
     # Socket timeout (seconds) for the SMTP connection. Guards against a hung/
     # black-holed mail server pinning a worker thread (sends run in a thread pool).
     smtp_timeout: float = 30.0
+    # Secure-by-default: refuse SMTP login over a non-TLS channel (which would put
+    # credentials on the wire in plaintext) and verify the server certificate on
+    # STARTTLS. Set true ONLY for a trusted local/dev server (e.g. mailhog): it
+    # permits plaintext auth and disables TLS certificate verification.
+    smtp_allow_insecure: bool = False
     outreach_from_email: str = ""
     # Recipient-domain allowlist for POST /outreach/send. Empty (default) allows
     # any syntactically valid address; set to constrain sends and blunt the
@@ -51,6 +56,10 @@ class OutreachSettings(BaseSettings):
     # Socket timeout (seconds) for the IMAP connection. Guards against a hung mail
     # server pinning a worker thread (the inbox scan runs in a thread pool).
     imap_timeout: float = 30.0
+    # Secure-by-default: refuse IMAP login over a non-SSL channel (plaintext
+    # credentials) and verify the server certificate. Set true ONLY for a trusted
+    # local/dev server: it permits plaintext auth and disables TLS verification.
+    imap_allow_insecure: bool = False
     # Cron cadence for the scheduler 'inbox_scan' job (read by the scheduler).
     inbox_scan_schedule: str = "0 */2 * * *"
     # Classifications below this confidence get no proposed status (cannot be

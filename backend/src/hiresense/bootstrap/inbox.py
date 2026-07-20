@@ -37,6 +37,7 @@ def build_inbox(
         folder=s.imap_folder,
         use_ssl=s.imap_use_ssl,
         timeout=s.imap_timeout,
+        allow_insecure=s.imap_allow_insecure,
     )
     active = {ApplicationStatus.APPLIED, ApplicationStatus.INTERVIEWING}
 

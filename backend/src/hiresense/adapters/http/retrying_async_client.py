@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
+from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx
@@ -24,9 +25,10 @@ class RetryingAsyncClient:
     backoff capped at ``max_retries`` attempts.
 
     The wrapper is intentionally a thin facade: any attribute it does not
-    override (``aclose``, ``stream``, headers, …) is delegated to the wrapped
-    client, so it is interchangeable with the real ``httpx.AsyncClient`` for
-    every consumer.
+    override (``aclose``, headers, …) is delegated to the wrapped client, so
+    it is interchangeable with the real ``httpx.AsyncClient`` for every
+    consumer. ``stream`` is overridden too so streamed requests get the same
+    retry semantics as buffered ones.
 
     The sleep callable is injectable so tests can assert backoff delays
     without actually sleeping.
@@ -82,6 +84,43 @@ class RetryingAsyncClient:
         if last_exc is not None:  # pragma: no cover - defensive
             raise last_exc
         raise RuntimeError("retry loop exited without a response")  # pragma: no cover
+
+    @asynccontextmanager
+    async def stream(self, method: str, url: Any, **kwargs: Any) -> AsyncIterator[httpx.Response]:
+        """Retry-aware counterpart of ``httpx.AsyncClient.stream``.
+
+        Retries the connect/headers phase (transport errors and retryable
+        status codes) exactly like ``request``; once a non-retryable response
+        is open it is yielded for streaming. Without this override, ``stream``
+        fell through ``__getattr__`` to the raw client and silently lost retry
+        (probes gave up on the first transient failure).
+        """
+        last_exc: BaseException | None = None
+        for attempt in range(self._max_retries + 1):
+            try:
+                cm = self._client.stream(method, url, **kwargs)
+                response = await cm.__aenter__()
+            except _RETRYABLE_EXCEPTIONS as exc:
+                last_exc = exc
+                if attempt >= self._max_retries:
+                    raise
+                await self._backoff(attempt, method, url, reason=type(exc).__name__)
+                continue
+
+            if response.status_code in self._retry_status_codes and attempt < self._max_retries:
+                await cm.__aexit__(None, None, None)
+                await self._backoff(attempt, method, url, reason=f"HTTP {response.status_code}")
+                continue
+
+            try:
+                yield response
+            finally:
+                await cm.__aexit__(None, None, None)
+            return
+
+        if last_exc is not None:  # pragma: no cover - defensive
+            raise last_exc
+        raise RuntimeError("stream retry loop exited without a response")  # pragma: no cover
 
     async def _backoff(self, attempt: int, method: str, url: Any, *, reason: str) -> None:
         delay = self._base_delay * (2**attempt)

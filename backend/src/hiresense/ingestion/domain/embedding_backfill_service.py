@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
+from hiresense.ingestion.domain.embedding_text import job_text
 from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.ports.jobs_repository import JobsRepositoryPort
@@ -10,13 +11,6 @@ from hiresense.ports.embedding import EmbeddingPort
 from hiresense.ports.vector_store import VectorStorePort
 
 logger = logging.getLogger(__name__)
-
-_JOB_TEXT_CHAR_LIMIT = 4000
-
-
-def _job_text(job: NormalizedJob) -> str:
-    parts = [job.title, " ".join(job.skills), job.description]
-    return "\n".join(p for p in parts if p)[:_JOB_TEXT_CHAR_LIMIT]
 
 
 @dataclass(frozen=True)
@@ -74,7 +68,7 @@ class EmbeddingBackfillService:
         if not jobs:
             return 0
 
-        texts = [_job_text(j) for j in jobs]
+        texts = [job_text(j) for j in jobs]
         try:
             vectors = await self._embedding.embed(texts)
         except Exception:

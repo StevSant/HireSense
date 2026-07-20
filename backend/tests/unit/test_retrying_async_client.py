@@ -162,3 +162,92 @@ def test_delegates_unknown_attributes_to_wrapped_client() -> None:
     # `calls` is not overridden on the wrapper → resolved on the wrapped client.
     assert wrapper.calls is fake.calls
     assert wrapper.wrapped is fake
+
+
+class _FakeStreamContext:
+    def __init__(self, owner: _FakeStreamingClient, outcome: object, method: str, url: object):
+        self._owner = owner
+        self._outcome = outcome
+        self._method = method
+        self._url = url
+
+    async def __aenter__(self) -> httpx.Response:
+        if isinstance(self._outcome, Exception):
+            raise self._outcome
+        return httpx.Response(
+            status_code=int(self._outcome),  # type: ignore[arg-type]
+            request=httpx.Request(self._method, self._url),
+        )
+
+    async def __aexit__(self, *exc_info: object) -> None:
+        self._owner.closed += 1
+
+
+class _FakeStreamingClient:
+    """Scripted stand-in for httpx.AsyncClient.stream."""
+
+    def __init__(self, outcomes: list[object]) -> None:
+        self._outcomes = list(outcomes)
+        self.calls: list[tuple[str, object]] = []
+        self.closed = 0
+
+    def stream(self, method: str, url: object, **kwargs: object) -> _FakeStreamContext:
+        self.calls.append((method, url))
+        return _FakeStreamContext(self, self._outcomes.pop(0), method, url)
+
+
+@pytest.mark.asyncio
+async def test_stream_retries_retryable_status_then_succeeds() -> None:
+    fake = _FakeStreamingClient([503, 200])
+    sleep = _FakeSleep()
+    wrapper = _make_client(fake, sleep)  # type: ignore[arg-type]
+
+    async with wrapper.stream("GET", "https://example.com") as response:
+        assert response.status_code == 200
+
+    assert len(fake.calls) == 2
+    assert sleep.delays == [0.5]
+    assert fake.closed == 2  # the retried response and the yielded one both closed
+
+
+@pytest.mark.asyncio
+async def test_stream_retries_transport_error_then_succeeds() -> None:
+    fake = _FakeStreamingClient([httpx.ConnectError("boom"), 200])
+    sleep = _FakeSleep()
+    wrapper = _make_client(fake, sleep)  # type: ignore[arg-type]
+
+    async with wrapper.stream("GET", "https://example.com") as response:
+        assert response.status_code == 200
+
+    assert len(fake.calls) == 2
+    assert sleep.delays == [0.5]
+
+
+@pytest.mark.asyncio
+async def test_stream_gives_up_after_max_retries_on_transport_error() -> None:
+    err = httpx.ReadTimeout("slow")
+    fake = _FakeStreamingClient([err, err, err, err])
+    sleep = _FakeSleep()
+    wrapper = _make_client(fake, sleep, max_retries=3)  # type: ignore[arg-type]
+
+    with pytest.raises(httpx.ReadTimeout):
+        async with wrapper.stream("GET", "https://example.com"):
+            pass  # pragma: no cover - never reached
+
+    assert len(fake.calls) == 4
+    assert len(sleep.delays) == 3
+
+
+@pytest.mark.asyncio
+async def test_stream_returns_last_failing_response_after_exhaustion() -> None:
+    fake = _FakeStreamingClient([500, 500, 500, 500])
+    sleep = _FakeSleep()
+    wrapper = _make_client(fake, sleep, max_retries=3)  # type: ignore[arg-type]
+
+    async with wrapper.stream("GET", "https://example.com") as response:
+        # Exhausted retries → the still-failing response is yielded for the
+        # caller to classify, matching request()'s behavior.
+        assert response.status_code == 500
+
+    assert len(fake.calls) == 4
+    assert len(sleep.delays) == 3

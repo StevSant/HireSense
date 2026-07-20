@@ -13,6 +13,9 @@
   .status {
     text-transform: capitalize;
     font-weight: 600;
+    &--pending {
+      color: var(--muted, #757575);
+    }
     &--drafted {
       color: var(--success, #2e7d32);
     }

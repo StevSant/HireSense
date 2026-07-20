@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from hiresense.applications.api.dependencies import (
     get_application_service,
+    get_apply_service,
     get_artifact_service,
 )
 from hiresense.applications.api.routes import router
@@ -22,6 +23,7 @@ from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
 from hiresense.kernel import SlidingWindowRateLimiter, register_domain_exception_handlers
 from hiresense.kernel.exceptions import ConflictError, NotFoundError, ValidationError
+from hiresense.tracking.domain import InvalidStatusTransitionError
 
 
 class FakeOrchestrator:
@@ -316,6 +318,73 @@ def test_create_with_already_tracked_job_returns_409(
 
     assert resp.status_code == 409
     assert resp.json()["detail"] == "This job is already tracked"
+
+
+class FakeApplyService:
+    """mark_applied either succeeds silently or raises the scripted error."""
+
+    def __init__(self, exc: Exception | None = None) -> None:
+        self.exc = exc
+        self.calls: list[uuid_mod.UUID] = []
+
+    async def mark_applied(self, application_id):
+        self.calls.append(application_id)
+        if self.exc is not None:
+            raise self.exc
+
+
+def _client_with_apply(
+    application_service: FakeApplicationService, apply_service: FakeApplyService
+) -> TestClient:
+    app = FastAPI()
+    register_domain_exception_handlers(app)
+    app.include_router(router)
+    app.dependency_overrides[require_auth] = lambda: True
+    app.dependency_overrides[get_application_service] = lambda: application_service
+    app.dependency_overrides[get_apply_service] = lambda: apply_service
+    app.dependency_overrides[get_ingestion_orchestrator] = lambda: FakeOrchestrator()
+    return TestClient(app)
+
+
+def test_mark_applied_returns_aggregate(application_service: FakeApplicationService):
+    client = _client_with_apply(application_service, FakeApplyService())
+    resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
+    app_id = resp.json()["id"]
+
+    resp = client.post(f"/applications/{app_id}/mark-applied")
+
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["id"] == app_id
+
+
+def test_mark_applied_on_terminal_application_returns_409(
+    application_service: FakeApplicationService,
+):
+    """A terminal (accepted/rejected) application cannot transition to APPLIED:
+    the state-machine rejection is a 409 conflict, not a 404 (issue found in
+    the #195 review — this was the third update_status call site)."""
+    apply_service = FakeApplyService(
+        exc=InvalidStatusTransitionError("Cannot change status of a rejected application")
+    )
+    client = _client_with_apply(application_service, apply_service)
+    resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
+    app_id = resp.json()["id"]
+
+    resp = client.post(f"/applications/{app_id}/mark-applied")
+
+    assert resp.status_code == 409
+    assert "rejected" in resp.json()["detail"]
+
+
+def test_mark_applied_missing_application_returns_404(
+    application_service: FakeApplicationService,
+):
+    apply_service = FakeApplyService(exc=ValueError("Application not found"))
+    client = _client_with_apply(application_service, apply_service)
+
+    resp = client.post(f"/applications/{uuid_mod.uuid4()}/mark-applied")
+
+    assert resp.status_code == 404
 
 
 def test_generate_match(client: TestClient):

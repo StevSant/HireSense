@@ -12,6 +12,8 @@ class IdentityProvider:
         role: str = "admin",
         password_hash: str = "",
         expiry_hours: int = 24,
+        issuer: str = "hiresense",
+        audience: str = "hiresense-api",
     ) -> None:
         self._auth_service = AuthService(
             username=username,
@@ -20,6 +22,8 @@ class IdentityProvider:
             role=role,
             password_hash=password_hash,
             expiry_hours=expiry_hours,
+            issuer=issuer,
+            audience=audience,
         )
 
     def get_auth_service(self) -> AuthService:

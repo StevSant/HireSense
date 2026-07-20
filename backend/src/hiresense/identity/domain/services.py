@@ -18,6 +18,8 @@ class AuthService:
         role: str = "admin",
         password_hash: str = "",
         expiry_hours: int = 24,
+        issuer: str = "hiresense",
+        audience: str = "hiresense-api",
     ) -> None:
         self._username = username
         # When a hash is configured (AUTH_PASSWORD_HASH), the plaintext is never
@@ -29,6 +31,11 @@ class AuthService:
         self._jwt_secret = jwt_secret
         self._role = role
         self._expiry_hours = expiry_hours
+        # iss/aud are set on issued tokens and enforced on validation (RFC 8725):
+        # a token minted for another issuer/audience — e.g. a sibling service
+        # reusing this secret — is rejected instead of silently accepted.
+        self._issuer = issuer
+        self._audience = audience
 
     def login(self, username: str, password: str) -> str | None:
         if self._verify(username, password):
@@ -59,14 +66,33 @@ class AuthService:
 
     def validate_token(self, token: str) -> dict[str, Any] | None:
         try:
-            return jwt.decode(token, self._jwt_secret, algorithms=["HS256"])
+            return jwt.decode(
+                token,
+                self._jwt_secret,
+                algorithms=["HS256"],
+                issuer=self._issuer,
+                audience=self._audience,
+                # Require the claims to be PRESENT, not just matching when set:
+                # python-jose's verify_* only checks a claim it finds, so a token
+                # that simply omits exp/iss/aud would otherwise pass. Our own
+                # tokens always carry all three, so requiring them costs nothing
+                # and rejects tokens minted without them (e.g. by another service
+                # reusing the secret).
+                options={"require_exp": True, "require_iss": True, "require_aud": True},
+            )
         except JWTError:
             return None
 
     def _create_token(self, subject: str) -> str:
         expire = datetime.now(timezone.utc) + timedelta(hours=self._expiry_hours)
         return jwt.encode(
-            {"sub": subject, "role": self._role, "exp": expire},
+            {
+                "sub": subject,
+                "role": self._role,
+                "iss": self._issuer,
+                "aud": self._audience,
+                "exp": expire,
+            },
             self._jwt_secret,
             algorithm="HS256",
         )

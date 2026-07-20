@@ -4,8 +4,9 @@ import logging
 from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from hiresense.admin.api import router as admin_router
 from hiresense.analytics.api import router as analytics_router
@@ -38,13 +39,20 @@ from hiresense.bootstrap import (
 )
 from hiresense.config import Settings
 from hiresense.observability import setup_telemetry
+from hiresense.ports import LLMTimeoutError
 from hiresense.cover_letter_templates.api import router as cover_letter_templates_router
 from hiresense.identity.api import router as auth_router
-from hiresense.kernel import SecurityHeadersMiddleware, SlidingWindowRateLimiter
+from hiresense.kernel import (
+    SecurityHeadersMiddleware,
+    SlidingWindowRateLimiter,
+    register_domain_exception_handlers,
+)
 from hiresense.ingestion.api import router as ingestion_router
 from hiresense.interview.api import router as interview_router
+from hiresense.interview.domain import InterviewPrepError
 from hiresense.matching.api import router as matching_router
 from hiresense.optimization.api import router as optimization_router
+from hiresense.optimization.domain import OptimizationError
 from hiresense.outreach.api import router as outreach_router
 from hiresense.network.api import router as network_router
 from hiresense.autopilot.api import router as autopilot_router
@@ -104,8 +112,47 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=settings.cors_allow_methods,
         allow_headers=settings.cors_allow_headers,
+        # Pagination total on list endpoints travels in a response header; it
+        # must be allow-listed or the browser can't read it cross-origin.
+        expose_headers=["X-Total-Count"],
     )
     app.add_middleware(SecurityHeadersMiddleware)
+
+    # Map typed domain errors (NotFoundError/ConflictError/ValidationError) to
+    # HTTP statuses in one place, so routers derive status from exception type
+    # rather than substring-matching messages.
+    register_domain_exception_handlers(app)
+
+    # A stalled LLM provider call is aborted by the per-call timeout (issue #139)
+    # and raises LLMTimeoutError; map it to 504 Gateway Timeout so the client
+    # gets a clean error instead of the request hanging on the async worker.
+    @app.exception_handler(LLMTimeoutError)
+    async def _llm_timeout_handler(_request: Request, exc: LLMTimeoutError) -> JSONResponse:
+        logging.getLogger(__name__).warning(
+            "LLM call timed out after %.1fs (provider=%s model=%s)",
+            exc.timeout,
+            exc.provider,
+            exc.model,
+        )
+        return JSONResponse(status_code=504, content={"detail": "LLM request timed out"})
+
+    # CV optimization failed (LLM error / non-JSON / bad change shape). Surface a
+    # 503 instead of silently persisting the unoptimized CV as a success (#142).
+    @app.exception_handler(OptimizationError)
+    async def _optimization_error_handler(
+        _request: Request, exc: OptimizationError
+    ) -> JSONResponse:
+        logging.getLogger(__name__).warning("CV optimization failed: %s", exc)
+        return JSONResponse(status_code=503, content={"detail": "CV optimization failed"})
+
+    # Interview prep generation failed. Surface a 503 instead of persisting the
+    # "temporarily unavailable" placeholder as if it were real prep (#147).
+    @app.exception_handler(InterviewPrepError)
+    async def _interview_prep_error_handler(
+        _request: Request, exc: InterviewPrepError
+    ) -> JSONResponse:
+        logging.getLogger(__name__).warning("Interview prep generation failed: %s", exc)
+        return JSONResponse(status_code=503, content={"detail": "Interview prep generation failed"})
 
     app.state.settings = settings
 
@@ -117,6 +164,19 @@ def create_app() -> FastAPI:
             window_seconds=settings.rate_limit_window_seconds,
         )
         if settings.rate_limit_enabled
+        else None
+    )
+
+    # Dedicated, stricter per-client-IP limiter for POST /auth/login (see
+    # enforce_login_rate_limit), separate from the expensive bucket so brute-force
+    # throttling of the admin credential can't be loosened by other traffic. None
+    # disables enforcement.
+    app.state.login_rate_limiter = (
+        SlidingWindowRateLimiter(
+            max_requests=settings.login_rate_limit_max_requests,
+            window_seconds=settings.login_rate_limit_window_seconds,
+        )
+        if settings.login_rate_limit_enabled
         else None
     )
 

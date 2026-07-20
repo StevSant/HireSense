@@ -154,6 +154,9 @@ class InMemoryJobsRepository:
     def get_by_id(self, job_id: str) -> NormalizedJob | None:
         return self._jobs.get(job_id)
 
+    def get_by_ids(self, job_ids: list[str]) -> dict[str, NormalizedJob]:
+        return {jid: self._jobs[jid] for jid in job_ids if jid in self._jobs}
+
     def update_scores(
         self,
         job_id: str,

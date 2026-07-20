@@ -9,5 +9,6 @@ def test_blank_host_returns_empty():
         password="",
         folder="INBOX",
         use_ssl=True,
+        timeout=30.0,
     )
     assert reader.fetch_unseen() == []

@@ -96,6 +96,7 @@ async def test_build_preference_subscribes_to_status_changed() -> None:
         sync_session_factory=session_factory,
         embedding=None,
         vector_store=vector_store,
+        company_profile_store=None,
     )
 
     # Code under test: build_preference must perform the real subscribe().

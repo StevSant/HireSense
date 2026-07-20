@@ -4,6 +4,6 @@ export interface AutopilotDraft {
   application_id: string | null;
   job_title: string | null;
   company: string | null;
-  status: 'drafted' | 'partial' | 'failed';
+  status: 'pending' | 'drafted' | 'partial' | 'failed';
   detail: string | null;
 }

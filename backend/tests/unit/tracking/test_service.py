@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 import pytest
 
+from hiresense.tracking.domain import InvalidStatusTransitionError
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 from hiresense.tracking.domain.services import TrackingService
 
@@ -67,11 +68,27 @@ class FakeRepository:
                 return app
         return None
 
-    def list_all(self, status: ApplicationStatus | None = None) -> list[TrackedApplication]:
+    def list_all(
+        self,
+        status: ApplicationStatus | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[TrackedApplication]:
         apps = list(self._store.values())
         if status is not None:
             apps = [a for a in apps if a.status == status.value]
+        if offset:
+            apps = apps[offset:]
+        if limit is not None:
+            apps = apps[:limit]
         return apps
+
+    def count_all(self, status: ApplicationStatus | None = None) -> int:
+        apps = list(self._store.values())
+        if status is not None:
+            apps = [a for a in apps if a.status == status.value]
+        return len(apps)
 
     def save(self, app: TrackedApplication) -> TrackedApplication:
         app.updated_at = datetime.now(timezone.utc)
@@ -226,6 +243,21 @@ async def test_update_status() -> None:
     updated = await svc.update_status(app.id, ApplicationStatus.INTERVIEWING)
 
     assert updated.status == ApplicationStatus.INTERVIEWING.value
+
+
+async def test_update_status_rejects_invalid_transition() -> None:
+    repo = FakeRepository()
+    bus = FakeEventBus()
+    svc = make_service(repo=repo, event_bus=bus)
+    app = svc.track_job(title="Data Scientist", company="OpenAI")
+    await svc.update_status(app.id, ApplicationStatus.REJECTED)
+
+    # REJECTED is terminal — reviving it back to SAVED must be refused, and the
+    # application must be left untouched (no mutation, no event).
+    with pytest.raises(InvalidStatusTransitionError):
+        await svc.update_status(app.id, ApplicationStatus.SAVED)
+
+    assert svc.get(app.id).status == ApplicationStatus.REJECTED.value
 
 
 async def test_update_status_to_applied_sets_applied_at() -> None:

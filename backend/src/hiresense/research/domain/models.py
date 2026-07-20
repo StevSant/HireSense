@@ -22,6 +22,10 @@ class CompanyResearch(BaseModel):
     company_size: str | None = None
     headquarters: str | None = None
     website: str | None = None
+    # Source-provided "about" text (from a captured company profile), not the
+    # LLM. Transient: never persisted (no ORM column), attached per request so it
+    # can be shown even when no LLM is configured. None when no profile exists.
+    description: str | None = None
     raw_llm_response: str
     created_at: datetime | None = None
     updated_at: datetime | None = None

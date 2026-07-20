@@ -7,12 +7,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
-from hiresense.identity.api.dependencies import require_auth
+from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.inbox.api.dependencies import get_inbox_provider
 from hiresense.inbox.api.provider import InboxProvider
 from hiresense.inbox.domain import DetectedSignal, InboundEmail, SignalState
 from hiresense.tracking.api.dependencies import get_tracking_service
-from hiresense.tracking.domain import TrackingService
+from hiresense.tracking.domain import InvalidStatusTransitionError, TrackingService
 from hiresense.tracking.domain.models import ApplicationStatus
 
 router = APIRouter(tags=["inbox"], dependencies=[Depends(require_auth)])
@@ -26,7 +26,12 @@ class IngestEmailRequest(BaseModel):
     received_at: datetime | None = None
 
 
-@router.post("/tracking/ingest-email", response_model=None, status_code=201)
+@router.post(
+    "/tracking/ingest-email",
+    response_model=None,
+    status_code=201,
+    dependencies=[Depends(enforce_expensive_rate_limit)],
+)
 async def ingest_email(
     body: IngestEmailRequest,
     provider: Annotated[InboxProvider, Depends(get_inbox_provider)],
@@ -64,9 +69,14 @@ async def confirm_signal(
         raise HTTPException(status_code=404, detail="Signal not found")
     if signal.matched_application_id is None or signal.proposed_status is None:
         raise HTTPException(status_code=409, detail="Signal has no matched application to update")
-    await tracking.update_status(
-        signal.matched_application_id, ApplicationStatus(signal.proposed_status)
-    )
+    try:
+        await tracking.update_status(
+            signal.matched_application_id, ApplicationStatus(signal.proposed_status)
+        )
+    except InvalidStatusTransitionError as exc:
+        # The matched application moved to a terminal state after this signal was
+        # detected — the proposed transition is no longer valid.
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     updated = repo.set_state(signal_id, SignalState.APPLIED)
     if updated is None:  # signal vanished between get and set_state
         raise HTTPException(status_code=404, detail="Signal not found")

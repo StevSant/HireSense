@@ -58,6 +58,49 @@ def test_settings_rejects_placeholder_secrets(
         Settings()
 
 
+def test_settings_rejects_wildcard_cors_origin(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://test:test@localhost/test")
+    monkeypatch.setenv("AUTH_USERNAME", "admin")
+    monkeypatch.setenv("AUTH_PASSWORD", "pass")
+    monkeypatch.setenv("JWT_SECRET_KEY", "secret")
+    monkeypatch.setenv("LLM_API_KEY", "sk-test")
+    monkeypatch.setenv("CORS_ORIGINS", "*")
+
+    from hiresense.config import Settings
+
+    with pytest.raises(ValueError, match="wildcard"):
+        Settings()
+
+
+def test_otel_exporter_insecure_defaults_secure() -> None:
+    # Reading the field default directly (not an instance) avoids backend/.env,
+    # which opts into insecure=true for the local LGTM stack. The insecure OTLP
+    # connection must be opt-in, so the code default is secure.
+    from hiresense.config.groups import ObservabilitySettings
+
+    assert ObservabilitySettings.model_fields["otel_exporter_insecure"].default is False
+
+
+def test_cli_main_binds_configured_app_port(monkeypatch: pytest.MonkeyPatch) -> None:
+    import uvicorn
+
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://test:test@localhost/test")
+    monkeypatch.setenv("AUTH_USERNAME", "admin")
+    monkeypatch.setenv("AUTH_PASSWORD", "pass")
+    monkeypatch.setenv("JWT_SECRET_KEY", "secret")
+    monkeypatch.setenv("LLM_API_KEY", "sk-test")
+    monkeypatch.setenv("APP_PORT", "9123")
+
+    captured: dict[str, object] = {}
+    monkeypatch.setattr(uvicorn, "run", lambda *args, **kwargs: captured.update(kwargs))
+
+    from hiresense._cli import main
+
+    main()
+
+    assert captured["port"] == 9123
+
+
 def test_embedding_device_configurable(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://test:test@localhost/test")
     monkeypatch.setenv("AUTH_USERNAME", "admin")

@@ -8,7 +8,7 @@ from opentelemetry.sdk.metrics.export import (
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SpanExporter
 
 
-def build_span_exporter(endpoint: str, insecure: bool = True) -> SpanExporter:
+def build_span_exporter(endpoint: str, insecure: bool = False) -> SpanExporter:
     """OTLP span exporter when an endpoint is set, else console."""
     if not endpoint:
         return ConsoleSpanExporter()
@@ -17,7 +17,7 @@ def build_span_exporter(endpoint: str, insecure: bool = True) -> SpanExporter:
     return OTLPSpanExporter(endpoint=endpoint, insecure=insecure)
 
 
-def build_log_exporter(endpoint: str, insecure: bool = True) -> LogExporter:
+def build_log_exporter(endpoint: str, insecure: bool = False) -> LogExporter:
     """OTLP log exporter when an endpoint is set, else console."""
     if not endpoint:
         return ConsoleLogExporter()
@@ -26,7 +26,7 @@ def build_log_exporter(endpoint: str, insecure: bool = True) -> LogExporter:
     return OTLPLogExporter(endpoint=endpoint, insecure=insecure)
 
 
-def build_metric_reader(endpoint: str, insecure: bool = True) -> PeriodicExportingMetricReader:
+def build_metric_reader(endpoint: str, insecure: bool = False) -> PeriodicExportingMetricReader:
     """Periodic metric reader wrapping OTLP or console metric exporter."""
     if not endpoint:
         return PeriodicExportingMetricReader(ConsoleMetricExporter())

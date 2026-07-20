@@ -10,3 +10,7 @@ class Firmographics(BaseModel):
     company_size: str | None = None
     headquarters: str | None = None
     website: str | None = None
+    # Plain-text "about" blurb from a source-captured company profile (e.g. a job
+    # board's company page). Grounds the research prompt and is surfaced as an
+    # About block; may be non-English. None when no source profile was captured.
+    description: str | None = None

@@ -6,7 +6,7 @@ import pytest
 from fastapi import HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials
 
-from hiresense.identity.api.dependencies import require_admin
+from hiresense.identity.api.dependencies import require_admin, require_admin_actor
 
 
 class _FakeAuthService:
@@ -45,3 +45,12 @@ def test_require_admin_rejects_invalid_token_with_401() -> None:
     with pytest.raises(HTTPException) as exc:
         require_admin(request=_request(), credentials=_creds(), auth_service=service)
     assert exc.value.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_require_admin_actor_returns_token_subject_not_the_payload() -> None:
+    # Audit fields (e.g. LLM-settings updated_by) must record the username, not
+    # the whole decoded payload dict. require_admin_actor takes the payload from
+    # require_admin (the gate) and yields just the subject.
+    actor = require_admin_actor(payload={"sub": "alice", "role": "admin"})
+    assert actor == "alice"
+    assert isinstance(actor, str)

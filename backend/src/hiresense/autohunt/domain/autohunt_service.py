@@ -7,6 +7,7 @@ from typing import Any
 from hiresense.autohunt.domain.digest import Digest
 from hiresense.autohunt.domain.digest_entry import DigestEntry
 from hiresense.ingestion.domain.job_scorer import score_job_against_skills
+from hiresense.observability import get_domain_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,7 @@ class AutoHuntService:
             )
         except Exception:
             logger.exception("autohunt: rerank failed — persisting empty digest")
+            get_domain_metrics().automation_failures_total.add(1, {"component": "autohunt_rerank"})
             return self._persist([], cutoff, now)
 
         qualified = [
@@ -106,4 +108,5 @@ class AutoHuntService:
             self._digest_repo.prune_older_than(now - timedelta(days=self._retention_days))
         except Exception:
             logger.exception("autohunt: digest prune failed (non-fatal)")
+            get_domain_metrics().automation_failures_total.add(1, {"component": "autohunt_prune"})
         return digest

@@ -1,10 +1,11 @@
+import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from langchain_core.messages import AIMessage
 
 from hiresense.adapters.llm import LangChainLLMAdapter
-from hiresense.ports import LLMPort
+from hiresense.ports import LLMPort, LLMTimeoutError
 
 
 def test_adapter_satisfies_llm_port() -> None:
@@ -96,6 +97,47 @@ async def test_cache_system_prefix_true_but_no_system_prompt_sends_no_system_mes
 
     call_args = mock_model.ainvoke.call_args[0][0]
     assert len(call_args) == 1  # only the human message
+
+
+@pytest.mark.asyncio
+async def test_generate_raises_llm_timeout_error_when_call_exceeds_timeout() -> None:
+    mock_model = AsyncMock()
+
+    async def slow_ainvoke(_messages):
+        await asyncio.sleep(1.0)
+        return AIMessage(content="too late")
+
+    mock_model.ainvoke = slow_ainvoke
+
+    adapter = LangChainLLMAdapter(model=mock_model, provider="anthropic", timeout=0.01)
+    with pytest.raises(LLMTimeoutError) as excinfo:
+        await adapter.complete("prompt")
+    assert excinfo.value.timeout == 0.01
+    assert excinfo.value.provider == "anthropic"
+
+
+@pytest.mark.asyncio
+async def test_generate_returns_before_timeout() -> None:
+    mock_model = AsyncMock()
+    mock_model.ainvoke.return_value = AIMessage(content="fast enough")
+
+    adapter = LangChainLLMAdapter(model=mock_model, timeout=5.0)
+    result = await adapter.complete("prompt")
+
+    assert result == "fast enough"
+
+
+@pytest.mark.asyncio
+async def test_no_timeout_when_timeout_is_none() -> None:
+    # With timeout=None (the default) the call is not wrapped in wait_for; a
+    # completed call returns normally regardless of the (absent) ceiling.
+    mock_model = AsyncMock()
+    mock_model.ainvoke.return_value = AIMessage(content="response")
+
+    adapter = LangChainLLMAdapter(model=mock_model)
+    result = await adapter.complete("prompt")
+
+    assert result == "response"
 
 
 @pytest.mark.asyncio

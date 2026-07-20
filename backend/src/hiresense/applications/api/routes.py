@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import uuid as uuid_mod
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import StreamingResponse
 
+from hiresense.kernel import resolve_page_limit
 from hiresense.ports import LatexCompileError
 from hiresense.applications.api.dependencies import (
     get_application_service,
@@ -33,7 +34,9 @@ from hiresense.applications.domain.autofill_plan_view import AutofillPlanView
 from hiresense.applications.domain.artifact_service import ArtifactService
 from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
+from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.tracking.domain import InvalidStatusTransitionError
 
 router = APIRouter(
     prefix="/applications",
@@ -41,16 +44,37 @@ router = APIRouter(
     dependencies=[Depends(require_auth)],
 )
 
+# Fallbacks when the router is mounted without app.state.settings (bare-app unit
+# tests). Match the config defaults in config/groups/core.py.
+_DEFAULT_PAGE_SIZE = 100
+_MAX_PAGE_SIZE = 500
+
+
+def _page_size(request: Request, limit: int | None) -> int:
+    settings = getattr(request.app.state, "settings", None)
+    return resolve_page_limit(
+        limit,
+        default=settings.default_page_size if settings is not None else _DEFAULT_PAGE_SIZE,
+        maximum=settings.max_page_size if settings is not None else _MAX_PAGE_SIZE,
+    )
+
 
 # -------- application CRUD --------------------------------------------
 
 
 @router.get("/cover-letters", response_model=list[CoverLetterLibraryItem])
 def list_all_cover_letters(
+    request: Request,
+    response: Response,
+    limit: int | None = Query(None, ge=1),
+    offset: int = Query(0, ge=0),
     service: ApplicationService = Depends(get_application_service),
 ) -> list[CoverLetterLibraryItem]:
     """Cross-application cover letter library — one row per generated letter."""
-    return [CoverLetterLibraryItem(**row) for row in service.list_all_cover_letters()]
+    page = _page_size(request, limit)
+    rows = service.list_all_cover_letters(limit=page, offset=offset)
+    response.headers["X-Total-Count"] = str(service.count_all_cover_letters())
+    return [CoverLetterLibraryItem(**row) for row in rows]
 
 
 @router.post("", response_model=ApplicationAggregate, status_code=201)
@@ -58,48 +82,47 @@ async def create_application(
     request: CreateApplicationRequest,
     service: ApplicationService = Depends(get_application_service),
 ) -> ApplicationAggregate:
-    try:
-        if request.job_id is not None:
-            return await service.create_from_ingested(str(request.job_id))
-        return await service.create_from_manual(
-            title=request.title or "",
-            company=request.company or "",
-            description=request.description or "",
-            url=request.url,
-            notes=request.notes,
-        )
-    except ValueError as exc:
-        msg = str(exc).lower()
-        if "not found" in msg:
-            status_code = 404
-        elif "already tracked" in msg:
-            status_code = 409
-        else:
-            status_code = 400
-        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+    if request.job_id is not None:
+        return await service.create_from_ingested(str(request.job_id))
+    return await service.create_from_manual(
+        title=request.title or "",
+        company=request.company or "",
+        description=request.description or "",
+        url=request.url,
+        notes=request.notes,
+    )
 
 
 @router.get("", response_model=list[ApplicationListItemResponse])
 def list_applications(
+    request: Request,
+    response: Response,
+    limit: int | None = Query(None, ge=1),
+    offset: int = Query(0, ge=0),
     service: ApplicationService = Depends(get_application_service),
     orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
 ) -> list[ApplicationListItemResponse]:
-    aggregates = service.list()
-    return [_to_list_item(a, orchestrator) for a in aggregates]
+    page = _page_size(request, limit)
+    aggregates = service.list(limit=page, offset=offset)
+    response.headers["X-Total-Count"] = str(service.count())
+    job_ids = [str(a.job_id) for a in aggregates if a.job_id is not None]
+    jobs_by_id = orchestrator.get_jobs_by_ids(job_ids) if job_ids else {}
+    return [_to_list_item(a, jobs_by_id) for a in aggregates]
 
 
 def _to_list_item(
     a: ApplicationAggregate,
-    orchestrator: IngestionOrchestrator,
+    jobs_by_id: dict[str, NormalizedJob],
 ) -> ApplicationListItemResponse:
     """Shape an aggregate into the list row, enriching pipeline fields
-    (location/salary/source/posted) from the linked ingested job when present."""
+    (location/salary/source/posted) from the linked ingested job when present.
+    The job map is resolved once per list request (batched), not per row."""
     location: str | None = None
     salary_range: str | None = None
     source: str | None = None
     posted_date = None
     if a.job_id is not None:
-        job = orchestrator.get_job_by_id(str(a.job_id))
+        job = jobs_by_id.get(str(a.job_id))
         if job is not None:
             location = job.location or None
             salary_range = job.salary_range
@@ -196,12 +219,7 @@ async def generate_match(
     request: GenerateMatchRequest,
     service: ArtifactService = Depends(get_artifact_service),
 ) -> MatchView:
-    try:
-        return await service.generate_match(application_id, cv_language=request.cv_language)
-    except ValueError as exc:
-        msg = str(exc).lower()
-        status_code = 404 if "not found" in msg else 400
-        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+    return await service.generate_match(application_id, cv_language=request.cv_language)
 
 
 @router.post(
@@ -215,16 +233,11 @@ async def generate_optimization(
     request: GenerateOptimizationRequest,
     service: ArtifactService = Depends(get_artifact_service),
 ) -> CvOptimizationView:
-    try:
-        return await service.generate_optimization(
-            application_id,
-            cv_language=request.cv_language,
-            match_id=request.match_id,
-        )
-    except ValueError as exc:
-        msg = str(exc).lower()
-        status_code = 404 if "not found" in msg else 400
-        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+    return await service.generate_optimization(
+        application_id,
+        cv_language=request.cv_language,
+        match_id=request.match_id,
+    )
 
 
 @router.post(
@@ -263,10 +276,6 @@ async def generate_cover_letter(
             cv_language=request.cv_language,
             tone=request.tone,
         )
-    except ValueError as exc:
-        msg = str(exc).lower()
-        status_code = 404 if "not found" in msg else 400
-        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
     except RuntimeError as exc:
         # LLM not configured
         raise HTTPException(status_code=503, detail=str(exc)) from exc
@@ -368,5 +377,9 @@ async def mark_applied(
     try:
         await apply_service.mark_applied(application_id)
         return app_service.get(application_id)
+    except InvalidStatusTransitionError as exc:
+        # e.g. the tracked application is already terminal (accepted/rejected):
+        # a conflict with its current state, not a missing resource.
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

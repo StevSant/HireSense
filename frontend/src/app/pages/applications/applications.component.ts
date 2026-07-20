@@ -15,6 +15,7 @@ import { BatchResult } from '../tracking/models/batch-result.model';
 import { CompanyResearch } from '../tracking/models/company-research.model';
 import { scoreColor as toScoreColor } from '../../core/utils/score-color';
 import { formatScorePercent } from '../../core/utils/format-score-percent';
+import { dimensionLabel as toDimensionLabel } from '../../core/utils/dimension-label';
 import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { CompanyLinkComponent } from '../../core/components/company-link';
 import { createSortState } from '../../core/utils/sort-state';
@@ -299,15 +300,7 @@ export class ApplicationsComponent implements OnInit {
   }
 
   dimensionLabel(dimension: string): string {
-    const labels: Record<string, string> = {
-      seniority_fit: 'Seniority Fit',
-      compensation: 'Compensation',
-      growth_potential: 'Growth Potential',
-      culture_fit: 'Culture Fit',
-      application_strength: 'Application Strength',
-      interview_readiness: 'Interview Readiness',
-    };
-    return labels[dimension] || dimension.replace(/_/g, ' ');
+    return toDimensionLabel(dimension);
   }
 
   // ----- company research -------------------------------------------------

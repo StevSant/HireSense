@@ -107,6 +107,15 @@ class JobsRepositoryPort(Protocol):
 
     def get_by_id(self, job_id: str) -> NormalizedJob | None: ...
 
+    def get_by_ids(self, job_ids: list[str]) -> dict[str, NormalizedJob]:
+        """Batch lookup: fetch every requested job in a single query.
+
+        Returns a ``{job_id: job}`` map containing only the ids that exist
+        (unknown ids are omitted, never raised). An empty input is a no-op that
+        returns ``{}`` without touching the store.
+        """
+        ...
+
     def update_scores(
         self,
         job_id: str,

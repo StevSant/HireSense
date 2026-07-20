@@ -95,6 +95,18 @@ async def test_seeking_freelancer_posts_are_rejected() -> None:
     assert [j.source_id for j in jobs] == ["101"]
 
 
+@pytest.mark.asyncio
+async def test_long_seeker_comment_still_rejected() -> None:
+    """The seeker check parses only a bounded header prefix; a seeker post with a
+    huge body is still correctly rejected (header sits at the start)."""
+    long_seeker = _comment(
+        404,
+        "SEEKING WORK | Full-Stack Developer" + "<p>filler filler filler</p>" * 2000,
+    )
+    jobs = await _adapter([COMPANY_POST, long_seeker]).fetch_jobs()
+    assert [j.source_id for j in jobs] == ["101"]
+
+
 def test_source_metadata() -> None:
     adapter = HNHiringAdapter(http_client=None, base_url="https://x")
     assert adapter.source_name() == "hn_hiring"

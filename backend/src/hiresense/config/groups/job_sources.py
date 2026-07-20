@@ -25,6 +25,11 @@ class JobSourcesSettings(BaseSettings):
         "cybersecurity",
         "hardware-electronics",
     ]
+    # Max concurrent /companies/{id} lookups during a Get on Board fetch. Company
+    # names are resolved one round-trip per distinct id; a bounded semaphore runs
+    # them in parallel instead of serially (hundreds of jobs → hundreds of serial
+    # GETs otherwise). Kept modest to stay polite to the public API.
+    getonboard_company_concurrency: int = 8
     linkedin_jobs_url: str = "https://www.linkedin.com/jobs-guest/jobs/api"
     # LinkedIn per-job detail fetch rate-limit knobs (guest endpoint is aggressive)
     linkedin_detail_concurrency: int = 1

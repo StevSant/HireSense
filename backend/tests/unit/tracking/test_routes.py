@@ -10,6 +10,7 @@ from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
 from hiresense.tracking.api.dependencies import get_tracking_service
 from hiresense.tracking.api.routes import router
+from hiresense.tracking.domain import InvalidStatusTransitionError
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 
 
@@ -218,6 +219,24 @@ def test_update_application_not_found() -> None:
     )
 
     assert resp.status_code == 404
+
+
+class _RejectingTransitionService(FakeTrackingService):
+    async def update_status(self, id, status, notes=None):
+        raise InvalidStatusTransitionError("Cannot change status")
+
+
+def test_update_application_invalid_transition_returns_409() -> None:
+    fake = _RejectingTransitionService()
+    created = fake.track_job(title="ML Engineer", company="DeepMind")
+    client = TestClient(make_app(fake))
+
+    resp = client.patch(
+        f"/tracking/{created.id}",
+        json={"status": ApplicationStatus.SAVED.value},
+    )
+
+    assert resp.status_code == 409
 
 
 def test_delete_application() -> None:

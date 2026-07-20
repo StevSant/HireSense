@@ -23,15 +23,20 @@ _SEEKER_HEADER_PREFIXES = (
     "SEEKING REMOTE",
 )
 
+# Only the first pipe-delimited header line decides seeker-vs-company, so parse
+# a bounded prefix of the comment instead of the whole (potentially large) body.
+_HEADER_SCAN_CHARS = 2_000
+
 
 def _is_seeker_post(text: str) -> bool:
     """True if the comment is a job-seeker pitch rather than a job posting.
 
     Seeker comments open their pipe-delimited header with a ``SEEKING …``
     marker (e.g. ``SEEKING WORK | Full-Stack Developer``), whereas company
-    posts lead with the company name.
+    posts lead with the company name. Only the header (first line) matters, so
+    a bounded prefix is parsed rather than the full document.
     """
-    plain = strip_html(text)
+    plain = strip_html(text[:_HEADER_SCAN_CHARS])
     header = plain.split("\n", 1)[0]
     first_part = header.split("|", 1)[0].strip().upper()
     return first_part.startswith(_SEEKER_HEADER_PREFIXES)

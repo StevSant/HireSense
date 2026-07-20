@@ -123,6 +123,19 @@ def create_app() -> FastAPI:
         else None
     )
 
+    # Dedicated, stricter per-client-IP limiter for POST /auth/login (see
+    # enforce_login_rate_limit), separate from the expensive bucket so brute-force
+    # throttling of the admin credential can't be loosened by other traffic. None
+    # disables enforcement.
+    app.state.login_rate_limiter = (
+        SlidingWindowRateLimiter(
+            max_requests=settings.login_rate_limit_max_requests,
+            window_seconds=settings.login_rate_limit_window_seconds,
+        )
+        if settings.login_rate_limit_enabled
+        else None
+    )
+
     # Initialize observability (traces/metrics/logs) before any engine/client
     # is built so auto-instrumentation can hook them. No-op when disabled.
     setup_telemetry(app, settings)

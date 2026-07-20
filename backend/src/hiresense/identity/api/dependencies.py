@@ -83,9 +83,7 @@ def _enforce_rate_limit(request: Request, state_attr: str, detail: str) -> None:
 
 def enforce_expensive_rate_limit(request: Request) -> None:
     """Per-client-IP sliding-window limit for LLM/network-heavy endpoints."""
-    _enforce_rate_limit(
-        request, "rate_limiter", "Rate limit exceeded for expensive operations"
-    )
+    _enforce_rate_limit(request, "rate_limiter", "Rate limit exceeded for expensive operations")
 
 
 def enforce_login_rate_limit(request: Request) -> None:

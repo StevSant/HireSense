@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 from hiresense.ports import LatexCompileError
 from hiresense.profile.domain.apply_prefill import build_prefill
 from hiresense.profile.domain.apply_profile import ApplyProfile
+from hiresense.profile.domain.contact_info import ContactInfo
 from hiresense.profile.domain.latex_parser import LaTeXParser, ParsedCV
 from hiresense.profile.domain.models import CandidateProfile, CVSection
 from hiresense.profile.domain.profile_language_view import ProfileLanguageView
@@ -247,6 +248,17 @@ class ProfileService:
             skills=list(profile.skills or []),
             raw_tex=profile.raw_tex or "",
         )
+
+    def get_contact_info(self, language: str) -> ContactInfo | None:
+        """Public letterhead contact details (name/email/phone) for the latest
+        profile in ``language``. Returns None when no profile exists for that
+        language. This is the supported way to read contact fields — callers
+        must not reach into private latest-profile lookups.
+        """
+        profile = self._get_latest_for_language_sync(language)
+        if profile is None:
+            return None
+        return ContactInfo(name=profile.name, email=profile.email, phone=profile.phone)
 
     def _get_latest_for_language_sync(self, language: str) -> CandidateProfile | None:
         if self._repository is not None:

@@ -19,5 +19,6 @@ def test_domain_metrics_singleton_exposes_instruments():
     m1.llm_errors_total.add(0)
     m1.events_published_total.add(1, {"type": "jobs_ingested"})
     m1.event_handler_errors_total.add(0, {"type": "jobs_ingested"})
+    m1.automation_failures_total.add(1, {"component": "inbox_fetch"})
     m1.embedding_encode_duration_ms.record(45.0)
     m1.source_fetch_duration_ms.record(300.0, {"source": "remotive"})

@@ -55,6 +55,10 @@ class IngestionOrchestrator:
         self._closure_miss_threshold = closure_miss_threshold
         self._quality_classifier = quality_classifier
         self._last_run_at: float = 0.0
+        # Single-flight guard: True while a run() is mid-pass. Prevents two
+        # concurrent /fetch triggers from both clearing the cooldown check and
+        # double-running the ingestion pass (#159).
+        self._run_in_flight: bool = False
 
     async def run(
         self,
@@ -63,12 +67,21 @@ class IngestionOrchestrator:
         _metrics = get_domain_metrics()
         with _tracer.start_as_current_span("ingestion.run") as span:
             started = time.perf_counter()
+            claimed = False
             try:
+                # Single-flight + cooldown gate. The in-flight check, the
+                # cooldown check, and the claim below all run with no intervening
+                # await, so on the single-threaded event loop they are atomic: a
+                # second concurrent /fetch can neither double-run a pass already
+                # in flight nor slip past the cooldown window (#159).
+                if self._run_in_flight:
+                    raise IngestionCooldownError(retry_after=self._cooldown_seconds)
                 elapsed = time.monotonic() - self._last_run_at
                 if self._last_run_at and elapsed < self._cooldown_seconds:
                     remaining = int(self._cooldown_seconds - elapsed)
                     raise IngestionCooldownError(retry_after=remaining)
-                self._last_run_at = time.monotonic()
+                self._run_in_flight = True
+                claimed = True
 
                 await self._prune_expired()
 
@@ -187,6 +200,9 @@ class IngestionOrchestrator:
 
                 span.set_attribute("ingestion.jobs_new", len(new_jobs))
                 _metrics.ingestion_run_duration_ms.record((time.perf_counter() - started) * 1000.0)
+                # Start the cooldown only after a fully successful pass, so a run
+                # that fails fast doesn't consume the window (#159).
+                self._last_run_at = time.monotonic()
                 return new_jobs
             except IngestionCooldownError:
                 # Normal throttling, not an error — leave span status unset.
@@ -194,12 +210,23 @@ class IngestionOrchestrator:
             except Exception:
                 span.set_status(trace.Status(trace.StatusCode.ERROR))
                 raise
+            finally:
+                # Release the single-flight guard only if this call claimed it —
+                # a cooldown-rejected concurrent trigger must not clear the flag
+                # held by the run that is actually in flight.
+                if claimed:
+                    self._run_in_flight = False
 
     def store_job(self, job: NormalizedJob) -> None:
         self._repository.upsert(job)
 
     def get_job_by_id(self, job_id: str) -> NormalizedJob | None:
         return self._repository.get_by_id(job_id)
+
+    def get_jobs_by_ids(self, job_ids: list[str]) -> dict[str, NormalizedJob]:
+        """Batch job enrichment: resolve many ids in one query (avoids the
+        per-row ``get_job_by_id`` N+1 when shaping list responses)."""
+        return self._repository.get_by_ids(job_ids)
 
     def list_jobs(self, criteria: JobListCriteria | None = None) -> list[NormalizedJob]:
         """Full corpus, or — given criteria — only rows matching the cheap

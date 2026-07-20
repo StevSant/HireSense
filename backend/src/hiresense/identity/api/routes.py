@@ -10,7 +10,7 @@ from hiresense.identity.api.cookies import (
     set_session_cookie,
 )
 from hiresense.identity.api.dependencies import (
-    enforce_expensive_rate_limit,
+    enforce_login_rate_limit,
     get_auth_service,
     get_current_user,
 )
@@ -21,11 +21,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 # Rate-limited: login is the brute-force surface for the single admin
-# credential, so it shares the per-client-IP sliding-window limiter.
+# credential, so it has its own stricter per-client-IP limiter, independent of
+# the shared expensive-operations bucket.
 @router.post(
     "/login",
     response_model=TokenResponse,
-    dependencies=[Depends(enforce_expensive_rate_limit)],
+    dependencies=[Depends(enforce_login_rate_limit)],
 )
 async def login(
     body: LoginRequest,

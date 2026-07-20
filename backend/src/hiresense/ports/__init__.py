@@ -7,6 +7,7 @@ from hiresense.ports.llm import (
     LLMInvocationError,
     LLMPort,
     LLMResult,
+    LLMTimeoutError,
     MeteredLLMPort,
 )
 from hiresense.ports.vector_store import ScoredResult, VectorStorePort
@@ -21,6 +22,7 @@ __all__ = [
     "LLMInvocationError",
     "LLMPort",
     "LLMResult",
+    "LLMTimeoutError",
     "MeteredLLMPort",
     "ScoredResult",
     "VectorStorePort",

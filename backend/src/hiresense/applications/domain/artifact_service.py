@@ -14,6 +14,7 @@ from hiresense.applications.domain.models import (
     ApplicationMatch,
 )
 from hiresense.applications.ports import ApplicationRepositoryPort
+from hiresense.kernel.exceptions import NotFoundError, ValidationError
 from hiresense.matching.domain import SkillMatcher
 
 
@@ -41,11 +42,11 @@ class ArtifactService:
     ) -> MatchView:
         snapshot = self._repo.get_snapshot(application_id)
         if snapshot is None:
-            raise ValueError(f"Snapshot for {application_id} not found")
+            raise NotFoundError(f"Snapshot for {application_id} not found")
 
         profile = self._profiles.get_for_language(cv_language)
         if profile is None:
-            raise ValueError(f"Profile for language '{cv_language}' not found")
+            raise NotFoundError(f"Profile for language '{cv_language}' not found")
 
         cv_summary = getattr(profile, "summary", "") or ""
         cv_skills = list(getattr(profile, "skills", []) or [])
@@ -63,14 +64,20 @@ class ArtifactService:
 
         # Fallback when the orchestrator returns no skill verdict: use the same
         # normalization + evidence logic so the result stays consistent with
-        # what analyze() produces (no divergent exact-string set math).
-        fallback = SkillMatcher().match(
-            cv_skills,
-            list(snapshot.required_skills or []),
-            evidence_text="\n".join(filter(None, [cv_summary, cv_text])),
-        )
-        matched = fallback.matched
-        missing = fallback.missing
+        # what analyze() produces (no divergent exact-string set math). Computed
+        # lazily — only when a verdict field is actually missing — so a fully
+        # populated result skips the normalization + set math entirely.
+        if result.matched_skills and result.missing_skills:
+            matched = list(result.matched_skills)
+            missing = list(result.missing_skills)
+        else:
+            fallback = SkillMatcher().match(
+                cv_skills,
+                list(snapshot.required_skills or []),
+                evidence_text="\n".join(filter(None, [cv_summary, cv_text])),
+            )
+            matched = list(result.matched_skills) if result.matched_skills else fallback.matched
+            missing = list(result.missing_skills) if result.missing_skills else fallback.missing
 
         row = ApplicationMatch(
             application_id=application_id,
@@ -79,8 +86,8 @@ class ArtifactService:
             skill_score=result.breakdown.skill_score,
             experience_score=result.breakdown.experience_score,
             language_score=result.breakdown.language_score,
-            matched_skills=list(result.matched_skills) if result.matched_skills else matched,
-            missing_skills=list(result.missing_skills) if result.missing_skills else missing,
+            matched_skills=matched,
+            missing_skills=missing,
             pros=list(result.pros or []),
             cons=list(result.cons or []),
             recommendations=list(result.recommendations or []),
@@ -111,18 +118,18 @@ class ArtifactService:
     ) -> CvOptimizationView:
         snapshot = self._repo.get_snapshot(application_id)
         if snapshot is None:
-            raise ValueError(f"Snapshot for {application_id} not found")
+            raise NotFoundError(f"Snapshot for {application_id} not found")
 
         if match_id is None:
             match = self._repo.get_latest_match(application_id)
         else:
             match = self._repo.get_match(match_id)
         if match is None:
-            raise ValueError("No match found - run a match before optimizing")
+            raise ValidationError("No match found - run a match before optimizing")
 
         profile = self._profiles.get_for_language(cv_language)
         if profile is None:
-            raise ValueError(f"Profile for language '{cv_language}' not found")
+            raise NotFoundError(f"Profile for language '{cv_language}' not found")
 
         original_tex = getattr(profile, "raw_tex", "") or ""
 
@@ -167,7 +174,7 @@ class ArtifactService:
     ) -> InterviewPrepView:
         snapshot = self._repo.get_snapshot(application_id)
         if snapshot is None:
-            raise ValueError(f"Snapshot for {application_id} not found")
+            raise NotFoundError(f"Snapshot for {application_id} not found")
         if self._tracking is None:
             raise RuntimeError("tracking_service not wired into ArtifactService")
         tracked = self._tracking.get(application_id)

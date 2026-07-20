@@ -25,6 +25,7 @@ function research(over: Partial<CompanyResearch> = {}): CompanyResearch {
     company_size: '51-200',
     headquarters: 'Remote',
     website: 'https://acme.com',
+    description: null,
     logo_url: null,
     created_at: null,
     updated_at: null,

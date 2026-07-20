@@ -65,6 +65,15 @@ class DomainMetrics:
             unit="1",
             description="Domain event handler failures",
         )
+        self.automation_failures_total = meter.create_counter(
+            "hiresense.automation_failures_total",
+            unit="1",
+            description=(
+                "Swallowed failures in background automation (log-and-continue paths). "
+                "Attribute component=scheduler_job|inbox_fetch|autohunt_rerank|"
+                "autohunt_prune|autopilot_draft"
+            ),
+        )
         self.embedding_encode_duration_ms = meter.create_histogram(
             "hiresense.embedding_encode_duration_ms",
             unit="ms",

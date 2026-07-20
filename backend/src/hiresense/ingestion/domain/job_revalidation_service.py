@@ -5,10 +5,21 @@ import logging
 from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import urljoin
 
 from hiresense.ingestion.domain.closed_listing_classifier import Verdict, classify_listing
+from hiresense.ingestion.domain.ssrf_guard import is_safe_probe_url
 
 logger = logging.getLogger(__name__)
+
+# Status codes that carry a Location we follow — manually, re-validating each
+# hop — so an allowlisted host can't bounce the probe to an internal target.
+_REDIRECT_STATUS = frozenset({301, 302, 303, 307, 308})
+
+
+class _ProbeBlocked(Exception):
+    """A probe target was refused by the SSRF guard or its redirect chain ran
+    too long. Signals UNKNOWN to the caller — never a closure."""
 
 
 class JobRevalidationService:
@@ -39,6 +50,9 @@ class JobRevalidationService:
         batch: int,
         concurrency: int,
         delay: float,
+        max_probe_bytes: int = 262144,
+        max_redirects: int = 5,
+        url_guard: Callable[[str], bool] | None = None,
         probe_url_builders: dict[str, Callable[[Any], str]] | None = None,
         user_agent: str | None = None,
         clock: Callable[[], datetime] | None = None,
@@ -64,6 +78,11 @@ class JobRevalidationService:
         self._batch = batch
         self._sem = asyncio.Semaphore(max(1, concurrency))
         self._delay = delay
+        # SSRF hardening: cap the streamed body and the redirect chain, and
+        # validate every hop's target. Guard is injectable so tests run offline.
+        self._max_probe_bytes = max(1, max_probe_bytes)
+        self._max_redirects = max(0, max_redirects)
+        self._url_guard = url_guard or is_safe_probe_url
         self._clock = clock or (lambda: datetime.now(timezone.utc))
         # Guards against overlapping sweeps (fetch + the manual button can both
         # trigger one); a second trigger while one runs is a no-op.
@@ -164,9 +183,13 @@ class JobRevalidationService:
         probe_url = self._probe_url(job)
         async with self._sem:
             try:
-                resp = await self._http.get(
-                    probe_url, follow_redirects=True, headers=self._probe_headers
-                )
+                status_code, body = await self._fetch_capped(probe_url)
+            except _ProbeBlocked as exc:
+                # A refused (SSRF) or over-redirected target is not a closure
+                # signal — treat as UNKNOWN so a crafted listing can neither
+                # drive internal requests nor false-close a job.
+                logger.warning("Revalidation probe blocked for %s: %s", probe_url, exc)
+                return Verdict.UNKNOWN
             except Exception as exc:
                 # Transient transport failures must never close a job, but a
                 # silently swallowed probe makes sweeps undebuggable — log it.
@@ -176,7 +199,46 @@ class JobRevalidationService:
                 if self._delay:
                     await asyncio.sleep(self._delay)
             return classify_listing(
-                status_code=resp.status_code,
-                body=getattr(resp, "text", "") or "",
+                status_code=status_code,
+                body=body,
                 markers=self._markers,
             )
+
+    async def _fetch_capped(self, url: str) -> tuple[int, str]:
+        """Fetch ``url`` with an SSRF check on every hop and a capped body read.
+
+        Redirects are followed manually (not by the HTTP client) so each hop's
+        target is re-validated before we connect — an allowlisted host can no
+        longer bounce the probe to an internal address. The body is streamed and
+        truncated to ``max_probe_bytes`` so an adversarial page can't exhaust
+        memory. Raises ``_ProbeBlocked`` on a disallowed target or a redirect
+        chain longer than ``max_redirects``.
+        """
+        current = url
+        for _ in range(self._max_redirects + 1):
+            # DNS resolution inside the guard is blocking — offload it.
+            if not await asyncio.to_thread(self._url_guard, current):
+                raise _ProbeBlocked(f"target is not a public http(s) address: {current}")
+            async with self._http.stream(
+                "GET", current, follow_redirects=False, headers=self._probe_headers
+            ) as resp:
+                location = resp.headers.get("location")
+                if resp.status_code in _REDIRECT_STATUS and location:
+                    current = urljoin(current, location)
+                    continue
+                body = await self._read_capped(resp)
+                return resp.status_code, body
+        raise _ProbeBlocked(f"exceeded {self._max_redirects} redirects from {url}")
+
+    async def _read_capped(self, resp: Any) -> str:
+        """Read at most ``max_probe_bytes`` of the streamed response body."""
+        chunks: list[bytes] = []
+        total = 0
+        async for chunk in resp.aiter_bytes():
+            chunks.append(chunk)
+            total += len(chunk)
+            if total >= self._max_probe_bytes:
+                break
+        raw = b"".join(chunks)[: self._max_probe_bytes]
+        encoding = getattr(resp, "encoding", None) or "utf-8"
+        return raw.decode(encoding, errors="replace")

@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from hiresense.applications.api.dependencies import (
     get_application_service,
+    get_apply_service,
     get_artifact_service,
 )
 from hiresense.applications.api.routes import router
@@ -20,7 +21,9 @@ from hiresense.applications.domain.aggregate import (
 )
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
-from hiresense.kernel import SlidingWindowRateLimiter
+from hiresense.kernel import SlidingWindowRateLimiter, register_domain_exception_handlers
+from hiresense.kernel.exceptions import ConflictError, NotFoundError, ValidationError
+from hiresense.tracking.domain import InvalidStatusTransitionError
 
 
 class FakeOrchestrator:
@@ -28,6 +31,9 @@ class FakeOrchestrator:
 
     def get_job_by_id(self, job_id: str):
         return None
+
+    def get_jobs_by_ids(self, job_ids):
+        return {}
 
 
 def _make_aggregate(
@@ -96,7 +102,7 @@ class FakeApplicationService:
         return agg
 
     async def create_from_ingested(self, job_id):
-        raise ValueError(f"Job {job_id} not found")
+        raise NotFoundError(f"Job {job_id} not found")
 
     def get(self, application_id):
         agg = self._store.get(application_id)
@@ -104,8 +110,22 @@ class FakeApplicationService:
             raise ValueError(f"Application {application_id} not found")
         return agg
 
-    def list(self, status=None):
-        return list(self._store.values())
+    def list(self, status=None, *, limit=None, offset=None):
+        apps = list(self._store.values())
+        if offset:
+            apps = apps[offset:]
+        if limit is not None:
+            apps = apps[:limit]
+        return apps
+
+    def count(self, status=None):
+        return len(self._store)
+
+    def list_all_cover_letters(self, *, limit=None, offset=None):
+        return []
+
+    def count_all_cover_letters(self):
+        return 0
 
     def remove(self, application_id):
         if application_id not in self._store:
@@ -148,7 +168,7 @@ class FakeArtifactService:
         )
 
     async def generate_optimization(self, application_id, cv_language, match_id):
-        raise ValueError("No match found")
+        raise ValidationError("No match found")
 
     async def generate_interview_prep(self, application_id):
         return InterviewPrepView(
@@ -176,6 +196,7 @@ def client(
     application_service: FakeApplicationService, artifact_service: FakeArtifactService
 ) -> TestClient:
     app = FastAPI()
+    register_domain_exception_handlers(app)
     app.include_router(router)
     app.dependency_overrides[require_auth] = lambda: True
     app.dependency_overrides[get_application_service] = lambda: application_service
@@ -211,6 +232,24 @@ def test_list_returns_artifact_flags(client: TestClient):
     # Pipeline-view enrichment fields folded in from the former Tracking page.
     assert {"job_id", "location", "salary_range", "source", "posted_date"} <= row.keys()
     assert row["has_match"] is False
+
+
+def test_list_paginates_and_reports_total(client: TestClient):
+    for i in range(3):
+        client.post("/applications", json={"title": f"T{i}", "company": "Y", "description": "Z"})
+    resp = client.get("/applications", params={"limit": 2, "offset": 0})
+    assert resp.status_code == 200
+    assert len(resp.json()) == 2
+    assert resp.headers["X-Total-Count"] == "3"
+
+    page2 = client.get("/applications", params={"limit": 2, "offset": 2})
+    assert len(page2.json()) == 1
+    assert page2.headers["X-Total-Count"] == "3"
+
+
+def test_list_rejects_invalid_pagination(client: TestClient):
+    assert client.get("/applications", params={"limit": 0}).status_code == 422
+    assert client.get("/applications", params={"offset": -1}).status_code == 422
 
 
 def test_get_returns_aggregate(client: TestClient):
@@ -264,6 +303,90 @@ def test_create_with_unknown_job_id_returns_404(client: TestClient):
     assert resp.status_code == 404
 
 
+def test_create_with_already_tracked_job_returns_409(
+    client: TestClient, application_service: FakeApplicationService
+):
+    """A ConflictError from the service maps to 409 via the shared handler
+    (type-based), not by matching an 'already tracked' substring."""
+
+    async def _raise_conflict(job_id):
+        raise ConflictError("This job is already tracked")
+
+    application_service.create_from_ingested = _raise_conflict  # type: ignore[assignment]
+
+    resp = client.post("/applications", json={"job_id": str(uuid_mod.uuid4())})
+
+    assert resp.status_code == 409
+    assert resp.json()["detail"] == "This job is already tracked"
+
+
+class FakeApplyService:
+    """mark_applied either succeeds silently or raises the scripted error."""
+
+    def __init__(self, exc: Exception | None = None) -> None:
+        self.exc = exc
+        self.calls: list[uuid_mod.UUID] = []
+
+    async def mark_applied(self, application_id):
+        self.calls.append(application_id)
+        if self.exc is not None:
+            raise self.exc
+
+
+def _client_with_apply(
+    application_service: FakeApplicationService, apply_service: FakeApplyService
+) -> TestClient:
+    app = FastAPI()
+    register_domain_exception_handlers(app)
+    app.include_router(router)
+    app.dependency_overrides[require_auth] = lambda: True
+    app.dependency_overrides[get_application_service] = lambda: application_service
+    app.dependency_overrides[get_apply_service] = lambda: apply_service
+    app.dependency_overrides[get_ingestion_orchestrator] = lambda: FakeOrchestrator()
+    return TestClient(app)
+
+
+def test_mark_applied_returns_aggregate(application_service: FakeApplicationService):
+    client = _client_with_apply(application_service, FakeApplyService())
+    resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
+    app_id = resp.json()["id"]
+
+    resp = client.post(f"/applications/{app_id}/mark-applied")
+
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["id"] == app_id
+
+
+def test_mark_applied_on_terminal_application_returns_409(
+    application_service: FakeApplicationService,
+):
+    """A terminal (accepted/rejected) application cannot transition to APPLIED:
+    the state-machine rejection is a 409 conflict, not a 404 (issue found in
+    the #195 review — this was the third update_status call site)."""
+    apply_service = FakeApplyService(
+        exc=InvalidStatusTransitionError("Cannot change status of a rejected application")
+    )
+    client = _client_with_apply(application_service, apply_service)
+    resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
+    app_id = resp.json()["id"]
+
+    resp = client.post(f"/applications/{app_id}/mark-applied")
+
+    assert resp.status_code == 409
+    assert "rejected" in resp.json()["detail"]
+
+
+def test_mark_applied_missing_application_returns_404(
+    application_service: FakeApplicationService,
+):
+    apply_service = FakeApplyService(exc=ValueError("Application not found"))
+    client = _client_with_apply(application_service, apply_service)
+
+    resp = client.post(f"/applications/{uuid_mod.uuid4()}/mark-applied")
+
+    assert resp.status_code == 404
+
+
 def test_generate_match(client: TestClient):
     resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
     app_id = resp.json()["id"]
@@ -293,6 +416,7 @@ def test_artifact_routes_are_rate_limited_when_hammered(
     """The four LLM artifact routes (match/optimize/interview-prep/cover-letter)
     share the same expensive-operation limiter as optimization/matching."""
     app = FastAPI()
+    register_domain_exception_handlers(app)
     app.include_router(router)
     app.dependency_overrides[require_auth] = lambda: True
     app.dependency_overrides[get_application_service] = lambda: application_service

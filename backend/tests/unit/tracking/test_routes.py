@@ -8,8 +8,11 @@ from fastapi.testclient import TestClient
 
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
+from hiresense.kernel import register_domain_exception_handlers
+from hiresense.kernel.exceptions import ConflictError, NotFoundError
 from hiresense.tracking.api.dependencies import get_tracking_service
 from hiresense.tracking.api.routes import router
+from hiresense.tracking.domain import InvalidStatusTransitionError
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 
 
@@ -49,7 +52,7 @@ class FakeTrackingService:
         return self._make(title=title, company=company, url=url, notes=notes)
 
     def track_from_ingestion(self, job_id: str) -> TrackedApplication:
-        raise ValueError(f"Job {job_id} not found")
+        raise NotFoundError(f"Job {job_id} not found")
 
     def get(self, id: uuid_mod.UUID) -> TrackedApplication:
         app = self._store.get(id)
@@ -57,11 +60,27 @@ class FakeTrackingService:
             raise ValueError(f"Application {id} not found")
         return app
 
-    def list(self, status: ApplicationStatus | None = None) -> list[TrackedApplication]:
+    def list(
+        self,
+        status: ApplicationStatus | None = None,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[TrackedApplication]:
         apps = list(self._store.values())
         if status is not None:
             apps = [a for a in apps if a.status == status.value]
+        if offset:
+            apps = apps[offset:]
+        if limit is not None:
+            apps = apps[:limit]
         return apps
+
+    def count(self, status: ApplicationStatus | None = None) -> int:
+        apps = list(self._store.values())
+        if status is not None:
+            apps = [a for a in apps if a.status == status.value]
+        return len(apps)
 
     async def update_status(
         self,
@@ -95,6 +114,7 @@ class FakeTrackingService:
 
 def make_app(fake: FakeTrackingService) -> FastAPI:
     app = FastAPI()
+    register_domain_exception_handlers(app)
     app.dependency_overrides[get_tracking_service] = lambda: fake
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: FakeOrchestrator()
     app.dependency_overrides[require_auth] = lambda: "test-user"
@@ -129,6 +149,21 @@ def test_create_from_ingestion_not_found() -> None:
     assert resp.status_code == 404
 
 
+def test_create_from_ingestion_already_tracked_returns_409() -> None:
+    """A ConflictError from the service maps to HTTP 409 via the shared handler,
+    with no message-substring inspection in the router."""
+    fake = FakeTrackingService()
+    fake.track_from_ingestion = lambda job_id: (_ for _ in ()).throw(  # type: ignore[assignment]
+        ConflictError("This job is already tracked")
+    )
+    client = TestClient(make_app(fake))
+
+    resp = client.post("/tracking", json={"job_id": str(uuid_mod.uuid4())})
+
+    assert resp.status_code == 409
+    assert resp.json()["detail"] == "This job is already tracked"
+
+
 def test_list_applications() -> None:
     fake = FakeTrackingService()
     fake.track_job(title="Job A", company="Co A")
@@ -140,6 +175,22 @@ def test_list_applications() -> None:
     assert resp.status_code == 200
     data = resp.json()
     assert len(data) == 2
+
+
+def test_list_applications_paginates_and_reports_total() -> None:
+    fake = FakeTrackingService()
+    for i in range(3):
+        fake.track_job(title=f"Job {i}", company="Co")
+    client = TestClient(make_app(fake))
+
+    first = client.get("/tracking", params={"limit": 2, "offset": 0})
+    assert first.status_code == 200
+    assert len(first.json()) == 2
+    assert first.headers["X-Total-Count"] == "3"
+
+    second = client.get("/tracking", params={"limit": 2, "offset": 2})
+    assert len(second.json()) == 1
+    assert second.headers["X-Total-Count"] == "3"
 
 
 def test_get_application() -> None:
@@ -186,6 +237,24 @@ def test_update_application_not_found() -> None:
     )
 
     assert resp.status_code == 404
+
+
+class _RejectingTransitionService(FakeTrackingService):
+    async def update_status(self, id, status, notes=None):
+        raise InvalidStatusTransitionError("Cannot change status")
+
+
+def test_update_application_invalid_transition_returns_409() -> None:
+    fake = _RejectingTransitionService()
+    created = fake.track_job(title="ML Engineer", company="DeepMind")
+    client = TestClient(make_app(fake))
+
+    resp = client.patch(
+        f"/tracking/{created.id}",
+        json={"status": ApplicationStatus.SAVED.value},
+    )
+
+    assert resp.status_code == 409
 
 
 def test_delete_application() -> None:

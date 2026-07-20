@@ -23,6 +23,9 @@ class CompanyResearchResponse(BaseModel):
     company_size: str | None = None
     headquarters: str | None = None
     website: str | None = None
+    # Source-provided About text (plain text, may be non-English). Present when a
+    # company profile was captured at ingestion; independent of LLM availability.
+    description: str | None = None
     logo_url: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None

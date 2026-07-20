@@ -11,6 +11,7 @@ import { EvaluationResult } from './models/evaluation-result.model';
 import { MatchResult } from './models/match-result.model';
 import { scoreColor as toScoreColor } from '../../core/utils/score-color';
 import { formatScorePercent } from '../../core/utils/format-score-percent';
+import { dimensionLabel as toDimensionLabel } from '../../core/utils/dimension-label';
 import { mapLlmError } from '../../core/services/llm-error.util';
 import { LlmRunnerService } from '../../core/services/llm-runner.service';
 
@@ -253,15 +254,7 @@ export class MatchingComponent implements OnInit {
   }
 
   dimensionLabel(dimension: string): string {
-    const labels: Record<string, string> = {
-      seniority_fit: 'Seniority Fit',
-      compensation: 'Compensation',
-      growth_potential: 'Growth Potential',
-      culture_fit: 'Culture Fit',
-      application_strength: 'Application Strength',
-      interview_readiness: 'Interview Readiness',
-    };
-    return labels[dimension] || dimension.replace(/_/g, ' ');
+    return toDimensionLabel(dimension);
   }
 
   scoreColor(score: number): string {

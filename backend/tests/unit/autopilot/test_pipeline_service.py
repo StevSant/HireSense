@@ -21,10 +21,22 @@ class _Digest:
 class _Repo:
     def __init__(self, drafted=()):
         self.added = []
+        self._claimed = set()
         self._drafted = set(drafted)
 
     def add(self, draft):
         draft.id = uuid.uuid4()
+        self.added.append(draft)
+        return draft
+
+    def claim(self, draft):
+        if draft.job_id in self._claimed:
+            return None
+        self._claimed.add(draft.job_id)
+        draft.id = uuid.uuid4()
+        return draft
+
+    def finalize(self, draft):
         self.added.append(draft)
         return draft
 
@@ -73,7 +85,9 @@ async def test_drafts_top_n_and_records():
         [_Entry("a"), _Entry("b"), _Entry("c"), _Entry("d")], repo, drafter, top_n=2
     ).run()
     assert result.created == 2
-    assert drafter.calls == ["a", "b"]
+    # top_n picks the first two entries; drafting runs concurrently so the order
+    # of draft() calls is not guaranteed.
+    assert sorted(drafter.calls) == ["a", "b"]
     assert len(repo.added) == 2
 
 
@@ -94,6 +108,33 @@ async def test_drafter_exception_records_failed_and_continues():
     statuses = {d.job_id: d.status for d in repo.added}
     assert statuses["a"] is DraftStatus.FAILED
     assert statuses["b"] is DraftStatus.DRAFTED
+
+
+@pytest.mark.asyncio
+async def test_drafter_exception_increments_metric(monkeypatch):
+    # A swallowed per-job draft failure must be observable, not just logged (#163).
+    class _Counter:
+        def __init__(self):
+            self.calls = []
+
+        def add(self, value, attributes=None):
+            self.calls.append((value, attributes or {}))
+
+    class _Metrics:
+        def __init__(self):
+            self.automation_failures_total = _Counter()
+
+    metrics = _Metrics()
+    monkeypatch.setattr(
+        "hiresense.autopilot.domain.autopilot_pipeline_service.get_domain_metrics",
+        lambda: metrics,
+    )
+    repo, drafter = _Repo(), _Drafter(raise_on="a")
+    result = await _svc([_Entry("a"), _Entry("b")], repo, drafter).run()
+    assert result.created == 1  # b still drafted; the batch is not aborted
+    assert len(metrics.automation_failures_total.calls) == 1
+    _, attrs = metrics.automation_failures_total.calls[0]
+    assert attrs.get("component") == "autopilot_draft"
 
 
 @pytest.mark.asyncio

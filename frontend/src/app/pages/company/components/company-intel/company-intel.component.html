@@ -35,6 +35,13 @@
       </button>
     </div>
 
+    @if (has(r.description)) {
+      <section class="intel-about">
+        <h4>About</h4>
+        <p>{{ r.description }}</p>
+      </section>
+    }
+
     @if (notConfigured()) {
       <p class="intel-state">
         Company research isn't configured (no LLM). Add an API key to enable it.

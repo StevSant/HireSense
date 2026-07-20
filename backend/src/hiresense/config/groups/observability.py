@@ -24,6 +24,10 @@ class ObservabilitySettings(BaseSettings):
     log_format: str = "json"
     # Parent-based trace sampling ratio in [0.0, 1.0]. 1.0 = sample everything.
     otel_traces_sampler_ratio: float = 1.0
-    # Use an insecure (plaintext, no-TLS) OTLP gRPC connection. True is correct
-    # for the local LGTM stack / docker-compose; set False to use TLS.
-    otel_exporter_insecure: bool = True
+    # Use an insecure (plaintext, no-TLS) OTLP gRPC connection. Defaults to
+    # False so telemetry is never shipped unencrypted unless explicitly opted
+    # in. Set True for a trusted collector on the same host/network — the local
+    # LGTM stack (localhost:4317) or docker-compose (otel-lgtm sibling, which
+    # sets OTEL_EXPORTER_INSECURE=true). Leave False when the collector is
+    # off-host so the exporter negotiates TLS.
+    otel_exporter_insecure: bool = False

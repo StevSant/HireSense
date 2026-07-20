@@ -238,3 +238,68 @@ async def test_concurrency_defaults_to_four():
     svc = QuickScoringService(llm=StubLLM("[]"), cache_repo=StubCache())
 
     assert svc._concurrency == 4
+
+
+# --- #143: mismatched/reordered LLM output must not bind a score to the wrong job ---
+
+
+@pytest.mark.asyncio
+async def test_reordered_output_maps_by_ref_not_position():
+    # Model returns the objects in a different order than the jobs were sent.
+    # The `ref` must win over positional index so each score binds to its job.
+    jobs = [_job("a"), _job("b")]
+    response = json.dumps(
+        [
+            {"ref": 2, "score": 0.9, "verdict": "strong"},
+            {"ref": 1, "score": 0.1, "verdict": "weak"},
+        ]
+    )
+    svc = QuickScoringService(llm=StubLLM(response), cache_repo=StubCache())
+
+    results = await svc.score_page(jobs, ["python"], "summary")
+
+    assert results["a"].score == 0.1  # ref 1 -> job a, not the first array item
+    assert results["b"].score == 0.9  # ref 2 -> job b
+
+
+@pytest.mark.asyncio
+async def test_short_refless_output_is_dropped_not_positionally_guessed():
+    # 3 jobs but the model returns a single ref-less object. The old positional
+    # fallback bound it to job "a"; now a count mismatch disables positional
+    # guessing, so the ambiguous item is dropped rather than mis-attributed.
+    jobs = [_job("a"), _job("b"), _job("c")]
+    response = json.dumps([{"score": 0.9, "verdict": "strong"}])
+    svc = QuickScoringService(llm=StubLLM(response), cache_repo=StubCache())
+
+    results = await svc.score_page(jobs, ["python"], "summary")
+
+    assert results == {}  # nothing bound; caller keeps the heuristic score
+
+
+@pytest.mark.asyncio
+async def test_short_output_with_valid_refs_still_maps_by_ref():
+    # A count mismatch must NOT discard items that carry a usable ref — only the
+    # ref-less positional guess is disabled. Jobs 1 and 3 are scored; 2 is left.
+    jobs = [_job("a"), _job("b"), _job("c")]
+    response = json.dumps([{"ref": 1, "score": 0.2}, {"ref": 3, "score": 0.8}])
+    svc = QuickScoringService(llm=StubLLM(response), cache_repo=StubCache())
+
+    results = await svc.score_page(jobs, ["python"], "summary")
+
+    assert set(results) == {"a", "c"}
+    assert results["a"].score == 0.2
+    assert results["c"].score == 0.8
+
+
+@pytest.mark.asyncio
+async def test_equal_count_refless_output_still_maps_positionally():
+    # The positional fallback is retained for the well-behaved 1:1 case: when
+    # the array length equals the chunk length, position N maps to job N.
+    jobs = [_job("a"), _job("b")]
+    response = json.dumps([{"score": 0.3}, {"score": 0.7}])
+    svc = QuickScoringService(llm=StubLLM(response), cache_repo=StubCache())
+
+    results = await svc.score_page(jobs, ["python"], "summary")
+
+    assert results["a"].score == 0.3
+    assert results["b"].score == 0.7

@@ -110,6 +110,7 @@ def build_ingestion(
                     http_client=http_client,
                     base_url=s.getonboard_api_url,
                     categories=s.getonboard_categories,
+                    company_concurrency=s.getonboard_company_concurrency,
                 )
             )
             normalizers["getonboard"] = GetOnBoardNormalizer()

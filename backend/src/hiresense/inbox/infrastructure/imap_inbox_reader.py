@@ -3,6 +3,7 @@ from __future__ import annotations
 import email as email_lib
 import imaplib
 import logging
+import ssl
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
@@ -25,6 +26,8 @@ class ImapInboxReader:
         password: str,
         folder: str,
         use_ssl: bool,
+        timeout: float,
+        allow_insecure: bool = False,
     ) -> None:
         self._host = host
         self._port = port
@@ -32,6 +35,8 @@ class ImapInboxReader:
         self._password = password
         self._folder = folder
         self._use_ssl = use_ssl
+        self._timeout = timeout
+        self._allow_insecure = allow_insecure
 
     def fetch_unseen(self) -> list[InboundEmail]:
         if not self._host:
@@ -43,10 +48,19 @@ class ImapInboxReader:
             return []
 
     def _fetch(self) -> list[InboundEmail]:
+        if not self._use_ssl and self._username and not self._allow_insecure:
+            logger.warning(
+                "inbox: refusing IMAP login over a non-SSL connection (credentials "
+                "would be sent in plaintext); enable IMAP_USE_SSL, or set "
+                "IMAP_ALLOW_INSECURE=true for a trusted local/dev server"
+            )
+            return []
         client = (
-            imaplib.IMAP4_SSL(self._host, self._port)
+            imaplib.IMAP4_SSL(
+                self._host, self._port, ssl_context=self._ssl_context(), timeout=self._timeout
+            )
             if self._use_ssl
-            else imaplib.IMAP4(self._host, self._port)
+            else imaplib.IMAP4(self._host, self._port, timeout=self._timeout)
         )
         out: list[InboundEmail] = []
         try:
@@ -67,6 +81,13 @@ class ImapInboxReader:
             except Exception:  # noqa: BLE001
                 pass
         return out
+
+    def _ssl_context(self) -> ssl.SSLContext:
+        context = ssl.create_default_context()
+        if self._allow_insecure:
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        return context
 
     @staticmethod
     def _parse(raw: bytes) -> InboundEmail | None:

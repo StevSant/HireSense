@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from hiresense.kernel.events import TrackingStatusChangedEvent
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
+from hiresense.tracking.domain.status_transition_policy import ensure_valid_transition
 
 if TYPE_CHECKING:
     from hiresense.tracking.ports import TrackingRepositoryPort
@@ -69,6 +70,7 @@ class TrackingService:
     ) -> TrackedApplication:
         app = self.get(id)
         previous = app.status
+        ensure_valid_transition(previous, status.value)
         app.status = status.value
         if status == ApplicationStatus.APPLIED and app.applied_at is None:
             app.applied_at = datetime.now(timezone.utc)

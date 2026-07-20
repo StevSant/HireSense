@@ -127,7 +127,9 @@ def create_app() -> FastAPI:
     # CV optimization failed (LLM error / non-JSON / bad change shape). Surface a
     # 503 instead of silently persisting the unoptimized CV as a success (#142).
     @app.exception_handler(OptimizationError)
-    async def _optimization_error_handler(_request: Request, exc: OptimizationError) -> JSONResponse:
+    async def _optimization_error_handler(
+        _request: Request, exc: OptimizationError
+    ) -> JSONResponse:
         logging.getLogger(__name__).warning("CV optimization failed: %s", exc)
         return JSONResponse(status_code=503, content={"detail": "CV optimization failed"})
 
@@ -138,9 +140,7 @@ def create_app() -> FastAPI:
         _request: Request, exc: InterviewPrepError
     ) -> JSONResponse:
         logging.getLogger(__name__).warning("Interview prep generation failed: %s", exc)
-        return JSONResponse(
-            status_code=503, content={"detail": "Interview prep generation failed"}
-        )
+        return JSONResponse(status_code=503, content={"detail": "Interview prep generation failed"})
 
     app.state.settings = settings
 

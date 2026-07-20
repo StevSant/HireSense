@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Iterable
 
 from hiresense.ingestion.domain import IngestionCooldownError
+from hiresense.observability import get_domain_metrics
 from hiresense.scheduler.domain.job_definition import JobDefinition
 from hiresense.scheduler.domain.job_run import JobRun
 from hiresense.scheduler.domain.job_status import JobStatus
@@ -63,6 +64,9 @@ class JobRunner:
             return self._record(name, started, self._clock(), JobStatus.SKIPPED, str(exc), None)
         except Exception as exc:  # noqa: BLE001 - scheduler must never crash
             logger.exception("Scheduled job %r failed", name)
+            get_domain_metrics().automation_failures_total.add(
+                1, {"component": "scheduler_job", "job": name}
+            )
             run = self._record(name, started, self._clock(), JobStatus.FAILURE, str(exc), None)
             await self._notify_failure(name, str(exc))
             return run

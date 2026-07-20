@@ -18,6 +18,11 @@ class LLMSettings(BaseSettings):
     # prefix). Only takes effect when the resolved feature config's provider is
     # "anthropic" — other providers are unaffected regardless of this flag.
     llm_prompt_cache_enabled: bool = True
+    # Hard per-call timeout (seconds) for every LLM completion. Enforced with
+    # asyncio.wait_for around the provider call, so a stalled connection can't
+    # hang the cover-letter/optimize/match/interview endpoints indefinitely — on
+    # expiry the call raises LLMTimeoutError, surfaced by the API as a 504.
+    llm_timeout: float = 60.0
     embedding_model: str = "all-mpnet-base-v2"
     embedding_device: str = "cpu"
     # Embedding vector dimension — must match the model above (all-mpnet-base-v2

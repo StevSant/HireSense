@@ -514,7 +514,11 @@ async def analyze_job(
     force: bool = False,
 ) -> DeepAnalysisResult:
     """Deep, single-job match analysis (advanced model, cached, on demand)."""
-    job = orchestrator.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
+    # Offload the sync SQLAlchemy lookups to a worker thread so the query
+    # duration doesn't block the event loop (matches the list endpoint) (#157).
+    job = await asyncio.to_thread(
+        lambda: orchestrator.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
+    )
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
     if deep_analysis is None:
@@ -536,7 +540,11 @@ async def get_job(
     ],
     quick_scoring: Annotated[QuickScoringService | None, Depends(get_quick_scoring)],
 ) -> NormalizedJob:
-    job = orchestrator.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
+    # Offload the sync SQLAlchemy lookups to a worker thread so the query
+    # duration doesn't block the event loop (matches the list endpoint) (#157).
+    job = await asyncio.to_thread(
+        lambda: orchestrator.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
+    )
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
     # Overlay the cached Tier-1 LLM quick score so the detail header opens at the

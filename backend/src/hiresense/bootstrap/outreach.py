@@ -32,6 +32,7 @@ def build_outreach(
         password=s.smtp_password,
         from_email=s.outreach_from_email,
         use_tls=s.smtp_use_tls,
+        timeout=s.smtp_timeout,
     )
     service = OutreachService(
         tracking_service=tracking_service,

@@ -25,6 +25,7 @@ class ImapInboxReader:
         password: str,
         folder: str,
         use_ssl: bool,
+        timeout: float,
     ) -> None:
         self._host = host
         self._port = port
@@ -32,6 +33,7 @@ class ImapInboxReader:
         self._password = password
         self._folder = folder
         self._use_ssl = use_ssl
+        self._timeout = timeout
 
     def fetch_unseen(self) -> list[InboundEmail]:
         if not self._host:
@@ -44,9 +46,9 @@ class ImapInboxReader:
 
     def _fetch(self) -> list[InboundEmail]:
         client = (
-            imaplib.IMAP4_SSL(self._host, self._port)
+            imaplib.IMAP4_SSL(self._host, self._port, timeout=self._timeout)
             if self._use_ssl
-            else imaplib.IMAP4(self._host, self._port)
+            else imaplib.IMAP4(self._host, self._port, timeout=self._timeout)
         )
         out: list[InboundEmail] = []
         try:

@@ -21,6 +21,9 @@ class OutreachSettings(BaseSettings):
     smtp_username: str = ""
     smtp_password: str = ""
     smtp_use_tls: bool = True
+    # Socket timeout (seconds) for the SMTP connection. Guards against a hung/
+    # black-holed mail server pinning a worker thread (sends run in a thread pool).
+    smtp_timeout: float = 30.0
     outreach_from_email: str = ""
     # Recipient-domain allowlist for POST /outreach/send. Empty (default) allows
     # any syntactically valid address; set to constrain sends and blunt the
@@ -45,6 +48,9 @@ class OutreachSettings(BaseSettings):
     imap_password: str = ""
     imap_folder: str = "INBOX"
     imap_use_ssl: bool = True
+    # Socket timeout (seconds) for the IMAP connection. Guards against a hung mail
+    # server pinning a worker thread (the inbox scan runs in a thread pool).
+    imap_timeout: float = 30.0
     # Cron cadence for the scheduler 'inbox_scan' job (read by the scheduler).
     inbox_scan_schedule: str = "0 */2 * * *"
     # Classifications below this confidence get no proposed status (cannot be

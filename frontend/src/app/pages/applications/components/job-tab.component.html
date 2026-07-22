@@ -1,4 +1,111 @@
 <div class="job-tab">
+  <section class="listing-details">
+    <h2>Application details</h2>
+    @if (!aggregate().job_id) {
+      <p class="section-hint">
+        Listing metadata appears in the application pipeline. Include a pay period in salary values.
+      </p>
+    }
+    <div class="details-grid">
+      <div class="row">
+        <label for="job-tab-title">Title</label>
+        <input
+          id="job-tab-title"
+          maxlength="255"
+          [ngModel]="title()"
+          (ngModelChange)="title.set($event)"
+        />
+      </div>
+      <div class="row">
+        <label for="job-tab-company">Company</label>
+        <input
+          id="job-tab-company"
+          maxlength="255"
+          [ngModel]="company()"
+          (ngModelChange)="company.set($event)"
+        />
+      </div>
+      <div class="row">
+        <label for="job-tab-url">URL</label>
+        <input
+          id="job-tab-url"
+          maxlength="2048"
+          [ngModel]="url()"
+          (ngModelChange)="url.set($event)"
+        />
+      </div>
+      @if (!aggregate().job_id) {
+        <div class="row">
+          <label for="job-tab-location">Location</label>
+          <input
+            id="job-tab-location"
+            [ngModel]="location()"
+            (ngModelChange)="location.set($event)"
+          />
+        </div>
+        <div class="row">
+          <label for="job-tab-work-mode">Work mode</label>
+          <select
+            id="job-tab-work-mode"
+            [ngModel]="remoteModality()"
+            (ngModelChange)="remoteModality.set($event)"
+          >
+            <option value="">Not specified</option>
+            <option value="remote">Remote</option>
+            <option value="hybrid">Hybrid</option>
+            <option value="on_site">On-site</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="job-tab-salary">Salary range</label>
+          <input
+            id="job-tab-salary"
+            [ngModel]="salaryRange()"
+            (ngModelChange)="salaryRange.set($event)"
+            placeholder="e.g. USD 1,500-2,000/mo"
+          />
+        </div>
+        <div class="row">
+          <label for="job-tab-source">Source</label>
+          <input
+            id="job-tab-source"
+            maxlength="100"
+            [ngModel]="listingSource()"
+            (ngModelChange)="listingSource.set($event)"
+          />
+        </div>
+        <div class="row">
+          <label for="job-tab-posted-date">Posted date</label>
+          <input
+            id="job-tab-posted-date"
+            type="date"
+            [ngModel]="postedDate()"
+            (ngModelChange)="postedDate.set($event)"
+          />
+        </div>
+      }
+    </div>
+    <div class="row">
+      <label for="job-tab-notes">Notes</label>
+      <textarea
+        id="job-tab-notes"
+        rows="3"
+        [ngModel]="notes()"
+        (ngModelChange)="notes.set($event)"
+      ></textarea>
+    </div>
+    <div class="actions">
+      <button class="btn-primary" (click)="saveDetails()" [disabled]="detailsSaving()">
+        {{ detailsSaving() ? 'Saving...' : 'Save details' }}
+      </button>
+      @if (detailsSaved()) {
+        <span class="save-confirmation" role="status">✓ Saved</span>
+      }
+    </div>
+  </section>
+
+  <hr />
+
   <div class="row">
     <label for="job-tab-description">Job description</label>
     <textarea

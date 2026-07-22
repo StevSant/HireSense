@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 
 import pytest
 from sqlalchemy import create_engine
@@ -79,6 +80,39 @@ def test_update(repo) -> None:
     repo.save(updated)
     result = repo.get_by_id(created.id)
     assert result.status == ApplicationStatus.APPLIED.value
+
+
+def test_manual_listing_metadata_round_trip_and_clear(repo) -> None:
+    posted = datetime(2026, 7, 1, tzinfo=timezone.utc)
+    created = repo.create(
+        TrackedApplication(
+            title="SWE",
+            company="Acme",
+            location="Quito",
+            remote_modality="remote",
+            salary_range="USD 1,500-2,000/mo",
+            source="Referral",
+            posted_date=posted,
+        )
+    )
+
+    stored = repo.get_by_id(created.id)
+    assert stored is not None
+    assert stored.location == "Quito"
+    assert stored.remote_modality == "remote"
+    assert stored.salary_range == "USD 1,500-2,000/mo"
+    assert stored.source == "Referral"
+    # SQLite drops timezone metadata; PostgreSQL preserves it.
+    assert stored.posted_date.replace(tzinfo=timezone.utc) == posted
+
+    stored.location = None
+    stored.salary_range = None
+    repo.save(stored)
+
+    cleared = repo.get_by_id(created.id)
+    assert cleared is not None
+    assert cleared.location is None
+    assert cleared.salary_range is None
 
 
 def test_delete(repo) -> None:

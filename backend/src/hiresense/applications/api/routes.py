@@ -90,6 +90,11 @@ async def create_application(
         description=request.description or "",
         url=request.url,
         notes=request.notes,
+        location=request.location,
+        remote_modality=request.remote_modality.value if request.remote_modality else None,
+        salary_range=request.salary_range,
+        source=request.source,
+        posted_date=request.posted_date,
     )
 
 
@@ -117,17 +122,8 @@ def _to_list_item(
     """Shape an aggregate into the list row, enriching pipeline fields
     (location/salary/source/posted) from the linked ingested job when present.
     The job map is resolved once per list request (batched), not per row."""
-    location: str | None = None
-    salary_range: str | None = None
-    source: str | None = None
-    posted_date = None
-    if a.job_id is not None:
-        job = jobs_by_id.get(str(a.job_id))
-        if job is not None:
-            location = job.location or None
-            salary_range = job.salary_range
-            source = job.source
-            posted_date = job.posted_date
+    job = jobs_by_id.get(str(a.job_id)) if a.job_id is not None else None
+    metadata = _effective_listing_metadata(a, job)
     return ApplicationListItemResponse(
         id=a.id,
         title=a.title,
@@ -142,22 +138,48 @@ def _to_list_item(
         job_id=a.job_id,
         notes=a.notes,
         applied_at=a.applied_at,
-        location=location,
-        salary_range=salary_range,
-        source=source,
-        posted_date=posted_date,
+        **metadata,
     )
+
+
+def _effective_listing_metadata(
+    application: ApplicationAggregate,
+    job: NormalizedJob | None,
+) -> dict[str, object | None]:
+    persisted = {
+        "location": application.location,
+        "remote_modality": application.remote_modality,
+        "salary_range": application.salary_range,
+        "source": application.source,
+        "posted_date": application.posted_date,
+    }
+    if job is None:
+        return persisted
+    return {
+        "location": job.location or persisted["location"],
+        "remote_modality": job.remote_modality or persisted["remote_modality"],
+        "salary_range": job.salary_range or persisted["salary_range"],
+        "source": job.source or persisted["source"],
+        "posted_date": job.posted_date or persisted["posted_date"],
+    }
 
 
 @router.get("/{application_id}", response_model=ApplicationAggregate)
 def get_application(
     application_id: uuid_mod.UUID,
     service: ApplicationService = Depends(get_application_service),
+    orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
 ) -> ApplicationAggregate:
     try:
-        return service.get(application_id)
+        application = service.get(application_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    job = (
+        orchestrator.get_job_by_id(str(application.job_id))
+        if application.job_id is not None
+        else None
+    )
+    return application.model_copy(update=_effective_listing_metadata(application, job))
 
 
 @router.delete("/{application_id}", status_code=204)

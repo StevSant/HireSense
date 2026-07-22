@@ -12,6 +12,7 @@ export interface TrackedApplication {
   created_at: string;
   updated_at: string;
   location: string | null;
+  remote_modality: 'remote' | 'hybrid' | 'on_site' | null;
   salary_range: string | null;
   source: string | null;
   posted_date: string | null;

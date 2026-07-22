@@ -66,6 +66,11 @@ class ApplicationAggregate(BaseModel):
     url: str | None
     status: str
     notes: str | None
+    location: str | None = None
+    remote_modality: str | None = None
+    salary_range: str | None = None
+    source: str | None = None
+    posted_date: datetime | None = None
     applied_at: datetime | None
     created_at: datetime | None
     updated_at: datetime | None

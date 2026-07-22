@@ -13,6 +13,19 @@ if TYPE_CHECKING:
     from hiresense.tracking.ports import TrackingRepositoryPort
 
 
+_EDITABLE_DETAIL_FIELDS = {
+    "title",
+    "company",
+    "url",
+    "notes",
+    "location",
+    "remote_modality",
+    "salary_range",
+    "source",
+    "posted_date",
+}
+
+
 class TrackingService:
     def __init__(
         self, repository: TrackingRepositoryPort, ingestion_orchestrator: Any, event_bus: Any
@@ -27,12 +40,22 @@ class TrackingService:
         company: str,
         url: str | None = None,
         notes: str | None = None,
+        location: str | None = None,
+        remote_modality: str | None = None,
+        salary_range: str | None = None,
+        source: str | None = None,
+        posted_date: datetime | None = None,
     ) -> TrackedApplication:
         app = TrackedApplication(
             title=title,
             company=company,
             url=url,
             notes=notes,
+            location=location,
+            remote_modality=remote_modality,
+            salary_range=salary_range,
+            source=source,
+            posted_date=posted_date,
             status=ApplicationStatus.SAVED.value,
         )
         return self._repo.create(app)
@@ -78,19 +101,37 @@ class TrackingService:
         status: ApplicationStatus,
         notes: str | None = None,
     ) -> TrackedApplication:
-        app = self.get(id)
+        changes = {"notes": notes} if notes is not None else None
+        return await self.update_application(id, status=status, changes=changes)
+
+    async def update_application(
+        self,
+        id: uuid_mod.UUID,
+        *,
+        status: ApplicationStatus | None = None,
+        changes: dict[str, object | None] | None = None,
+    ) -> TrackedApplication:
+        detail_changes = changes or {}
+        unknown = set(detail_changes) - _EDITABLE_DETAIL_FIELDS
+        if unknown:
+            raise ValueError(f"Unsupported application fields: {', '.join(sorted(unknown))}")
+
+        app = self.get(id).model_copy(deep=True)
         previous = app.status
-        ensure_valid_transition(previous, status.value)
-        app.status = status.value
-        if status == ApplicationStatus.APPLIED and app.applied_at is None:
-            app.applied_at = datetime.now(timezone.utc)
-        if notes is not None:
-            app.notes = notes
-        if previous != status.value:
-            saved = self._repo.save_with_history(app, from_status=previous, to_status=status.value)
+        if status is not None:
+            ensure_valid_transition(previous, status.value)
+            app.status = status.value
+            if status == ApplicationStatus.APPLIED and app.applied_at is None:
+                app.applied_at = datetime.now(timezone.utc)
+        for field, value in detail_changes.items():
+            setattr(app, field, value)
+
+        status_changed = previous != app.status
+        if status_changed:
+            saved = self._repo.save_with_history(app, from_status=previous, to_status=app.status)
         else:
             saved = self._repo.save(app)
-        if previous != saved.status and saved.job_id is not None:
+        if status_changed and saved.job_id is not None:
             await self._event_bus.publish(
                 TrackingStatusChangedEvent(job_id=str(saved.job_id), status=saved.status)
             )
@@ -99,6 +140,17 @@ class TrackingService:
     def update_notes(self, id: uuid_mod.UUID, notes: str) -> TrackedApplication:
         app = self.get(id)
         app.notes = notes
+        return self._repo.save(app)
+
+    def update_details(
+        self, id: uuid_mod.UUID, changes: dict[str, object | None]
+    ) -> TrackedApplication:
+        unknown = set(changes) - _EDITABLE_DETAIL_FIELDS
+        if unknown:
+            raise ValueError(f"Unsupported application fields: {', '.join(sorted(unknown))}")
+        app = self.get(id)
+        for field, value in changes.items():
+            setattr(app, field, value)
         return self._repo.save(app)
 
     def remove(self, id: uuid_mod.UUID) -> None:

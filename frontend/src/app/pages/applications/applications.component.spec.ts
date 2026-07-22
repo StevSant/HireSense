@@ -24,6 +24,7 @@ function makeItem(over: Partial<ApplicationListItem> = {}): ApplicationListItem 
     notes: null,
     applied_at: null,
     location: 'Remote',
+    remote_modality: 'remote',
     salary_range: null,
     source: null,
     posted_date: null,
@@ -93,6 +94,28 @@ describe('ApplicationsComponent', () => {
     expect(fixture.componentInstance.applications().length).toBe(2);
     const rows = fixture.nativeElement.querySelectorAll('tr.row');
     expect(rows.length).toBe(2);
+  });
+
+  it('renders work mode, pay period, source, and posted date metadata', () => {
+    const { fixture } = mount({
+      list: () =>
+        of([
+          makeItem({
+            location: 'Quito',
+            remote_modality: 'on_site',
+            salary_range: 'USD 1,500-2,000/mo',
+            source: 'Referral',
+            posted_date: '2026-07-01T00:00:00Z',
+          }),
+        ]),
+    });
+
+    const text = fixture.nativeElement.querySelector('tr.row').textContent;
+    expect(text).toContain('Quito');
+    expect(text).toContain('On-site');
+    expect(text).toContain('USD 1,500-2,000/mo');
+    expect(text).toContain('Referral');
+    expect(text).toContain('Jul 1, 2026');
   });
 
   it('renders the empty state when there are no applications', () => {

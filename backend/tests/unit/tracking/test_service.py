@@ -154,6 +154,27 @@ def test_track_manual_job() -> None:
     assert app.job_id is None
 
 
+def test_track_manual_job_with_listing_metadata() -> None:
+    posted = datetime(2026, 7, 1, tzinfo=timezone.utc)
+    svc = make_service()
+
+    app = svc.track_job(
+        title="Backend Engineer",
+        company="Acme Corp",
+        location="Quito",
+        remote_modality="remote",
+        salary_range="USD 1,500-2,000/mo",
+        source="Referral",
+        posted_date=posted,
+    )
+
+    assert app.location == "Quito"
+    assert app.remote_modality == "remote"
+    assert app.salary_range == "USD 1,500-2,000/mo"
+    assert app.source == "Referral"
+    assert app.posted_date == posted
+
+
 def test_track_from_ingestion() -> None:
     job_id = str(uuid_mod.uuid4())
     job = FakeJob(
@@ -366,6 +387,92 @@ def test_update_notes() -> None:
     updated = svc.update_notes(app.id, "Great culture fit")
 
     assert updated.notes == "Great culture fit"
+
+
+def test_update_details_preserves_omitted_fields_and_clears_explicit_null() -> None:
+    svc = make_service()
+    app = svc.track_job(
+        title="QA Engineer",
+        company="Atlassian",
+        location="Quito",
+        remote_modality="hybrid",
+        salary_range="USD 1,500/mo",
+    )
+
+    updated = svc.update_details(
+        app.id,
+        {"title": "Senior QA Engineer", "location": None, "source": "Referral"},
+    )
+
+    assert updated.title == "Senior QA Engineer"
+    assert updated.location is None
+    assert updated.source == "Referral"
+    assert updated.remote_modality == "hybrid"
+    assert updated.salary_range == "USD 1,500/mo"
+
+
+@pytest.mark.asyncio
+async def test_combined_update_commits_status_and_details_once_with_history() -> None:
+    class RecordingRepository(FakeRepository):
+        def __init__(self) -> None:
+            super().__init__()
+            self.save_calls = 0
+            self.history_save_calls: list[tuple[TrackedApplication, str | None, str]] = []
+
+        def save(self, app: TrackedApplication) -> TrackedApplication:
+            self.save_calls += 1
+            return super().save(app)
+
+        def save_with_history(self, application, *, from_status, to_status):
+            self.history_save_calls.append(
+                (application.model_copy(deep=True), from_status, to_status)
+            )
+            self._store[application.id] = application
+            return application
+
+    repo = RecordingRepository()
+    service = make_service(repo=repo)
+    app = service.track_job(title="Engineer", company="Acme")
+
+    updated = await service.update_application(
+        app.id,
+        status=ApplicationStatus.APPLIED,
+        changes={"title": "Senior Engineer", "source": "Referral"},
+    )
+
+    assert updated.status == "applied"
+    assert updated.title == "Senior Engineer"
+    assert updated.source == "Referral"
+    assert repo.save_calls == 0
+    assert len(repo.history_save_calls) == 1
+    committed, from_status, to_status = repo.history_save_calls[0]
+    assert committed.title == "Senior Engineer"
+    assert committed.source == "Referral"
+    assert (from_status, to_status) == ("saved", "applied")
+
+
+@pytest.mark.asyncio
+async def test_repository_failure_does_not_publish_status_event() -> None:
+    class FailingRepository(FakeRepository):
+        def save_with_history(self, application, *, from_status, to_status):
+            raise RuntimeError("commit failed")
+
+    job_id = uuid_mod.uuid4()
+    repo = FailingRepository()
+    app = repo.create(_make_app(job_id=job_id))
+    bus = FakeEventBus()
+    service = make_service(repo=repo, event_bus=bus)
+
+    with pytest.raises(RuntimeError, match="commit failed"):
+        await service.update_application(
+            app.id,
+            status=ApplicationStatus.APPLIED,
+            changes={"title": "Senior Engineer"},
+        )
+
+    assert bus.published == []
+    assert repo.get_by_id(app.id).status == "saved"
+    assert repo.get_by_id(app.id).title == "Engineer"
 
 
 def test_remove() -> None:

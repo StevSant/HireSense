@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
 import pytest
 
@@ -52,7 +53,7 @@ class FakeTrackingService:
         self.tracked[app.id] = app
         return app
 
-    def track_job(self, title: str, company: str, url=None, notes=None):
+    def track_job(self, title: str, company: str, url=None, notes=None, **metadata):
         from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 
         app = TrackedApplication(
@@ -62,6 +63,7 @@ class FakeTrackingService:
             url=url,
             notes=notes,
             status=ApplicationStatus.SAVED.value,
+            **metadata,
         )
         self.tracked[app.id] = app
         return app
@@ -259,6 +261,36 @@ async def test_create_from_manual_calls_llm_extractor() -> None:
     assert agg.job_snapshot.required_skills == ["python", "kubernetes"]
     assert agg.job_snapshot.source == JobSnapshotSource.LLM_EXTRACTED.value
     assert extractor.called_with == "Run k8s clusters"
+
+
+@pytest.mark.asyncio
+async def test_create_from_manual_passes_listing_metadata_to_tracking() -> None:
+    posted = datetime(2026, 7, 1, tzinfo=timezone.utc)
+    tracking = FakeTrackingService()
+    service = ApplicationService(
+        repository=FakeRepo(),
+        tracking_service=tracking,
+        ingestion_orchestrator=FakeIngestionOrchestrator(),
+        skill_extractor=FakeSkillExtractor(skills=[]),
+    )
+
+    aggregate = await service.create_from_manual(
+        title="SRE",
+        company="Acme",
+        description="Run k8s clusters",
+        url=None,
+        location="Quito",
+        remote_modality="remote",
+        salary_range="USD 1,500-2,000/mo",
+        source="Referral",
+        posted_date=posted,
+    )
+
+    assert aggregate.location == "Quito"
+    assert aggregate.remote_modality == "remote"
+    assert aggregate.salary_range == "USD 1,500-2,000/mo"
+    assert aggregate.source == "Referral"
+    assert aggregate.posted_date == posted
 
 
 @pytest.mark.asyncio

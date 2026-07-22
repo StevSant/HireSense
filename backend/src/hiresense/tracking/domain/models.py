@@ -16,6 +16,12 @@ class ApplicationStatus(str, enum.Enum):
     REJECTED = "rejected"
 
 
+class RemoteModality(str, enum.Enum):
+    REMOTE = "remote"
+    HYBRID = "hybrid"
+    ON_SITE = "on_site"
+
+
 class TrackedApplication(BaseModel):
     """A job application the candidate is tracking (pure domain model)."""
 
@@ -26,6 +32,11 @@ class TrackedApplication(BaseModel):
     url: str | None = None
     status: str = ApplicationStatus.SAVED.value
     notes: str | None = None
+    location: str | None = None
+    remote_modality: str | None = None
+    salary_range: str | None = None
+    source: str | None = None
+    posted_date: datetime | None = None
     applied_at: datetime | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None

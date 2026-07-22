@@ -2,19 +2,45 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from hiresense.tracking.domain.models import RemoteModality
+
+Title = Annotated[str, Field(max_length=255)]
+Company = Annotated[str, Field(max_length=255)]
+ApplicationUrl = Annotated[str, Field(max_length=2048)]
+ListingSource = Annotated[str, Field(max_length=100)]
 
 
 class CreateApplicationRequest(BaseModel):
     """Either job_id (from ingested job) OR title+company+description (manual)."""
 
     job_id: uuid.UUID | None = None
-    title: str | None = None
-    company: str | None = None
+    title: Title | None = None
+    company: Company | None = None
     description: str | None = None
-    url: str | None = None
+    url: ApplicationUrl | None = None
     notes: str | None = None
+    location: str | None = None
+    remote_modality: RemoteModality | None = None
+    salary_range: str | None = None
+    source: ListingSource | None = None
+    posted_date: datetime | None = None
+
+    @field_validator("remote_modality", mode="before")
+    @classmethod
+    def normalize_onsite_alias(cls, value: object) -> object:
+        return "on_site" if value == "onsite" else value
+
+    @field_validator("location", "salary_range", "source", mode="before")
+    @classmethod
+    def strip_optional_metadata(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
 
     @model_validator(mode="after")
     def check_one_of(self) -> "CreateApplicationRequest":
@@ -61,13 +87,13 @@ class ApplicationListItemResponse(BaseModel):
     has_optimization: bool
     has_prep: bool
     latest_match_score: float | None
-    # Pipeline-view enrichment (folded in from the former Tracking page). These
-    # are derived from the linked ingested job when available; they stay None for
-    # manually-tracked applications with no job link.
+    # Pipeline-view enrichment (folded in from the former Tracking page). Linked
+    # jobs supply live values, while persisted metadata supplies field fallbacks.
     job_id: uuid.UUID | None = None
     notes: str | None = None
     applied_at: datetime | None = None
     location: str | None = None
+    remote_modality: str | None = None
     salary_range: str | None = None
     source: str | None = None
     posted_date: datetime | None = None

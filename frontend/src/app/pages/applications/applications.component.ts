@@ -220,6 +220,13 @@ export class ApplicationsComponent implements OnInit {
     return formatScorePercent(score);
   }
 
+  workModeLabel(mode: ApplicationListItem['remote_modality']): string {
+    if (mode === 'on_site') return 'On-site';
+    if (mode === 'remote') return 'Remote';
+    if (mode === 'hybrid') return 'Hybrid';
+    return '';
+  }
+
   // ----- inline status change (folded in from the Tracking page) ----------
   // Applications share their id with the tracked-application row, so the
   // tracking PATCH endpoint updates the same record.

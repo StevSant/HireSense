@@ -12,7 +12,20 @@ from hiresense.tracking.infrastructure.status_history_orm import (
     ApplicationStatusHistoryOrm,
 )
 
-_CONTENT_FIELDS = ("job_id", "title", "company", "url", "status", "notes", "applied_at")
+_CONTENT_FIELDS = (
+    "job_id",
+    "title",
+    "company",
+    "url",
+    "status",
+    "notes",
+    "location",
+    "remote_modality",
+    "salary_range",
+    "source",
+    "posted_date",
+    "applied_at",
+)
 
 
 def _to_domain(row: TrackedApplicationOrm) -> TrackedApplication:

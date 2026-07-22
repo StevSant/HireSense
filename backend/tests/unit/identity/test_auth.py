@@ -1,3 +1,4 @@
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 from datetime import datetime, timezone
 
 from jose import jwt
@@ -42,6 +43,41 @@ def test_validate_invalid_token() -> None:
     service = AuthService(username="admin", password="secret", jwt_secret="key")
     payload = service.validate_token("garbage.token.here")
     assert payload is None
+
+
+def test_validate_rejects_expired_token() -> None:
+    service = AuthService(
+        username="admin",
+        password="secret",
+        jwt_secret="key",
+        expiry_hours=-1,
+    )
+    token = service.login("admin", "secret")
+    assert token is not None
+    assert service.validate_token(token) is None
+
+
+def test_validate_rejects_token_signed_with_different_secret() -> None:
+    issuer = AuthService(username="admin", password="secret", jwt_secret="secret-a")
+    validator = AuthService(username="admin", password="secret", jwt_secret="secret-b")
+    token = issuer.login("admin", "secret")
+    assert token is not None
+    assert validator.validate_token(token) is None
+
+
+def test_validate_rejects_byte_flipped_signature() -> None:
+    service = AuthService(username="admin", password="secret", jwt_secret="key")
+    token = service.login("admin", "secret")
+    assert token is not None
+
+    header, payload, encoded_signature = token.split(".")
+    padding = "=" * (-len(encoded_signature) % 4)
+    signature = bytearray(urlsafe_b64decode(encoded_signature + padding))
+    signature[0] ^= 0x01
+    tampered_signature = urlsafe_b64encode(signature).rstrip(b"=").decode("ascii")
+    tampered_token = f"{header}.{payload}.{tampered_signature}"
+
+    assert service.validate_token(tampered_token) is None
 
 
 def test_token_carries_default_admin_role() -> None:

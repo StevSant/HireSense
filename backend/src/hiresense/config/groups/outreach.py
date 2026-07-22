@@ -11,7 +11,8 @@ class OutreachSettings(BaseSettings):
     outreach_followup_cadence_days: int = 7
     # Soft length guard passed to the generator (chars).
     outreach_max_chars: int = 500
-    # Intended cron cadence for the follow-up nudge sweep — INFORMATIONAL ONLY.
+    # Cron cadence consumed by the in-app scheduler when SCHEDULER_ENABLED=true;
+    # when disabled, the job remains available for manual or externally driven runs.
     outreach_followup_schedule: str = "0 10 * * *"
     # SMTP for actually sending outreach email (POST /outreach/send). Leave
     # smtp_host / outreach_from_email blank to disable sending (the endpoint then

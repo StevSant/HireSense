@@ -38,7 +38,12 @@ describe('AuthService', () => {
   });
 
   it('never touches localStorage for the session', () => {
-    const spy = vi.spyOn(Storage.prototype, 'setItem');
+    const spy = vi.spyOn(localStorage, 'setItem');
+    localStorage.setItem('__hiresense_spy_probe__', 'probe');
+    expect(spy).toHaveBeenCalledOnce();
+    localStorage.removeItem('__hiresense_spy_probe__');
+    spy.mockClear();
+
     const { service, httpMock } = makeService();
     service.login('admin', 'secret').subscribe();
     httpMock.expectOne(`${environment.apiUrl}/auth/login`).flush({ access_token: 't' });

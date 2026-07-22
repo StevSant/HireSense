@@ -67,9 +67,9 @@ class IngestionSettings(BaseSettings):
     # Consecutive snapshot fetches a previously-seen job may be missing before
     # it is marked closed (guards against a transient/empty fetch).
     job_closure_miss_threshold: int = 2
-    # Advisory cadence for the URL-probe revalidation sweep. The app does NOT
-    # self-schedule — POST /ingestion/revalidate is driven by an external cron;
-    # this value documents the intended interval for that cron operator.
+    # Cadence consumed by the in-app scheduler for URL-probe revalidation when
+    # SCHEDULER_ENABLED=true. When disabled, operators can still trigger
+    # POST /ingestion/revalidate manually or from an external cron.
     job_revalidation_interval_hours: int = 24
     # Max jobs probed per sweep run (oldest-checked first) — bounds network cost.
     job_revalidation_batch: int = 100

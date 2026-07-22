@@ -12,7 +12,8 @@ class SchedulingSettings(BaseSettings):
     autohunt_initial_lookback_days: int = 7
     # Digests older than this are pruned at the end of each run.
     autohunt_digest_retention_days: int = 90
-    # Intended cron cadence — INFORMATIONAL ONLY; the app never self-schedules.
+    # Cron cadence consumed by the in-app scheduler when SCHEDULER_ENABLED=true;
+    # when disabled, the job remains available for manual or externally driven runs.
     autohunt_schedule: str = "0 9 * * *"
 
     # --- Autopilot pipeline (Phase 4: auto-draft applications for top matches) ---

@@ -55,6 +55,15 @@ describe('errorInterceptor', () => {
     },
   );
 
+  it('does not exempt a protected endpoint whose query contains an auth path', () => {
+    const url = `${environment.apiUrl}/applications?next=/auth/login`;
+
+    http.get(url).subscribe({ error: () => undefined });
+    httpMock.expectOne(url).flush({}, { status: 401, statusText: 'Unauthorized' });
+
+    expect(logout).toHaveBeenCalledTimes(1);
+  });
+
   it('skips logout and rethrows a non-401 response', () => {
     const url = `${environment.apiUrl}/applications`;
     let capturedError: unknown;

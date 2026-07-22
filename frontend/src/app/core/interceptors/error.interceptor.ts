@@ -26,5 +26,6 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 function isAuthEndpoint(url: string): boolean {
-  return url.includes('/auth/login') || url.includes('/auth/me') || url.includes('/auth/logout');
+  const pathname = new URL(url, 'http://localhost').pathname.replace(/\/+$/, '');
+  return ['/auth/login', '/auth/me', '/auth/logout'].some((path) => pathname.endsWith(path));
 }

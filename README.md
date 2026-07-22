@@ -8,7 +8,7 @@ HireSense pulls postings from job boards and company ATS portals, ranks them aga
 profile with **pgvector semantic search + tiered LLM scoring**, and manages the whole
 pipeline: tracking, CV & cover-letter generation, interview prep, outreach, and analytics.
 
-[![Python 3.13](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Angular 21](https://img.shields.io/badge/Angular-21-DD0031?style=flat-square&logo=angular&logoColor=white)](https://angular.dev/)
 [![PostgreSQL + pgvector](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
@@ -120,7 +120,7 @@ Closed jobs are hidden by default and dropped from semantic search.
 
 | Layer | Tech |
 |---|---|
-| **Backend** | Python 3.13, FastAPI, SQLAlchemy 2.0 + Alembic, Pydantic |
+| **Backend** | Python 3.12+, FastAPI, SQLAlchemy 2.0 + Alembic, Pydantic |
 | **Database** | PostgreSQL 16 + `pgvector` (ANN semantic search) |
 | **Frontend** | Angular 21 (standalone components, signals), Vitest |
 | **LLM / embeddings** | LangChain provider abstraction (Anthropic default), `all-mpnet-base-v2` embeddings |

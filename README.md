@@ -2,11 +2,12 @@
 
 <img src="docs/assets/logo.svg" alt="HireSense" width="320" />
 
-### AI-assisted job hunting — ingest, rank, and apply, end to end.
+### From the job-board firehose to your next interview — self-hosted, end to end.
 
 HireSense pulls postings from job boards and company ATS portals, ranks them against your
-profile with **pgvector semantic search + tiered LLM scoring**, and manages the whole
-pipeline: tracking, CV & cover-letter generation, interview prep, outreach, and analytics.
+profile with **pgvector semantic search + tiered LLM scoring**, and runs the whole pipeline
+on your own infrastructure: tracking, CV & cover-letter generation, interview prep,
+outreach, and analytics.
 
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -35,6 +36,22 @@ It ingests postings from many sources, **pre-ranks the entire corpus** with pgve
 the best matches reach page one, refines with skill overlap and tiered LLM scoring, then
 helps you act — track applications, generate tailored CVs and cover letters, prep for
 interviews, and see where your profile sits on pay and fit.
+
+## 🎯 Why HireSense?
+
+- **From firehose to shortlist** — semantic pre-ranking runs over the *entire* corpus, not
+  just the current page, so the strongest matches land on page one instead of being buried
+  under reposts.
+- **Own your data, self-hosted** — the full stack runs on your own infrastructure (Docker:
+  Postgres, API, web, Grafana). No third-party SaaS holds your profile, your matches, or
+  your applications.
+- **Cost-aware by design** — tiered LLM scoring lets cheap models filter the long tail while
+  stronger models rank the finalists, so quality stays high and spend tracks signal.
+- **The whole hunt in one place** — discover, track, generate tailored CVs & cover letters,
+  prep for interviews, and see where you stand on pay and fit — end to end, without stitching
+  separate tools together.
+- **Runs without an LLM key** — `APP_MODE=local` falls back to heuristic-only matching, so
+  you can explore the full app before wiring up any external services.
 
 ## ✨ Features
 

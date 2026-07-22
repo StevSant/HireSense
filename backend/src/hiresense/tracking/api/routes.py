@@ -38,10 +38,11 @@ def _enrich(
         return response
     return response.model_copy(
         update={
-            "location": job.location or None,
-            "salary_range": job.salary_range,
-            "source": job.source,
-            "posted_date": job.posted_date,
+            "location": job.location or response.location,
+            "remote_modality": job.remote_modality or response.remote_modality,
+            "salary_range": job.salary_range or response.salary_range,
+            "source": job.source or response.source,
+            "posted_date": job.posted_date or response.posted_date,
         }
     )
 
@@ -62,6 +63,11 @@ def create_application(
             company=request.company,
             url=request.url,
             notes=request.notes,
+            location=request.location,
+            remote_modality=request.remote_modality.value if request.remote_modality else None,
+            salary_range=request.salary_range,
+            source=request.source,
+            posted_date=request.posted_date,
         )
     return _enrich(app, orchestrator)
 
@@ -109,11 +115,12 @@ async def update_application(
 ) -> TrackedApplicationResponse:
     try:
         if request.status is not None:
-            app = await service.update_status(id, request.status, notes=request.notes)
-        elif request.notes is not None:
-            app = service.update_notes(id, request.notes)
+            app = await service.update_status(id, request.status)
         else:
             app = service.get(id)
+        detail_changes = request.model_dump(exclude_unset=True, exclude={"status"})
+        if detail_changes:
+            app = service.update_details(id, detail_changes)
     except InvalidStatusTransitionError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:

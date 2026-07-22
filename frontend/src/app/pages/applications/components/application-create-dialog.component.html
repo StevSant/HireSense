@@ -46,6 +46,62 @@
       ></textarea>
     </div>
 
+    <details class="listing-metadata">
+      <summary>Optional listing details</summary>
+      <p class="hint">These values appear in the application pipeline.</p>
+      <div class="metadata-grid">
+        <div class="field">
+          <label for="create-location">Location</label>
+          <input
+            id="create-location"
+            [ngModel]="location()"
+            (ngModelChange)="location.set($event)"
+            placeholder="e.g. Quito, Ecuador"
+          />
+        </div>
+        <div class="field">
+          <label for="create-work-mode">Work mode</label>
+          <select
+            id="create-work-mode"
+            [ngModel]="remoteModality()"
+            (ngModelChange)="remoteModality.set($event)"
+          >
+            <option value="">Not specified</option>
+            <option value="remote">Remote</option>
+            <option value="hybrid">Hybrid</option>
+            <option value="on_site">On-site</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="create-salary">Salary range</label>
+          <input
+            id="create-salary"
+            [ngModel]="salaryRange()"
+            (ngModelChange)="salaryRange.set($event)"
+            placeholder="e.g. USD 1,500-2,000/mo"
+          />
+        </div>
+        <div class="field">
+          <label for="create-source">Source</label>
+          <input
+            id="create-source"
+            [ngModel]="source()"
+            (ngModelChange)="source.set($event)"
+            placeholder="e.g. Referral or LinkedIn"
+          />
+        </div>
+        <div class="field">
+          <label for="create-posted-date">Posted date</label>
+          <input
+            id="create-posted-date"
+            type="date"
+            [ngModel]="postedDate()"
+            (ngModelChange)="postedDate.set($event)"
+          />
+        </div>
+      </div>
+    </details>
+
     @if (error()) {
       <div class="alert alert-error">{{ error() }}</div>
     }

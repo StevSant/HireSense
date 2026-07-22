@@ -315,6 +315,14 @@
   white-space: nowrap;
 }
 
+.work-mode,
+.posted-date {
+  display: block;
+  margin-top: 0.2rem;
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
 /* --- Row actions (research + delete) --- */
 .row-actions {
   display: inline-flex;

@@ -90,6 +90,11 @@ async def create_application(
         description=request.description or "",
         url=request.url,
         notes=request.notes,
+        location=request.location,
+        remote_modality=request.remote_modality.value if request.remote_modality else None,
+        salary_range=request.salary_range,
+        source=request.source,
+        posted_date=request.posted_date,
     )
 
 
@@ -117,17 +122,19 @@ def _to_list_item(
     """Shape an aggregate into the list row, enriching pipeline fields
     (location/salary/source/posted) from the linked ingested job when present.
     The job map is resolved once per list request (batched), not per row."""
-    location: str | None = None
-    salary_range: str | None = None
-    source: str | None = None
-    posted_date = None
+    location = a.location
+    remote_modality = a.remote_modality
+    salary_range = a.salary_range
+    source = a.source
+    posted_date = a.posted_date
     if a.job_id is not None:
         job = jobs_by_id.get(str(a.job_id))
         if job is not None:
-            location = job.location or None
-            salary_range = job.salary_range
-            source = job.source
-            posted_date = job.posted_date
+            location = job.location or location
+            remote_modality = job.remote_modality or remote_modality
+            salary_range = job.salary_range or salary_range
+            source = job.source or source
+            posted_date = job.posted_date or posted_date
     return ApplicationListItemResponse(
         id=a.id,
         title=a.title,
@@ -143,6 +150,7 @@ def _to_list_item(
         notes=a.notes,
         applied_at=a.applied_at,
         location=location,
+        remote_modality=remote_modality,
         salary_range=salary_range,
         source=source,
         posted_date=posted_date,

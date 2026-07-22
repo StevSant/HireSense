@@ -13,6 +13,19 @@ if TYPE_CHECKING:
     from hiresense.tracking.ports import TrackingRepositoryPort
 
 
+_EDITABLE_DETAIL_FIELDS = {
+    "title",
+    "company",
+    "url",
+    "notes",
+    "location",
+    "remote_modality",
+    "salary_range",
+    "source",
+    "posted_date",
+}
+
+
 class TrackingService:
     def __init__(
         self, repository: TrackingRepositoryPort, ingestion_orchestrator: Any, event_bus: Any
@@ -27,12 +40,22 @@ class TrackingService:
         company: str,
         url: str | None = None,
         notes: str | None = None,
+        location: str | None = None,
+        remote_modality: str | None = None,
+        salary_range: str | None = None,
+        source: str | None = None,
+        posted_date: datetime | None = None,
     ) -> TrackedApplication:
         app = TrackedApplication(
             title=title,
             company=company,
             url=url,
             notes=notes,
+            location=location,
+            remote_modality=remote_modality,
+            salary_range=salary_range,
+            source=source,
+            posted_date=posted_date,
             status=ApplicationStatus.SAVED.value,
         )
         return self._repo.create(app)
@@ -99,6 +122,17 @@ class TrackingService:
     def update_notes(self, id: uuid_mod.UUID, notes: str) -> TrackedApplication:
         app = self.get(id)
         app.notes = notes
+        return self._repo.save(app)
+
+    def update_details(
+        self, id: uuid_mod.UUID, changes: dict[str, object | None]
+    ) -> TrackedApplication:
+        unknown = set(changes) - _EDITABLE_DETAIL_FIELDS
+        if unknown:
+            raise ValueError(f"Unsupported application fields: {', '.join(sorted(unknown))}")
+        app = self.get(id)
+        for field, value in changes.items():
+            setattr(app, field, value)
         return self._repo.save(app)
 
     def remove(self, id: uuid_mod.UUID) -> None:

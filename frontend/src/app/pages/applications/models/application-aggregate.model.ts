@@ -12,6 +12,11 @@ export interface ApplicationAggregate {
   url: string | null;
   status: string;
   notes: string | null;
+  location: string | null;
+  remote_modality: 'remote' | 'hybrid' | 'on_site' | null;
+  salary_range: string | null;
+  source: string | null;
+  posted_date: string | null;
   applied_at: string | null;
   created_at: string | null;
   updated_at: string | null;

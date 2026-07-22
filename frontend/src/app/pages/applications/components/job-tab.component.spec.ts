@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { JobTabComponent } from './job-tab.component';
 import { ApplicationsService } from '../../../core/services/applications.service';
+import { TrackingService } from '../../../core/services/tracking.service';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
 
 function makeAggregate(over: Partial<ApplicationAggregate> = {}): ApplicationAggregate {
@@ -16,6 +17,11 @@ function makeAggregate(over: Partial<ApplicationAggregate> = {}): ApplicationAgg
     applied_at: null,
     created_at: null,
     updated_at: null,
+    location: null,
+    remote_modality: null,
+    salary_range: null,
+    source: null,
+    posted_date: null,
     job_snapshot: {
       id: 'snap-1',
       description: 'Build great APIs.',
@@ -42,14 +48,18 @@ describe('JobTabComponent', () => {
       regenerateSkills: vi.fn(() => of(aggregate)),
       ...service,
     };
+    const update = vi.fn(() => of(aggregate));
     TestBed.configureTestingModule({
       imports: [JobTabComponent],
-      providers: [{ provide: ApplicationsService, useValue: svc }],
+      providers: [
+        { provide: ApplicationsService, useValue: svc },
+        { provide: TrackingService, useValue: { update } },
+      ],
     });
     const fixture = TestBed.createComponent(JobTabComponent);
     fixture.componentRef.setInput('aggregate', aggregate);
     fixture.detectChanges();
-    return { fixture, svc };
+    return { fixture, svc, update };
   }
 
   it('seeds description and skills from the snapshot via ngOnChanges', () => {
@@ -71,6 +81,38 @@ describe('JobTabComponent', () => {
     expect(fixture.componentInstance.skills()).toContain('django');
     fixture.componentInstance.removeSkill('python');
     expect(fixture.componentInstance.skills()).not.toContain('python');
+  });
+
+  it('edits manual listing details and sends null for cleared optional fields', () => {
+    const { fixture, update } = mount(
+      makeAggregate({
+        title: 'Backend Engineer',
+        company: 'Acme',
+        location: 'Quito',
+        remote_modality: 'remote',
+        salary_range: 'USD 1,500/mo',
+        source: 'Referral',
+        posted_date: '2026-07-01T00:00:00Z',
+      }),
+    );
+    const component = fixture.componentInstance;
+    component.title.set('Senior Backend Engineer');
+    component.location.set('');
+    component.remoteModality.set('hybrid');
+
+    component.saveDetails();
+
+    expect(update).toHaveBeenCalledWith('app-1', {
+      title: 'Senior Backend Engineer',
+      company: 'Acme',
+      url: null,
+      notes: null,
+      location: null,
+      remote_modality: 'hybrid',
+      salary_range: 'USD 1,500/mo',
+      source: 'Referral',
+      posted_date: '2026-07-01T00:00:00Z',
+    });
   });
 
   it('saves the snapshot and emits changed', () => {

@@ -103,13 +103,23 @@
             <tr (click)="open(app.id)" class="row">
               <td>{{ app.title }}</td>
               <td><app-company-link [name]="app.company" /></td>
-              <td class="location" [title]="app.location || ''">{{ app.location || '—' }}</td>
+              <td class="location" [title]="app.location || ''">
+                <span>{{ app.location || '—' }}</span>
+                @if (app.remote_modality) {
+                  <span class="work-mode">{{ workModeLabel(app.remote_modality) }}</span>
+                }
+              </td>
               <td>{{ app.salary_range || '—' }}</td>
               <td>
                 @if (app.source) {
                   <span class="source-badge">{{ app.source }}</span>
                 } @else {
                   <span class="muted">—</span>
+                }
+                @if (app.posted_date) {
+                  <span class="posted-date">{{
+                    app.posted_date | date: 'mediumDate' : 'UTC'
+                  }}</span>
                 }
               </td>
               <td>

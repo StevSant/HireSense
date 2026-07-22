@@ -3,7 +3,9 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, field_validator, model_validator
+
+from hiresense.tracking.domain.models import RemoteModality
 
 
 class CreateApplicationRequest(BaseModel):
@@ -15,6 +17,24 @@ class CreateApplicationRequest(BaseModel):
     description: str | None = None
     url: str | None = None
     notes: str | None = None
+    location: str | None = None
+    remote_modality: RemoteModality | None = None
+    salary_range: str | None = None
+    source: str | None = None
+    posted_date: datetime | None = None
+
+    @field_validator("remote_modality", mode="before")
+    @classmethod
+    def normalize_onsite_alias(cls, value: object) -> object:
+        return "on_site" if value == "onsite" else value
+
+    @field_validator("location", "salary_range", "source", mode="before")
+    @classmethod
+    def strip_optional_metadata(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
 
     @model_validator(mode="after")
     def check_one_of(self) -> "CreateApplicationRequest":
@@ -68,6 +88,7 @@ class ApplicationListItemResponse(BaseModel):
     notes: str | None = None
     applied_at: datetime | None = None
     location: str | None = None
+    remote_modality: str | None = None
     salary_range: str | None = None
     source: str | None = None
     posted_date: datetime | None = None

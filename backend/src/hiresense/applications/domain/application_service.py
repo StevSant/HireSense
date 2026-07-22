@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import Any
 
 from hiresense.applications.domain.aggregate import (
@@ -70,15 +71,32 @@ class ApplicationService:
         description: str,
         url: str | None,
         notes: str | None = None,
+        location: str | None = None,
+        remote_modality: str | None = None,
+        salary_range: str | None = None,
+        source: str | None = None,
+        posted_date: datetime | None = None,
     ) -> ApplicationAggregate:
-        tracked = self._tracking.track_job(title=title, company=company, url=url, notes=notes)
+        tracked = self._tracking.track_job(
+            title=title,
+            company=company,
+            url=url,
+            notes=notes,
+            location=location,
+            remote_modality=remote_modality,
+            salary_range=salary_range,
+            source=source,
+            posted_date=posted_date,
+        )
         skills = await self._extractor.extract(description)
-        source = JobSnapshotSource.LLM_EXTRACTED.value if skills else JobSnapshotSource.MANUAL.value
+        snapshot_source = (
+            JobSnapshotSource.LLM_EXTRACTED.value if skills else JobSnapshotSource.MANUAL.value
+        )
         snapshot = ApplicationJobSnapshot(
             application_id=tracked.id,
             description=description,
             required_skills=skills,
-            source=source,
+            source=snapshot_source,
         )
         self._repo.create_snapshot(snapshot)
         return self._build_aggregate(tracked)
@@ -257,6 +275,11 @@ class ApplicationService:
             url=tracked.url,
             status=tracked.status,
             notes=tracked.notes,
+            location=tracked.location,
+            remote_modality=tracked.remote_modality,
+            salary_range=tracked.salary_range,
+            source=tracked.source,
+            posted_date=tracked.posted_date,
             applied_at=tracked.applied_at,
             created_at=tracked.created_at,
             updated_at=tracked.updated_at,

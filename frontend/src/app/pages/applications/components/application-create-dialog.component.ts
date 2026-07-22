@@ -21,6 +21,11 @@ export class ApplicationCreateDialogComponent {
   company = signal('');
   description = signal('');
   url = signal('');
+  location = signal('');
+  remoteModality = signal<'remote' | 'hybrid' | 'on_site' | ''>('');
+  salaryRange = signal('');
+  source = signal('');
+  postedDate = signal('');
   saving = signal(false);
   error = signal('');
 
@@ -40,6 +45,11 @@ export class ApplicationCreateDialogComponent {
         company: c,
         description: d,
         url: this.url().trim() || undefined,
+        location: this.location().trim() || undefined,
+        remote_modality: this.remoteModality() || undefined,
+        salary_range: this.salaryRange().trim() || undefined,
+        source: this.source().trim() || undefined,
+        posted_date: this.postedDate() ? `${this.postedDate()}T00:00:00Z` : undefined,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

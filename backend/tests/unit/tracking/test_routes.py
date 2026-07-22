@@ -48,8 +48,9 @@ class FakeTrackingService:
         company: str,
         url: str | None = None,
         notes: str | None = None,
+        **metadata,
     ) -> TrackedApplication:
-        return self._make(title=title, company=company, url=url, notes=notes)
+        return self._make(title=title, company=company, url=url, notes=notes, **metadata)
 
     def track_from_ingestion(self, job_id: str) -> TrackedApplication:
         raise NotFoundError(f"Job {job_id} not found")
@@ -101,6 +102,13 @@ class FakeTrackingService:
         app.updated_at = datetime.now(timezone.utc)
         return app
 
+    def update_details(self, id: uuid_mod.UUID, changes: dict) -> TrackedApplication:
+        app = self.get(id)
+        for field, value in changes.items():
+            setattr(app, field, value)
+        app.updated_at = datetime.now(timezone.utc)
+        return app
+
     def remove(self, id: uuid_mod.UUID) -> None:
         if id not in self._store:
             raise ValueError(f"Application {id} not found")
@@ -138,6 +146,30 @@ def test_create_manual_application() -> None:
     assert data["title"] == "Backend Engineer"
     assert data["company"] == "Acme"
     assert data["status"] == ApplicationStatus.SAVED.value
+
+
+def test_create_manual_application_with_listing_metadata() -> None:
+    client = TestClient(make_app(FakeTrackingService()))
+
+    resp = client.post(
+        "/tracking",
+        json={
+            "title": "Backend Engineer",
+            "company": "Acme",
+            "location": "Quito",
+            "remote_modality": "onsite",
+            "salary_range": "USD 1,500-2,000/mo",
+            "source": "Referral",
+            "posted_date": "2026-07-01T00:00:00Z",
+        },
+    )
+
+    assert resp.status_code == 201, resp.text
+    data = resp.json()
+    assert data["location"] == "Quito"
+    assert data["remote_modality"] == "on_site"
+    assert data["salary_range"] == "USD 1,500-2,000/mo"
+    assert data["source"] == "Referral"
 
 
 def test_create_from_ingestion_not_found() -> None:
@@ -225,6 +257,42 @@ def test_update_application() -> None:
 
     assert resp.status_code == 200
     assert resp.json()["status"] == ApplicationStatus.APPLIED.value
+
+
+def test_update_application_details_preserves_omitted_and_clears_null() -> None:
+    fake = FakeTrackingService()
+    created = fake.track_job(
+        title="ML Engineer",
+        company="DeepMind",
+        location="London",
+        salary_range="GBP 90,000/year",
+    )
+    client = TestClient(make_app(fake))
+
+    resp = client.patch(
+        f"/tracking/{created.id}",
+        json={"title": "Senior ML Engineer", "location": None, "remote_modality": "hybrid"},
+    )
+
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["title"] == "Senior ML Engineer"
+    assert data["location"] is None
+    assert data["remote_modality"] == "hybrid"
+    assert data["salary_range"] == "GBP 90,000/year"
+
+
+def test_update_application_rejects_invalid_remote_modality() -> None:
+    fake = FakeTrackingService()
+    created = fake.track_job(title="ML Engineer", company="DeepMind")
+    client = TestClient(make_app(fake))
+
+    resp = client.patch(
+        f"/tracking/{created.id}",
+        json={"remote_modality": "sometimes"},
+    )
+
+    assert resp.status_code == 422
 
 
 def test_update_application_not_found() -> None:

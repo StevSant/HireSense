@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid as uuid_mod
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
 import pytest
 from fastapi import FastAPI
@@ -32,8 +33,10 @@ class FakeOrchestrator:
     def get_job_by_id(self, job_id: str):
         return None
 
+    jobs_by_id: dict[str, object] = {}
+
     def get_jobs_by_ids(self, job_ids):
-        return {}
+        return {job_id: self.jobs_by_id[job_id] for job_id in job_ids if job_id in self.jobs_by_id}
 
 
 def _make_aggregate(
@@ -44,6 +47,12 @@ def _make_aggregate(
     required_skills: list[str] | None = None,
     match_count: int = 0,
     latest_match_score: float | None = None,
+    job_id: uuid_mod.UUID | None = None,
+    location: str | None = None,
+    remote_modality: str | None = None,
+    salary_range: str | None = None,
+    source: str | None = None,
+    posted_date: datetime | None = None,
 ) -> ApplicationAggregate:
     app_id = uuid_mod.uuid4()
     now = datetime.now(timezone.utc)
@@ -73,7 +82,7 @@ def _make_aggregate(
         )
     return ApplicationAggregate(
         id=app_id,
-        job_id=None,
+        job_id=job_id,
         title=title,
         company=company,
         url=None,
@@ -82,6 +91,11 @@ def _make_aggregate(
         applied_at=None,
         created_at=now,
         updated_at=now,
+        location=location,
+        remote_modality=remote_modality,
+        salary_range=salary_range,
+        source=source,
+        posted_date=posted_date,
         job_snapshot=snap,
         latest_match=latest_match,
         latest_optimization=None,
@@ -96,8 +110,13 @@ class FakeApplicationService:
     def __init__(self) -> None:
         self._store: dict[uuid_mod.UUID, ApplicationAggregate] = {}
 
-    async def create_from_manual(self, title, company, description, url, notes=None):
-        agg = _make_aggregate(title=title, company=company, description=description)
+    async def create_from_manual(self, title, company, description, url, notes=None, **metadata):
+        agg = _make_aggregate(
+            title=title,
+            company=company,
+            description=description,
+            **metadata,
+        )
         self._store[agg.id] = agg
         return agg
 
@@ -216,6 +235,29 @@ def test_create_manual_application_returns_aggregate(client: TestClient):
     assert body["job_snapshot"]["description"] == "Run k8s"
 
 
+def test_create_manual_application_returns_pipeline_metadata(client: TestClient):
+    resp = client.post(
+        "/applications",
+        json={
+            "title": "SRE",
+            "company": "Acme",
+            "description": "Run k8s",
+            "location": "Quito",
+            "remote_modality": "onsite",
+            "salary_range": "USD 1,500-2,000/mo",
+            "source": "Referral",
+            "posted_date": "2026-07-01T00:00:00Z",
+        },
+    )
+
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert body["location"] == "Quito"
+    assert body["remote_modality"] == "on_site"
+    assert body["salary_range"] == "USD 1,500-2,000/mo"
+    assert body["source"] == "Referral"
+
+
 def test_create_rejects_missing_description(client: TestClient):
     resp = client.post("/applications", json={"title": "SRE", "company": "Acme"})
     assert resp.status_code == 422
@@ -230,8 +272,71 @@ def test_list_returns_artifact_flags(client: TestClient):
     row = rows[0]
     assert {"has_match", "has_optimization", "has_prep", "latest_match_score"} <= row.keys()
     # Pipeline-view enrichment fields folded in from the former Tracking page.
-    assert {"job_id", "location", "salary_range", "source", "posted_date"} <= row.keys()
+    assert {
+        "job_id",
+        "location",
+        "remote_modality",
+        "salary_range",
+        "source",
+        "posted_date",
+    } <= row.keys()
     assert row["has_match"] is False
+
+
+def test_list_manual_application_uses_persisted_metadata(client: TestClient):
+    client.post(
+        "/applications",
+        json={
+            "title": "SRE",
+            "company": "Acme",
+            "description": "Run k8s",
+            "location": "Quito",
+            "remote_modality": "remote",
+            "salary_range": "USD 1,500-2,000/mo",
+            "source": "Referral",
+            "posted_date": "2026-07-01T00:00:00Z",
+        },
+    )
+
+    row = client.get("/applications").json()[0]
+
+    assert row["location"] == "Quito"
+    assert row["remote_modality"] == "remote"
+    assert row["salary_range"] == "USD 1,500-2,000/mo"
+    assert row["source"] == "Referral"
+
+
+def test_list_prefers_live_ingested_metadata_with_field_fallback(
+    client: TestClient, application_service
+):
+    job_id = uuid_mod.uuid4()
+    aggregate = _make_aggregate(
+        job_id=job_id,
+        location="Fallback location",
+        remote_modality="hybrid",
+        salary_range="USD 1,500/mo",
+        source="Fallback source",
+        posted_date=datetime(2026, 6, 1, tzinfo=timezone.utc),
+    )
+    application_service._store[aggregate.id] = aggregate
+    FakeOrchestrator.jobs_by_id[str(job_id)] = SimpleNamespace(
+        location="Live location",
+        remote_modality=None,
+        salary_range="USD 2,000/mo",
+        source="Live source",
+        posted_date=None,
+    )
+
+    try:
+        row = client.get("/applications").json()[0]
+    finally:
+        FakeOrchestrator.jobs_by_id.clear()
+
+    assert row["location"] == "Live location"
+    assert row["remote_modality"] == "hybrid"
+    assert row["salary_range"] == "USD 2,000/mo"
+    assert row["source"] == "Live source"
+    assert row["posted_date"].startswith("2026-06-01")
 
 
 def test_list_paginates_and_reports_total(client: TestClient):

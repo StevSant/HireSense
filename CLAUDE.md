@@ -93,7 +93,7 @@ No NgModules: standalone components with lazy-loaded routes (`app.routes.ts`). A
 
 ### Job lifecycle (cross-cutting behavior)
 
-Jobs are upserted by stable identity (`source` + `source_id`, else `sha256(url)`); a content hash drives in-place updates. Closure detection: snapshot sources (ATS portals) close jobs missing from N consecutive complete fetches; feed sources close via a throttled URL-probe sweep (`POST /ingestion/revalidate`) driven by an **external** cron — the app never self-schedules revalidation. Closed jobs are hidden by default and excluded from semantic search.
+Jobs are upserted by stable identity (`source` + `source_id`, else `sha256(url)`); a content hash drives in-place updates. Closure detection: snapshot sources (ATS portals) close jobs missing from N consecutive complete fetches; feed sources close via a throttled URL-probe sweep run by the opt-in in-app scheduler when `SCHEDULER_ENABLED=true`. When the scheduler is disabled, operators can still trigger `POST /ingestion/revalidate` manually or from an external cron. Closed jobs are hidden by default and excluded from semantic search.
 
 ## Feature workflow
 

@@ -110,9 +110,10 @@ content hash drives in-place updates on refetch. Closures are detected two ways:
 
 - **Snapshot sources** (company ATS portals) — a job missing from N consecutive complete
   fetches is marked `closed`.
-- **Feed / search sources** — a throttled URL-probe sweep (`POST /ingestion/revalidate`,
-  driven by an external cron) closes listings that 404 or show a "no longer available"
-  marker.
+- **Feed / search sources** — a throttled URL-probe sweep closes listings that 404 or show
+  a "no longer available" marker. The in-app scheduler runs the sweep when
+  `SCHEDULER_ENABLED=true`; when disabled, operators can trigger
+  `POST /ingestion/revalidate` manually or from an external cron.
 
 Closed jobs are hidden by default and dropped from semantic search.
 

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 HireSense — AI-assisted job hunting. Ingests postings from job boards and company ATS portals, ranks them against the user's profile (pgvector ANN semantic pre-ranking + skill overlap + tiered LLM scoring), and manages applications end to end (tracking, CV/cover-letter generation, interview prep, outreach, analytics).
 
-Monorepo: `backend/` (Python 3.13, FastAPI, SQLAlchemy + Alembic, PostgreSQL 16 + pgvector), `frontend/` (Angular 21, standalone components + signals, Vitest), `docker-compose.yml` (db, app, frontend, otel-lgtm/Grafana).
+Monorepo: `backend/` (Python 3.12+, FastAPI, SQLAlchemy + Alembic, PostgreSQL 16 + pgvector), `frontend/` (Angular 21, standalone components + signals, Vitest), `docker-compose.yml` (db, app, frontend, otel-lgtm/Grafana).
 
 ## Commands
 
@@ -93,7 +93,7 @@ No NgModules: standalone components with lazy-loaded routes (`app.routes.ts`). A
 
 ### Job lifecycle (cross-cutting behavior)
 
-Jobs are upserted by stable identity (`source` + `source_id`, else `sha256(url)`); a content hash drives in-place updates. Closure detection: snapshot sources (ATS portals) close jobs missing from N consecutive complete fetches; feed sources close via a throttled URL-probe sweep (`POST /ingestion/revalidate`) driven by an **external** cron — the app never self-schedules revalidation. Closed jobs are hidden by default and excluded from semantic search.
+Jobs are upserted by stable identity (`source` + `source_id`, else `sha256(url)`); a content hash drives in-place updates. Closure detection: snapshot sources (ATS portals) close jobs missing from N consecutive complete fetches; feed sources close via a throttled URL-probe sweep run by the opt-in in-app scheduler when `SCHEDULER_ENABLED=true`. When the scheduler is disabled, operators can still trigger `POST /ingestion/revalidate` manually or from an external cron. Closed jobs are hidden by default and excluded from semantic search.
 
 ## Feature workflow
 

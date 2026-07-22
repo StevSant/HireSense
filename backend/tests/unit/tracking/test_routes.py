@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid as uuid_mod
 from datetime import datetime, timezone
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -29,6 +30,9 @@ class FakeOrchestrator:
 class FakeTrackingService:
     def __init__(self) -> None:
         self._store: dict[uuid_mod.UUID, TrackedApplication] = {}
+        self.update_application_calls = 0
+        self.update_status_calls = 0
+        self.update_details_calls = 0
 
     def _make(self, **kwargs) -> TrackedApplication:
         app = TrackedApplication(**kwargs)
@@ -89,6 +93,7 @@ class FakeTrackingService:
         status: ApplicationStatus,
         notes: str | None = None,
     ) -> TrackedApplication:
+        self.update_status_calls += 1
         app = self.get(id)
         app.status = status.value
         if notes is not None:
@@ -103,8 +108,25 @@ class FakeTrackingService:
         return app
 
     def update_details(self, id: uuid_mod.UUID, changes: dict) -> TrackedApplication:
+        self.update_details_calls += 1
         app = self.get(id)
         for field, value in changes.items():
+            setattr(app, field, value)
+        app.updated_at = datetime.now(timezone.utc)
+        return app
+
+    async def update_application(
+        self,
+        id: uuid_mod.UUID,
+        *,
+        status: ApplicationStatus | None = None,
+        changes: dict[str, object | None] | None = None,
+    ) -> TrackedApplication:
+        self.update_application_calls += 1
+        app = self.get(id)
+        if status is not None:
+            app.status = status.value
+        for field, value in (changes or {}).items():
             setattr(app, field, value)
         app.updated_at = datetime.now(timezone.utc)
         return app
@@ -282,6 +304,43 @@ def test_update_application_details_preserves_omitted_and_clears_null() -> None:
     assert data["salary_range"] == "GBP 90,000/year"
 
 
+def test_combined_update_calls_atomic_service_operation_once() -> None:
+    fake = FakeTrackingService()
+    created = fake.track_job(title="ML Engineer", company="DeepMind")
+    client = TestClient(make_app(fake))
+
+    response = client.patch(
+        f"/tracking/{created.id}",
+        json={"status": "applied", "title": "Senior ML Engineer", "source": "Referral"},
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "applied"
+    assert response.json()["title"] == "Senior ML Engineer"
+    assert fake.update_application_calls == 1
+    assert fake.update_status_calls == 0
+    assert fake.update_details_calls == 0
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("title", "t" * 256),
+        ("company", "c" * 256),
+        ("url", f"https://example.com/{'u' * 2030}"),
+        ("source", "s" * 101),
+    ],
+)
+def test_update_rejects_values_larger_than_tracking_columns(field: str, value: str) -> None:
+    fake = FakeTrackingService()
+    created = fake.track_job(title="ML Engineer", company="DeepMind")
+    client = TestClient(make_app(fake))
+
+    response = client.patch(f"/tracking/{created.id}", json={field: value})
+
+    assert response.status_code == 422
+
+
 def test_update_application_rejects_invalid_remote_modality() -> None:
     fake = FakeTrackingService()
     created = fake.track_job(title="ML Engineer", company="DeepMind")
@@ -308,7 +367,7 @@ def test_update_application_not_found() -> None:
 
 
 class _RejectingTransitionService(FakeTrackingService):
-    async def update_status(self, id, status, notes=None):
+    async def update_application(self, id, *, status=None, changes=None):
         raise InvalidStatusTransitionError("Cannot change status")
 
 

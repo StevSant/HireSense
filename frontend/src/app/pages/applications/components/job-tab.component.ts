@@ -108,17 +108,25 @@ export class JobTabComponent implements OnChanges {
     this.detailsSaving.set(true);
     this.detailsSaved.set(false);
     this.error.set('');
+    const commonDetails = {
+      title,
+      company,
+      url: this.url().trim() || null,
+      notes: this.notes().trim() || null,
+    };
+    const manualListingMetadata = this.aggregate().job_id
+      ? {}
+      : {
+          location: this.location().trim() || null,
+          remote_modality: this.remoteModality() || null,
+          salary_range: this.salaryRange().trim() || null,
+          source: this.listingSource().trim() || null,
+          posted_date: this.postedDate() ? `${this.postedDate()}T00:00:00Z` : null,
+        };
     this.trackingService
       .update(this.aggregate().id, {
-        title,
-        company,
-        url: this.url().trim() || null,
-        notes: this.notes().trim() || null,
-        location: this.location().trim() || null,
-        remote_modality: this.remoteModality() || null,
-        salary_range: this.salaryRange().trim() || null,
-        source: this.listingSource().trim() || null,
-        posted_date: this.postedDate() ? `${this.postedDate()}T00:00:00Z` : null,
+        ...commonDetails,
+        ...manualListingMetadata,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

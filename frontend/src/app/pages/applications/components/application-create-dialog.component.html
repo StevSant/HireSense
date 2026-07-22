@@ -12,6 +12,7 @@
       <label for="create-title">Title</label>
       <input
         id="create-title"
+        maxlength="255"
         [ngModel]="title()"
         (ngModelChange)="title.set($event)"
         placeholder="e.g. Senior Backend Engineer"
@@ -21,6 +22,7 @@
       <label for="create-company">Company</label>
       <input
         id="create-company"
+        maxlength="255"
         [ngModel]="company()"
         (ngModelChange)="company.set($event)"
         placeholder="e.g. Acme Corp"
@@ -30,6 +32,7 @@
       <label for="create-url">URL (optional)</label>
       <input
         id="create-url"
+        maxlength="2048"
         [ngModel]="url()"
         (ngModelChange)="url.set($event)"
         placeholder="https://..."
@@ -85,6 +88,7 @@
           <label for="create-source">Source</label>
           <input
             id="create-source"
+            maxlength="100"
             [ngModel]="source()"
             (ngModelChange)="source.set($event)"
             placeholder="e.g. Referral or LinkedIn"

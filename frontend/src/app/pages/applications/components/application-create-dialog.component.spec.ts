@@ -23,6 +23,16 @@ describe('ApplicationCreateDialogComponent', () => {
     expect(details.open).toBe(false);
   });
 
+  it('matches bounded API fields with input maxlength attributes', () => {
+    const { fixture } = mount();
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('#create-title')?.getAttribute('maxlength')).toBe('255');
+    expect(element.querySelector('#create-company')?.getAttribute('maxlength')).toBe('255');
+    expect(element.querySelector('#create-url')?.getAttribute('maxlength')).toBe('2048');
+    expect(element.querySelector('#create-source')?.getAttribute('maxlength')).toBe('100');
+  });
+
   it('submits salary text and optional listing metadata unchanged', () => {
     const { fixture, createManual } = mount();
     const component = fixture.componentInstance;

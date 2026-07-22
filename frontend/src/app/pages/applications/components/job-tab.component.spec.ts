@@ -86,6 +86,7 @@ describe('JobTabComponent', () => {
   it('edits manual listing details and sends null for cleared optional fields', () => {
     const { fixture, update } = mount(
       makeAggregate({
+        job_id: null,
         title: 'Backend Engineer',
         company: 'Acme',
         location: 'Quito',
@@ -112,6 +113,48 @@ describe('JobTabComponent', () => {
       salary_range: 'USD 1,500/mo',
       source: 'Referral',
       posted_date: '2026-07-01T00:00:00Z',
+    });
+  });
+
+  it('shows bounded listing metadata inputs for a manual application', () => {
+    const { fixture } = mount(makeAggregate({ job_id: null }));
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('#job-tab-location')).not.toBeNull();
+    expect(element.querySelector('#job-tab-work-mode')).not.toBeNull();
+    expect(element.querySelector('#job-tab-source')?.getAttribute('maxlength')).toBe('100');
+    expect(element.querySelector('#job-tab-title')?.getAttribute('maxlength')).toBe('255');
+    expect(element.querySelector('#job-tab-company')?.getAttribute('maxlength')).toBe('255');
+    expect(element.querySelector('#job-tab-url')?.getAttribute('maxlength')).toBe('2048');
+  });
+
+  it('hides listing metadata editors for an ingested application', () => {
+    const { fixture } = mount(
+      makeAggregate({
+        job_id: 'job-1',
+        location: 'Live location',
+        remote_modality: 'remote',
+        salary_range: 'USD 2,000/mo',
+        source: 'LinkedIn',
+      }),
+    );
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('#job-tab-location')).toBeNull();
+    expect(element.querySelector('#job-tab-work-mode')).toBeNull();
+    expect(element.querySelector('#job-tab-source')).toBeNull();
+  });
+
+  it('updates only common editable details for an ingested application', () => {
+    const { fixture, update } = mount(makeAggregate({ job_id: 'job-1' }));
+
+    fixture.componentInstance.saveDetails();
+
+    expect(update).toHaveBeenCalledWith('app-1', {
+      title: 'Senior Backend Engineer',
+      company: 'Acme Corp',
+      url: null,
+      notes: null,
     });
   });
 

@@ -28,10 +28,10 @@ from hiresense.tracking.domain import InvalidStatusTransitionError
 
 
 class FakeOrchestrator:
-    """List enrichment looks up the linked ingested job; manual apps have none."""
+    """Application responses enrich linked jobs from this in-memory map."""
 
     def get_job_by_id(self, job_id: str):
-        return None
+        return self.jobs_by_id.get(job_id)
 
     jobs_by_id: dict[str, object] = {}
 
@@ -263,6 +263,26 @@ def test_create_rejects_missing_description(client: TestClient):
     assert resp.status_code == 422
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("title", "t" * 256),
+        ("company", "c" * 256),
+        ("url", f"https://example.com/{'u' * 2030}"),
+        ("source", "s" * 101),
+    ],
+)
+def test_create_rejects_values_larger_than_tracking_columns(
+    client: TestClient, field: str, value: str
+) -> None:
+    payload = {"title": "SRE", "company": "Acme", "description": "Run k8s"}
+    payload[field] = value
+
+    response = client.post("/applications", json=payload)
+
+    assert response.status_code == 422
+
+
 def test_list_returns_artifact_flags(client: TestClient):
     client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
     resp = client.get("/applications")
@@ -363,6 +383,39 @@ def test_get_returns_aggregate(client: TestClient):
     resp = client.get(f"/applications/{app_id}")
     assert resp.status_code == 200
     assert resp.json()["id"] == app_id
+
+
+def test_get_prefers_live_ingested_metadata_with_field_fallback(
+    client: TestClient, application_service: FakeApplicationService
+) -> None:
+    job_id = uuid_mod.uuid4()
+    aggregate = _make_aggregate(
+        job_id=job_id,
+        location="Fallback location",
+        remote_modality="hybrid",
+        salary_range="USD 1,500/mo",
+        source="Fallback source",
+        posted_date=datetime(2026, 6, 1, tzinfo=timezone.utc),
+    )
+    application_service._store[aggregate.id] = aggregate
+    FakeOrchestrator.jobs_by_id[str(job_id)] = SimpleNamespace(
+        location="Live location",
+        remote_modality=None,
+        salary_range="USD 2,000/mo",
+        source="Live source",
+        posted_date=None,
+    )
+
+    try:
+        body = client.get(f"/applications/{aggregate.id}").json()
+    finally:
+        FakeOrchestrator.jobs_by_id.clear()
+
+    assert body["location"] == "Live location"
+    assert body["remote_modality"] == "hybrid"
+    assert body["salary_range"] == "USD 2,000/mo"
+    assert body["source"] == "Live source"
+    assert body["posted_date"].startswith("2026-06-01")
 
 
 def test_get_missing_returns_404(client: TestClient):

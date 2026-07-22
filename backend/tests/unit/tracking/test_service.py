@@ -411,6 +411,70 @@ def test_update_details_preserves_omitted_fields_and_clears_explicit_null() -> N
     assert updated.salary_range == "USD 1,500/mo"
 
 
+@pytest.mark.asyncio
+async def test_combined_update_commits_status_and_details_once_with_history() -> None:
+    class RecordingRepository(FakeRepository):
+        def __init__(self) -> None:
+            super().__init__()
+            self.save_calls = 0
+            self.history_save_calls: list[tuple[TrackedApplication, str | None, str]] = []
+
+        def save(self, app: TrackedApplication) -> TrackedApplication:
+            self.save_calls += 1
+            return super().save(app)
+
+        def save_with_history(self, application, *, from_status, to_status):
+            self.history_save_calls.append(
+                (application.model_copy(deep=True), from_status, to_status)
+            )
+            self._store[application.id] = application
+            return application
+
+    repo = RecordingRepository()
+    service = make_service(repo=repo)
+    app = service.track_job(title="Engineer", company="Acme")
+
+    updated = await service.update_application(
+        app.id,
+        status=ApplicationStatus.APPLIED,
+        changes={"title": "Senior Engineer", "source": "Referral"},
+    )
+
+    assert updated.status == "applied"
+    assert updated.title == "Senior Engineer"
+    assert updated.source == "Referral"
+    assert repo.save_calls == 0
+    assert len(repo.history_save_calls) == 1
+    committed, from_status, to_status = repo.history_save_calls[0]
+    assert committed.title == "Senior Engineer"
+    assert committed.source == "Referral"
+    assert (from_status, to_status) == ("saved", "applied")
+
+
+@pytest.mark.asyncio
+async def test_repository_failure_does_not_publish_status_event() -> None:
+    class FailingRepository(FakeRepository):
+        def save_with_history(self, application, *, from_status, to_status):
+            raise RuntimeError("commit failed")
+
+    job_id = uuid_mod.uuid4()
+    repo = FailingRepository()
+    app = repo.create(_make_app(job_id=job_id))
+    bus = FakeEventBus()
+    service = make_service(repo=repo, event_bus=bus)
+
+    with pytest.raises(RuntimeError, match="commit failed"):
+        await service.update_application(
+            app.id,
+            status=ApplicationStatus.APPLIED,
+            changes={"title": "Senior Engineer"},
+        )
+
+    assert bus.published == []
+    assert repo.get_by_id(app.id).status == "saved"
+    assert repo.get_by_id(app.id).title == "Engineer"
+
+
 def test_remove() -> None:
     repo = FakeRepository()
     svc = make_service(repo=repo)

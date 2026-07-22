@@ -114,13 +114,12 @@ async def update_application(
     orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
 ) -> TrackedApplicationResponse:
     try:
-        if request.status is not None:
-            app = await service.update_status(id, request.status)
-        else:
-            app = service.get(id)
         detail_changes = request.model_dump(exclude_unset=True, exclude={"status"})
-        if detail_changes:
-            app = service.update_details(id, detail_changes)
+        app = await service.update_application(
+            id,
+            status=request.status,
+            changes=detail_changes,
+        )
     except InvalidStatusTransitionError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:

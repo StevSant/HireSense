@@ -2,10 +2,16 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from hiresense.tracking.domain.models import ApplicationStatus, RemoteModality
+
+Title = Annotated[str, Field(max_length=255)]
+Company = Annotated[str, Field(max_length=255)]
+ApplicationUrl = Annotated[str, Field(max_length=2048)]
+ListingSource = Annotated[str, Field(max_length=100)]
 
 
 def _strip_optional(value: object) -> object:
@@ -19,7 +25,7 @@ class ListingMetadataRequest(BaseModel):
     location: str | None = None
     remote_modality: RemoteModality | None = None
     salary_range: str | None = None
-    source: str | None = None
+    source: ListingSource | None = None
     posted_date: datetime | None = None
 
     @field_validator("location", "salary_range", "source", mode="before")
@@ -35,18 +41,18 @@ class ListingMetadataRequest(BaseModel):
 
 class CreateApplicationRequest(ListingMetadataRequest):
     job_id: uuid.UUID | None = None
-    title: str | None = None
-    company: str | None = None
-    url: str | None = None
+    title: Title | None = None
+    company: Company | None = None
+    url: ApplicationUrl | None = None
     notes: str | None = None
 
 
 class UpdateApplicationRequest(ListingMetadataRequest):
     status: ApplicationStatus | None = None
     notes: str | None = None
-    title: str | None = None
-    company: str | None = None
-    url: str | None = None
+    title: Title | None = None
+    company: Company | None = None
+    url: ApplicationUrl | None = None
 
     @field_validator("title", "company")
     @classmethod

@@ -28,14 +28,24 @@ outreach, and analytics.
 
 ## What is HireSense?
 
-Job hunting is a search problem drowning in noise: the same roles reposted across a dozen
-boards, listings that don't match your stack, and no signal on where you actually stand in
-the market. HireSense turns that firehose into a ranked, deduplicated shortlist.
+**The problem.** Job hunting is a search problem drowning in noise: the same roles reposted
+across a dozen boards, listings that don't match your stack, a CV you rewrite from scratch
+for every application, applications you lose track of, and no signal on where you actually
+stand in the market.
 
-It ingests postings from many sources, **pre-ranks the entire corpus** with pgvector ANN so
-the best matches reach page one, refines with skill overlap and tiered LLM scoring, then
-helps you act — track applications, generate tailored CVs and cover letters, prep for
-interviews, and see where your profile sits on pay and fit.
+**What HireSense does.** It turns that firehose into a ranked, deduplicated shortlist —
+pre-ranking the entire corpus with pgvector ANN so the best matches reach page one, refining
+with skill overlap and tiered LLM scoring — then helps you act on the results, end to end.
+
+| The pain | How HireSense solves it |
+|---|---|
+| The same roles reposted across a dozen boards | Ingests many sources and **deduplicates by stable identity** — one canonical entry per role. |
+| Listings that don't match your stack | **Whole-corpus semantic pre-ranking** + skill overlap + tiered LLM scoring put real fits on page one. |
+| Rewriting your CV and cover letter for every role | **Tailored CV & cover-letter generation** from templates, per posting. |
+| Losing track of where each application stands | **Pipeline tracking** — Saved → Applied → Interviewing → Offer, with per-application artifacts. |
+| No signal on your market position | **Market analytics** — your pay band, best-fit companies & roles, and pipeline conversion. |
+| Dead listings cluttering the results | **Change & closure detection** updates jobs in place and hides ones that disappear or 404. |
+| The hunt stalls the moment you get busy | **Autopilot** — scheduled hunts, notifications, and inbound-email → tracking keep it moving. |
 
 ## 🎯 Why HireSense?
 

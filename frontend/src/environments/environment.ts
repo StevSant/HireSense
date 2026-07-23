@@ -1,5 +1,6 @@
 export const environment = {
   production: false,
+  demo: false,
   // Use the relative /api path so dev traffic flows through the Angular dev
   // proxy (proxy.conf.json → http://localhost:8000) and stays same-origin with
   // the app served at :4200. Calling the backend cross-origin (absolute :8000

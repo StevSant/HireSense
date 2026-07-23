@@ -7,6 +7,8 @@ import { timeoutInterceptor } from './core/interceptors/timeout.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { errorLoggingInterceptor } from './core/interceptors/error-logging.interceptor';
 import { GlobalErrorHandler } from './core/error-handler';
+import { environment } from '../environments/environment';
+import { demoApiInterceptor } from './demo/demo-api.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -25,6 +27,7 @@ export const appConfig: ApplicationConfig = {
     // (withCredentials) and error (401 recovery); it only taps + rethrows.
     provideHttpClient(
       withInterceptors([
+        ...(environment.demo ? [demoApiInterceptor] : []),
         credentialsInterceptor,
         errorInterceptor,
         errorLoggingInterceptor,

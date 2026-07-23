@@ -4,6 +4,7 @@ import { RouterOutlet, RouterLink, Router, NavigationEnd } from '@angular/router
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
 import { HUBS, HubTabsComponent, hubForUrl } from '../../core/nav';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-dashboard',
@@ -18,6 +19,7 @@ export class DashboardComponent {
   private destroyRef = inject(DestroyRef);
 
   sidebarOpen = signal(false);
+  readonly demoMode = environment.demo;
   // router.url at construction time is already the post-redirect URL; the NavigationEnd
   // subscription uses urlAfterRedirects for the same reason on later navigations.
   activeHub = signal(hubForUrl(this.router.url));

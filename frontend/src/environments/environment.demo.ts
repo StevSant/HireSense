@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  demo: false,
+  demo: true,
   apiUrl: '/api',
   feedbackRefetchDebounceMs: 2500,
   httpTimeoutMs: 30000,

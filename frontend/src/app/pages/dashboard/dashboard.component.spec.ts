@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { DashboardComponent } from './dashboard.component';
 import { AuthService } from '../../core/services/auth.service';
+import { environment } from '../../../environments/environment';
 
 function makeAuth(over: Partial<Record<string, unknown>> = {}) {
   return {
@@ -34,6 +35,23 @@ describe('DashboardComponent', () => {
     const fixture = mount();
     const links = fixture.nativeElement.querySelectorAll('aside.sidebar nav a');
     expect(links.length).toBe(5);
+  });
+
+  it('labels demo mode, links to the repository, and hides admin navigation', () => {
+    (environment as unknown as { demo: boolean }).demo = true;
+
+    try {
+      const fixture = mount();
+      const banner = fixture.nativeElement.querySelector('[data-testid="demo-banner"]');
+      const links = fixture.nativeElement.querySelectorAll('aside.sidebar nav a');
+
+      expect(banner.textContent).toContain('Synthetic data');
+      expect(banner.textContent).toContain('Read-only');
+      expect(banner.querySelector('a').href).toBe('https://github.com/StevSant/HireSense');
+      expect(links.length).toBe(4);
+    } finally {
+      (environment as unknown as { demo: boolean }).demo = false;
+    }
   });
 
   it('highlights the hub that matches the active hub signal', () => {

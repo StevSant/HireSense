@@ -11,12 +11,15 @@ outreach, and analytics.
 
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Angular 21](https://img.shields.io/badge/Angular-21-DD0031?style=flat-square&logo=angular&logoColor=white)](https://angular.dev/)
+[![Angular 22](https://img.shields.io/badge/Angular-22-DD0031?style=flat-square&logo=angular&logoColor=white)](https://angular.dev/)
 [![PostgreSQL + pgvector](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0f766e?style=flat-square)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-2dd4bf?style=flat-square)](#-contributing)
 
-**[Quick Start](#-quick-start) · [How it works](#-how-it-works) · [Architecture](#-architecture) · [Screenshots](#-screenshots)**
+**[Live Demo](https://hiresense-demo.vercel.app) · [Quick Start](#-quick-start) · [How it works](#-how-it-works) · [Architecture](#-architecture) · [Screenshots](#-screenshots)**
+
+**[Try the frontend-only demo →](https://hiresense-demo.vercel.app)** — Read-only,
+synthetic data, no account required, and no backend connected.
 
 </div>
 
@@ -150,7 +153,7 @@ Closed jobs are hidden by default and dropped from semantic search.
 |---|---|
 | **Backend** | Python 3.12+, FastAPI, SQLAlchemy 2.0 + Alembic, Pydantic |
 | **Database** | PostgreSQL 16 + `pgvector` (ANN semantic search) |
-| **Frontend** | Angular 21 (standalone components, signals), Vitest |
+| **Frontend** | Angular 22 (standalone components, signals), Vitest |
 | **LLM / embeddings** | LangChain provider abstraction (Anthropic default), `all-mpnet-base-v2` embeddings |
 | **Observability** | OpenTelemetry → Grafana / Loki / Tempo (otel-lgtm) |
 | **Tooling** | `uv` (Python), `npm` (frontend), `ruff`, `pytest` |

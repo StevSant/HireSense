@@ -157,6 +157,7 @@ class ArtifactService:
             ],
         )
         saved = self._repo.create_optimization(row)
+        readiness = getattr(result, "claim_readiness", None)
         return CvOptimizationView(
             id=saved.id,
             match_id=saved.match_id,
@@ -165,6 +166,9 @@ class ArtifactService:
             optimized_tex=saved.optimized_tex,
             improvement_summary=saved.improvement_summary,
             changes=list(saved.changes or []),
+            claim_readiness=(
+                readiness.model_dump() if hasattr(readiness, "model_dump") else readiness
+            ),
             created_at=saved.created_at,
         )
 

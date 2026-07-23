@@ -24,6 +24,8 @@ def content_hash(job: NormalizedJob) -> str:
         "|".join(sorted(c.strip().lower() for c in job.categories)),
         "|".join(sorted(c.strip().lower() for c in job.countries)),
         (job.remote_modality or ""),
+        str(job.requires_existing_work_authorization),
+        str(job.visa_sponsorship_available),
     ]
     raw = "\x1f".join(parts).encode("utf-8")
     return hashlib.sha256(raw).hexdigest()

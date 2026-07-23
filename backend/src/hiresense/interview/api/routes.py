@@ -111,6 +111,7 @@ async def prepare_interview(
     return InterviewPrepResponse(
         job_title=prep.job_title,
         company=prep.company,
+        interview_stage=prep.interview_stage,
         matched_stories=[
             StoryMatchResponse(
                 story_id=m.story_id,

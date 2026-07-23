@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from hiresense.bootstrap.shared_infra import SharedInfra
+from hiresense.claims.domain import CandidateClaimService
 from hiresense.matching.api.provider import MatchingProvider
 from hiresense.matching.domain import BatchEvaluationService, MatchingOrchestrator
 from hiresense.matching.domain.scorers import (
@@ -25,7 +26,10 @@ class MatchingBuild:
 
 
 def build_matching(
-    infra: SharedInfra, tracked: Callable[[str], Any], preference: Any | None = None
+    infra: SharedInfra,
+    tracked: Callable[[str], Any],
+    preference: Any | None = None,
+    claim_service: CandidateClaimService | None = None,
 ) -> MatchingBuild:
     s = infra.settings
     job_char_limit = s.match_dimension_job_char_limit
@@ -59,6 +63,7 @@ def build_matching(
             llm=tracked("interview_readiness_scorer"),
             weight=s.weight_interview,
             job_char_limit=job_char_limit,
+            claim_service=claim_service,
         ),
     ]
     # Default scoring path: all 6 dimensions in one LLM call. The individual

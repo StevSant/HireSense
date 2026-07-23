@@ -20,6 +20,7 @@ from hiresense.bootstrap import (
     build_autohunt,
     build_autopilot,
     build_cover_letter_templates,
+    build_claims,
     build_identity,
     build_inbox,
     build_ingestion,
@@ -41,6 +42,7 @@ from hiresense.config import Settings
 from hiresense.observability import setup_telemetry
 from hiresense.ports import LLMTimeoutError
 from hiresense.cover_letter_templates.api import router as cover_letter_templates_router
+from hiresense.claims.api import router as claims_router
 from hiresense.identity.api import router as auth_router
 from hiresense.kernel import (
     SecurityHeadersMiddleware,
@@ -217,6 +219,11 @@ def create_app() -> FastAPI:
     app.state.profile = profile.provider
     app.include_router(profile_router)
 
+    # --- Claims ledger (candidate assertions + their verification evidence) ---
+    claims = build_claims(infra)
+    app.state.claims = claims.provider
+    app.include_router(claims_router)
+
     # --- Portfolio (external proof-of-work sources; optional) ---
     portfolio = build_portfolio(infra)
     if portfolio is not None:
@@ -231,7 +238,12 @@ def create_app() -> FastAPI:
     app.include_router(network_router)
 
     # --- Matching ---
-    matching = build_matching(infra, tracked, preference=preference.service)
+    matching = build_matching(
+        infra,
+        tracked,
+        preference=preference.service,
+        claim_service=claims.service,
+    )
     app.state.matching = matching.provider
     app.include_router(matching_router)
 
@@ -249,7 +261,7 @@ def create_app() -> FastAPI:
     )
 
     # --- Optimization ---
-    optimization = build_optimization(infra, tracked)
+    optimization = build_optimization(infra, tracked, claim_service=claims.service)
     app.state.optimization = optimization.provider
     app.include_router(optimization_router)
 

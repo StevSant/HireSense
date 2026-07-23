@@ -27,15 +27,15 @@
   </div>
 
   <div class="apply-field">
-    <label for="ap-visa">Requires visa sponsorship?</label>
+    <label for="ap-visa">Work authorization status</label>
     <select
       id="ap-visa"
-      [ngModel]="form().requires_visa_sponsorship"
-      (ngModelChange)="set('requires_visa_sponsorship', $event)"
+      [ngModel]="form().work_authorization_status"
+      (ngModelChange)="set('work_authorization_status', $event)"
     >
-      <option value="">Prefer not to say</option>
-      <option value="no">No</option>
-      <option value="yes">Yes</option>
+      <option value="unknown">Prefer not to say</option>
+      <option value="authorized">Authorized to work</option>
+      <option value="requires_sponsorship">Requires visa sponsorship</option>
     </select>
   </div>
 

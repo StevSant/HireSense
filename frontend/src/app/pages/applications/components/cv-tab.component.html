@@ -116,6 +116,21 @@
   </section>
 
   @if (optimization(); as opt) {
+    @if (claimReadiness(); as readiness) {
+      <section class="claim-readiness" [class.claim-readiness-blocked]="!readiness.ready">
+        @if (readiness.ready) {
+          <p>All generated claims are supported by your CV.</p>
+        } @else {
+          <h3>{{ claimReviewHeading(readiness.blocked_changes.length) }}</h3>
+          @for (blocked of readiness.blocked_changes; track $index) {
+            <div class="blocked-claim">
+              <strong>{{ blocked.change.optimized }}</strong>
+              <span>{{ blockerExplanation(blocked.reason) }}</span>
+            </div>
+          }
+        }
+      </section>
+    }
     @if (opt.improvement_summary) {
       <div class="summary-card">
         <h3>Improvement summary</h3>

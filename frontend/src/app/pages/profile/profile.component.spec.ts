@@ -191,6 +191,15 @@ describe('ProfileComponent', () => {
     expect(el.querySelector('.details-grid')).not.toBeNull();
   });
 
+  it('shows a profile setup guide in the personal details tab', () => {
+    const { fixture } = mount({ profiles: { en: makeProfile() } });
+    const cmp = fixture.componentInstance;
+    cmp.pageTab.set('personal');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Make your profile ready to use');
+  });
+
   it('addAnotherLanguage marks the intent as add', () => {
     const { fixture } = mount({ profiles: { en: makeProfile() } });
     const cmp = fixture.componentInstance;

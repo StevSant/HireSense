@@ -27,6 +27,7 @@ export const HUBS: readonly Hub[] = [
     label: 'Pipeline',
     tabs: [
       { label: 'Applications', path: '/dashboard/applications' },
+      { label: 'Inbox review', path: '/dashboard/applications/signals' },
       { label: 'Interview', path: '/dashboard/interview' },
       { label: 'Outreach', path: '/dashboard/outreach' },
     ],

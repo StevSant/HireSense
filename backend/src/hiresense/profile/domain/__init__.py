@@ -9,6 +9,7 @@ from hiresense.profile.domain.screening_answer import ScreeningAnswer
 from hiresense.profile.domain.services import ProfileService
 from hiresense.profile.domain.skill_extractor import SkillExtractor
 from hiresense.profile.domain.translation_outcome import TranslationOutcome
+from hiresense.profile.domain.work_authorization import WorkAuthorizationStatus
 
 __all__ = [
     "ApplyProfile",
@@ -22,5 +23,6 @@ __all__ = [
     "ScreeningAnswer",
     "SkillExtractor",
     "TranslationOutcome",
+    "WorkAuthorizationStatus",
     "build_prefill",
 ]

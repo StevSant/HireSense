@@ -33,6 +33,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'applications/signals',
+        loadComponent: () =>
+          import('./pages/applications/components/inbox-signals.component').then(
+            (m) => m.InboxSignalsComponent,
+          ),
+      },
+      {
         path: 'applications/:id',
         loadComponent: () =>
           import('./pages/applications/application-detail.component').then(

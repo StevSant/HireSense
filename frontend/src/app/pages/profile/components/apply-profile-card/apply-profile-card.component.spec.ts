@@ -47,6 +47,7 @@ describe('ApplyProfileCardComponent', () => {
         apply_profile: {
           preferred_name: 'Ada',
           work_authorization: 'EU work permit',
+          work_authorization_status: 'authorized',
           requires_visa_sponsorship: false,
           desired_salary: '€70k',
           years_of_experience: 8,
@@ -59,7 +60,7 @@ describe('ApplyProfileCardComponent', () => {
 
     const form = fixture.componentInstance.form();
     expect(form.work_authorization).toBe('EU work permit');
-    expect(form.requires_visa_sponsorship).toBe('no');
+    expect(form.work_authorization_status).toBe('authorized');
     expect(form.years_of_experience).toBe('8');
     expect(form.screening_answers.length).toBe(1);
     expect(fixture.componentInstance.isDirty()).toBe(false);
@@ -70,7 +71,7 @@ describe('ApplyProfileCardComponent', () => {
     const c = fixture.componentInstance;
 
     c.set('work_authorization', '  US Citizen  ');
-    c.set('requires_visa_sponsorship', 'no');
+    c.set('work_authorization_status', 'authorized');
     c.set('years_of_experience', '5');
     c.addScreeningAnswer();
     c.updateScreeningAnswer(0, 'question', 'Q1');
@@ -80,6 +81,7 @@ describe('ApplyProfileCardComponent', () => {
     expect(setApplyProfile).toHaveBeenCalledTimes(1);
     const payload = setApplyProfile.mock.calls[0][0];
     expect(payload.work_authorization).toBe('US Citizen');
+    expect(payload.work_authorization_status).toBe('authorized');
     expect(payload.requires_visa_sponsorship).toBe(false);
     expect(payload.years_of_experience).toBe(5);
     expect(payload.preferred_name).toBeNull();

@@ -8,11 +8,17 @@ import uuid
 from typing import Any
 
 from opentelemetry import trace
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from hiresense.kernel.events import MatchCompletedEvent
+from hiresense.matching.domain.eligibility import (
+    EligibilityResult,
+    EligibilityStatus,
+    determine_work_authorization_eligibility,
+)
 from hiresense.matching.domain.models import MatchResult, ScoreBreakdown
 from hiresense.matching.domain.scorers.base import DimensionResult
+from hiresense.kernel.prompt_boundary import PromptBoundary
 from hiresense.matching.domain.semantic_scorer import SemanticScorer
 from hiresense.matching.domain.skill_matcher import SkillMatcher
 from hiresense.observability import get_domain_metrics, get_tracer
@@ -33,6 +39,12 @@ class EvaluationResult(BaseModel):
     job_title: str
     company: str
     dimensions: list[DimensionResult]
+    eligibility: EligibilityResult = Field(
+        default_factory=lambda: EligibilityResult(
+            status=EligibilityStatus.UNKNOWN,
+            rationale="Work-authorization information was not evaluated.",
+        )
+    )
 
 
 class MatchingOrchestrator:
@@ -71,6 +83,20 @@ class MatchingOrchestrator:
                 company = (
                     job.get("company", "") if isinstance(job, dict) else getattr(job, "company", "")
                 )
+                eligibility = determine_work_authorization_eligibility(job, profile)
+                span.set_attribute("matching.eligibility", eligibility.status.value)
+                if eligibility.status is EligibilityStatus.INELIGIBLE:
+                    result = EvaluationResult(
+                        composite_score=0.0,
+                        job_title=title,
+                        company=company,
+                        dimensions=[],
+                        eligibility=eligibility,
+                    )
+                    _metrics.matches_completed_total.add(1)
+                    _metrics.match_score.record(0.0)
+                    span.set_attribute("matching.score", 0.0)
+                    return result
 
                 if dimension_scorers is not None:
                     # Explicit override (e.g. the preference nudge adapter):
@@ -92,6 +118,7 @@ class MatchingOrchestrator:
                     job_title=title,
                     company=company,
                     dimensions=dimensions,
+                    eligibility=eligibility,
                 )
                 _metrics.matches_completed_total.add(1)
                 # composite_score is already 0..1
@@ -266,11 +293,11 @@ class MatchingOrchestrator:
     ) -> dict[str, Any]:
         prompt = (
             "Analyze this job-candidate match.\n\n"
-            f"Job Description: {job_description}\n"
+            f"Job Description: {PromptBoundary.untrusted_job_content(job_description, max_chars=12000)}\n"
             f"Required Skills: {', '.join(job_skills)}\n\n"
             f"Candidate Summary: {cv_summary}\n"
             f"Candidate Skills: {', '.join(cv_skills)}\n\n"
-            f"Candidate CV (full text):\n{cv_text or ''}\n\n"
+            f"Candidate CV (full text):\n{PromptBoundary.untrusted_cv_content(cv_text or '')}\n\n"
             "Return a JSON object with:\n"
             '- "experience_score": float 0-1\n'
             '- "language_score": float 0-1\n'
@@ -285,7 +312,11 @@ class MatchingOrchestrator:
         )
         try:
             response = await self._llm.complete(
-                prompt, system="You are a job matching analysis assistant."
+                prompt,
+                system=(
+                    "You are a job matching analysis assistant. "
+                    f"{PromptBoundary.untrusted_content_instruction()}"
+                ),
             )
             cleaned = _strip_markdown_fence(response)
             return json.loads(cleaned)

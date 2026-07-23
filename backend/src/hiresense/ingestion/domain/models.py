@@ -48,6 +48,10 @@ class NormalizedJob(BaseModel):
     # doesn't expose it. Used by the strict-location filter to let through
     # only postings the candidate can actually take.
     remote_modality: str | None = None
+    # Explicit job-posting facts only. ``None`` preserves the unknown state for
+    # postings that do not say whether authorization or sponsorship is needed.
+    requires_existing_work_authorization: bool | None = None
+    visa_sponsorship_available: bool | None = None
     countries: list[str] = Field(default_factory=list)
     # Intrinsic, profile-independent quality classification computed once at
     # ingestion: "ok" | "low_quality" | "spam". Flagged jobs are hidden from the

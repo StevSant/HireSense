@@ -1,5 +1,6 @@
 import pytest
 
+from hiresense.claims.domain import CandidateClaim, ClaimVerificationStatus
 from hiresense.matching.domain.scorers.interview_readiness_scorer import InterviewReadinessScorer
 
 
@@ -18,6 +19,18 @@ class FakeProfile:
         self.skills = ["Python", "FastAPI", "PostgreSQL"]
         self.sections = [
             type("S", (), {"name": "EXPERIENCE", "content": "Built APIs at Acme Corp"})()
+        ]
+
+
+class FakeClaimService:
+    def list_verified_for_readiness(self) -> list[CandidateClaim]:
+        return [
+            CandidateClaim(
+                text="Reduced API latency by 40%.",
+                source="portfolio",
+                provenance="https://example.com/case-study",
+                verification_status=ClaimVerificationStatus.VERIFIED,
+            )
         ]
 
 
@@ -52,6 +65,18 @@ async def test_interview_readiness_scorer_includes_profile_in_prompt() -> None:
     assert "Python" in llm.last_prompt
     assert "Built APIs at Acme Corp" in llm.last_prompt
     assert "EXPERIENCE" in llm.last_prompt
+
+
+@pytest.mark.asyncio
+async def test_interview_readiness_scorer_includes_verified_claim_provenance_in_prompt() -> None:
+    llm = FakeLLM('{"score": 0.75, "rationale": "Prepared"}')
+    scorer = InterviewReadinessScorer(llm=llm, weight=20, claim_service=FakeClaimService())
+
+    await scorer.score(JOB, FakeProfile())
+
+    assert "Verified candidate evidence:" in llm.last_prompt
+    assert "Reduced API latency by 40%." in llm.last_prompt
+    assert "portfolio: https://example.com/case-study" in llm.last_prompt
 
 
 @pytest.mark.asyncio

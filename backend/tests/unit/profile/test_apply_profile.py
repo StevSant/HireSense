@@ -8,7 +8,12 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from hiresense.infrastructure.database import Base
-from hiresense.profile.domain import ApplyProfile, CandidateProfile, build_prefill
+from hiresense.profile.domain import (
+    ApplyProfile,
+    CandidateProfile,
+    WorkAuthorizationStatus,
+    build_prefill,
+)
 from hiresense.profile.domain.screening_answer import ScreeningAnswer
 from hiresense.profile.infrastructure.orm import ProfileOrm  # noqa: F401 (registers table)
 from hiresense.profile.infrastructure.repository import ProfileRepository
@@ -23,6 +28,7 @@ def _profile(**over) -> CandidateProfile:
 def test_apply_profile_defaults_are_empty() -> None:
     ap = ApplyProfile()
     assert ap.requires_visa_sponsorship is None
+    assert ap.work_authorization_status is WorkAuthorizationStatus.UNKNOWN
     assert ap.screening_answers == []
 
 
@@ -100,6 +106,7 @@ def test_apply_profile_round_trips_through_json_column(repo) -> None:
             apply_profile=ApplyProfile(
                 work_authorization="US Citizen",
                 requires_visa_sponsorship=False,
+                work_authorization_status=WorkAuthorizationStatus.AUTHORIZED,
                 screening_answers=[ScreeningAnswer(question="Why us?", answer="Mission fit.")],
             )
         )
@@ -111,6 +118,7 @@ def test_apply_profile_round_trips_through_json_column(repo) -> None:
     assert stored.apply_profile is not None
     assert stored.apply_profile.work_authorization == "US Citizen"
     assert stored.apply_profile.requires_visa_sponsorship is False
+    assert stored.apply_profile.work_authorization_status is WorkAuthorizationStatus.AUTHORIZED
     assert stored.apply_profile.screening_answers[0].question == "Why us?"
 
 

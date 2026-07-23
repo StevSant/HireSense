@@ -18,3 +18,5 @@ class NormalizedJobDTO(BaseModel):
     language: str
     url: str
     posted_date: datetime | None = None
+    requires_existing_work_authorization: bool | None = None
+    visa_sponsorship_available: bool | None = None

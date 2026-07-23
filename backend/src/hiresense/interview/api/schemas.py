@@ -49,6 +49,7 @@ class PrepareRequest(BaseModel):
     company: str
     description: str
     location: str | None = None
+    interview_stage: str | None = None
 
 
 class StoryMatchResponse(BaseModel):
@@ -60,6 +61,7 @@ class StoryMatchResponse(BaseModel):
 class InterviewPrepResponse(BaseModel):
     job_title: str
     company: str
+    interview_stage: str | None
     matched_stories: list[StoryMatchResponse]
     competencies_to_probe: list[str]
     technical_topics: list[str]

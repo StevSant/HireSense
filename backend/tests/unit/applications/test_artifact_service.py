@@ -102,6 +102,21 @@ class FakeOptimizerResult:
         self.optimized_tex = "OPT_TEX"
         self.improvement_summary = "tightened skills"
         self.changes = [{"section": "skills", "before": "x", "after": "y"}]
+        self.claim_readiness = {
+            "ready": False,
+            "supported_changes": [],
+            "blocked_changes": [
+                {
+                    "change": {
+                        "section_name": "SKILLS",
+                        "original": "x",
+                        "optimized": "y",
+                        "reason": "",
+                    },
+                    "reason": "unsupported_job_skill",
+                }
+            ],
+        }
 
 
 class FakeOptimizer:
@@ -375,6 +390,7 @@ async def test_generate_optimization_pulls_missing_skills_from_match() -> None:
     assert result.optimized_tex == "OPT_TEX"
     assert optimizer.last_args["job_skills"] == ["python", "k8s"]
     assert optimizer.last_args["missing_skills"] == ["k8s"]
+    assert result.claim_readiness["blocked_changes"][0]["reason"] == "unsupported_job_skill"
 
 
 @pytest.mark.asyncio

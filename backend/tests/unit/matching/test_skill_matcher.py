@@ -113,6 +113,32 @@ def test_evidence_does_not_create_substring_false_positive() -> None:
     assert result.matched == []
 
 
+def test_negated_evidence_does_not_satisfy_required_skill() -> None:
+    matcher = SkillMatcher()
+
+    result = matcher.match(
+        candidate_skills=[],
+        required_skills=["kubernetes"],
+        evidence_text="Backend developer with no professional Kubernetes experience.",
+    )
+
+    assert result.matched == []
+    assert result.missing == ["kubernetes"]
+
+
+def test_explicit_candidate_skill_outweighs_negated_prose_evidence() -> None:
+    matcher = SkillMatcher()
+
+    result = matcher.match(
+        candidate_skills=["kubernetes"],
+        required_skills=["kubernetes"],
+        evidence_text="Earlier in my career, I had no Kubernetes experience.",
+    )
+
+    assert result.matched == ["kubernetes"]
+    assert result.missing == []
+
+
 def test_missing_skill_absent_from_both_list_and_evidence() -> None:
     matcher = SkillMatcher()
     result = matcher.match(

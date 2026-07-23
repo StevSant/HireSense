@@ -5,6 +5,7 @@ import { InterviewComponent } from './interview.component';
 import { InterviewService } from '../../core/services/interview.service';
 import { IngestionService } from '../../core/services/ingestion.service';
 import { ApplicationsService } from '../../core/services/applications.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 
 function makeStory(over: Partial<Record<string, unknown>> = {}) {
   return {
@@ -51,6 +52,20 @@ describe('InterviewComponent', () => {
       ...opts.interview,
     };
     const ingestion = { getJob: () => of({ title: 'X', company: 'Y', description: 'Z' }) };
+    const analytics = {
+      upskillingPlan: () =>
+        of({
+          has_profile: true,
+          steps: [
+            {
+              skill: 'kubernetes',
+              demand_count: 10,
+              demand_pct: 50,
+              next_action: 'Learn the core concepts and vocabulary.',
+            },
+          ],
+        }),
+    };
     const route = {
       snapshot: {
         queryParamMap: { get: (key: string) => (key === 'job_id' ? (opts.jobId ?? null) : null) },
@@ -62,6 +77,7 @@ describe('InterviewComponent', () => {
       providers: [
         { provide: InterviewService, useValue: interview },
         { provide: IngestionService, useValue: ingestion },
+        { provide: AnalyticsService, useValue: analytics },
         { provide: ActivatedRoute, useValue: route },
         // Required by the embedded <app-applications-prep-list>
         { provide: ApplicationsService, useValue: { list: () => of([]) } },
@@ -80,6 +96,12 @@ describe('InterviewComponent', () => {
     expect(cmp.stories().length).toBe(2);
     expect(cmp.storiesLoading()).toBe(false);
     expect(cmp.storiesError()).toBe('');
+  });
+
+  it('loads the profile-aware upskilling plan on init', () => {
+    const { fixture } = mount();
+
+    expect(fixture.componentInstance.upskillingPlan()?.steps[0].skill).toBe('kubernetes');
   });
 
   it('surfaces an error and clears loading when listStories fails (error state)', () => {
@@ -124,6 +146,25 @@ describe('InterviewComponent', () => {
     expect(cmp.preparing()).toBe(false);
     expect(cmp.prepResult()?.company).toBe('Globex');
     expect(cmp.prepError()).toBe('');
+  });
+
+  it('includes the selected interview stage when generating prep', () => {
+    const prepare = vi.fn(() => of(makePrep()));
+    const { fixture } = mount({ interview: { prepare } });
+    const cmp = fixture.componentInstance;
+
+    cmp.prepJobTitle.set('Engineer');
+    cmp.prepCompany.set('Globex');
+    cmp.prepDescription.set('Build things');
+    cmp.prepInterviewStage.set('Technical interview');
+    cmp.generatePrep();
+
+    expect(prepare).toHaveBeenCalledWith({
+      job_title: 'Engineer',
+      company: 'Globex',
+      description: 'Build things',
+      interview_stage: 'Technical interview',
+    });
   });
 
   it('surfaces a prep error when generatePrep fails', () => {

@@ -98,6 +98,36 @@
   }
 }
 
+.claim-readiness {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+
+  p,
+  h3 {
+    margin: 0;
+  }
+}
+
+.claim-readiness-blocked {
+  color: #92400e;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.blocked-claim {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+
+  span {
+    font-size: 0.9em;
+  }
+}
+
 .section-title {
   font-size: 1.05em;
   margin: 1.25rem 0 0.5rem;

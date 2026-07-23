@@ -38,6 +38,7 @@ class CvOptimizationView(BaseModel):
     optimized_tex: str
     improvement_summary: str
     changes: list[dict]
+    claim_readiness: dict | None = None
     created_at: datetime | None = None
 
 

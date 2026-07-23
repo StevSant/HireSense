@@ -4,6 +4,8 @@ import uuid as uuid_mod
 
 from pydantic import BaseModel
 
+from hiresense.matching.domain.eligibility import EligibilityStatus
+
 
 class EvaluateRequest(BaseModel):
     job_id: str | None = None
@@ -13,6 +15,8 @@ class EvaluateRequest(BaseModel):
     description: str | None = None
     skills: list[str] = []
     location: str | None = None
+    requires_existing_work_authorization: bool | None = None
+    visa_sponsorship_available: bool | None = None
 
 
 class DimensionResultResponse(BaseModel):
@@ -22,16 +26,23 @@ class DimensionResultResponse(BaseModel):
     weight: int
 
 
+class EligibilityResponse(BaseModel):
+    status: EligibilityStatus
+    rationale: str
+
+
 class EvaluationResponse(BaseModel):
     composite_score: float
     job_title: str
     company: str
     dimensions: list[DimensionResultResponse]
+    eligibility: EligibilityResponse
 
 
 class BatchEvaluateRequest(BaseModel):
     tracked_app_ids: list[uuid_mod.UUID] = []
     include_ingested: bool = False
+    profile_id: str | None = None
 
 
 class BatchResultResponse(BaseModel):
@@ -41,6 +52,7 @@ class BatchResultResponse(BaseModel):
     source_id: str
     composite_score: float
     dimensions: list[DimensionResultResponse]
+    eligibility: EligibilityResponse
     failed: bool = False
 
 

@@ -5,10 +5,13 @@ import logging
 import re
 from typing import Any
 
+from hiresense.kernel.prompt_boundary import PromptBoundary
+
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = (
-    "You extract required technical skills from job descriptions. Return only a JSON array."
+    "You extract required technical skills from job descriptions. "
+    f"{PromptBoundary.untrusted_content_instruction()} Return only a JSON array."
 )
 USER_PROMPT_TEMPLATE = (
     "Extract the required technical skills from the following job description. "
@@ -27,7 +30,9 @@ class SkillExtractor:
         if self._llm is None or not description.strip():
             return []
 
-        prompt = USER_PROMPT_TEMPLATE.format(description=description)
+        prompt = USER_PROMPT_TEMPLATE.format(
+            description=PromptBoundary.untrusted_job_content(description, max_chars=12000)
+        )
         try:
             response = await self._llm.complete(prompt, system=SYSTEM_PROMPT)
         except Exception:

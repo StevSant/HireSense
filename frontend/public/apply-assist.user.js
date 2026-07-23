@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         HireSense Apply Assist
 // @namespace    hiresense
-// @version      1.0.0
+// @version      1.1.0
 // @description  Prefill ATS application forms (Greenhouse/Lever/Ashby/Workable/SmartRecruiters/Recruitee) from your HireSense profile. Fills fields for you to REVIEW and submit — it never clicks Submit.
 // @match        *://*.greenhouse.io/*
 // @match        *://*.lever.co/*
@@ -10,8 +10,6 @@
 // @match        *://*.smartrecruiters.com/*
 // @match        *://*.recruitee.com/*
 // @grant        GM_xmlhttpRequest
-// @grant        GM_setValue
-// @grant        GM_getValue
 // @grant        GM_addStyle
 // @connect      localhost
 // @connect      *
@@ -22,9 +20,8 @@
 //   2. Install this script from your HireSense app, e.g. http://localhost:8000/apply-assist.user.js
 //      (served as a static asset from the frontend's public/ dir).
 //   3. Edit API_BASE below to point at your HireSense backend.
-//   4. First time you click "Fill from HireSense" it asks for your HireSense
-//      access token (copy from the HireSense tab: localStorage.access_token).
-//      It's stored in the userscript manager, not the page.
+//   4. Sign in to HireSense in this browser. Apply Assist reuses the app's
+//      httpOnly session cookie; there is no token in localStorage.
 //
 // DESIGN: prefill + review + YOU press Submit. No auto-submit (ToS/anti-bot safe).
 
@@ -110,25 +107,15 @@
   }
 
   // --- API ----------------------------------------------------------------
-  function getToken() {
-    let token = GM_getValue('hs_token', '');
-    if (!token) {
-      token =
-        prompt(
-          'Paste your HireSense access token (from the HireSense tab: localStorage.access_token):',
-        ) || '';
-      if (token) GM_setValue('hs_token', token.trim());
-    }
-    return token.trim();
-  }
-
   function fetchPrefill() {
-    const token = getToken();
     return new Promise((resolve, reject) => {
       GM_xmlhttpRequest({
         method: 'GET',
         url: `${API_BASE}/profile/prefill`,
-        headers: { Authorization: `Bearer ${token}` },
+        // Cookie auth is the primary HireSense session transport. Explicitly
+        // retain cookies for this privileged userscript request; the server
+        // still validates the httpOnly session and never exposes it to page JS.
+        anonymous: false,
         onload: (res) => {
           if (res.status === 200) {
             try {
@@ -137,8 +124,7 @@
               reject(e);
             }
           } else if (res.status === 401) {
-            GM_setValue('hs_token', ''); // clear bad token so next run re-prompts
-            reject(new Error('Unauthorized — token cleared, try again'));
+            reject(new Error('Sign in to HireSense in this browser, then try again'));
           } else if (res.status === 404) {
             reject(new Error('No HireSense profile found — upload a CV first'));
           } else {

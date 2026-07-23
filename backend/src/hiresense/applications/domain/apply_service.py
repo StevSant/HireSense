@@ -134,11 +134,11 @@ class ApplyService:
         try:
             return await self._latex.compile_to_pdf(opt.optimized_tex)
         except LatexCompileError:
-            logger.warning(
-                "Optimized TeX failed to compile for application %s — falling back to original_tex",
+            logger.exception(
+                "Optimized TeX failed to compile for application %s; refusing to offer an unoptimized fallback",
                 application_id,
             )
-            return await self._latex.compile_to_pdf(opt.original_tex)
+            raise
 
     async def compile_cover_letter_pdf(
         self,

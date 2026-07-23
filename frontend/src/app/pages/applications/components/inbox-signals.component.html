@@ -1,0 +1,60 @@
+<section class="inbox-signals">
+  <header>
+    <h1>Inbox status review</h1>
+    <p>
+      Review email-detected application updates before HireSense changes your pipeline.
+    </p>
+  </header>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <p class="muted">Loading inbox signals…</p>
+  } @else if (signals().length === 0) {
+    <p class="muted">No status updates need review.</p>
+  } @else {
+    <ul class="signal-list">
+      @for (signal of signals(); track signal.id) {
+        <li class="signal-card">
+          <div class="signal-copy">
+            <h2>{{ signal.subject }}</h2>
+            <p>
+              {{ signal.company || 'Unknown company' }}
+              @if (signal.role) {
+                · {{ signal.role }}
+              }
+              · {{ signal.received_at | date: 'mediumDate' }}
+            </p>
+            <p class="proposal">
+              Detected <strong>{{ signal.kind | titlecase }}</strong>
+              @if (signal.proposed_status) {
+                → set application to <strong>{{ signal.proposed_status | titlecase }}</strong>
+              }
+              <span class="confidence">{{ signal.confidence | number: '1.0-0' }}% confidence</span>
+            </p>
+          </div>
+          <div class="actions">
+            <button
+              type="button"
+              class="btn-primary"
+              [disabled]="reviewingId() !== null || !signal.matched_application_id || !signal.proposed_status"
+              (click)="confirm(signal.id)"
+            >
+              @if (reviewingId() === signal.id) { Updating… } @else { Confirm status }
+            </button>
+            <button
+              type="button"
+              class="btn-secondary"
+              [disabled]="reviewingId() !== null"
+              (click)="dismiss(signal.id)"
+            >
+              Dismiss
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</section>

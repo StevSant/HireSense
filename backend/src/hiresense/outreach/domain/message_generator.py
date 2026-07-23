@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from hiresense.kernel.prompt_boundary import PromptBoundary
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,7 +15,9 @@ class OutreachUnavailableError(RuntimeError):
 SYSTEM_PROMPT = (
     "You draft short, on-brand outreach messages to recruiters and hiring "
     "managers. Concise, specific, and genuine. No fluff, no placeholders, no "
-    "markdown. Return only the message body, ready to paste."
+    "markdown. "
+    f"{PromptBoundary.untrusted_content_instruction()} "
+    "Return only the message body, ready to paste."
 )
 
 
@@ -45,7 +49,7 @@ class OutreachMessageGenerator:
         parts = [
             f"Draft an outreach message following this style guide:\n---\n{style_guide}\n---\n",
             f"Role: {title} at {company}",
-            f"Job context: {job_description[:1200]}",
+            f"Job context: {PromptBoundary.untrusted_job_content(job_description, max_chars=1200)}",
             f"Candidate name (sign with this): {candidate_name or '(unknown)'}",
             f"Candidate summary: {candidate_summary or '(none)'}",
             f"Candidate skills: {', '.join(candidate_skills) or '(none)'}",

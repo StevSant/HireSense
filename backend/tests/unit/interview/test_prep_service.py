@@ -12,8 +12,10 @@ from hiresense.ports import LLMTimeoutError
 class FakeLLM:
     def __init__(self, response: str) -> None:
         self._response = response
+        self.prompt = ""
 
     async def complete(self, prompt, *, system="", model=""):
+        self.prompt = prompt
         return self._response
 
 
@@ -81,6 +83,32 @@ async def test_prepare_no_stories():
     result = await service.prepare({"title": "SWE", "company": "X", "description": ""})
     assert result.matched_stories == []
     assert len(result.technical_topics) > 0
+
+
+@pytest.mark.asyncio
+async def test_prepare_includes_optional_interview_stage_in_prompt():
+    llm = FakeLLM(
+        json.dumps(
+            {
+                "matched_stories": [],
+                "competencies_to_probe": [],
+                "technical_topics": [],
+                "negotiation_points": [],
+            }
+        )
+    )
+    service = InterviewPrepService(llm=llm, story_repo=FakeStoryRepo())
+
+    await service.prepare(
+        {
+            "title": "SWE",
+            "company": "Acme",
+            "description": "Build APIs",
+            "interview_stage": "Technical interview",
+        }
+    )
+
+    assert "Interview stage: Technical interview" in llm.prompt
 
 
 @pytest.mark.asyncio

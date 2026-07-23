@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -58,10 +59,11 @@ class IngestionSettings(BaseSettings):
 
     # Days to retain ingested jobs before HARD-deleting (GC backstop) at the
     # start of each /ingestion/fetch and /ingestion/scan-portals call. 0
-    # disables pruning. With explicit closure detection now the primary
+    # disables pruning; values are capped at 10 years to prevent accidental
+    # unbounded retention. With explicit closure detection now the primary
     # lifecycle signal, this is just a floor to bound table growth — kept long
     # enough that closed jobs linger with their badge before deletion.
-    ingestion_job_retention_days: int = 90
+    ingestion_job_retention_days: int = Field(default=90, ge=0, le=3650)
 
     # --- Job closure / revalidation ---
     # Consecutive snapshot fetches a previously-seen job may be missing before

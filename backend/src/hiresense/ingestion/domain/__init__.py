@@ -5,6 +5,10 @@ from hiresense.ingestion.domain.ats_platform import AtsPlatform
 from hiresense.ingestion.domain.closed_listing_classifier import Verdict, classify_listing
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
+from hiresense.ingestion.domain.cross_source_deduplicator import (
+    canonical_listing_key,
+    consolidate_cross_source_jobs,
+)
 from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.job_embedding_indexer import JobEmbeddingIndexer
 from hiresense.ingestion.domain.job_filter import (
@@ -51,6 +55,8 @@ __all__ = [
     "changed_score_updates",
     "classify_application",
     "classify_listing",
+    "canonical_listing_key",
+    "consolidate_cross_source_jobs",
     "content_hash",
     "filter_and_paginate",
     "identity_key",

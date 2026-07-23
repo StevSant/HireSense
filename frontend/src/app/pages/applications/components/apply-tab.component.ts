@@ -127,14 +127,13 @@ export class ApplyTabComponent {
     return (this.aggregate().company || 'company').replace(/[^a-zA-Z0-9]+/g, '_').slice(0, 40);
   }
 
-  openJobAndMarkApplied(): void {
+  openJob(): void {
     const url = this.aggregate().url;
     // The job URL is ingested (attacker-influenceable); openExternalUrl only
     // opens it when it is a safe http(s) scheme, blocking javascript:/data: sinks.
     if (url) {
       openExternalUrl(url);
     }
-    this.markApplied();
   }
 
   markApplied(): void {

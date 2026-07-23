@@ -52,6 +52,8 @@ class IngestedJob(Base):
     categories: Mapped[list] = mapped_column(JSON, default=list)
     countries: Mapped[list] = mapped_column(JSON, default=list)
     remote_modality: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    requires_existing_work_authorization: Mapped[bool | None] = mapped_column(nullable=True)
+    visa_sponsorship_available: Mapped[bool | None] = mapped_column(nullable=True)
     match_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     semantic_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     # Intrinsic quality classification (see JobQuality): "ok" | "low_quality" |

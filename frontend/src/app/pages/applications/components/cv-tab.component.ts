@@ -13,6 +13,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { CvOptimizationRunnerService } from '../../../core/services/cv-optimization-runner.service';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
+import { ClaimBlockerReason } from '../models/cv-optimization.model';
 
 type ViewMode = 'changes' | 'full';
 type PreviewSource = 'original' | 'optimized';
@@ -52,6 +53,9 @@ export class CvTabComponent {
   running = computed(() => this.runner.isRunning(this.aggregate().id));
   runnerError = computed(() => this.runner.lastError());
   optimization = computed(() => this.aggregate().latest_optimization);
+  claimReadiness = computed(
+    () => this.runner.lastReadiness(this.aggregate().id) ?? this.optimization()?.claim_readiness ?? null,
+  );
   hasMatch = computed(() => this.aggregate().latest_match !== null);
 
   /** Without an optimization only the Original CV can be previewed. */
@@ -171,6 +175,21 @@ export class CvTabComponent {
 
   setViewMode(mode: ViewMode): void {
     this.viewMode.set(mode);
+  }
+
+  blockerExplanation(reason: ClaimBlockerReason): string {
+    switch (reason) {
+      case 'missing_exact_anchor':
+        return 'The original wording could not be found in your CV.';
+      case 'unsupported_job_skill':
+        return 'This skill is not evidenced in your CV.';
+      case 'unsupported_numeric_claim':
+        return 'This number is not supported by the original wording.';
+    }
+  }
+
+  claimReviewHeading(blockedCount: number): string {
+    return blockedCount === 1 ? '1 claim needs review' : `${blockedCount} claims need review`;
   }
 
   async copyTex(): Promise<void> {

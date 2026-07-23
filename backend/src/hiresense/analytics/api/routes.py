@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from hiresense.analytics.api.dependencies import get_analytics_service
 from hiresense.analytics.domain import (
@@ -11,6 +13,7 @@ from hiresense.analytics.domain import (
     SearchFocus,
     SkillGap,
     TargetSalary,
+    UpskillingPlan,
 )
 from hiresense.identity.api.dependencies import require_auth
 
@@ -18,8 +21,15 @@ router = APIRouter(prefix="/analytics", tags=["analytics"], dependencies=[Depend
 
 
 @router.get("/funnel", response_model=FunnelMetrics)
-def funnel(service: AnalyticsService = Depends(get_analytics_service)) -> FunnelMetrics:
-    return service.funnel()
+def funnel(
+    start: datetime | None = Query(default=None),
+    end: datetime | None = Query(default=None),
+    service: AnalyticsService = Depends(get_analytics_service),
+) -> FunnelMetrics:
+    try:
+        return service.funnel(start=start, end=end)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/market", response_model=MarketIntel)
@@ -30,6 +40,11 @@ def market(service: AnalyticsService = Depends(get_analytics_service)) -> Market
 @router.get("/skill-gap", response_model=SkillGap)
 def skill_gap(service: AnalyticsService = Depends(get_analytics_service)) -> SkillGap:
     return service.skill_gap()
+
+
+@router.get("/upskilling-plan", response_model=UpskillingPlan)
+def upskilling_plan(service: AnalyticsService = Depends(get_analytics_service)) -> UpskillingPlan:
+    return service.upskilling_plan()
 
 
 @router.get("/target-salary", response_model=TargetSalary)

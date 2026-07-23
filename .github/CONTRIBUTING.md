@@ -83,6 +83,7 @@ uv run python -m pytest
 # frontend (from frontend/)
 npm test
 npx ng lint
+npm run test:e2e:smoke  # requires Playwright Chromium: npx playwright install chromium
 ```
 
 The backend test suite runs **without Postgres** (integration tests use in-memory SQLite).

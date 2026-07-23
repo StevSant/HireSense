@@ -487,6 +487,9 @@
   @if (pageTab() === 'personal') {
     <section class="tab-panel" id="panel-personal" role="tabpanel" aria-labelledby="tab-personal">
       @if (profile(); as p) {
+        <div class="details-card">
+          <app-profile-setup-card [profile]="p" />
+        </div>
         @if (!editingPersonal()) {
           <div class="details-card">
             <div class="details-card-header">

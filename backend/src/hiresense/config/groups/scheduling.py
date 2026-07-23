@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -10,8 +11,9 @@ class SchedulingSettings(BaseSettings):
     autohunt_min_score: float = 0.6
     # First-run lookback window (no prior digest to anchor the watermark).
     autohunt_initial_lookback_days: int = 7
-    # Digests older than this are pruned at the end of each run.
-    autohunt_digest_retention_days: int = 90
+    # Digests older than this are pruned at the end of each run. 0 disables
+    # pruning; retain no more than 10 years to keep this control bounded.
+    autohunt_digest_retention_days: int = Field(default=90, ge=0, le=3650)
     # Cron cadence consumed by the in-app scheduler when SCHEDULER_ENABLED=true;
     # when disabled, the job remains available for manual or externally driven runs.
     autohunt_schedule: str = "0 9 * * *"
@@ -35,4 +37,5 @@ class SchedulingSettings(BaseSettings):
     # not double-fire; docker-compose sets it true for the `app` service.
     scheduler_enabled: bool = False
     # Prune scheduler_job_runs rows older than this (inline on each insert).
-    scheduler_run_retention_days: int = 30
+    # 0 disables pruning; retain no more than 10 years to keep this control bounded.
+    scheduler_run_retention_days: int = Field(default=30, ge=0, le=3650)

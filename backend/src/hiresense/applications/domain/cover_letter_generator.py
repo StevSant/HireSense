@@ -3,11 +3,14 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from hiresense.kernel.prompt_boundary import PromptBoundary
+
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = (
     "You write concise, professional cover letters tailored to a specific job. "
-    "Match the candidate's strengths to the role's requirements. No fluff."
+    "Match the candidate's strengths to the role's requirements. No fluff. "
+    f"{PromptBoundary.untrusted_content_instruction()}"
 )
 
 USER_PROMPT_TEMPLATE = (
@@ -61,7 +64,7 @@ class CoverLetterGenerator:
         prompt = USER_PROMPT_TEMPLATE.format(
             title=title,
             company=company,
-            description=description,
+            description=PromptBoundary.untrusted_job_content(description, max_chars=12000),
             candidate_summary=candidate_summary,
             candidate_skills=", ".join(candidate_skills) or "(none provided)",
             required_skills=", ".join(required_skills) or "(none provided)",

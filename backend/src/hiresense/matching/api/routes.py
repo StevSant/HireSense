@@ -10,6 +10,7 @@ from hiresense.matching.api.dependencies import (
     get_batch_evaluation_service,
     get_ingestion_orchestrator_for_matching,
     get_matching_orchestrator,
+    get_optional_profile_service,
     get_tracking_service_for_matching,
 )
 from hiresense.matching.api.schemas import (
@@ -17,6 +18,7 @@ from hiresense.matching.api.schemas import (
     BatchEvaluationResponse,
     BatchResultResponse,
     DimensionResultResponse,
+    EligibilityResponse,
     EvaluateRequest,
     EvaluationResponse,
 )
@@ -44,6 +46,7 @@ class AnalyzeRequest(BaseModel):
 async def evaluate_job(
     body: EvaluateRequest,
     orchestrator: Annotated[object, Depends(get_matching_orchestrator)],
+    profile_service: Annotated[object | None, Depends(get_optional_profile_service)],
 ) -> EvaluationResponse:
     job = {
         "title": body.job_title or "",
@@ -51,8 +54,15 @@ async def evaluate_job(
         "description": body.description or "",
         "skills": body.skills,
         "location": body.location or "",
+        "requires_existing_work_authorization": body.requires_existing_work_authorization,
+        "visa_sponsorship_available": body.visa_sponsorship_available,
     }
-    result = await orchestrator.evaluate(job=job, profile=None)
+    profile = (
+        await profile_service.get_profile(body.profile_id)
+        if profile_service and body.profile_id
+        else None
+    )
+    result = await orchestrator.evaluate(job=job, profile=profile)
     return EvaluationResponse(
         composite_score=result.composite_score,
         job_title=result.job_title,
@@ -63,6 +73,10 @@ async def evaluate_job(
             )
             for d in result.dimensions
         ],
+        eligibility=EligibilityResponse(
+            status=result.eligibility.status,
+            rationale=result.eligibility.rationale,
+        ),
     )
 
 
@@ -95,6 +109,7 @@ async def batch_evaluate(
     batch_service: Annotated[object, Depends(get_batch_evaluation_service)],
     tracking_service: Annotated[object, Depends(get_tracking_service_for_matching)],
     ingestion_orchestrator: Annotated[object, Depends(get_ingestion_orchestrator_for_matching)],
+    profile_service: Annotated[object | None, Depends(get_optional_profile_service)],
 ) -> BatchEvaluationResponse:
     jobs: list[dict] = []
 
@@ -133,13 +148,27 @@ async def batch_evaluate(
                     "company": job.company,
                     "description": getattr(job, "description", ""),
                     "skills": getattr(job, "skills", []),
-                    "location": getattr(job, "location", ""),
+                        "location": getattr(job, "location", ""),
+                        "requires_existing_work_authorization": getattr(
+                            job, "requires_existing_work_authorization", None
+                        ),
+                        "visa_sponsorship_available": getattr(
+                            job, "visa_sponsorship_available", None
+                        ),
                     "source": "ingested",
                     "source_id": str(job.id),
                 }
             )
 
-    results = await batch_service.evaluate_batch(jobs)
+    profile = (
+        await profile_service.get_profile(body.profile_id)
+        if profile_service and body.profile_id
+        else None
+    )
+    if profile is None:
+        results = await batch_service.evaluate_batch(jobs)
+    else:
+        results = await batch_service.evaluate_batch(jobs, profile=profile)
 
     return BatchEvaluationResponse(
         total_jobs=len(results),
@@ -159,6 +188,10 @@ async def batch_evaluate(
                     )
                     for d in r.dimensions
                 ],
+                eligibility=EligibilityResponse(
+                    status=r.eligibility.status,
+                    rationale=r.eligibility.rationale,
+                ),
                 failed=r.failed,
             )
             for r in results

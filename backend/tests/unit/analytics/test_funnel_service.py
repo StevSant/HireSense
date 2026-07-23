@@ -117,3 +117,26 @@ def test_current_rejected_counted():
     assert m.current_rejected == 1
     current_saved = next(s.current for s in m.stages if s.stage == "saved")
     assert current_saved == 1
+
+
+def test_period_uses_only_apps_started_in_window_and_statuses_known_by_window_end():
+    earlier, cohort = uuid_mod.uuid4(), uuid_mod.uuid4()
+    rows = [
+        _t(earlier, None, "saved", 1),
+        _t(earlier, "saved", "applied", 4),
+        _t(cohort, None, "saved", 3),
+        _t(cohort, "saved", "applied", 5),
+        _t(cohort, "applied", "interviewing", 8),
+    ]
+
+    metrics = FunnelService(_FakeHistory(rows)).compute(
+        start=datetime(2026, 5, 2, tzinfo=timezone.utc),
+        end=datetime(2026, 5, 6, tzinfo=timezone.utc),
+    )
+
+    stages = {stage.stage: stage for stage in metrics.stages}
+    assert metrics.total_applications == 1
+    assert stages["saved"].reached == 1
+    assert stages["applied"].reached == 1
+    assert stages["interviewing"].reached == 0
+    assert stages["applied"].current == 1

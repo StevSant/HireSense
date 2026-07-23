@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import { FunnelMetrics } from '../../pages/analytics/models/funnel-metrics.model';
 import { MarketIntel } from '../../pages/analytics/models/market-intel.model';
 import { SkillGap } from '../../pages/analytics/models/skill-gap.model';
+import { UpskillingPlan } from '../../pages/interview/models/upskilling-plan.model';
 import { TargetSalary } from '../../pages/analytics/models/target-salary.model';
 import { CompBenchmark } from '../../pages/analytics/models/comp-benchmark.model';
 import { SearchFocus } from '../../pages/analytics/models/search-focus.model';
@@ -23,6 +24,10 @@ export class AnalyticsService {
 
   skillGap(): Observable<SkillGap> {
     return this.http.get<SkillGap>(`${environment.apiUrl}/analytics/skill-gap`);
+  }
+
+  upskillingPlan(): Observable<UpskillingPlan> {
+    return this.http.get<UpskillingPlan>(`${environment.apiUrl}/analytics/upskilling-plan`);
   }
 
   targetSalary(): Observable<TargetSalary> {

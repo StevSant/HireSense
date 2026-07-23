@@ -14,6 +14,7 @@ from hiresense.bootstrap.analytics import AnalyticsBuild, build_analytics
 from hiresense.bootstrap.applications import build_applications
 from hiresense.bootstrap.autohunt import AutoHuntBuild, build_autohunt
 from hiresense.bootstrap.cover_letter_templates import build_cover_letter_templates
+from hiresense.bootstrap.claims import ClaimsBuild, build_claims
 from hiresense.bootstrap.dimension_scorer_adapter import MatchingDimensionScorerAdapter
 from hiresense.bootstrap.identity import build_identity
 from hiresense.bootstrap.ingestion import IngestionBuild, build_ingestion
@@ -35,6 +36,7 @@ __all__ = [
     "AdminBuild",
     "AnalyticsBuild",
     "AutoHuntBuild",
+    "ClaimsBuild",
     "AutopilotBuild",
     "InboxBuild",
     "IngestionBuild",
@@ -58,6 +60,7 @@ __all__ = [
     "build_applications",
     "build_autohunt",
     "build_cover_letter_templates",
+    "build_claims",
     "build_identity",
     "build_ingestion",
     "build_interview",

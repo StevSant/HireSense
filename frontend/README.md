@@ -46,13 +46,16 @@ ng test
 
 ## Running end-to-end tests
 
-For end-to-end (e2e) testing, run:
+The browser smoke test starts the Angular app locally and checks that the public login
+form renders. It deliberately makes no backend, database, or external-service calls.
 
 ```bash
-ng e2e
+npx playwright install chromium # once per machine
+npm run test:e2e:smoke
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Run the full Playwright suite with `npm run test:e2e`. CI installs Chromium and runs the
+smoke command on every pull request and push to `main`.
 
 ## Additional Resources
 

@@ -14,6 +14,7 @@ from hiresense.applications.domain.models import (
     ApplicationJobSnapshot,
     JobSnapshotSource,
 )
+from hiresense.kernel.prompt_boundary import PromptBoundary
 
 
 # ---------------------------------------------------------------------------
@@ -178,7 +179,9 @@ async def test_generator_prompt_byte_identical_when_no_portfolio() -> None:
     expected = USER_PROMPT_TEMPLATE.format(
         title=_COMMON_KWARGS["title"],
         company=_COMMON_KWARGS["company"],
-        description=_COMMON_KWARGS["description"],
+        description=PromptBoundary.untrusted_job_content(
+            _COMMON_KWARGS["description"], max_chars=12000
+        ),
         candidate_summary=_COMMON_KWARGS["candidate_summary"],
         candidate_skills=", ".join(_COMMON_KWARGS["candidate_skills"]),
         required_skills=", ".join(_COMMON_KWARGS["required_skills"]),
@@ -186,9 +189,7 @@ async def test_generator_prompt_byte_identical_when_no_portfolio() -> None:
         missing_skills=", ".join(_COMMON_KWARGS["missing_skills"]),
         tone=_COMMON_KWARGS["tone"],
     )
-    assert llm.last_prompt == expected, (
-        "Prompt must be byte-identical to USER_PROMPT_TEMPLATE.format(...) when no portfolio_section"
-    )
+    assert llm.last_prompt == expected
 
 
 @pytest.mark.asyncio

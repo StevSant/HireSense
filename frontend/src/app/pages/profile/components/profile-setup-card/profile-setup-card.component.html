@@ -1,0 +1,38 @@
+<section class="profile-setup" aria-labelledby="profile-setup-title">
+  <div class="profile-setup-heading">
+    <div>
+      <p class="profile-setup-kicker">Profile setup</p>
+      <h3 id="profile-setup-title">Make your profile ready to use</h3>
+    </div>
+    <span class="profile-setup-count">{{ completedCount() }}/{{ steps().length }}</span>
+  </div>
+
+  <div
+    class="profile-setup-progress"
+    role="progressbar"
+    aria-label="Profile setup progress"
+    [attr.aria-valuemin]="0"
+    [attr.aria-valuemax]="steps().length"
+    [attr.aria-valuenow]="completedCount()"
+  >
+    <span [style.width.%]="(completedCount() / steps().length) * 100"></span>
+  </div>
+
+  @if (isComplete()) {
+    <p class="profile-setup-complete">Your profile covers the essentials for applications.</p>
+  } @else {
+    <ul class="profile-setup-list">
+      @for (step of steps(); track step.label) {
+        @if (!step.complete) {
+          <li>
+            <span class="profile-setup-marker" aria-hidden="true"></span>
+            <div>
+              <strong>{{ step.label }}</strong>
+              <p>{{ step.guidance }}</p>
+            </div>
+          </li>
+        }
+      }
+    </ul>
+  }
+</section>

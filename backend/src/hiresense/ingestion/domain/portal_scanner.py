@@ -12,6 +12,7 @@ from hiresense.ingestion.domain.application_classifier import classify_applicati
 from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
+from hiresense.ingestion.domain.work_authorization_facts import add_work_authorization_facts
 from hiresense.ingestion.domain.normalizer import JobNormalizer
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
 from hiresense.ingestion.domain.upsert_result import UpsertResult
@@ -154,7 +155,7 @@ class PortalScanner:
             normalized: list[NormalizedJob] = []
             for raw in raw_jobs:
                 total_fetched += 1
-                normalized_data = normalizer.normalize(raw)
+                normalized_data = add_work_authorization_facts(normalizer.normalize(raw))
                 classification = classify_application(
                     normalized_data.get("url"), platform=portal.platform
                 )

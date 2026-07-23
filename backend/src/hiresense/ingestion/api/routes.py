@@ -21,6 +21,7 @@ from hiresense.ingestion.api.dependencies import (
     get_semantic_scoring,
 )
 from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
+from hiresense.ingestion.domain.cross_source_deduplicator import consolidate_cross_source_jobs
 from hiresense.ingestion.domain.job_filter import (
     JobQueryParams,
     PaginatedResult,
@@ -88,6 +89,28 @@ async def _gather_profile(
         if extra_text:
             summary_parts.append(extra_text)
     return candidate_skills, "\n".join(summary_parts)
+
+
+async def _persist_score_updates_by_bucket(
+    updates: list[ScoreUpdate],
+    bucket_by_job_id: dict[str, Literal["boards", "portals"]],
+    orchestrator: IngestionOrchestrator,
+    scanner: PortalScanner,
+) -> None:
+    """Persist score changes through the repository that owns each job."""
+    updates_by_bucket: dict[str, list[ScoreUpdate]] = {"boards": [], "portals": []}
+    for update in updates:
+        bucket = bucket_by_job_id.get(update.job_id)
+        if bucket is not None:
+            updates_by_bucket[bucket].append(update)
+
+    persist_tasks = []
+    if board_updates := updates_by_bucket["boards"]:
+        persist_tasks.append(asyncio.to_thread(orchestrator.persist_scores_batch, board_updates))
+    if portal_updates := updates_by_bucket["portals"]:
+        persist_tasks.append(asyncio.to_thread(scanner.persist_scores_batch, portal_updates))
+    if persist_tasks:
+        await asyncio.gather(*persist_tasks)
 
 
 def _apply_quick(job: NormalizedJob, quick: QuickMatchResult | None) -> NormalizedJob:
@@ -210,7 +233,7 @@ async def revalidate_jobs(
 )
 async def list_jobs(
     request: Request,
-    tab: Annotated[Literal["boards", "portals"], Query()],
+    tab: Annotated[Literal["boards", "portals", "all"], Query()],
     orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
@@ -268,10 +291,29 @@ async def list_jobs(
         date_to=date_to,
     )
     # Corpus load + score persists below run sync SQLAlchemy sessions; offload
-    # to a worker thread so they don't block the event loop.
-    all_jobs = await asyncio.to_thread(
-        orchestrator.list_jobs if tab == "boards" else scanner.list_jobs, criteria
-    )
+    # to worker threads so they don't block the event loop. The combined feed
+    # deliberately loads both buckets before consolidation: that is the only
+    # path where an aggregator listing and the company's ATS listing can meet.
+    if tab == "all":
+        board_jobs, portal_jobs = await asyncio.gather(
+            asyncio.to_thread(orchestrator.list_jobs, criteria),
+            asyncio.to_thread(scanner.list_jobs, criteria),
+        )
+    elif tab == "boards":
+        board_jobs = await asyncio.to_thread(orchestrator.list_jobs, criteria)
+        portal_jobs = []
+    else:
+        board_jobs = []
+        portal_jobs = await asyncio.to_thread(scanner.list_jobs, criteria)
+    bucket_by_job_id: dict[str, Literal["boards", "portals"]] = {
+        job.id: "boards" for job in board_jobs
+    }
+    bucket_by_job_id.update({job.id: "portals" for job in portal_jobs})
+    all_jobs = board_jobs + portal_jobs
+    # Source identities remain separate in persistence for lifecycle tracking.
+    # The feed is consolidated before scoring so equivalent cross-source posts
+    # do not consume a page slot or duplicate LLM work.
+    all_jobs = consolidate_cross_source_jobs(all_jobs)
     # Snapshot the persisted scores so the corpus-wide persist below only writes
     # rows whose score actually changed this request (#132) — otherwise every GET
     # (including plain pagination / sort-only reloads) issues a full-corpus
@@ -280,10 +322,6 @@ async def list_jobs(
 
     candidate_skills, candidate_summary = await _gather_profile(
         profile_service, portfolio_enrichment
-    )
-
-    persist_scores_batch = (
-        orchestrator.persist_scores_batch if tab == "boards" else scanner.persist_scores_batch
     )
 
     # Default to match-descending so the ranking is actually applied when the
@@ -314,14 +352,35 @@ async def list_jobs(
     # only after it's already been paginated off. Passthrough (no vector store,
     # empty profile, etc.) leaves the skill-only ordering intact.
     if pre_ranker is not None:
-        all_jobs = await pre_ranker.rerank(
-            all_jobs, skill_by_id, candidate_skills, candidate_summary, bucket=tab
-        )
+        if tab == "all":
+            ranked_boards, ranked_portals = await asyncio.gather(
+                pre_ranker.rerank(
+                    [job for job in all_jobs if bucket_by_job_id[job.id] == "boards"],
+                    skill_by_id,
+                    candidate_skills,
+                    candidate_summary,
+                    bucket="boards",
+                ),
+                pre_ranker.rerank(
+                    [job for job in all_jobs if bucket_by_job_id[job.id] == "portals"],
+                    skill_by_id,
+                    candidate_skills,
+                    candidate_summary,
+                    bucket="portals",
+                ),
+            )
+            all_jobs = ranked_boards + ranked_portals
+        else:
+            all_jobs = await pre_ranker.rerank(
+                all_jobs, skill_by_id, candidate_skills, candidate_summary, bucket=tab
+            )
 
     if candidate_skills:
         score_updates = changed_score_updates(all_jobs, original_scores)
         if score_updates:
-            await asyncio.to_thread(persist_scores_batch, score_updates)
+            await _persist_score_updates_by_bucket(
+                score_updates, bucket_by_job_id, orchestrator, scanner
+            )
 
     # GLOBAL apply of already-cached Tier-1 LLM scores BEFORE pagination. The
     # LLM quick score is the accurate, displayed match value, but it was only
@@ -447,9 +506,11 @@ async def list_jobs(
             )
             for j in result.jobs
         ]
-        await asyncio.to_thread(
-            persist_scores_batch,
+        await _persist_score_updates_by_bucket(
             [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in result.jobs],
+            bucket_by_job_id,
+            orchestrator,
+            scanner,
         )
         # Page-level re-sort so the order reflects the post-semantic match_score
         # that the user actually sees. Phase-1 sort happens pre-pagination on

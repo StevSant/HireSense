@@ -3,6 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from hiresense.profile.domain.screening_answer import ScreeningAnswer
+from hiresense.profile.domain.work_authorization import WorkAuthorizationStatus
 
 
 class ApplyProfile(BaseModel):
@@ -18,6 +19,7 @@ class ApplyProfile(BaseModel):
 
     preferred_name: str | None = None
     work_authorization: str | None = None
+    work_authorization_status: WorkAuthorizationStatus = WorkAuthorizationStatus.UNKNOWN
     requires_visa_sponsorship: bool | None = None
     desired_salary: str | None = None
     years_of_experience: int | None = None

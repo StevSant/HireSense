@@ -15,11 +15,12 @@ import { ScreeningAnswer } from '../../models/screening-answer.model';
 import { ProfileService } from '../../../../core/services/profile.service';
 
 type TriState = '' | 'yes' | 'no';
+type WorkAuthorizationStatus = 'authorized' | 'requires_sponsorship' | 'unknown';
 
 interface ApplyProfileFormState {
   preferred_name: string;
   work_authorization: string;
-  requires_visa_sponsorship: TriState;
+  work_authorization_status: WorkAuthorizationStatus;
   desired_salary: string;
   years_of_experience: string;
   willing_to_relocate: TriState;
@@ -39,12 +40,25 @@ function boolFromTri(value: TriState): boolean | null {
   return null;
 }
 
+function authorizationStatus(profile: ApplyProfile | null): WorkAuthorizationStatus {
+  if (profile?.work_authorization_status) return profile.work_authorization_status;
+  if (profile?.requires_visa_sponsorship === true) return 'requires_sponsorship';
+  if (profile?.requires_visa_sponsorship === false) return 'authorized';
+  return 'unknown';
+}
+
+function sponsorshipRequirement(status: WorkAuthorizationStatus): boolean | null {
+  if (status === 'requires_sponsorship') return true;
+  if (status === 'authorized') return false;
+  return null;
+}
+
 function snapshot(profile: CandidateProfile): ApplyProfileFormState {
   const ap = profile.apply_profile ?? null;
   return {
     preferred_name: ap?.preferred_name ?? '',
     work_authorization: ap?.work_authorization ?? '',
-    requires_visa_sponsorship: triFromBool(ap?.requires_visa_sponsorship),
+    work_authorization_status: authorizationStatus(ap),
     desired_salary: ap?.desired_salary ?? '',
     years_of_experience: ap?.years_of_experience != null ? String(ap.years_of_experience) : '',
     willing_to_relocate: triFromBool(ap?.willing_to_relocate),
@@ -85,7 +99,7 @@ export class ApplyProfileCardComponent {
     return {
       preferred_name: '',
       work_authorization: '',
-      requires_visa_sponsorship: '',
+      work_authorization_status: 'unknown',
       desired_salary: '',
       years_of_experience: '',
       willing_to_relocate: '',
@@ -131,7 +145,8 @@ export class ApplyProfileCardComponent {
     return {
       preferred_name: state.preferred_name.trim() || null,
       work_authorization: state.work_authorization.trim() || null,
-      requires_visa_sponsorship: boolFromTri(state.requires_visa_sponsorship),
+      work_authorization_status: state.work_authorization_status,
+      requires_visa_sponsorship: sponsorshipRequirement(state.work_authorization_status),
       desired_salary: state.desired_salary.trim() || null,
       years_of_experience: Number.isNaN(parsedYears) ? null : parsedYears,
       willing_to_relocate: boolFromTri(state.willing_to_relocate),

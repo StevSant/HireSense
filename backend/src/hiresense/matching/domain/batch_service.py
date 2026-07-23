@@ -4,8 +4,9 @@ import asyncio
 import logging
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from hiresense.matching.domain.eligibility import EligibilityResult, EligibilityStatus
 from hiresense.matching.domain.scorers.base import DimensionResult
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,12 @@ class BatchResult(BaseModel):
     source_id: str
     composite_score: float
     dimensions: list[DimensionResult]
+    eligibility: EligibilityResult = Field(
+        default_factory=lambda: EligibilityResult(
+            status=EligibilityStatus.UNKNOWN,
+            rationale="Work-authorization information was not evaluated.",
+        )
+    )
     failed: bool = False
 
 
@@ -26,14 +33,16 @@ class BatchEvaluationService:
         self._orchestrator = orchestrator
         self._semaphore = asyncio.Semaphore(concurrency)
 
-    async def evaluate_batch(self, jobs: list[dict]) -> list[BatchResult]:
+    async def evaluate_batch(
+        self, jobs: list[dict], profile: Any | None = None
+    ) -> list[BatchResult]:
         if not jobs:
             return []
 
         async def evaluate_one(job: dict) -> BatchResult:
             async with self._semaphore:
                 try:
-                    result = await self._orchestrator.evaluate(job=job, profile=None)
+                    result = await self._orchestrator.evaluate(job=job, profile=profile)
                     return BatchResult(
                         job_title=result.job_title,
                         company=result.company,
@@ -41,6 +50,7 @@ class BatchEvaluationService:
                         source_id=job.get("source_id", ""),
                         composite_score=result.composite_score,
                         dimensions=list(result.dimensions),
+                        eligibility=result.eligibility,
                     )
                 except Exception as exc:
                     logger.warning("Batch evaluation failed for %s: %s", job.get("title", ""), exc)
@@ -51,6 +61,10 @@ class BatchEvaluationService:
                         source_id=job.get("source_id", ""),
                         composite_score=0.0,
                         dimensions=[],
+                        eligibility=EligibilityResult(
+                            status=EligibilityStatus.UNKNOWN,
+                            rationale="Eligibility could not be evaluated because matching failed.",
+                        ),
                         failed=True,
                     )
 

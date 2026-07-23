@@ -1,6 +1,29 @@
 <div class="page">
   <app-applications-prep-list />
 
+  @if (upskillingPlan(); as plan) {
+    <section class="section" aria-label="Personalized upskilling plan">
+      <div class="section-header">
+        <h1>Skill focus</h1>
+      </div>
+      @if (plan.has_profile && plan.steps.length > 0) {
+        <p>Based on skills missing from your profile across current open roles.</p>
+        <ol class="prep-list">
+          @for (step of plan.steps; track step.skill) {
+            <li>
+              <strong>{{ step.skill }}</strong> — {{ step.next_action }}
+              <span class="match-relevance">In {{ step.demand_pct }}% of open roles.</span>
+            </li>
+          }
+        </ol>
+      } @else if (!plan.has_profile) {
+        <p class="empty-state">Add skills to your profile to receive a personalized focus plan.</p>
+      } @else {
+        <p class="empty-state">No priority skill gaps in the current open roles.</p>
+      }
+    </section>
+  }
+
   <!-- Story Bank Section -->
   <section class="section">
     <div class="section-header">
@@ -214,6 +237,22 @@
             class="form-input"
           />
         </div>
+        <div class="form-group">
+          <label for="prep-interview-stage"
+            >Interview stage <span class="optional">(optional)</span></label
+          >
+          <select
+            id="prep-interview-stage"
+            [value]="prepInterviewStage()"
+            (change)="onPrepInterviewStageChange($event)"
+            class="form-input"
+          >
+            <option value="">Not specified</option>
+            @for (stage of interviewStageOptions; track stage) {
+              <option [value]="stage">{{ stage }}</option>
+            }
+          </select>
+        </div>
       </div>
       <div class="form-group">
         <label for="prep-description">Job Description</label>
@@ -240,6 +279,9 @@
       <div class="prep-results">
         <h2>
           Interview Prep for {{ prep.job_title }} at <app-company-link [name]="prep.company" />
+          @if (prep.interview_stage) {
+            — {{ prep.interview_stage }}
+          }
         </h2>
 
         @if (prep.matched_stories.length > 0) {

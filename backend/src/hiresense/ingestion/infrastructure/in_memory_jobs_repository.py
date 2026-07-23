@@ -63,6 +63,8 @@ class InMemoryJobsRepository:
                     "categories": list(job.categories),
                     "countries": list(job.countries),
                     "remote_modality": job.remote_modality,
+                    "requires_existing_work_authorization": job.requires_existing_work_authorization,
+                    "visa_sponsorship_available": job.visa_sponsorship_available,
                 }
             )
             self._content_hash[existing_id] = new_hash

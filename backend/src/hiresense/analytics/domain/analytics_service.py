@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from hiresense.analytics.domain.comp_benchmark_service import CompBenchmark, CompBenchmarkService
@@ -8,6 +9,7 @@ from hiresense.analytics.domain.market_service import MarketIntel, MarketIntelSe
 from hiresense.analytics.domain.search_focus_service import SearchFocus, SearchFocusService
 from hiresense.analytics.domain.skill_gap_service import SkillGap, SkillGapService
 from hiresense.analytics.domain.target_salary_service import TargetSalary, TargetSalaryService
+from hiresense.analytics.domain.upskilling_plan_service import UpskillingPlan, UpskillingPlanService
 
 
 class AnalyticsService:
@@ -36,14 +38,19 @@ class AnalyticsService:
         self._cache = cache
         self._language = language
 
-    def funnel(self) -> FunnelMetrics:
-        return self._funnel.compute()
+    def funnel(
+        self, *, start: datetime | None = None, end: datetime | None = None
+    ) -> FunnelMetrics:
+        return self._funnel.compute(start=start, end=end)
 
     def market(self) -> MarketIntel:
         return self._cache.get_or_compute("market", self._market.compute)
 
     def skill_gap(self) -> SkillGap:
         return self._skill_gap.compute(profile_skills=self._profile_skills())
+
+    def upskilling_plan(self) -> UpskillingPlan:
+        return UpskillingPlanService().build(self.skill_gap())
 
     async def target_salary(self) -> TargetSalary:
         skills, summary = self._profile_skills_summary()

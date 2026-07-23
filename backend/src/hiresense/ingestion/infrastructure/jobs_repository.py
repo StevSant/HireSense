@@ -44,6 +44,8 @@ def _to_orm(job: NormalizedJob, bucket: str) -> IngestedJob:
         categories=list(job.categories),
         countries=list(job.countries),
         remote_modality=job.remote_modality,
+        requires_existing_work_authorization=job.requires_existing_work_authorization,
+        visa_sponsorship_available=job.visa_sponsorship_available,
         match_score=job.match_score,
         semantic_score=job.semantic_score,
         quality=job.quality,
@@ -76,6 +78,8 @@ def _to_domain(row: IngestedJob) -> NormalizedJob:
         categories=list(row.categories or []),
         countries=list(row.countries or []),
         remote_modality=row.remote_modality,
+        requires_existing_work_authorization=row.requires_existing_work_authorization,
+        visa_sponsorship_available=row.visa_sponsorship_available,
         match_score=row.match_score,
         semantic_score=row.semantic_score,
         quality=row.quality,
@@ -119,6 +123,8 @@ class JobsRepository(SqlRepository):
             row.categories = list(job.categories)
             row.countries = list(job.countries)
             row.remote_modality = job.remote_modality
+            row.requires_existing_work_authorization = job.requires_existing_work_authorization
+            row.visa_sponsorship_available = job.visa_sponsorship_available
             row.content_hash = new_hash
             row.updated_at = now
 

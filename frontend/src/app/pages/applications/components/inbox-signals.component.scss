@@ -1,0 +1,91 @@
+.inbox-signals {
+  max-width: 920px;
+
+  header {
+    margin-bottom: 1.25rem;
+
+    h1 {
+      margin: 0;
+    }
+
+    p {
+      color: #6b7280;
+      margin: 0.4rem 0 0;
+    }
+  }
+}
+
+.signal-list {
+  display: grid;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.signal-card {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.signal-copy {
+  h2,
+  p {
+    margin: 0;
+  }
+
+  h2 {
+    font-size: 1rem;
+  }
+
+  p {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-top: 0.35rem;
+  }
+}
+
+.proposal strong {
+  color: #374151;
+}
+
+.confidence {
+  color: #047857;
+  font-size: 0.8rem;
+  margin-left: 0.4rem;
+}
+
+.actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.5rem;
+}
+
+.alert {
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 0.8rem;
+}
+
+.alert-error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.muted {
+  color: #6b7280;
+}
+
+@media (max-width: 640px) {
+  .signal-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

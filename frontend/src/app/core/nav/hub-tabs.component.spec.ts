@@ -28,6 +28,7 @@ describe('HubTabsComponent', () => {
 
     expect(links.map((a) => a.textContent?.trim())).toEqual([
       'Applications',
+      'Inbox review',
       'Interview',
       'Outreach',
     ]);

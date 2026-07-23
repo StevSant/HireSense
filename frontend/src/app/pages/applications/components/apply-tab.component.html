@@ -126,26 +126,25 @@
     </div>
 
     <p class="hint">
-      Open the original job posting and upload the bundle. When done, mark this application as
-      <em>applied</em> so it shows up in your tracker.
+      Open the original job posting and upload the bundle. Only after the job board confirms your
+      submission, mark this application as <em>applied</em> so it shows up in your tracker.
     </p>
 
     <div class="submit-row">
       @if (aggregate().url) {
-        <button class="btn-primary" (click)="openJobAndMarkApplied()">
-          🚀 Open job & mark applied
-        </button>
-      } @else {
-        <button class="btn-primary" (click)="markApplied()" [disabled]="marking() || isApplied()">
-          @if (marking()) {
-            Marking...
-          } @else if (isApplied()) {
-            ✓ Applied
-          } @else {
-            Mark as applied
-          }
+        <button class="btn-secondary" (click)="openJob()">
+          🚀 Open job posting
         </button>
       }
+      <button class="btn-primary" (click)="markApplied()" [disabled]="marking() || isApplied()">
+        @if (marking()) {
+          Marking...
+        } @else if (isApplied()) {
+          ✓ Applied
+        } @else {
+          Mark as applied
+        }
+      </button>
 
       @if (isApplied()) {
         <span class="applied-badge">

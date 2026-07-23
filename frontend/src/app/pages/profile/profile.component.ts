@@ -19,6 +19,7 @@ import { CoverLetterTemplatesComponent } from './components/cover-letter-templat
 import { AccountComponent } from '../account/account.component';
 import { PortfolioCardComponent } from './components/portfolio-card/portfolio-card.component';
 import { NetworkCardComponent } from './components/network-card/network-card.component';
+import { ProfileSetupCardComponent } from './components/profile-setup-card/profile-setup-card.component';
 
 type ProfilePageTab = 'cv' | 'personal' | 'cover-letters' | 'account';
 
@@ -36,6 +37,7 @@ type ProfilePageTab = 'cv' | 'personal' | 'cover-letters' | 'account';
     AccountComponent,
     PortfolioCardComponent,
     NetworkCardComponent,
+    ProfileSetupCardComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',

@@ -27,6 +27,11 @@ from hiresense.analytics.domain.skill_gap_service import SkillGap, SkillGapItem,
 from hiresense.analytics.domain.skill_normalizer import SkillNormalizer
 from hiresense.analytics.domain.target_salary_service import TargetSalary, TargetSalaryService
 from hiresense.analytics.domain.ttl_cache import TtlCache
+from hiresense.analytics.domain.upskilling_plan_service import (
+    UpskillingPlan,
+    UpskillingPlanService,
+    UpskillingStep,
+)
 
 __all__ = [
     "AnalyticsService",
@@ -54,4 +59,7 @@ __all__ = [
     "TargetSalaryService",
     "TrendPoint",
     "TtlCache",
+    "UpskillingPlan",
+    "UpskillingPlanService",
+    "UpskillingStep",
 ]

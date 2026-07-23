@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from hiresense.interview.domain.errors import InterviewPrepError
 from hiresense.interview.domain.models import Competency, Story
 from hiresense.interview.ports import StoryRepositoryPort
+from hiresense.kernel.prompt_boundary import PromptBoundary
 from hiresense.ports.llm import LLMTimeoutError
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ class StoryMatch(BaseModel):
 class InterviewPrep(BaseModel):
     job_title: str
     company: str
+    interview_stage: str | None
     matched_stories: list[StoryMatch]
     competencies_to_probe: list[str]
     technical_topics: list[str]
@@ -87,11 +89,13 @@ class InterviewPrepService:
         title = job.get("title", "")
         company = job.get("company", "")
         description = job.get("description", "")
+        interview_stage = (job.get("interview_stage") or "").strip()
 
         if self._llm is None:
             return InterviewPrep(
                 job_title=title,
                 company=company,
+                interview_stage=interview_stage or None,
                 matched_stories=[],
                 competencies_to_probe=[],
                 technical_topics=[],
@@ -104,9 +108,12 @@ class InterviewPrepService:
         for i, s in enumerate(stories, 1):
             story_summaries += f'{i}. [{s.id}] "{s.title}" ({s.competency}) - {s.situation[:100]}\n'
 
+        interview_stage_context = f"Interview stage: {interview_stage}\n\n" if interview_stage else ""
         prompt = (
             "You are an interview preparation coach.\n\n"
-            f"Job: {title} at {company}\nDescription: {description[:2000]}\n\n"
+            f"Job: {title} at {company}\nDescription: "
+            f"{PromptBoundary.untrusted_job_content(description, max_chars=2000)}\n\n"
+            f"{interview_stage_context}"
             f"Candidate's Story Bank:\n{story_summaries or 'No stories yet.'}\n\n"
             "Return JSON with:\n"
             "- matched_stories: [{story_id, story_title, relevance}] (only stories relevant to this job)\n"
@@ -118,7 +125,12 @@ class InterviewPrepService:
 
         try:
             response = await self._llm.complete(
-                prompt, system="You are an interview coach. Return only valid JSON."
+                prompt,
+                system=(
+                    "You are an interview coach. "
+                    f"{PromptBoundary.untrusted_content_instruction()} "
+                    "Return only valid JSON."
+                ),
             )
             data = None
             try:
@@ -141,6 +153,7 @@ class InterviewPrepService:
             return InterviewPrep(
                 job_title=title,
                 company=company,
+                interview_stage=interview_stage or None,
                 matched_stories=matched,
                 competencies_to_probe=data.get("competencies_to_probe", []),
                 technical_topics=data.get("technical_topics", []),

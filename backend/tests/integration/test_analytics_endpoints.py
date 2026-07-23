@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from uuid import uuid4
 
 import pytest
 from fastapi import FastAPI
@@ -26,6 +27,7 @@ from hiresense.identity.api.dependencies import require_auth
 from hiresense.infrastructure.database import Base
 from hiresense.ingestion.infrastructure.models import IngestedJob  # noqa: F401
 from hiresense.tracking.domain.models import TrackedApplication
+from hiresense.tracking.domain.status_transition import StatusTransition
 from hiresense.tracking.infrastructure.orm import TrackedApplicationOrm  # noqa: F401
 from hiresense.tracking.infrastructure.status_history_orm import ApplicationStatusHistoryOrm  # noqa: F401
 from hiresense.tracking.infrastructure.repository import TrackingRepository
@@ -44,6 +46,14 @@ class _Emb:
 class _Store:
     async def search(self, query_embedding, *, top_k=10, filters=None):
         return []  # no similar jobs in this fixture → target-salary insufficient
+
+
+class _StaticHistory:
+    def __init__(self, rows):
+        self._rows = rows
+
+    def list_history(self):
+        return self._rows
 
 
 def _factory():
@@ -132,6 +142,69 @@ async def test_funnel_endpoint():
 
 
 @pytest.mark.asyncio
+async def test_funnel_endpoint_rejects_an_inverted_period():
+    factory = _factory()
+    history = _seed(factory)
+    app = _build_app(factory, history)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
+        response = await c.get(
+            "/analytics/funnel",
+            params={"start": "2026-05-03T00:00:00Z", "end": "2026-05-02T00:00:00Z"},
+        )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "start must be earlier than or equal to end"
+
+
+@pytest.mark.asyncio
+async def test_funnel_endpoint_returns_the_requested_historical_cohort():
+    factory = _factory()
+    before_window, in_window = uuid4(), uuid4()
+    history = _StaticHistory(
+        [
+            StatusTransition(
+                application_id=before_window,
+                to_status="saved",
+                changed_at=datetime(2026, 5, 1, tzinfo=timezone.utc),
+            ),
+            StatusTransition(
+                application_id=before_window,
+                to_status="applied",
+                changed_at=datetime(2026, 5, 3, tzinfo=timezone.utc),
+            ),
+            StatusTransition(
+                application_id=in_window,
+                to_status="saved",
+                changed_at=datetime(2026, 5, 3, tzinfo=timezone.utc),
+            ),
+            StatusTransition(
+                application_id=in_window,
+                to_status="applied",
+                changed_at=datetime(2026, 5, 5, tzinfo=timezone.utc),
+            ),
+            StatusTransition(
+                application_id=in_window,
+                to_status="interviewing",
+                changed_at=datetime(2026, 5, 8, tzinfo=timezone.utc),
+            ),
+        ]
+    )
+    app = _build_app(factory, history)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
+        response = await c.get(
+            "/analytics/funnel",
+            params={"start": "2026-05-02T00:00:00Z", "end": "2026-05-06T00:00:00Z"},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_applications"] == 1
+    reached = {stage["stage"]: stage["reached"] for stage in data["stages"]}
+    assert reached["applied"] == 1
+    assert reached["interviewing"] == 0
+
+
+@pytest.mark.asyncio
 async def test_market_endpoint():
     factory = _factory()
     history = _seed(factory)
@@ -156,6 +229,27 @@ async def test_skill_gap_endpoint():
         assert data["has_profile"] is True
         # market has python+react; profile has python → react is a gap
         assert any(g["skill"] == "react" for g in data["missing"])
+
+
+@pytest.mark.asyncio
+async def test_upskilling_plan_endpoint_uses_profile_aware_skill_gaps():
+    factory = _factory()
+    history = _seed(factory)
+    app = _build_app(factory, history)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
+        response = await c.get("/analytics/upskilling-plan")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["has_profile"] is True
+    assert data["steps"] == [
+        {
+            "skill": "react",
+            "demand_count": 1,
+            "demand_pct": 100.0,
+            "next_action": "Learn the core concepts and vocabulary.",
+        }
+    ]
 
 
 @pytest.mark.asyncio

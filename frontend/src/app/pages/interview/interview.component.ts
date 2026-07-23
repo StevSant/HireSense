@@ -5,11 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { TitleCasePipe, DatePipe } from '@angular/common';
 import { InterviewService } from '../../core/services/interview.service';
 import { IngestionService } from '../../core/services/ingestion.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 import { LlmRunnerService } from '../../core/services/llm-runner.service';
 import { mapLlmError } from '../../core/services/llm-error.util';
 import { Competency } from './models/competency.model';
 import { InterviewPrep } from './models/interview-prep.model';
 import { Story } from './models/story.model';
+import { UpskillingPlan } from './models/upskilling-plan.model';
 import { ApplicationsPrepListComponent } from './components/applications-prep-list.component';
 import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { CompanyLinkComponent } from '../../core/components/company-link';
@@ -39,6 +41,8 @@ export class InterviewComponent implements OnInit {
   storiesError = signal('');
   showAddStoryForm = signal(false);
   addingStory = signal(false);
+
+  upskillingPlan = signal<UpskillingPlan | null>(null);
 
   // Client-side sort + competency filter over the loaded story bank.
   storySort = createSortState<StorySortField>('created', 'desc', ['title', 'competency']);
@@ -81,6 +85,7 @@ export class InterviewComponent implements OnInit {
   prepJobTitle = signal('');
   prepCompany = signal('');
   prepDescription = signal('');
+  prepInterviewStage = signal('');
   // Keyed by the deep-linked job id when present, else a constant — see
   // applyJobIdFromQuery(). The run itself lives in LlmRunnerService so it
   // survives navigating away from this page mid-generation.
@@ -100,7 +105,16 @@ export class InterviewComponent implements OnInit {
     'conflict_resolution',
   ];
 
+  readonly interviewStageOptions = [
+    'Recruiter screen',
+    'Hiring manager interview',
+    'Technical interview',
+    'Final interview',
+    'Offer / negotiation',
+  ];
+
   private ingestionService = inject(IngestionService);
+  private analyticsService = inject(AnalyticsService);
   private llmRunner = inject(LlmRunnerService);
   private route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -109,6 +123,7 @@ export class InterviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadStories();
+    this.loadUpskillingPlan();
     this.applyJobIdFromQuery();
   }
 
@@ -145,6 +160,13 @@ export class InterviewComponent implements OnInit {
           this.storiesLoading.set(false);
         },
       });
+  }
+
+  private loadUpskillingPlan(): void {
+    this.analyticsService
+      .upskillingPlan()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (plan) => this.upskillingPlan.set(plan), error: () => {} });
   }
 
   toggleAddStoryForm(): void {
@@ -212,13 +234,19 @@ export class InterviewComponent implements OnInit {
     const job_title = this.prepJobTitle().trim();
     const company = this.prepCompany().trim();
     const description = this.prepDescription().trim();
+    const interview_stage = this.prepInterviewStage().trim();
     if (!job_title || !company || !description) {
       return;
     }
     this.llmRunner.clear(this.prepKey());
     this.llmRunner.run(
       this.prepKey(),
-      this.interviewService.prepare({ job_title, company, description }),
+      this.interviewService.prepare({
+        job_title,
+        company,
+        description,
+        ...(interview_stage ? { interview_stage } : {}),
+      }),
       (err) => mapLlmError(err, 'Failed to generate prep'),
     );
   }
@@ -265,6 +293,10 @@ export class InterviewComponent implements OnInit {
 
   onPrepDescriptionInput(event: Event): void {
     this.prepDescription.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  onPrepInterviewStageChange(event: Event): void {
+    this.prepInterviewStage.set((event.target as HTMLSelectElement).value);
   }
 
   private resetStoryForm(): void {

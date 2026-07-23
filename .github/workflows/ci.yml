@@ -121,6 +121,24 @@ jobs:
         env:
           CI: "true"
 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser smoke test (Playwright)
+        run: npm run test:e2e:smoke
+        env:
+          CI: "true"
+
+      - name: Upload Playwright diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-diagnostics
+          path: |
+            frontend/test-results/**
+            frontend/playwright-report/**
+          if-no-files-found: ignore
+
       - name: Build (production)
         run: npm run build
 

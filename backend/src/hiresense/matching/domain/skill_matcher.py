@@ -58,4 +58,32 @@ class SkillMatcher:
         if not evidence:
             return False
         # Word-boundary match so "java" is not satisfied by "javascript".
-        return re.search(rf"\b{re.escape(canonical)}\b", evidence) is not None
+        matches = re.finditer(rf"\b{re.escape(canonical)}\b", evidence)
+        return any(
+            not SkillMatcher._is_negated_evidence(evidence, match.start(), match.end())
+            for match in matches
+        )
+
+    @staticmethod
+    def _is_negated_evidence(evidence: str, start: int, end: int) -> bool:
+        before = evidence[max(0, start - 80) : start]
+        after = evidence[end : min(len(evidence), end + 60)]
+        return bool(
+            re.search(
+                r"\b(?:no|without)\s+(?:professional\s+)?"
+                r"(?:experience|knowledge|exposure|background|proficiency|skills?)?\s*"
+                r"(?:with|in)?\s*$",
+                before,
+            )
+            or re.match(
+                r"\s*(?:experience|knowledge|exposure|background|proficiency|skills?)?\s*"
+                r"(?:is|was|were)?\s*(?:none|absent|lacking)\b",
+                after,
+            )
+            or re.search(
+                r"\b(?:never|haven't|hasn't|didn't|doesn't|don't)\s+"
+                r"(?:used|worked\s+(?:with|on)|had\s+experience\s+with)\s*$",
+                before,
+            )
+            or re.search(r"\bnot\s+(?:experienced|proficient|familiar)\s+(?:with|in)?\s*$", before)
+        )

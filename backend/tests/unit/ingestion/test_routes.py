@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api import get_ingestion_orchestrator, get_portal_scanner, router
 from hiresense.ingestion.api.dependencies import get_semantic_scoring
+from hiresense.ingestion.domain.application_method import ApplicationMethod
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.profile.api.dependencies import get_profile_service
 
@@ -110,6 +111,77 @@ async def test_list_jobs_portals_tab() -> None:
     data = resp.json()
     assert data["total"] == 1
     assert data["jobs"][0]["source"] == "PortalCo"
+
+
+@pytest.mark.asyncio
+async def test_list_jobs_all_tab_consolidates_cross_source_duplicates_and_persists_scores() -> None:
+    board_job = NormalizedJob(
+        id="board-duplicate",
+        title="Backend Engineer",
+        company="Acme, Inc.",
+        description="Build Python APIs",
+        skills=["python"],
+        source="remotive",
+        source_type="api",
+        language="en",
+        url="https://example.com/board-duplicate",
+    )
+    portal_job = NormalizedJob(
+        id="portal-duplicate",
+        title="backend engineer",
+        company="Acme",
+        description="Build Python APIs for Acme.",
+        skills=["python"],
+        source="acme-careers",
+        source_type="api",
+        language="en",
+        url="https://example.com/portal-duplicate",
+        application_method=ApplicationMethod.ATS_FORM,
+    )
+
+    class RecordingOrchestrator(FakeOrchestrator):
+        def __init__(self) -> None:
+            super().__init__()
+            self.score_updates = []
+
+        def list_jobs(self, criteria=None) -> list[NormalizedJob]:
+            return [board_job]
+
+        def persist_scores_batch(self, updates) -> None:
+            self.score_updates.extend(updates)
+
+    class RecordingScanner(FakeScanner):
+        def __init__(self) -> None:
+            self.score_updates = []
+
+        def list_jobs(self, criteria=None) -> list[NormalizedJob]:
+            return [portal_job]
+
+        def persist_scores_batch(self, updates) -> None:
+            self.score_updates.extend(updates)
+
+    class ProfileWithSkills:
+        async def list_profiles(self):
+            return [_Profile()]
+
+    app = FastAPI()
+    orchestrator = RecordingOrchestrator()
+    scanner = RecordingScanner()
+    app.dependency_overrides[get_ingestion_orchestrator] = lambda: orchestrator
+    app.dependency_overrides[get_portal_scanner] = lambda: scanner
+    app.dependency_overrides[get_profile_service] = lambda: ProfileWithSkills()
+    app.dependency_overrides[get_semantic_scoring] = lambda: None
+    app.dependency_overrides[require_auth] = lambda: "test-user"
+    app.include_router(router)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/ingestion/jobs", params={"tab": "all"})
+
+    assert response.status_code == 200
+    assert response.json()["total"] == 1
+    assert response.json()["jobs"][0]["id"] == "portal-duplicate"
+    assert orchestrator.score_updates == []
+    assert [update.job_id for update in scanner.score_updates] == ["portal-duplicate"]
 
 
 @pytest.mark.asyncio

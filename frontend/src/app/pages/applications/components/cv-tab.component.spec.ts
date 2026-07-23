@@ -47,12 +47,32 @@ const OPT = {
   created_at: null,
 };
 
+const BLOCKED_READINESS = {
+  ready: false,
+  supported_changes: [],
+  blocked_changes: [
+    {
+      change: {
+        section_name: 'SUMMARY',
+        original: 'Built APIs',
+        optimized: 'Built Kubernetes APIs',
+        reason: 'Match the role',
+      },
+      reason: 'unsupported_job_skill' as const,
+    },
+  ],
+};
+
 describe('CvTabComponent', () => {
   let runnerRun: ReturnType<typeof vi.fn>;
   let runningId: ReturnType<typeof signal<string | null>>;
   let lastError: ReturnType<typeof signal<string>>;
 
-  function mount(aggregate = makeAggregate(), service: Record<string, unknown> = {}) {
+  function mount(
+    aggregate = makeAggregate(),
+    service: Record<string, unknown> = {},
+    readiness: typeof BLOCKED_READINESS | null = null,
+  ) {
     runnerRun = vi.fn();
     runningId = signal<string | null>(null);
     lastError = signal('');
@@ -60,6 +80,7 @@ describe('CvTabComponent', () => {
       run: runnerRun,
       isRunning: (id: string) => runningId() === id,
       lastError,
+      lastReadiness: (id: string) => (id === 'app-1' ? readiness : null),
     };
     const svc = {
       downloadCvPdf: () => of(new Blob(['cv'])),
@@ -119,6 +140,14 @@ describe('CvTabComponent', () => {
     expect(fixture.componentInstance.viewMode()).toBe('changes');
     fixture.componentInstance.setViewMode('full');
     expect(fixture.componentInstance.viewMode()).toBe('full');
+  });
+
+  it('explains blocked claims from the latest optimization response', () => {
+    const { fixture } = mount(makeAggregate({ latest_optimization: OPT }), {}, BLOCKED_READINESS);
+
+    expect(fixture.nativeElement.textContent).toContain('1 claim needs review');
+    expect(fixture.nativeElement.textContent).toContain('Kubernetes APIs');
+    expect(fixture.nativeElement.textContent).toContain('not evidenced in your CV');
   });
 
   it('copies the optimized tex to the clipboard and flashes', async () => {

@@ -21,3 +21,11 @@ def get_tracking_service_for_matching(request: Request) -> TrackingService:
 
 def get_ingestion_orchestrator_for_matching(request: Request) -> IngestionOrchestrator:
     return request.app.state.ingestion.get_orchestrator()
+
+
+def get_optional_profile_service(request: Request):
+    """Allow lightweight route fixtures without weakening production auth wiring."""
+    try:
+        return request.app.state.profile.get_profile_service()
+    except AttributeError:
+        return None

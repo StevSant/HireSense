@@ -82,10 +82,15 @@ class FakeStoryService:
 
 
 class FakeInterviewPrepService:
+    def __init__(self) -> None:
+        self.received_job: dict | None = None
+
     async def prepare(self, job: dict) -> InterviewPrep:
+        self.received_job = job
         return InterviewPrep(
             job_title=job.get("title", ""),
             company=job.get("company", ""),
+            interview_stage=job.get("interview_stage") or None,
             matched_stories=[],
             competencies_to_probe=["leadership", "communication"],
             technical_topics=["Python", "FastAPI"],
@@ -253,6 +258,7 @@ def test_prepare_interview() -> None:
             "job_title": "Senior Backend Engineer",
             "company": "Acme Corp",
             "description": "We are looking for a backend engineer with Python experience.",
+            "interview_stage": "Technical interview",
         },
     )
 
@@ -260,6 +266,9 @@ def test_prepare_interview() -> None:
     data = resp.json()
     assert data["job_title"] == "Senior Backend Engineer"
     assert data["company"] == "Acme Corp"
+    assert data["interview_stage"] == "Technical interview"
     assert "competencies_to_probe" in data
     assert "technical_topics" in data
     assert "negotiation_points" in data
+    assert fake_prep.received_job is not None
+    assert fake_prep.received_job["interview_stage"] == "Technical interview"

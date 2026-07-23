@@ -180,12 +180,12 @@ describe('ApplyTabComponent', () => {
     expect(fixture.componentInstance.marking()).toBe(false);
   });
 
-  it('opens the job url in a new tab then marks applied', () => {
+  it('opens the job without marking the application applied', () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
     const markApplied = vi.fn(() => of(makeAggregate()));
     const { fixture } = mount(makeAggregate(), { markApplied });
-    fixture.componentInstance.openJobAndMarkApplied();
+    fixture.componentInstance.openJob();
     expect(open).toHaveBeenCalledWith('https://example.com/job-1', '_blank', 'noopener');
-    expect(markApplied).toHaveBeenCalledWith('app-1');
+    expect(markApplied).not.toHaveBeenCalled();
   });
 });

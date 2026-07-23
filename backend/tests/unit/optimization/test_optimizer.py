@@ -1,4 +1,7 @@
+import uuid
+
 import pytest
+from hiresense.claims.domain import CandidateClaim, ClaimVerificationStatus
 from hiresense.optimization.domain import CVOptimizer, OptimizationError
 from hiresense.ports import LLMTimeoutError
 
@@ -10,7 +13,7 @@ class FakeLLM:
                 {
                     "section_name": "SUMMARY",
                     "original": "Backend developer with Python experience",
-                    "optimized": "Backend engineer specializing in scalable Python APIs with FastAPI and Kubernetes",
+                    "optimized": "Backend engineer specializing in scalable Python APIs",
                     "reason": "Aligned with job requirements"
                 }
             ],
@@ -83,11 +86,11 @@ async def test_optimizer_parses_markdown_fenced_json() -> None:
                 "    {\n"
                 '      "section_name": "SUMMARY",\n'
                 '      "original": "Backend developer with Python experience",\n'
-                '      "optimized": "Backend SRE with Python, Kubernetes, and Terraform experience",\n'
-                '      "reason": "Adds missing required skills"\n'
+                '      "optimized": "Backend SRE with Python experience",\n'
+                '      "reason": "Improves wording without adding claims"\n'
                 "    }\n"
                 "  ],\n"
-                '  "improvement_summary": "Added Kubernetes and Terraform to summary"\n'
+                '  "improvement_summary": "Refined the summary wording"\n'
                 "}\n"
                 "```"
             )
@@ -105,8 +108,8 @@ async def test_optimizer_parses_markdown_fenced_json() -> None:
     )
     assert len(result.changes) == 1
     assert result.changes[0].section_name == "SUMMARY"
-    assert "Kubernetes" in result.optimized_tex
-    assert result.improvement_summary == "Added Kubernetes and Terraform to summary"
+    assert "Backend SRE with Python experience" in result.optimized_tex
+    assert result.improvement_summary == "Refined the summary wording"
 
 
 @pytest.mark.asyncio
@@ -131,10 +134,9 @@ async def test_optimizer_truncates_job_description_in_prompt() -> None:
         missing_skills=[],
         recommendations=[],
     )
-    prefix = "Job Description: "
-    start = llm.last_prompt.index(prefix) + len(prefix)
-    end = llm.last_prompt.index("\n", start)
-    assert llm.last_prompt[start:end] == "d" * 100
+    assert "<untrusted_job>" in llm.last_prompt
+    assert "d" * 100 in llm.last_prompt
+    assert "d" * 101 not in llm.last_prompt
 
 
 @pytest.mark.asyncio
@@ -231,6 +233,113 @@ async def test_optimizer_no_changes_is_a_success_not_a_failure() -> None:
     assert result.changes == []
     assert result.optimized_tex == original
     assert result.improvement_summary == "already well tailored"
+
+
+@pytest.mark.asyncio
+async def test_optimizer_discards_change_that_adds_an_unsupported_job_skill_claim() -> None:
+    class UnsupportedClaimLLM:
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            return """{
+                "changes": [{
+                    "section_name": "SUMMARY",
+                    "original": "Backend developer with Python experience",
+                    "optimized": "Backend developer with Python and Kubernetes experience",
+                    "reason": "Matches the role"
+                }],
+                "improvement_summary": "Added Kubernetes experience"
+            }"""
+
+    original = "\\section*{SUMMARY}\nBackend developer with Python experience"
+    result = await CVOptimizer(llm=UnsupportedClaimLLM()).optimize(
+        match_id="match-evidence",
+        job_id="job-evidence",
+        cv_id="cv-evidence",
+        original_tex=original,
+        job_description="Backend role requiring Kubernetes",
+        job_skills=["python", "kubernetes"],
+        missing_skills=["kubernetes"],
+        recommendations=[],
+    )
+
+    assert result.changes == []
+    assert result.optimized_tex == original
+    assert not result.claim_readiness.ready
+    assert result.claim_readiness.blocked_changes[0].reason == "unsupported_job_skill"
+
+
+@pytest.mark.asyncio
+async def test_optimizer_uses_verified_claim_evidence_and_exposes_provenance() -> None:
+    class VerifiedClaims:
+        def list_verified_for_readiness(self) -> list[CandidateClaim]:
+            return [
+                CandidateClaim(
+                    id=uuid.uuid4(),
+                    text="Built Kubernetes services that reduced latency by 40%.",
+                    source="portfolio",
+                    provenance="https://example.com/case-study",
+                    verification_status=ClaimVerificationStatus.VERIFIED,
+                )
+            ]
+
+    class EvidenceBackedLLM:
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            assert "Verified candidate evidence" in prompt
+            return """{
+                "changes": [{
+                    "section_name": "SUMMARY",
+                    "original": "Built Python APIs.",
+                    "optimized": "Built Python APIs and Kubernetes services that reduced latency by 40%.",
+                    "reason": "Match the role"
+                }],
+                "improvement_summary": "Added verified evidence"
+            }"""
+
+    result = await CVOptimizer(
+        llm=EvidenceBackedLLM(), claim_service=VerifiedClaims()
+    ).optimize(
+        match_id="match-evidence",
+        job_id="job-evidence",
+        cv_id="cv-evidence",
+        original_tex="Built Python APIs.",
+        job_description="Backend role requiring Kubernetes",
+        job_skills=["python", "kubernetes"],
+        missing_skills=["kubernetes"],
+        recommendations=[],
+    )
+
+    assert result.changes[0].optimized.startswith("Built Python APIs and Kubernetes")
+    assert result.claim_readiness.ready
+    assert result.claim_readiness.supported_evidence[0].claims[0].provenance.endswith("case-study")
+
+
+@pytest.mark.asyncio
+async def test_optimizer_discards_change_without_an_exact_cv_anchor() -> None:
+    class UnanchoredChangeLLM:
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            return """{
+                "changes": [{
+                    "section_name": "SUMMARY",
+                    "original": "A different summary",
+                    "optimized": "A better summary",
+                    "reason": "Matches the role"
+                }],
+                "improvement_summary": "Improved summary"
+            }"""
+
+    original = "\\section*{SUMMARY}\nBackend developer with Python experience"
+    result = await CVOptimizer(llm=UnanchoredChangeLLM()).optimize(
+        match_id="match-anchor",
+        job_id="job-anchor",
+        cv_id="cv-anchor",
+        original_tex=original,
+        job_description="Backend role",
+        job_skills=["python"],
+        missing_skills=[],
+        recommendations=[],
+    )
+
+    assert result.changes == []
+    assert result.optimized_tex == original
 
 
 @pytest.mark.asyncio

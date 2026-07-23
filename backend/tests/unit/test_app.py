@@ -85,6 +85,7 @@ async def test_all_routers_registered(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "/ingestion/fetch" in routes
     assert "/matching/analyze" in routes
     assert "/optimization/optimize" in routes
+    assert "/claims" in routes
     assert "/profile/upload" in routes
     assert "/portfolio/sync" in routes
     assert "/portfolio/projects" in routes

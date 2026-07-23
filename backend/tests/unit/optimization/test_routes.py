@@ -59,6 +59,12 @@ async def test_optimize_endpoint() -> None:
     assert data["changes"][0]["section_name"] == "SUMMARY"
     assert data["improvement_summary"] == "Improved summary section"
     assert data["optimized_tex"] != data["original_tex"]
+    assert data["claim_readiness"] == {
+        "ready": True,
+        "supported_changes": [],
+        "blocked_changes": [],
+        "supported_evidence": [],
+    }
 
 
 @pytest.mark.asyncio

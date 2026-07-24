@@ -54,7 +54,10 @@ export class CvTabComponent {
   runnerError = computed(() => this.runner.lastError());
   optimization = computed(() => this.aggregate().latest_optimization);
   claimReadiness = computed(
-    () => this.runner.lastReadiness(this.aggregate().id) ?? this.optimization()?.claim_readiness ?? null,
+    () =>
+      this.runner.lastReadiness(this.aggregate().id) ??
+      this.optimization()?.claim_readiness ??
+      null,
   );
   hasMatch = computed(() => this.aggregate().latest_match !== null);
 

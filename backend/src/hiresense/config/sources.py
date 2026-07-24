@@ -19,6 +19,8 @@ class _CommaSeparatedMixin:
             "portfolio_sources",
             "themuse_categories",
             "adzuna_countries",
+            "yc_jobs_roles",
+            "dice_employment_types",
         }
     )
 

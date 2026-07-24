@@ -69,8 +69,11 @@ with skill overlap and tiered LLM scoring — then helps you act on the results,
 ## ✨ Features
 
 - **Multi-source ingestion** — job boards (Remotive, RemoteOK, Jobicy, Himalayas,
-  WeWorkRemotely, GetOnBoard, LinkedIn, HN "Who is hiring?") and company ATS portals
-  (Greenhouse, Lever, Ashby), deduplicated by stable identity.
+  WeWorkRemotely, GetOnBoard, LinkedIn, HN "Who is hiring?", Arbeitnow, The Muse,
+  Dice, CrunchBoard, Y Combinator Jobs; plus optional Adzuna and import fallbacks
+  for Indeed / Wellfound / Glassdoor / Monster) and company ATS portals
+  (Greenhouse, Lever, Ashby, Workable, SmartRecruiters, Recruitee), deduplicated
+  by stable identity with cross-source provenance.
 - **Semantic matching** — global pgvector ANN pre-ranking over the whole corpus, blended
   with skill overlap and **tiered LLM scoring** (cheap models filter, strong models rank).
 - **Application pipeline** — track every role Saved → Applied → Interviewing → Offer, with
@@ -205,6 +208,9 @@ hardcoded URLs, keys, or thresholds. `APP_MODE` sets a bundle of defaults:
 |---|---|
 | **`local`** (default) | Blank `LLM_API_KEY` → heuristic-only matching; blank auth → ephemeral dev secret + default creds with a loud warning. `DATABASE_URL` (Postgres) is still required. |
 | **`production`** | Strict: missing `DATABASE_URL` / `LLM_API_KEY` / auth trio fail fast at startup. Used by `docker-compose.yml`. |
+
+Supported job sources, capabilities, import fallbacks, and troubleshooting:
+[`docs/job-sources.md`](docs/job-sources.md).
 
 ## 🤝 Contributing
 

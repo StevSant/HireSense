@@ -148,13 +148,11 @@ async def batch_evaluate(
                     "company": job.company,
                     "description": getattr(job, "description", ""),
                     "skills": getattr(job, "skills", []),
-                        "location": getattr(job, "location", ""),
-                        "requires_existing_work_authorization": getattr(
-                            job, "requires_existing_work_authorization", None
-                        ),
-                        "visa_sponsorship_available": getattr(
-                            job, "visa_sponsorship_available", None
-                        ),
+                    "location": getattr(job, "location", ""),
+                    "requires_existing_work_authorization": getattr(
+                        job, "requires_existing_work_authorization", None
+                    ),
+                    "visa_sponsorship_available": getattr(job, "visa_sponsorship_available", None),
                     "source": "ingested",
                     "source_id": str(job.id),
                 }

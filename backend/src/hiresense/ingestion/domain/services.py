@@ -15,6 +15,7 @@ from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.work_authorization_facts import add_work_authorization_facts
 from hiresense.ingestion.domain.normalizer import JobNormalizer
+from hiresense.ingestion.domain.source_health import SourceHealthTracker, SourceRunStats
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.ports import JobsRepositoryPort
 from hiresense.ingestion.ports.jobs_repository import QualityUpdate, ScoreUpdate
@@ -45,6 +46,7 @@ class IngestionOrchestrator:
         indexer: Any | None = None,
         closure_miss_threshold: int = 2,
         quality_classifier: Any | None = None,
+        health_tracker: SourceHealthTracker | None = None,
     ) -> None:
         self._sources = sources
         self._normalizers = normalizers
@@ -55,11 +57,19 @@ class IngestionOrchestrator:
         self._indexer = indexer
         self._closure_miss_threshold = closure_miss_threshold
         self._quality_classifier = quality_classifier
+        self._health = health_tracker or SourceHealthTracker()
         self._last_run_at: float = 0.0
         # Single-flight guard: True while a run() is mid-pass. Prevents two
         # concurrent /fetch triggers from both clearing the cooldown check and
         # double-running the ingestion pass (#159).
         self._run_in_flight: bool = False
+
+    @property
+    def health_tracker(self) -> SourceHealthTracker:
+        return self._health
+
+    def source_names(self) -> list[str]:
+        return [s.source_name() for s in self._sources]
 
     async def run(
         self,
@@ -97,28 +107,60 @@ class IngestionOrchestrator:
                         continue
 
                     fetch_started = time.perf_counter()
+                    run_stats = SourceRunStats()
                     with _tracer.start_as_current_span("ingestion.source.fetch") as fetch_span:
                         fetch_span.set_attribute("source", source_name)
                         try:
                             raw_jobs = await source.fetch_jobs(filters)
-                        except Exception:
+                        except Exception as exc:
                             fetch_span.set_status(trace.Status(trace.StatusCode.ERROR))
                             logger.exception("Failed to fetch from %s", source_name)
                             raw_jobs = None
+                            run_stats.success = False
+                            run_stats.error = f"{type(exc).__name__}: {exc}"
                         finally:
+                            duration_ms = (time.perf_counter() - fetch_started) * 1000.0
                             _metrics.source_fetch_duration_ms.record(
-                                (time.perf_counter() - fetch_started) * 1000.0,
+                                duration_ms,
                                 {"source": source_name},
                             )
                     if raw_jobs is None:
+                        self._health.record_run(
+                            source_name,
+                            duration_ms=(time.perf_counter() - fetch_started) * 1000.0,
+                            stats=run_stats,
+                        )
                         continue  # bad fetch: skip disappearance for this source this run
 
                     fetched_count = len(raw_jobs)
+                    run_stats.pages_fetched = getattr(source, "last_pages_fetched", 0) or 0
+                    run_stats.jobs_discovered = fetched_count
+                    run_stats.jobs_rejected_malformed = int(
+                        getattr(source, "last_rejected_malformed", 0) or 0
+                    )
+                    run_stats.rate_limited_count = int(
+                        getattr(source, "last_rate_limited_count", 0) or 0
+                    )
+                    run_stats.parse_failures = int(getattr(source, "last_parse_failures", 0) or 0)
                     _metrics.jobs_fetched_total.add(fetched_count, {"source": source_name})
 
                     normalized: list[NormalizedJob] = []
                     for raw in raw_jobs:
-                        normalized_data = add_work_authorization_facts(normalizer.normalize(raw))
+                        try:
+                            normalized_data = add_work_authorization_facts(
+                                normalizer.normalize(raw)
+                            )
+                        except Exception:
+                            run_stats.jobs_rejected_malformed += 1
+                            logger.exception(
+                                "Failed to normalize job from %s id=%s",
+                                source_name,
+                                raw.source_id,
+                            )
+                            continue
+                        if not normalized_data.get("title") or not normalized_data.get("company"):
+                            run_stats.jobs_rejected_malformed += 1
+                            continue
                         classification = classify_application(
                             normalized_data.get("url"),
                             platform=normalized_data.get("platform"),
@@ -152,6 +194,11 @@ class IngestionOrchestrator:
                             touched.append(outcome.job)
                             if outcome.result == UpsertResult.INSERTED:
                                 new_jobs.append(outcome.job)
+                                run_stats.jobs_created += 1
+                            else:
+                                run_stats.jobs_updated += 1
+                        else:
+                            run_stats.jobs_deduplicated += 1
 
                     indexed_count = len(touched)
                     _metrics.jobs_indexed_total.add(indexed_count, {"source": source_name})
@@ -172,6 +219,12 @@ class IngestionOrchestrator:
                         )
                         if closed_ids and self._indexer is not None:
                             await self._indexer.remove(closed_ids)
+
+                    self._health.record_run(
+                        source_name,
+                        duration_ms=(time.perf_counter() - fetch_started) * 1000.0,
+                        stats=run_stats,
+                    )
 
                 # Quality classification (intrinsic, profile-independent) for
                 # every inserted/updated/reopened job, in one batched pass.

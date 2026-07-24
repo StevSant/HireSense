@@ -34,8 +34,21 @@
               >💰 {{ compensationHighlight() }}</span
             >
           }
+          @if (equityHighlight()) {
+            <span class="chip chip-comp" [title]="'Equity: ' + equityHighlight()"
+              >Equity {{ equityHighlight() }}</span
+            >
+          }
+          @for (chip of metaChips(); track chip) {
+            <span class="chip">{{ chip }}</span>
+          }
           @if (job().department) {
             <span class="chip">🏷 {{ job().department }}</span>
+          }
+          @if (alsoFoundOn().length > 1) {
+            <span class="chip" [title]="alsoFoundOn().length + ' sources saw this role'"
+              >Also on {{ alsoFoundOn().length }} sources</span
+            >
           }
         </div>
       </div>

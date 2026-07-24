@@ -18,10 +18,17 @@ class IngestionSettings(BaseSettings):
         "linkedin",
         "arbeitnow",
         "themuse",
+        "dice",
+        "crunchboard",
+        "yc_jobs",
     ]
     # NOTE: `linkedin` is a fragile guest-endpoint HTML scraper (ToS-risky,
     # breaks on markup changes and rate-limits aggressively). It's kept enabled
     # by default for its on-site coverage; drop it here if it misbehaves.
+    # `dice` uses Dice's official MCP search. `crunchboard` uses the official
+    # RSS feed. `yc_jobs` parses public Work at a Startup Inertia JSON.
+    # Import fallbacks (`indeed`, `wellfound`, `glassdoor`, `monster`) are
+    # opt-in — add them here and place JSONL/CSV under csv_import_dir.
 
     # Directory CSV-import file_path filters are confined to (path-traversal guard).
     csv_import_dir: str = "./csv_imports"

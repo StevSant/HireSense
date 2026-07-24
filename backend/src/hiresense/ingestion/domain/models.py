@@ -25,6 +25,15 @@ class NormalizedJob(BaseModel):
     skills: list[str] = Field(default_factory=list)
     location: str = ""
     salary_range: str | None = None
+    # Explicit employment classification when the source states it
+    # (full_time / part_time / contract / internship / temporary / other).
+    employment_type: str | None = None
+    # Equity display string when the source states a range (e.g. "0.1% – 0.25%").
+    equity_range: str | None = None
+    # Platform-specific structured extras. Missing keys mean unknown — never invent.
+    # May include salary_min/max/currency/period, yc_batch, company_stage, easy_apply,
+    # employer_type, also_found_on, source_urls, etc.
+    source_metadata: dict[str, Any] = Field(default_factory=dict)
     source: str
     source_type: str
     language: str = "en"

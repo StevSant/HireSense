@@ -395,6 +395,79 @@ tr.closed {
   background: #f3f4f6;
   color: #374151;
 }
+.source-badge-dice {
+  background: #ecfdf5;
+  color: #047857;
+}
+.source-badge-crunchboard {
+  background: #fff7ed;
+  color: #c2410c;
+}
+.source-badge-yc_jobs {
+  background: #fef3c7;
+  color: #92400e;
+}
+.source-badge-indeed {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+.source-badge-wellfound {
+  background: #fce7f3;
+  color: #9d174d;
+}
+.source-badge-glassdoor {
+  background: #dcfce7;
+  color: #166534;
+}
+.source-badge-monster {
+  background: #e0f2fe;
+  color: #075985;
+}
+.source-badge-arbeitnow {
+  background: #f5f3ff;
+  color: #5b21b6;
+}
+.source-badge-themuse {
+  background: #fdf2f8;
+  color: #9d174d;
+}
+.source-badge-adzuna {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.source-health-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.health-chip {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.health-failing {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+.health-degraded {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+.health-unavailable {
+  background: #f1f5f9;
+  color: #64748b;
+}
 
 .clickable-row.dimmed {
   opacity: 0.45;

@@ -32,6 +32,9 @@ def _to_orm(job: NormalizedJob, bucket: str) -> IngestedJob:
         description=job.description,
         location=job.location,
         salary_range=job.salary_range,
+        employment_type=job.employment_type,
+        equity_range=job.equity_range,
+        source_metadata=dict(job.source_metadata or {}),
         language=job.language,
         url=job.url,
         apply_url=job.apply_url,
@@ -64,6 +67,9 @@ def _to_domain(row: IngestedJob) -> NormalizedJob:
         skills=list(row.skills or []),
         location=row.location,
         salary_range=row.salary_range,
+        employment_type=row.employment_type,
+        equity_range=row.equity_range,
+        source_metadata=dict(row.source_metadata or {}),
         source=row.source,
         source_type=row.source_type,
         language=row.language,
@@ -119,6 +125,9 @@ class JobsRepository(SqlRepository):
             row.description = job.description
             row.location = job.location
             row.salary_range = job.salary_range
+            row.employment_type = job.employment_type
+            row.equity_range = job.equity_range
+            row.source_metadata = dict(job.source_metadata or {})
             row.skills = list(job.skills)
             row.categories = list(job.categories)
             row.countries = list(job.countries)

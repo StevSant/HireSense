@@ -59,6 +59,33 @@ export class JobDetailPanelComponent {
     return firstLine ?? null;
   });
 
+  equityHighlight = computed(() => {
+    const equity = this.job().equity_range?.trim();
+    return equity || null;
+  });
+
+  alsoFoundOn = computed(() => {
+    const meta = this.job().source_metadata;
+    const raw = meta?.['also_found_on'];
+    return Array.isArray(raw) ? raw : [];
+  });
+
+  metaChips = computed(() => {
+    const job = this.job();
+    const chips: string[] = [];
+    if (job.employment_type) chips.push(job.employment_type.replaceAll('_', ' '));
+    if (job.remote_modality) chips.push(job.remote_modality.replaceAll('_', ' '));
+    const meta = job.source_metadata ?? {};
+    for (const key of ['yc_batch', 'company_stage', 'employer_type', 'company_rating'] as const) {
+      const value = meta[key];
+      if (value !== undefined && value !== null && String(value).trim()) {
+        chips.push(`${key.replaceAll('_', ' ')}: ${value}`);
+      }
+    }
+    if (meta['easy_apply'] === true) chips.push('easy apply');
+    return chips;
+  });
+
   onOverlayClick(event: MouseEvent): void {
     if ((event.target as HTMLElement).classList.contains('panel-overlay')) {
       this.closed.emit();

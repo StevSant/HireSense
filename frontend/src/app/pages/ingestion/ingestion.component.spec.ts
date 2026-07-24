@@ -37,10 +37,52 @@ const jobsPayload = (connectionsByJob: Record<string, number> = {}) => ({
   connections_by_job: connectionsByJob,
 });
 
+function flushBootstrapGets(mock: HttpTestingController): void {
+  mock
+    .match((r) => r.url === `${environment.apiUrl}/ingestion/portals`)
+    .forEach((r) => r.flush([]));
+  mock
+    .match((r) => r.url === `${environment.apiUrl}/ingestion/sources`)
+    .forEach((r) =>
+      r.flush({
+        sources: [
+          {
+            capabilities: {
+              source: 'remotive',
+              display_name: 'Remotive',
+              source_type: 'api',
+              integration: 'official_api',
+              enabled_by_default: true,
+              requires_credentials: false,
+              supports_keyword_search: true,
+              supports_location_search: false,
+              supports_remote_filter: false,
+              supports_pagination: false,
+              provides_salary: true,
+              provides_equity: false,
+              provides_company_metadata: false,
+              provides_technology_tags: true,
+              snapshot_source: false,
+              reliable_closure_detection: false,
+              closure_strategy: 'url_probe',
+              limitations: '',
+            },
+            enabled: true,
+            wired: true,
+          },
+        ],
+      }),
+    );
+  mock
+    .match((r) => r.url === `${environment.apiUrl}/ingestion/sources/health`)
+    .forEach((r) => r.flush({ sources: [] }));
+}
+
 describe('IngestionComponent — connections badge', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [IngestionComponent],
@@ -55,10 +97,7 @@ describe('IngestionComponent — connections badge', () => {
     const fixture = TestBed.createComponent(IngestionComponent);
     fixture.detectChanges();
 
-    // Flush portals call (order may vary)
-    httpMock
-      .match((r) => r.url === `${environment.apiUrl}/ingestion/portals`)
-      .forEach((r) => r.flush([]));
+    flushBootstrapGets(httpMock);
 
     // <app-job-filters>'s guaranteed single initial emission is the only
     // source of the first load (see the loadJobs$ comment in
@@ -80,9 +119,7 @@ describe('IngestionComponent — connections badge', () => {
     const component = fixture.componentInstance;
     fixture.detectChanges();
 
-    httpMock
-      .match((r) => r.url === `${environment.apiUrl}/ingestion/portals`)
-      .forEach((r) => r.flush([]));
+    flushBootstrapGets(httpMock);
     // Drain the single initial load issued by <app-job-filters>'s emission.
     httpMock.match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`)[0].flush(jobsPayload());
 
@@ -105,6 +142,7 @@ describe('IngestionComponent — exactly one initial job request', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [IngestionComponent],
@@ -118,16 +156,10 @@ describe('IngestionComponent — exactly one initial job request', () => {
     httpMock.verify();
   });
 
-  function flushPortals(mock: HttpTestingController): void {
-    mock
-      .match((r) => r.url === `${environment.apiUrl}/ingestion/portals`)
-      .forEach((r) => r.flush([]));
-  }
-
   it('fires exactly one request when no location is stored', () => {
     const fixture = TestBed.createComponent(IngestionComponent);
     fixture.detectChanges();
-    flushPortals(httpMock);
+    flushBootstrapGets(httpMock);
 
     const jobReqs = httpMock.match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`);
     expect(jobReqs.length).toBe(1);
@@ -141,7 +173,7 @@ describe('IngestionComponent — exactly one initial job request', () => {
 
     const fixture = TestBed.createComponent(IngestionComponent);
     fixture.detectChanges();
-    flushPortals(httpMock);
+    flushBootstrapGets(httpMock);
 
     const jobReqs = httpMock.match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`);
     expect(jobReqs.length).toBe(1);
@@ -157,6 +189,7 @@ describe('IngestionComponent — visibility-gated revalidation poll', () => {
   let originalVisibility: PropertyDescriptor | undefined;
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     localStorage.clear();
     vi.useFakeTimers();
     originalVisibility = Object.getOwnPropertyDescriptor(document, 'visibilityState');
@@ -188,9 +221,7 @@ describe('IngestionComponent — visibility-gated revalidation poll', () => {
     const component = fixture.componentInstance;
     fixture.detectChanges();
 
-    httpMock
-      .match((r) => r.url === `${environment.apiUrl}/ingestion/portals`)
-      .forEach((r) => r.flush([]));
+    flushBootstrapGets(httpMock);
     jobsReqs(httpMock)[0].flush(jobsPayload());
 
     component.revalidate();

@@ -56,3 +56,38 @@ class JobSourcesSettings(BaseSettings):
     adzuna_app_key: str = ""
     adzuna_countries: list[str] = ["mx", "br", "ar"]
     adzuna_query: str = "software developer"
+
+    # --- Expanded board sources (2026-07-24) ---
+    # Dice official MCP search (no API key required for public search).
+    dice_mcp_url: str = "https://mcp.dice.com/mcp"
+    dice_query: str = "software engineer"
+    dice_location: str = ""
+    dice_remote_only: bool = False
+    dice_page_limit: int = 3
+    dice_jobs_per_page: int = 50
+    dice_posted_date: str = ""  # ONE | THREE | SEVEN or blank
+    dice_employment_types: list[str] = []
+
+    # CrunchBoard official RSS (latest-window feed).
+    crunchboard_rss_url: str = "https://www.crunchboard.com/jobs.rss"
+    crunchboard_result_limit: int = 200
+
+    # Y Combinator Work at a Startup (public Inertia JSON in HTML).
+    yc_jobs_base_url: str = "https://www.workatastartup.com"
+    yc_jobs_roles: list[str] = [
+        "software-engineer",
+        "product",
+        "designer",
+        "science",
+    ]
+    yc_jobs_remote_only: bool = False
+    yc_jobs_enrich_companies: bool = True
+    yc_jobs_company_enrich_limit: int = 25
+    yc_jobs_result_limit: int = 200
+
+    # Import-fallback sources (Indeed / Wellfound / Glassdoor / Monster).
+    # Default filenames under csv_import_dir; override per fetch via filters.file_path.
+    indeed_import_filename: str = "indeed_jobs.jsonl"
+    wellfound_import_filename: str = "wellfound_jobs.jsonl"
+    glassdoor_import_filename: str = "glassdoor_jobs.jsonl"
+    monster_import_filename: str = "monster_jobs.jsonl"

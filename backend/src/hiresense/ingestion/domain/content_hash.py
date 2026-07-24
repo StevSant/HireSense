@@ -20,6 +20,8 @@ def content_hash(job: NormalizedJob) -> str:
         job.description.strip(),
         job.location.strip(),
         (job.salary_range or "").strip(),
+        (job.employment_type or "").strip(),
+        (job.equity_range or "").strip(),
         "|".join(sorted(s.strip().lower() for s in job.skills)),
         "|".join(sorted(c.strip().lower() for c in job.categories)),
         "|".join(sorted(c.strip().lower() for c in job.countries)),

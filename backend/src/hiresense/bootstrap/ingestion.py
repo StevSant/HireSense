@@ -10,21 +10,28 @@ from hiresense.ingestion.adapters import (
     AdzunaAdapter,
     ArbeitnowAdapter,
     AshbyAdapter,
+    CrunchBoardAdapter,
     CSVImportAdapter,
+    DiceAdapter,
     GetOnBoardAdapter,
+    GlassdoorAdapter,
     GreenhouseAdapter,
     HimalayasAdapter,
     HNHiringAdapter,
+    IndeedAdapter,
     JobicyAdapter,
     LeverAdapter,
     LinkedInAdapter,
+    MonsterAdapter,
     RecruiteeAdapter,
     RemoteOKAdapter,
     RemotiveAdapter,
     SmartRecruitersAdapter,
     TheMuseAdapter,
+    WellfoundAdapter,
     WeWorkRemotelyAdapter,
     WorkableAdapter,
+    YCJobsAdapter,
 )
 from hiresense.ingestion.api.provider import IngestionProvider
 from hiresense.ingestion.domain import (
@@ -41,23 +48,31 @@ from hiresense.ingestion.domain.normalizers import (
     AdzunaNormalizer,
     ArbeitnowNormalizer,
     AshbyNormalizer,
+    CrunchBoardNormalizer,
     CSVNormalizer,
+    DiceNormalizer,
     GetOnBoardNormalizer,
+    GlassdoorNormalizer,
     GreenhouseNormalizer,
     HimalayasNormalizer,
     HNHiringNormalizer,
+    IndeedNormalizer,
     JobicyNormalizer,
     LeverNormalizer,
     LinkedInNormalizer,
+    MonsterNormalizer,
     RecruiteeNormalizer,
     RemoteOKNormalizer,
     RemotiveNormalizer,
     SmartRecruitersNormalizer,
     TheMuseNormalizer,
+    WellfoundNormalizer,
     WeWorkRemotelyNormalizer,
     WorkableNormalizer,
+    YCJobsNormalizer,
 )
 from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
+from hiresense.ingestion.domain.source_health import SourceHealthTracker
 from hiresense.ingestion.infrastructure import JobMatchCacheRepository, JobsRepository
 from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
 from hiresense.bootstrap.shared_infra import SharedInfra
@@ -154,6 +169,75 @@ def build_ingestion(
                     )
                 )
                 normalizers["adzuna"] = AdzunaNormalizer()
+        elif source_name == "dice":
+            sources.append(
+                DiceAdapter(
+                    http_client=http_client,
+                    mcp_url=s.dice_mcp_url,
+                    query=s.dice_query,
+                    location=s.dice_location,
+                    remote_only=s.dice_remote_only,
+                    page_limit=s.dice_page_limit,
+                    jobs_per_page=s.dice_jobs_per_page,
+                    posted_date=s.dice_posted_date,
+                    employment_types=s.dice_employment_types,
+                )
+            )
+            normalizers["dice"] = DiceNormalizer()
+        elif source_name == "crunchboard":
+            sources.append(
+                CrunchBoardAdapter(
+                    http_client=http_client,
+                    rss_url=s.crunchboard_rss_url,
+                    result_limit=s.crunchboard_result_limit,
+                )
+            )
+            normalizers["crunchboard"] = CrunchBoardNormalizer()
+        elif source_name == "yc_jobs":
+            sources.append(
+                YCJobsAdapter(
+                    http_client=http_client,
+                    base_url=s.yc_jobs_base_url,
+                    roles=s.yc_jobs_roles,
+                    remote_only=s.yc_jobs_remote_only,
+                    enrich_companies=s.yc_jobs_enrich_companies,
+                    company_enrich_limit=s.yc_jobs_company_enrich_limit,
+                    result_limit=s.yc_jobs_result_limit,
+                )
+            )
+            normalizers["yc_jobs"] = YCJobsNormalizer()
+        elif source_name == "indeed":
+            sources.append(
+                IndeedAdapter(
+                    import_dir=s.csv_import_dir,
+                    default_filename=s.indeed_import_filename,
+                )
+            )
+            normalizers["indeed"] = IndeedNormalizer()
+        elif source_name == "wellfound":
+            sources.append(
+                WellfoundAdapter(
+                    import_dir=s.csv_import_dir,
+                    default_filename=s.wellfound_import_filename,
+                )
+            )
+            normalizers["wellfound"] = WellfoundNormalizer()
+        elif source_name == "glassdoor":
+            sources.append(
+                GlassdoorAdapter(
+                    import_dir=s.csv_import_dir,
+                    default_filename=s.glassdoor_import_filename,
+                )
+            )
+            normalizers["glassdoor"] = GlassdoorNormalizer()
+        elif source_name == "monster":
+            sources.append(
+                MonsterAdapter(
+                    import_dir=s.csv_import_dir,
+                    default_filename=s.monster_import_filename,
+                )
+            )
+            normalizers["monster"] = MonsterNormalizer()
 
     boards_jobs_repo = JobsRepository(session_factory=infra.sync_session_factory, bucket="boards")
     portals_jobs_repo = JobsRepository(session_factory=infra.sync_session_factory, bucket="portals")
@@ -175,6 +259,7 @@ def build_ingestion(
     # Intrinsic quality / spam classifier (cheap model, deterministic spam
     # fast-path + LLM); fails open to "ok" when no LLM is configured.
     quality_classifier = JobQualityClassifier(llm=tracked("job_quality_classifier"))
+    health_tracker = SourceHealthTracker()
 
     ingestion_orchestrator = IngestionOrchestrator(
         sources=sources,
@@ -186,6 +271,7 @@ def build_ingestion(
         indexer=boards_indexer,
         closure_miss_threshold=s.job_closure_miss_threshold,
         quality_classifier=quality_classifier,
+        health_tracker=health_tracker,
     )
 
     # URL-probe revalidation sweep for the boards bucket. Snapshot sources
@@ -202,8 +288,15 @@ def build_ingestion(
     # so a probe could only ever return UNKNOWN. Its API declares a per-job
     # expiryDate instead, so the sweep's expiry pass (close_expired) handles its
     # closure. hn_hiring/csv have no reliable per-URL closure signal.
+    # Import fallbacks without durable live URLs are still included when they
+    # expose http(s) job URLs — probes that fail stay UNKNOWN (never close).
+    _revalidation_excluded = {
+        "hn_hiring",
+        "csv",
+        "himalayas",
+    }
     revalidation_sources = [
-        name for name in s.enabled_job_sources if name not in ("hn_hiring", "csv", "himalayas")
+        name for name in s.enabled_job_sources if name not in _revalidation_excluded
     ]
 
     # LinkedIn closure lives on its guest API, not the public /jobs/view URL the

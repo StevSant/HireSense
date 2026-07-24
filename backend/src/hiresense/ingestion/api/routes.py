@@ -44,6 +44,11 @@ from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
 from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
 from hiresense.ingestion.domain.seniority import SeniorityLevel
 from hiresense.ingestion.domain.services import IngestionCooldownError, IngestionOrchestrator
+from hiresense.ingestion.domain.source_capabilities import (
+    SourceCapabilities,
+    list_source_capabilities,
+)
+from hiresense.ingestion.domain.source_health import SourceHealth
 from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
 from hiresense.matching.domain.deep_analysis_result import DeepAnalysisResult
 from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
@@ -136,6 +141,48 @@ def _apply_quick(job: NormalizedJob, quick: QuickMatchResult | None) -> Normaliz
 class FetchResponse(BaseModel):
     count: int
     jobs: list[NormalizedJob]
+
+
+class SourceInfo(BaseModel):
+    capabilities: SourceCapabilities
+    enabled: bool
+    wired: bool
+
+
+class SourcesResponse(BaseModel):
+    sources: list[SourceInfo]
+
+
+class SourcesHealthResponse(BaseModel):
+    sources: list[SourceHealth]
+
+
+@router.get("/sources", response_model=SourcesResponse)
+async def list_sources(
+    request: Request,
+    orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
+) -> SourcesResponse:
+    """Capability registry + enablement for board sources."""
+    settings = getattr(request.app.state, "settings", None)
+    enabled = set(getattr(settings, "enabled_job_sources", []) or [])
+    wired = set(orchestrator.source_names())
+    items: list[SourceInfo] = []
+    for caps in list_source_capabilities():
+        items.append(
+            SourceInfo(
+                capabilities=caps,
+                enabled=caps.source in enabled,
+                wired=caps.source in wired,
+            )
+        )
+    return SourcesResponse(sources=items)
+
+
+@router.get("/sources/health", response_model=SourcesHealthResponse)
+async def sources_health(
+    orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
+) -> SourcesHealthResponse:
+    return SourcesHealthResponse(sources=orchestrator.health_tracker.snapshot())
 
 
 @router.post(

@@ -24,6 +24,23 @@ import { FeedbackKind } from './models/feedback-kind.model';
 import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { CompanyLinkComponent } from '../../core/components/company-link';
 import { createSortState } from '../../core/utils/sort-state';
+import { SourceHealth, SourceInfo } from './models/source-capability.model';
+
+const FALLBACK_BOARD_SOURCES = [
+  'remotive',
+  'remoteok',
+  'jobicy',
+  'himalayas',
+  'hn_hiring',
+  'weworkremotely',
+  'getonboard',
+  'linkedin',
+  'arbeitnow',
+  'themuse',
+  'dice',
+  'crunchboard',
+  'yc_jobs',
+];
 
 @Component({
   selector: 'app-ingestion',
@@ -63,17 +80,23 @@ export class IngestionComponent implements OnInit {
 
   // Filters
   filters = signal<JobFilters>({});
-  boardSources = signal<string[]>([
-    'remotive',
-    'remoteok',
-    'jobicy',
-    'himalayas',
-    'hn_hiring',
-    'weworkremotely',
-    'getonboard',
-    'linkedin',
-  ]);
+  boardSources = signal<string[]>([...FALLBACK_BOARD_SOURCES]);
   portalSources = signal<string[]>([]);
+  sourceCatalog = signal<SourceInfo[]>([]);
+  sourceHealth = signal<SourceHealth[]>([]);
+  sourceWarnings = computed(() => {
+    const failing = this.sourceHealth().filter(
+      (h) => h.status === 'failing' || h.status === 'degraded',
+    );
+    const unavailable = this.sourceCatalog().filter(
+      (s) =>
+        s.enabled &&
+        !s.wired &&
+        (s.capabilities.requires_credentials ||
+          s.capabilities.integration === 'import_fallback'),
+    );
+    return { failing, unavailable };
+  });
 
   // Loading
   loading = signal(false);
@@ -191,11 +214,50 @@ export class IngestionComponent implements OnInit {
       )
       .subscribe(() => this.loadJobs());
     this.loadPortals();
+    this.loadSourceCatalog();
     this.applyKeywordFromQueryParam();
     // No loadJobs() here — <app-job-filters>'s guaranteed initial emission
     // (see the loadJobs$ comment above) drives onFiltersChange(), which
     // issues the first load.
     this.openDetailFromQueryParam();
+  }
+
+  loadSourceCatalog(): void {
+    this.ingestionService
+      .listSources()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          this.sourceCatalog.set(res.sources);
+          const enabledBoards = res.sources
+            .filter((s) => s.enabled || s.wired)
+            .map((s) => s.capabilities.source)
+            .filter(
+              (name) =>
+                ![
+                  'greenhouse',
+                  'lever',
+                  'ashby',
+                  'workable',
+                  'smartrecruiters',
+                  'recruitee',
+                ].includes(name),
+            );
+          if (enabledBoards.length) {
+            this.boardSources.set(enabledBoards);
+          }
+        },
+        error: () => {
+          // Keep FALLBACK_BOARD_SOURCES — Discover still works offline from cache.
+        },
+      });
+    this.ingestionService
+      .sourcesHealth()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => this.sourceHealth.set(res.sources),
+        error: () => this.sourceHealth.set([]),
+      });
   }
 
   private applyKeywordFromQueryParam(): void {

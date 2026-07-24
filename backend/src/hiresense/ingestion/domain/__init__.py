@@ -28,6 +28,19 @@ from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
 from hiresense.ingestion.domain.quick_match_verdict import QuickMatchVerdict
 from hiresense.ingestion.domain.score_change_filter import changed_score_updates
 from hiresense.ingestion.domain.services import IngestionCooldownError, IngestionOrchestrator
+from hiresense.ingestion.domain.source_capabilities import (
+    SOURCE_CAPABILITY_REGISTRY,
+    SourceCapabilities,
+    get_source_capabilities,
+    list_source_capabilities,
+    source_tier,
+)
+from hiresense.ingestion.domain.source_health import (
+    SourceHealth,
+    SourceHealthStatus,
+    SourceHealthTracker,
+    SourceRunStats,
+)
 from hiresense.ingestion.domain.ssrf_guard import is_safe_probe_url
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 
@@ -40,6 +53,12 @@ __all__ = [
     "JobEmbeddingIndexer",
     "JobRevalidationService",
     "OpenJob",
+    "SOURCE_CAPABILITY_REGISTRY",
+    "SourceCapabilities",
+    "SourceHealth",
+    "SourceHealthStatus",
+    "SourceHealthTracker",
+    "SourceRunStats",
     "UpsertResult",
     "detect_closures",
     "JobQuality",
@@ -59,8 +78,11 @@ __all__ = [
     "consolidate_cross_source_jobs",
     "content_hash",
     "filter_and_paginate",
+    "get_source_capabilities",
     "identity_key",
     "is_safe_probe_url",
+    "list_source_capabilities",
     "load_portals_config",
     "sort_jobs",
+    "source_tier",
 ]

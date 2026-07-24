@@ -10,6 +10,10 @@ import { PaginatedJobsResponse } from '../../pages/ingestion/models/paginated-jo
 import { PortalEntry } from '../../pages/ingestion/models/portal-entry.model';
 import { ScanPortalsRequest } from '../../pages/ingestion/models/scan-portals-request.model';
 import { ScanResult } from '../../pages/ingestion/models/scan-result.model';
+import {
+  SourcesHealthResponse,
+  SourcesResponse,
+} from '../../pages/ingestion/models/source-capability.model';
 
 @Injectable({ providedIn: 'root' })
 export class IngestionService {
@@ -103,6 +107,14 @@ export class IngestionService {
 
   loadPortals(): Observable<PortalEntry[]> {
     return this.http.get<PortalEntry[]>(`${environment.apiUrl}/ingestion/portals`);
+  }
+
+  listSources(): Observable<SourcesResponse> {
+    return this.http.get<SourcesResponse>(`${environment.apiUrl}/ingestion/sources`);
+  }
+
+  sourcesHealth(): Observable<SourcesHealthResponse> {
+    return this.http.get<SourcesHealthResponse>(`${environment.apiUrl}/ingestion/sources/health`);
   }
 
   scanPortals(body: ScanPortalsRequest): Observable<ScanResult> {

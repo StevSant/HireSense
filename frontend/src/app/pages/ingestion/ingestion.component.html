@@ -51,6 +51,23 @@
     </div>
   </div>
 
+  @if (sourceWarnings().failing.length || sourceWarnings().unavailable.length) {
+    <div class="source-health-banner" role="status">
+      @for (h of sourceWarnings().failing; track h.source) {
+        <span class="health-chip health-{{ h.status }}"
+          >{{ h.source }}: {{ h.status
+          }}{{ h.last_error ? ' — ' + h.last_error : '' }}</span
+        >
+      }
+      @for (s of sourceWarnings().unavailable; track s.capabilities.source) {
+        <span class="health-chip health-unavailable"
+          >{{ s.capabilities.display_name }} unavailable —
+          {{ s.capabilities.limitations || 'not configured' }}</span
+        >
+      }
+    </div>
+  }
+
   @if (error()) {
     <div class="alert alert-error">{{ error() }}</div>
   }

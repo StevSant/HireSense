@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from hiresense.ingestion.adapters.crunchboard import parse_crunchboard_title
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.normalizers._import_fields import (
     clean_description,
@@ -10,6 +9,7 @@ from hiresense.ingestion.domain.normalizers._import_fields import (
     normalize_remote_modality,
     parse_posted_date,
 )
+from hiresense.ingestion.domain.normalizers.crunchboard_title import parse_crunchboard_title
 
 
 class CrunchBoardNormalizer:

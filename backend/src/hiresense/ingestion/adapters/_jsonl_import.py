@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import csv
 import json
+import logging
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 def resolve_inside_import_dir(import_dir: str | Path, candidate: str) -> Path:
@@ -17,13 +20,19 @@ def resolve_inside_import_dir(import_dir: str | Path, candidate: str) -> Path:
     return resolved
 
 
-def load_records(path: Path) -> list[dict[str, Any]]:
-    """Load job records from JSON, JSONL, or CSV. Missing file → empty list."""
+def load_records(path: Path) -> tuple[list[dict[str, Any]], int]:
+    """Load job records from JSON, JSONL, or CSV.
+
+    Returns ``(records, parse_failures)``. Missing file → ``([], 0)``.
+    Malformed JSONL lines are skipped (counted) so valid rows still ingest.
+    Unsupported formats and unreadable whole-file JSON still raise ValueError.
+    """
     if not path.exists() or not path.is_file():
-        return []
+        return [], 0
     suffix = path.suffix.lower()
     if suffix == ".jsonl":
         records: list[dict[str, Any]] = []
+        parse_failures = 0
         with path.open(encoding="utf-8") as fh:
             for line_no, line in enumerate(fh, start=1):
                 text = line.strip()
@@ -31,24 +40,28 @@ def load_records(path: Path) -> list[dict[str, Any]]:
                     continue
                 try:
                     item = json.loads(text)
-                except json.JSONDecodeError as exc:
-                    raise ValueError(f"Invalid JSONL at {path}:{line_no}: {exc}") from exc
+                except json.JSONDecodeError:
+                    parse_failures += 1
+                    logger.warning("Invalid JSONL at %s:%s — skipping line", path, line_no)
+                    continue
                 if isinstance(item, dict):
                     records.append(item)
-        return records
+                else:
+                    parse_failures += 1
+        return records, parse_failures
     if suffix == ".json":
         with path.open(encoding="utf-8") as fh:
             data = json.load(fh)
         if isinstance(data, list):
-            return [item for item in data if isinstance(item, dict)]
+            return [item for item in data if isinstance(item, dict)], 0
         if isinstance(data, dict) and isinstance(data.get("jobs"), list):
-            return [item for item in data["jobs"] if isinstance(item, dict)]
+            return [item for item in data["jobs"] if isinstance(item, dict)], 0
         if isinstance(data, dict):
-            return [data]
-        return []
+            return [data], 0
+        return [], 0
     if suffix == ".csv":
         with path.open(newline="", encoding="utf-8") as fh:
-            return [dict(row) for row in csv.DictReader(fh)]
+            return [dict(row) for row in csv.DictReader(fh)], 0
     raise ValueError(f"Unsupported import format: {path.suffix}")
 
 

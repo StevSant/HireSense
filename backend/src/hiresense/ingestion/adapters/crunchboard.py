@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 import feedparser
 
 from hiresense.ingestion.domain.models import RawJobListing
+from hiresense.ingestion.domain.normalizers.crunchboard_title import parse_crunchboard_title
 from hiresense.kernel.value_objects import SourceType
 
-_TITLE_RE = re.compile(
-    r"^(?P<title>.+?)\s+at\s+(?P<company>.+?)(?:\s+\((?P<location>.+)\))?$",
-    re.IGNORECASE,
-)
+__all__ = ["CrunchBoardAdapter", "parse_crunchboard_title"]
 
 
 class CrunchBoardAdapter:
@@ -91,15 +88,3 @@ class CrunchBoardAdapter:
             if len(jobs) >= self._result_limit:
                 break
         return jobs
-
-
-def parse_crunchboard_title(title: str) -> tuple[str, str, str]:
-    """Split 'Role at Company (Location)' into title, company, location."""
-    match = _TITLE_RE.match(title.strip())
-    if not match:
-        return title.strip(), "", ""
-    return (
-        match.group("title").strip(),
-        match.group("company").strip(),
-        (match.group("location") or "").strip(),
-    )

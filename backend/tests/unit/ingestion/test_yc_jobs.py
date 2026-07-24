@@ -144,6 +144,11 @@ def test_yc_normalizer() -> None:
     )
     out = YCJobsNormalizer().normalize(raw)
     assert out["company"] == "OneSignal"
+    assert out["url"] == "https://www.workatastartup.com/jobs/92753"
+    assert (
+        out["source_metadata"]["company_url"]
+        == "https://www.workatastartup.com/companies/onesignal"
+    )
     assert out["salary_range"] == "$180K - $220K"
     assert out["equity_range"] == "0.1% – 0.25%"
     assert out["employment_type"] == "full_time"

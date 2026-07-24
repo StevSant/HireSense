@@ -43,10 +43,11 @@ class StructuredImportAdapter:
         filename = (filters or {}).get("file_path") or self.default_filename
         path = resolve_inside_import_dir(self._import_dir, str(filename))
         try:
-            records = load_records(path)
+            records, parse_failures = load_records(path)
         except ValueError:
             self.last_parse_failures += 1
             raise
+        self.last_parse_failures += parse_failures
         self.last_pages_fetched = 1 if path.exists() else 0
         jobs: list[RawJobListing] = []
         seen: set[str] = set()

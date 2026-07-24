@@ -127,6 +127,18 @@ async def test_dice_http_error_propagates() -> None:
         await adapter.fetch_jobs()
 
 
+@pytest.mark.asyncio
+async def test_dice_keeps_partial_pages_on_later_failure() -> None:
+    init = FakeResponse('{"jsonrpc":"2.0","id":1,"result":{}}')
+    page1 = FakeResponse(_tool_result([SAMPLE_JOB], page=1, page_count=3))
+    page2 = FakeResponse("nope", status_code=500)
+    client = FakeHttpClient([init, page1, page2])
+    adapter = DiceAdapter(http_client=client, page_limit=3, jobs_per_page=1)
+    jobs = await adapter.fetch_jobs()
+    assert len(jobs) == 1
+    assert adapter.last_parse_failures >= 1
+
+
 def test_dice_normalizer_fields() -> None:
     raw = RawJobListing(source="dice", source_id=SAMPLE_JOB["guid"], raw_data=SAMPLE_JOB)
     out = DiceNormalizer().normalize(raw)

@@ -29,12 +29,13 @@ class YCJobsNormalizer:
 
         slug = first_str(d, "companySlug")
         job_id = d.get("id") or raw.source_id
+        # Prefer the per-job URL so URL-probe revalidation can detect closure of
+        # a single role. Company pages stay live after one job is removed.
         url = f"https://www.workatastartup.com/jobs/{job_id}" if job_id else ""
-        if slug:
-            # Public company page is a stable discovery URL; job detail may require auth.
-            url = f"https://www.workatastartup.com/companies/{slug}"
 
         meta: dict[str, Any] = {}
+        if slug:
+            meta["company_url"] = f"https://www.workatastartup.com/companies/{slug}"
         batch = first_str(d, "companyBatch")
         if batch:
             meta["yc_batch"] = batch

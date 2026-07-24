@@ -128,6 +128,26 @@ async def test_monster_missing_file_returns_empty(import_dir: Path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_jsonl_skips_bad_lines_and_keeps_valid(import_dir: Path) -> None:
+    path = import_dir / "indeed_jobs.jsonl"
+    path.write_text(
+        "\n".join(
+            [
+                '{"id":"ok-1","title":"Eng","company":"Acme","url":"https://x/1"}',
+                "{not-json",
+                '{"id":"ok-2","title":"Dev","company":"Beta","url":"https://x/2"}',
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    adapter = IndeedAdapter(import_dir=str(import_dir))
+    jobs = await adapter.fetch_jobs()
+    assert [j.source_id for j in jobs] == ["ok-1", "ok-2"]
+    assert adapter.last_parse_failures == 1
+
+
+@pytest.mark.asyncio
 async def test_import_path_traversal_rejected(import_dir: Path) -> None:
     adapter = IndeedAdapter(import_dir=str(import_dir))
     with pytest.raises(ValueError, match="escapes"):

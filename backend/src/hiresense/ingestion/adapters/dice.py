@@ -153,10 +153,20 @@ class DiceAdapter:
                 )
             except Exception:
                 logger.exception("Dice MCP tools/call failed on page %s", page)
+                self.last_parse_failures += 1
+                # Preserve pages already fetched instead of failing the whole source.
+                if jobs:
+                    break
                 raise
 
             self.last_pages_fetched += 1
             if "error" in result:
+                self.last_parse_failures += 1
+                if jobs:
+                    logger.error(
+                        "Dice MCP error on page %s after partial success: %s", page, result["error"]
+                    )
+                    break
                 raise RuntimeError(f"Dice MCP error: {result['error']}")
 
             content = (result.get("result") or {}).get("content") or []

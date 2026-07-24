@@ -34,7 +34,9 @@ class IngestedJob(Base):
     salary_range: Mapped[str | None] = mapped_column(Text, nullable=True)
     employment_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
     equity_range: Mapped[str | None] = mapped_column(Text, nullable=True)
-    source_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    source_metadata: Mapped[dict] = mapped_column(
+        JSON, nullable=False, default=dict, server_default="{}"
+    )
     language: Mapped[str] = mapped_column(String(10), default="en")
     url: Mapped[str] = mapped_column(String(2048), default="")
     # Apply-method classification, derived once at ingestion (see

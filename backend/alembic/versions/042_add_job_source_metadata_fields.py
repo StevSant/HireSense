@@ -27,7 +27,12 @@ def upgrade() -> None:
     )
     op.add_column(
         "ingested_jobs",
-        sa.Column("source_metadata", sa.JSON(), nullable=True),
+        sa.Column(
+            "source_metadata",
+            sa.JSON(),
+            nullable=False,
+            server_default="{}",
+        ),
     )
 
 

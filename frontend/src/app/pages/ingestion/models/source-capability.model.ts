@@ -39,12 +39,7 @@ export interface SourcesResponse {
   sources: SourceInfo[];
 }
 
-export type SourceHealthStatus =
-  | 'healthy'
-  | 'degraded'
-  | 'failing'
-  | 'disabled'
-  | 'not_configured';
+export type SourceHealthStatus = 'healthy' | 'degraded' | 'failing' | 'disabled' | 'not_configured';
 
 export interface SourceHealth {
   source: string;

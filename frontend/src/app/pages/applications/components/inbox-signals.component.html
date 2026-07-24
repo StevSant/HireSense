@@ -1,9 +1,7 @@
 <section class="inbox-signals">
   <header>
     <h1>Inbox status review</h1>
-    <p>
-      Review email-detected application updates before HireSense changes your pipeline.
-    </p>
+    <p>Review email-detected application updates before HireSense changes your pipeline.</p>
   </header>
 
   @if (error()) {
@@ -39,10 +37,16 @@
             <button
               type="button"
               class="btn-primary"
-              [disabled]="reviewingId() !== null || !signal.matched_application_id || !signal.proposed_status"
+              [disabled]="
+                reviewingId() !== null || !signal.matched_application_id || !signal.proposed_status
+              "
               (click)="confirm(signal.id)"
             >
-              @if (reviewingId() === signal.id) { Updating… } @else { Confirm status }
+              @if (reviewingId() === signal.id) {
+                Updating…
+              } @else {
+                Confirm status
+              }
             </button>
             <button
               type="button"

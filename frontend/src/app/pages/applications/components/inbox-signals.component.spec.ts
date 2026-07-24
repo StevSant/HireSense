@@ -39,7 +39,8 @@ describe('InboxSignalsComponent', () => {
 
   it('keeps a failed confirmation available for review', () => {
     const { fixture } = mount({
-      confirm: () => throwError(() => ({ error: { detail: 'The application was already rejected.' } })),
+      confirm: () =>
+        throwError(() => ({ error: { detail: 'The application was already rejected.' } })),
     });
 
     fixture.componentInstance.confirm('signal-1');

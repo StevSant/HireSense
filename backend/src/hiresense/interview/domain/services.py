@@ -108,7 +108,9 @@ class InterviewPrepService:
         for i, s in enumerate(stories, 1):
             story_summaries += f'{i}. [{s.id}] "{s.title}" ({s.competency}) - {s.situation[:100]}\n'
 
-        interview_stage_context = f"Interview stage: {interview_stage}\n\n" if interview_stage else ""
+        interview_stage_context = (
+            f"Interview stage: {interview_stage}\n\n" if interview_stage else ""
+        )
         prompt = (
             "You are an interview preparation coach.\n\n"
             f"Job: {title} at {company}\nDescription: "

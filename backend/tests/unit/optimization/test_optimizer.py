@@ -294,9 +294,7 @@ async def test_optimizer_uses_verified_claim_evidence_and_exposes_provenance() -
                 "improvement_summary": "Added verified evidence"
             }"""
 
-    result = await CVOptimizer(
-        llm=EvidenceBackedLLM(), claim_service=VerifiedClaims()
-    ).optimize(
+    result = await CVOptimizer(llm=EvidenceBackedLLM(), claim_service=VerifiedClaims()).optimize(
         match_id="match-evidence",
         job_id="job-evidence",
         cv_id="cv-evidence",

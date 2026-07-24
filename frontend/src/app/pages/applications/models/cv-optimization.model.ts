@@ -1,7 +1,5 @@
 export type ClaimBlockerReason =
-  | 'missing_exact_anchor'
-  | 'unsupported_job_skill'
-  | 'unsupported_numeric_claim';
+  'missing_exact_anchor' | 'unsupported_job_skill' | 'unsupported_numeric_claim';
 
 export interface ClaimReadiness {
   ready: boolean;

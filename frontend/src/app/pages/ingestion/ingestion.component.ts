@@ -92,8 +92,7 @@ export class IngestionComponent implements OnInit {
       (s) =>
         s.enabled &&
         !s.wired &&
-        (s.capabilities.requires_credentials ||
-          s.capabilities.integration === 'import_fallback'),
+        (s.capabilities.requires_credentials || s.capabilities.integration === 'import_fallback'),
     );
     return { failing, unavailable };
   });

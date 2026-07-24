@@ -46,9 +46,7 @@
             <span class="chip">🏷 {{ job().department }}</span>
           }
           @if (alsoFoundOn().length > 1) {
-            <span
-              class="chip"
-              [title]="alsoFoundOn().length + ' sources saw this role'"
+            <span class="chip" [title]="alsoFoundOn().length + ' sources saw this role'"
               >Also on {{ alsoFoundOn().length }} sources</span
             >
           }

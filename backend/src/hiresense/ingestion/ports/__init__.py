@@ -7,10 +7,12 @@ from hiresense.ingestion.ports.jobs_repository import (
     ScoreUpdate,
     UpsertOutcome,
 )
+from hiresense.ingestion.ports.page_renderer import PageRendererPort
 
 __all__ = [
     "CompanyProfileSinkPort",
     "JobsRepositoryPort",
+    "PageRendererPort",
     "QualityUpdate",
     "ScoreUpdate",
     "UpsertOutcome",

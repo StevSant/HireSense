@@ -21,6 +21,7 @@ from hiresense.ingestion.infrastructure import IngestedJob, JobMatchCache  # noq
 from hiresense.inbox.infrastructure import DetectedSignalOrm  # noqa: F401
 from hiresense.interview.infrastructure import StoryOrm  # noqa: F401
 from hiresense.network.infrastructure import NetworkContactOrm  # noqa: F401
+from hiresense.opportunities.infrastructure import OpportunityOrm  # noqa: F401
 from hiresense.outreach.infrastructure import OutreachEventOrm  # noqa: F401
 from hiresense.portfolio.infrastructure import PortfolioProjectOrm  # noqa: F401
 from hiresense.preference.infrastructure import FeedbackSignalOrm, PreferenceModelOrm  # noqa: F401

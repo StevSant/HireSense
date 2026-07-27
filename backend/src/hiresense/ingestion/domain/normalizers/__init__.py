@@ -8,7 +8,11 @@ from hiresense.ingestion.domain.normalizers.arbeitnow_normalizer import Arbeitno
 from hiresense.ingestion.domain.normalizers.ashby_normalizer import AshbyNormalizer
 from hiresense.ingestion.domain.normalizers.crunchboard_normalizer import CrunchBoardNormalizer
 from hiresense.ingestion.domain.normalizers.dice_normalizer import DiceNormalizer
+from hiresense.ingestion.domain.normalizers.generic_scraper_normalizer import (
+    GenericScraperNormalizer,
+)
 from hiresense.ingestion.domain.normalizers.getonboard_normalizer import GetOnBoardNormalizer
+from hiresense.ingestion.domain.normalizers.globant_normalizer import GlobantNormalizer
 from hiresense.ingestion.domain.normalizers.greenhouse_normalizer import GreenhouseNormalizer
 from hiresense.ingestion.domain.normalizers.himalayas_normalizer import HimalayasNormalizer
 from hiresense.ingestion.domain.normalizers.hn_hiring_normalizer import HNHiringNormalizer
@@ -26,9 +30,11 @@ from hiresense.ingestion.domain.normalizers.smartrecruiters_normalizer import (
     SmartRecruitersNormalizer,
 )
 from hiresense.ingestion.domain.normalizers.the_muse_normalizer import TheMuseNormalizer
+from hiresense.ingestion.domain.normalizers.thoughtworks_normalizer import ThoughtworksNormalizer
 from hiresense.ingestion.domain.normalizers.weworkremotely_normalizer import (
     WeWorkRemotelyNormalizer,
 )
+from hiresense.ingestion.domain.normalizers.workday_normalizer import WorkdayNormalizer
 from hiresense.ingestion.domain.normalizers.workable_normalizer import WorkableNormalizer
 from hiresense.ingestion.domain.normalizers.yc_jobs_normalizer import YCJobsNormalizer
 
@@ -39,8 +45,10 @@ __all__ = [
     "CrunchBoardNormalizer",
     "CSVNormalizer",
     "DiceNormalizer",
+    "GenericScraperNormalizer",
     "GetOnBoardNormalizer",
     "GlassdoorNormalizer",
+    "GlobantNormalizer",
     "GreenhouseNormalizer",
     "HimalayasNormalizer",
     "HNHiringNormalizer",
@@ -54,8 +62,10 @@ __all__ = [
     "RemotiveNormalizer",
     "SmartRecruitersNormalizer",
     "TheMuseNormalizer",
+    "ThoughtworksNormalizer",
     "WellfoundNormalizer",
     "WeWorkRemotelyNormalizer",
+    "WorkdayNormalizer",
     "WorkableNormalizer",
     "YCJobsNormalizer",
 ]

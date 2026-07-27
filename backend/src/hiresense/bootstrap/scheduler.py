@@ -54,6 +54,7 @@ def build_scheduler(
     notification_service: Any = None,
     inbox_processing_service: Any = None,
     autopilot_pipeline_service: Any = None,
+    opportunities_service: Any = None,
 ) -> SchedulerBuild:
     definitions = [
         JobDefinition(
@@ -86,6 +87,22 @@ def build_scheduler(
             count_items=len,
         ),
     ]
+    if opportunities_service is not None:
+        definitions.append(
+            JobDefinition(
+                name="opportunities_ingest",
+                run=opportunities_service.run,
+                cron=settings.opportunities_schedule,
+                interval_hours=None,
+                count_items=lambda r: (
+                    (r or {}).get("inserted", 0)
+                    + (r or {}).get("updated", 0)
+                    + (r or {}).get("reopened", 0)
+                    if isinstance(r, dict)
+                    else None
+                ),
+            )
+        )
     if inbox_processing_service is not None:
         definitions.append(
             JobDefinition(

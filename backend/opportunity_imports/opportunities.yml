@@ -1,0 +1,18 @@
+# Seed curated opportunities for local/dev. Copy into OPPORTUNITIES_IMPORT_DIR
+# or point OPPORTUNITIES_IMPORT_DIR at this directory.
+
+opportunities:
+  - id: khipu-2027
+    kind: event
+    title: "Khipu 2027 — Latin American Meeting in Artificial Intelligence"
+    organization: "Khipu"
+    url: "https://apply.khipu.ai/Khipu2027"
+    apply_url: "https://apply.khipu.ai/Khipu2027"
+    description: >
+      Application portal for Khipu 2027, a Latin American AI meeting that often
+      covers travel/lodging for accepted participants.
+    topics: [ai, machine-learning, latam]
+    country: "Chile"
+    application_deadline: "2026-10-31"
+    funding: "Travel and lodging often covered for accepted participants (check current call)."
+    source_page: "https://apply.khipu.ai/Khipu2027"

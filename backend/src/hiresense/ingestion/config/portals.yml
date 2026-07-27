@@ -203,3 +203,48 @@ portals:
     board_id: your-workable-subdomain
     enabled: false
     categories: [general]
+
+  # --- Large software services / consulting firms ---
+  - name: Encora
+    platform: greenhouse
+    board_id: encora10
+    categories: [latam, consulting, software-services]
+
+  - name: Globant
+    platform: globant
+    board_id: globant
+    careers_url: https://career.globant.com/
+    categories: [latam, consulting, software-services]
+
+  - name: Thoughtworks
+    platform: thoughtworks
+    board_id: thoughtworks
+    careers_url: https://www.thoughtworks.com/careers
+    categories: [consulting, software-services]
+
+  - name: Cognizant
+    platform: scraper
+    board_id: cognizant
+    careers_url: https://careers.cognizant.com/global-en/jobs
+    render: http
+    selectors:
+      job_links: "a[href*='/jobs/']"
+      href_regex: "/jobs/\\d+"
+      skip_detail: "true"
+      max_jobs: "100"
+      title: "h1"
+      location: "[class*='location'], [data-ph-at-id='jobLocation']"
+      description: "main, article, [class*='job']"
+    categories: [consulting, software-services]
+
+  - name: Fintual
+    platform: scraper
+    board_id: fintual
+    careers_url: https://fintual.com/
+    enabled: false
+    selectors:
+      job_links: "a[href*='careers'], a[href*='jobs'], a[href*='trabaja']"
+      title: "h1"
+      location: "[class*='location']"
+      description: "main, article"
+    categories: [latam, fintech]

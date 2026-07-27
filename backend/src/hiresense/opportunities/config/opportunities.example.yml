@@ -1,0 +1,24 @@
+# Curated opportunity imports (funded events, fellowships, one-off portals).
+# Place this file (or a copy) under OPPORTUNITIES_IMPORT_DIR (default:
+# ./opportunity_imports/opportunities.yml).
+
+opportunities:
+  - id: khipu-2027
+    kind: event
+    title: "Khipu 2027 — Latin American Meeting in Artificial Intelligence"
+    organization: "Khipu"
+    url: "https://apply.khipu.ai/Khipu2027"
+    apply_url: "https://apply.khipu.ai/Khipu2027"
+    description: >
+      Application portal for Khipu 2027, a Latin American AI meeting that often
+      covers travel/lodging for accepted participants. Entered as a curated
+      opportunity because the site has no public machine-readable feed.
+    topics: [ai, machine-learning, latam]
+    country: "Chile"
+    city: null
+    start_date: "2027-03-01"
+    end_date: "2027-03-07"
+    application_deadline: "2026-10-31"
+    funding: "Travel and lodging often covered for accepted participants (check current call)."
+    notes: "Dates/deadline are placeholders — verify on the apply portal each cycle."
+    source_page: "https://apply.khipu.ai/Khipu2027"

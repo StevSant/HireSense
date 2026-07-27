@@ -25,6 +25,20 @@ def test_portal_entry_with_categories() -> None:
     assert entry.categories == ["ai-research"]
 
 
+def test_portal_entry_extended_fields() -> None:
+    entry = PortalEntry(
+        name="Globant",
+        platform="scraper",
+        board_id="globant",
+        careers_url="https://career.globant.com/",
+        render="browser",
+        selectors={"job_links": ".job-card a"},
+    )
+    assert entry.careers_url == "https://career.globant.com/"
+    assert entry.render == "browser"
+    assert entry.selectors == {"job_links": ".job-card a"}
+
+
 def test_portal_entry_rejects_invalid_platform() -> None:
     with pytest.raises(ValueError):
         PortalEntry(name="Foo", platform="invalid", board_id="foo")

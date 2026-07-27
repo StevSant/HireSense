@@ -5,6 +5,7 @@ from hiresense.ingestion.infrastructure.job_match_cache_model import JobMatchCac
 from hiresense.ingestion.infrastructure.job_match_cache_repository import JobMatchCacheRepository
 from hiresense.ingestion.infrastructure.jobs_repository import JobsRepository
 from hiresense.ingestion.infrastructure.models import IngestedJob
+from hiresense.ingestion.infrastructure.playwright_page_renderer import PlaywrightPageRenderer
 
 __all__ = [
     "InMemoryJobsRepository",
@@ -12,4 +13,5 @@ __all__ = [
     "JobMatchCache",
     "JobMatchCacheRepository",
     "JobsRepository",
+    "PlaywrightPageRenderer",
 ]

@@ -76,6 +76,13 @@ export const routes: Routes = [
           import('./pages/analytics/analytics.component').then((m) => m.AnalyticsComponent),
       },
       {
+        path: 'opportunities',
+        loadComponent: () =>
+          import('./pages/opportunities/opportunities.component').then(
+            (m) => m.OpportunitiesComponent,
+          ),
+      },
+      {
         path: 'company/:name',
         loadComponent: () =>
           import('./pages/company/company.component').then((m) => m.CompanyComponent),

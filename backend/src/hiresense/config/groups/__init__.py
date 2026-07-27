@@ -8,6 +8,7 @@ from hiresense.config.groups.job_sources import JobSourcesSettings
 from hiresense.config.groups.llm import LLMSettings
 from hiresense.config.groups.matching import MatchingSettings
 from hiresense.config.groups.observability import ObservabilitySettings
+from hiresense.config.groups.opportunities import OpportunitiesSettings
 from hiresense.config.groups.outreach import OutreachSettings
 from hiresense.config.groups.portals import PortalsSettings
 from hiresense.config.groups.portfolio import PortfolioSettings
@@ -26,6 +27,7 @@ __all__ = [
     "LLMSettings",
     "MatchingSettings",
     "ObservabilitySettings",
+    "OpportunitiesSettings",
     "OutreachSettings",
     "PortalsSettings",
     "PortfolioSettings",

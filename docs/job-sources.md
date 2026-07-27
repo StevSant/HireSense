@@ -13,6 +13,48 @@ portals from `portals.yml`. Capability metadata is available at
 | `yc_jobs` | Public Work at a Startup Inertia JSON | URL probe | Role list via `YC_JOBS_ROLES`; optional company enrich |
 | Existing boards | API / RSS / HTML | see capabilities | Remotive, RemoteOK, Jobicy, … |
 
+## Company portals
+
+Company portals live in `ingestion/config/portals.yml` and are scanned with
+`POST /ingestion/scan-portals`.
+
+| Platform | Method | Notes |
+|---|---|---|
+| `greenhouse`, `lever`, `ashby`, `workable`, `smartrecruiters`, `recruitee` | Public ATS API | Existing direct ATS support |
+| `workday` | Public recruiting API | Derives `/wday/cxs/{tenant}/{site}/jobs` from the public careers URL |
+| `thoughtworks` | Public careers JSON | `GET /rest/careers/jobs` (snapshot closure) |
+| `globant` | SuccessFactors BFF API | `GET /api/sap/job-requisition?page=N` (snapshot closure) |
+| `auto` | API-first detector | Chooses a known ATS adapter from the careers URL when possible |
+| `scraper` | HTML / browser fallback | CSS selectors + optional `href_regex` / `skip_detail`; `render: browser` for JS-heavy sites |
+
+`PortalEntry` now supports:
+
+- `careers_url`: canonical public careers page or jobs URL
+- `render`: `http` or `browser`
+- `selectors`: optional CSS selectors like `job_links`, `title`, `location`, `description`, plus `href_regex`, `skip_detail`, `max_jobs`
+
+Examples of companies seeded with this pattern: Encora (Greenhouse), Globant
+(SAP job-requisition API), Thoughtworks (careers JSON API), Cognizant (HTTP
+listing scraper with `/jobs/{id}` href filter).
+
+## Opportunities
+
+HireSense also has a separate `/opportunities` context for non-job opportunities:
+
+| Source | Method | Notes |
+|---|---|---|
+| `confs_tech` | Open GitHub JSON | Conferences / CFPs from confs.tech data |
+| `curated` | YAML / JSONL import | One-off funded programs like Khipu |
+
+List filters: `kind`, `topic` / `topics`, `country`, `q`, `funded_only`,
+`deadline_before`, `deadline_after`, `status`, `sort`
+(`date_asc` | `deadline_asc` | `relevance_desc`). Relevance uses profile skill
+text mentions and returns optional `relevance_score`.
+
+Configure with `ENABLED_OPPORTUNITY_SOURCES`, `OPPORTUNITIES_SCHEDULE`,
+`OPPORTUNITIES_IMPORT_DIR`, `OPPORTUNITIES_IMPORT_FILENAME`,
+`CONFS_TECH_BASE_URL`, `CONFS_TECH_TOPICS`, and `CONFS_TECH_YEARS`.
+
 ## Import fallbacks (opt-in)
 
 Indeed, Wellfound, Glassdoor, and Monster have **no legitimate public job-search API**

@@ -154,7 +154,7 @@
               <tr class="clickable-row" [class.closed]="item.status === 'closed'">
                 <td>
                   <span class="score-badge" [class]="scoreBadgeClass(item.relevance_score)">
-                    @if (item.relevance_score != null) {
+                    @if (item.relevance_score !== null) {
                       {{ item.relevance_score | percent: '1.0-0' }}
                     } @else {
                       —

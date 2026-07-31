@@ -4,5 +4,5 @@ export interface FetchOpportunitiesResponse {
   updated: number;
   reopened: number;
   unchanged: number;
-  errors: Array<Record<string, unknown>>;
+  errors: Record<string, unknown>[];
 }

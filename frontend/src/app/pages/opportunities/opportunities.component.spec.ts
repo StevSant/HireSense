@@ -44,23 +44,7 @@ function makeOpportunitiesService(overrides: Partial<OpportunitiesService> = {})
     errors: [],
   };
   return {
-    list: (_params: {
-      page: number;
-      pageSize: number;
-      kind?: string;
-      topic?: string;
-      topics?: string[];
-      excludeTopics?: string[];
-      country?: string;
-      q?: string;
-      fundedOnly?: boolean;
-      deadlineBefore?: string;
-      deadlineAfter?: string;
-      hideStale?: boolean;
-      matchedOnly?: boolean;
-      status?: string;
-      sort?: string;
-    }) => of(listResponse),
+    list: () => of(listResponse),
     fetch: () => of(fetchResponse),
     ...overrides,
   };

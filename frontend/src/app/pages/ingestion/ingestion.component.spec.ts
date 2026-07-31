@@ -166,8 +166,7 @@ describe('IngestionComponent — fetch completion feedback', () => {
 
     const reload = httpMock.expectOne(
       (r) =>
-        r.url === `${environment.apiUrl}/ingestion/jobs` &&
-        r.request.params.get('rescore') === 'false',
+        r.url === `${environment.apiUrl}/ingestion/jobs` && r.params.get('rescore') === 'false',
     );
     reload.flush(jobsPayload());
 

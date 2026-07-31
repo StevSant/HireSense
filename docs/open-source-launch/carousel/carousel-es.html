@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>HireSense — carrusel de lanzamiento (ES)</title>
+    <link rel="stylesheet" href="carousel.css" />
+  </head>
+  <body>
+    <!-- ============================================================
+         Carrusel de lanzamiento para LinkedIn — 8 diapositivas, 1080x1350.
+         Exportar: `node export-pdf.mjs` en esta carpeta.
+         Los datos de producto son SINTÉTICOS. No sustituir por datos reales.
+         ============================================================ -->
+
+    <div class="screen-only">
+      <b>Cómo exportar:</b> ejecuta <b>node export-pdf.mjs</b> en esta carpeta — obtienes
+      <b>carousel-es.pdf</b>, 8 páginas de 1080×1350 con los fondos intactos. ¿Imprimiendo a
+      mano? El destino debe ser "Guardar como PDF" (no "Microsoft Print to PDF"), márgenes
+      <b>Ninguno</b> y <b>Gráficos de fondo</b> marcado en Más ajustes. Esta barra gris no
+      aparece en el PDF.
+    </div>
+
+    <!-- ================= 1 · GANCHO ================= -->
+    <section class="slide slide--dark">
+      <svg class="radar" viewBox="0 0 200 200" aria-hidden="true">
+        <g stroke="#2dd4bf" stroke-width="1.6" fill="none">
+          <circle cx="100" cy="100" r="28" opacity="0.9" />
+          <circle cx="100" cy="100" r="52" opacity="0.6" />
+          <circle cx="100" cy="100" r="76" opacity="0.35" />
+          <circle cx="100" cy="100" r="98" opacity="0.18" />
+        </g>
+        <circle cx="100" cy="100" r="9" fill="#2dd4bf" />
+      </svg>
+
+      <div class="grow center stack-40">
+        <p class="eyebrow">Pregunta honesta</p>
+        <h1>
+          ¿Cuántas pestañas de portales de empleo tienes abiertas
+          <span class="hl">ahora mismo</span>?
+        </h1>
+      </div>
+
+      <div class="foot">
+        <span class="foot__brand"><span class="foot__dot"></span>HireSense</span>
+        <span>Desliza →</span>
+      </div>
+    </section>
+
+    <!-- ================= 2 · EL ANTES ================= -->
+    <section class="slide">
+      <p class="eyebrow">El antes</p>
+      <h2 style="margin-top: 20px">Así se ve buscar trabajo hoy.</h2>
+
+      <div class="grow tabmess">
+        <!-- ventana del navegador -->
+        <div class="window" style="width: 800px; left: 0; top: 70px; transform: rotate(-1.4deg)">
+          <div class="window__bar">
+            <span class="tab tab--active">Portal A · resultados</span>
+            <span class="tab">Portal B</span>
+            <span class="tab">Portal C</span>
+            <span class="tab">ATS empresa</span>
+            <span class="tab">Portal D</span>
+            <span class="tab">Portal E</span>
+            <span class="tab">+2</span>
+          </div>
+          <div class="window__body">
+            <div class="ghost-row" style="width: 92%"></div>
+            <div class="ghost-row" style="width: 74%"></div>
+            <div class="ghost-row" style="width: 88%"></div>
+            <div class="ghost-row" style="width: 61%"></div>
+            <div class="ghost-row" style="width: 80%"></div>
+            <div class="ghost-row" style="width: 69%; margin-bottom: 0"></div>
+          </div>
+        </div>
+
+        <!-- hoja de cálculo -->
+        <div class="window" style="width: 690px; right: 0; top: 330px; transform: rotate(1.8deg)">
+          <div class="window__bar">
+            <span class="tab tab--active">seguimiento-postulaciones.xlsx</span>
+          </div>
+          <div class="window__body">
+            <table class="sheet">
+              <tr>
+                <th>Empresa</th>
+                <th>Puesto</th>
+                <th>Enviado</th>
+                <th>Estado</th>
+              </tr>
+              <tr><td>—</td><td>—</td><td>12 mar</td><td>¿?</td></tr>
+              <tr><td>—</td><td>—</td><td>14 mar</td><td>sin respuesta</td></tr>
+              <tr><td>—</td><td>—</td><td>¿?</td><td>¿ya apliqué?</td></tr>
+              <tr><td>—</td><td>—</td><td>2 abr</td><td>sin respuesta</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- carpeta de CVs -->
+        <div class="window" style="width: 470px; left: 40px; bottom: 40px; transform: rotate(-2.2deg)">
+          <div class="window__bar"><span class="tab tab--active">CVs</span></div>
+          <div class="window__body">
+            <p class="tiny" style="font-family: var(--font-mono); line-height: 2.1">
+              CV_final.pdf<br />
+              CV_final_v2.pdf<br />
+              CV_final_v2_REAL.pdf<br />
+              CV_backend_ok.pdf
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <p class="body" style="max-width: 30ch; margin-bottom: 34px">
+        Siete pestañas, una hoja de cálculo, cuatro versiones del CV y
+        <span class="hl">cero idea de qué está funcionando</span>.
+      </p>
+
+      <div class="foot">
+        <span class="foot__brand"><span class="foot__dot"></span>HireSense</span>
+        <span>02 / 08</span>
+      </div>
+    </section>
+
+    <!-- ================= 3 · EL INSIGHT ================= -->
+    <section class="slide slide--dark">
+      <p class="eyebrow">El problema real</p>
+      <h2 style="margin-top: 20px">
+        Tu próximo trabajo ya está publicado.<br />
+        <span class="hl">Está en la página 40.</span>
+      </h2>
+
+      <div class="grow" style="display: flex; align-items: center; padding: 56px 0">
+        <div style="width: 100%">
+          <div class="corpus">
+            <div class="corpus__row" style="width: 96%"></div>
+            <div class="corpus__row" style="width: 88%"></div>
+            <div class="corpus__row" style="width: 93%"></div>
+            <div class="corpus__row" style="width: 78%"></div>
+            <div class="corpus__row" style="width: 90%"></div>
+            <div class="corpus__row" style="width: 84%"></div>
+            <div class="corpus__row" style="width: 95%"></div>
+            <div class="corpus__row" style="width: 71%"></div>
+            <div class="corpus__row" style="width: 89%"></div>
+            <div class="corpus__row" style="width: 82%"></div>
+            <div class="corpus__row" style="width: 91%"></div>
+            <div class="corpus__row" style="width: 73%"></div>
+            <div class="corpus__row" style="width: 86%"></div>
+            <div class="corpus__row" style="width: 79%"></div>
+            <div class="corpus__row" style="width: 90%"></div>
+            <div class="corpus__row" style="width: 83%"></div>
+            <div class="corpus__row--hit corpus__row" style="width: 100%"></div>
+          </div>
+          <p class="corpus__label" style="margin-top: 26px">
+            ↑ la que sí encajaba contigo
+          </p>
+        </div>
+      </div>
+
+      <p class="lede" style="margin-bottom: 34px">
+        Si una app solo puntúa la página que estás viendo, la mejor coincidencia queda
+        enterrada por el simple hecho de haber llegado tarde al feed.
+      </p>
+
+      <div class="foot">
+        <span class="foot__brand"><span class="foot__dot"></span>HireSense</span>
+        <span>03 / 08</span>
+      </div>
+    </section>
+
+    <!-- ================= 4 · CÓMO ================= -->
+    <section class="slide">
+      <p class="eyebrow">Cómo</p>
+      <h2 style="margin-top: 20px; max-width: 18ch">
+        Ordenar <span class="hl">todo</span> el conjunto, antes de paginar.
+      </h2>
+
+      <div class="grow" style="display: flex; align-items: center">
+        <div class="pipe" style="width: 100%">
+          <div class="pipe__step">
+            <span class="pipe__n">01</span>
+            <div>
+              <div class="pipe__t">Reunir</div>
+              <div class="pipe__d">Portales públicos + ATS de empresas</div>
+            </div>
+          </div>
+          <div class="pipe__arrow">↓</div>
+          <div class="pipe__step">
+            <span class="pipe__n">02</span>
+            <div>
+              <div class="pipe__t">Deduplicar</div>
+              <div class="pipe__d">Identidad estable + hash de contenido</div>
+            </div>
+          </div>
+          <div class="pipe__arrow">↓</div>
+          <div class="pipe__step">
+            <span class="pipe__n">03</span>
+            <div>
+              <div class="pipe__t">Preseleccionar con pgvector</div>
+              <div class="pipe__d">Búsqueda semántica sobre el conjunto completo</div>
+            </div>
+          </div>
+          <div class="pipe__arrow">↓</div>
+          <div class="pipe__step">
+            <span class="pipe__n">04</span>
+            <div>
+              <div class="pipe__t">Cruzar habilidades</div>
+              <div class="pipe__d">Señal estructurada y barata</div>
+            </div>
+          </div>
+          <div class="pipe__arrow">↓</div>
+          <div class="pipe__step">
+            <span class="pipe__n">05</span>
+            <div>
+              <div class="pipe__t">Evaluar con LLM sólo si aporta</div>
+              <div class="pipe__d">Escalonado y con caché, para controlar el costo</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span class="foot__brand"><span class="foot__dot"></span>HireSense</span>
+        <span>04 / 08</span>
+      </div>
+    </section>
+
+    <!-- ================= 5 · RESULTADO ================= -->
+    <section class="slide">
+      <p class="eyebrow">Resultado</p>
+      <h2 style="margin-top: 20px">Una lista corta que sí encaja.</h2>
+
+      <div class="grow" style="display: flex; align-items: center">
+        <div class="mock" style="width: 100%">
+          <div class="mock__head">Discover · ordenado por compatibilidad</div>
+          <table class="jobs">
+            <tr>
+              <th>Match</th>
+              <th>Puesto</th>
+              <th>Empresa</th>
+            </tr>
+            <tr>
+              <td><span class="score score--top">94%</span></td>
+              <td class="t">Backend Engineer · Python</td>
+              <td>Northwind Labs</td>
+            </tr>
+            <tr>
+              <td><span class="score">91%</span></td>
+              <td class="t">Ingeniero de Plataforma</td>
+              <td>Vela Systems</td>
+            </tr>
+            <tr>
+              <td><span class="score">88%</span></td>
+              <td class="t">Backend Developer · FastAPI</td>
+              <td>Corrientes Digital</td>
+            </tr>
+            <tr>
+              <td><span class="score">85%</span></td>
+              <td class="t">Data Platform Engineer</td>
+              <td>Kite Analytics</td>
+            </tr>
+            <tr>
+              <td><span class="score">82%</span></td>
+              <td class="t">Software Engineer · Remoto</td>
+              <td>Atlas Remoto</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <p class="body" style="max-width: 32ch; margin-bottom: 34px">
+        Cada puntaje viene con su explicación: qué coincidió, qué falta y qué señal no
+        estaba disponible.
+      </p>
+
+      <div class="foot">
+        <span class="foot__brand"><span class="foot__dot"></span>HireSense</span>
+        <span class="tiny" style="font-family: var(--font-mono)">Datos sintéticos · 05 / 08</span>
+      </div>
+    </section>
+
+    <!-- ================= 6 · DESPUÉS DEL MATCH ================= -->
+    <section class="slide">
+      <p class="eyebrow">Después del match</p>
+      <h2 style="margin-top: 20px; max-width: 17ch">
+        No es solo un buscador. Es el proceso completo.
+      </h2>
+
+      <div class="grow" style="display: flex; align-items: center">
+        <ul class="bullets">
+          <li>Seguimiento de postulaciones hasta entrevista u oferta</li>
+          <li>CV y cartas de presentación personalizados por vacante</li>
+          <li>Preparación de entrevistas con contexto de la empresa</li>
+          <li>Contactos profesionales y mensajes de acercamiento</li>
+          <li>Analítica de qué está funcionando y qué no</li>
+          <li>Cierre automático de vacantes que ya no existen</li>
+        </ul>
+      </div>
+
+      <div class="callout" style="margin-bottom: 34px">
+        <p class="body">
+          <span class="hl">Postularse es la parte fácil.</span> Encontrar a qué vale la pena
+          postularse es el trabajo real.
+        </p>
+      </div>
+
+      <div class="foot">
+        <span class="foot__brand"><span class="foot__dot"></span>HireSense</span>
+        <span>06 / 08</span>
+      </div>
+    </section>
+
+    <!-- ================= 7 · NUEVO: DISCOVER ================= -->
+    <section class="slide">
+      <p class="eyebrow">Nuevo esta semana</p>
+      <h2 style="margin-top: 20px; max-width: 19ch">
+        Una vacante no es la única puerta.
+      </h2>
+
+      <div class="grow" style="display: flex; align-items: center">
+        <div class="mock" style="width: 100%">
+          <div class="mock__head">Oportunidades · conferencias, CFPs y programas</div>
+          <table class="jobs">
+            <tr>
+              <th>Oportunidad</th>
+              <th class="nowrap">Cierra</th>
+              <th class="nowrap">Costo</th>
+            </tr>
+            <tr>
+              <td class="t">CFP · Congreso de Python</td>
+              <td class="nowrap">15 sep</td>
+              <td class="nowrap"><span class="chip chip--funded">Financiado</span></td>
+            </tr>
+            <tr>
+              <td class="t">Escuela de verano · Sistemas distribuidos</td>
+              <td class="nowrap">28 ago</td>
+              <td class="nowrap"><span class="chip chip--free">Gratis</span></td>
+            </tr>
+            <tr>
+              <td class="t">Conferencia regional de datos</td>
+              <td class="nowrap">3 oct</td>
+              <td class="nowrap"><span class="chip chip--paid">Probablemente de pago</span></td>
+            </tr>
+            <tr>
+              <td class="t">CFP · Track de infraestructura</td>
+              <td class="nowrap">21 sep</td>
+              <td class="nowrap"><span class="chip chip--free">Gratis</span></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <p class="body" style="max-width: 33ch; margin-bottom: 34px">
+        Filtra por tema, país y fecha límite. La etiqueta de costo se infiere
+        <span class="hl">incluso cuando la fuente no publica el precio</span>.
+      </p>
+
+      <div class="foot">
+        <span class="foot__brand"><span class="foot__dot"></span>HireSense</span>
+        <span class="tiny" style="font-family: var(--font-mono)">Datos sintéticos · 07 / 08</span>
+      </div>
+    </section>
+
+    <!-- ================= 8 · CIERRE ================= -->
+    <section class="slide slide--dark">
+      <svg class="radar radar--tl" viewBox="0 0 200 200" aria-hidden="true">
+        <g stroke="#2dd4bf" stroke-width="1.6" fill="none">
+          <circle cx="100" cy="100" r="28" opacity="0.9" />
+          <circle cx="100" cy="100" r="52" opacity="0.6" />
+          <circle cx="100" cy="100" r="76" opacity="0.35" />
+          <circle cx="100" cy="100" r="98" opacity="0.18" />
+        </g>
+        <circle cx="100" cy="100" r="9" fill="#2dd4bf" />
+      </svg>
+
+      <p class="eyebrow">HireSense</p>
+      <h2 style="margin-top: 20px">
+        Código abierto.<br />Autoalojable.<br /><span class="hl">Tuyo.</span>
+      </h2>
+
+      <div class="grow" style="display: flex; flex-direction: column; justify-content: center">
+        <p class="lede" style="margin-bottom: 46px">
+          Tu CV, tu sueldo esperado y tu historial de postulaciones no deberían vivir en el
+          servidor de otra empresa.
+        </p>
+        <div class="badges">
+          <span class="badge">MIT</span>
+          <span class="badge">FastAPI</span>
+          <span class="badge">Angular</span>
+          <span class="badge">PostgreSQL + pgvector</span>
+          <span class="badge">Docker</span>
+        </div>
+      </div>
+
+      <div class="cta" style="margin-bottom: 40px">
+        <div class="cta__row">
+          <span class="cta__k">Repo</span>
+          <span>github.com/StevSant/HireSense</span>
+        </div>
+        <div class="cta__row">
+          <span class="cta__k">Demo</span>
+          <span>hiresense-demo.vercel.app</span>
+        </div>
+        <div class="cta__row">
+          <span class="cta__k">Dime</span>
+          <span style="color: var(--accent-bright)">¿La instalación se entiende?</span>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span class="foot__brand"><span class="foot__dot"></span>HireSense</span>
+        <span>08 / 08</span>
+      </div>
+    </section>
+  </body>
+</html>

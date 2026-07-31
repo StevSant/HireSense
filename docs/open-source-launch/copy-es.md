@@ -84,6 +84,13 @@ Código abierto · Autoalojable
 
 ## LinkedIn
 
+El carrusel de 8 diapositivas que acompaña a la publicación principal está en
+[`carousel/carousel-es.html`](carousel/carousel-es.html) — se exporta a PDF desde Chrome.
+Ver [`carousel/README.md`](carousel/README.md).
+
+Recuerda que LinkedIn corta el texto a ~2-3 líneas antes del "…ver más": el gancho tiene que
+funcionar solo. Pon los enlaces en el primer comentario, no en el cuerpo.
+
 ### Publicación principal
 
 > ¿Cuántas pestañas de portales de empleo tienes abiertas ahora mismo?

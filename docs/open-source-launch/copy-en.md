@@ -81,6 +81,13 @@ Open source · Self-hosted
 
 ## LinkedIn
 
+The 8-slide carousel that goes with the primary post lives in
+[`carousel/carousel-en.html`](carousel/carousel-en.html) — export it to PDF from Chrome. See
+[`carousel/README.md`](carousel/README.md).
+
+Remember that LinkedIn truncates after ~2–3 lines: the hook has to work on its own. Put the
+links in the first comment, not the post body.
+
 ### Primary launch post
 
 > How many job-board tabs do you have open right now?

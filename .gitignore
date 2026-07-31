@@ -20,7 +20,11 @@ venv/
 Thumbs.db
 
 # Build
+# Blanket rule: PDFs are usually CVs or exported personal documents, never build input.
 *.pdf
+# Exception: the launch carousel exports, which are published marketing assets built from
+# the HTML in that same folder by `node export-pdf.mjs`.
+!docs/open-source-launch/carousel/*.pdf
 # MkDocs build output
 site/
 # Playwright MCP scratch output

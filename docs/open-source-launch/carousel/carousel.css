@@ -1,0 +1,675 @@
+/* ============================================================
+   HireSense launch carousel — shared slide styles
+   Page size: 1080 x 1350 (LinkedIn document post, 4:5)
+   Export: `node export-pdf.mjs` in this folder — headless Chromium
+   with printBackground on and the page box set explicitly, which
+   the print dialog gets wrong by default.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --paper: #f5f4f0;
+  --card: #ffffff;
+  --ink: #111318;
+  --ink-2: #3f3f46;
+  --ink-3: #71717a;
+  --ink-4: #a1a1aa;
+  --accent: #0f766e;
+  --accent-bright: #2dd4bf;
+  --accent-subtle: #ccfbf1;
+  --accent-text: #065f46;
+  --line: #e2e0db;
+  --line-soft: #eae8e4;
+  --amber: #f4b740;
+  --amber-bg: #fff8e7;
+  --on-dark: rgba(255, 255, 255, 0.92);
+  --on-dark-2: rgba(255, 255, 255, 0.58);
+  --on-dark-3: rgba(255, 255, 255, 0.32);
+
+  --font-display: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Consolas', monospace;
+
+  --pad: 96px;
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #52525b;
+  font-family: var(--font-body);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  padding: 32px 0;
+}
+
+/* ---------- Slide shell ---------- */
+
+.slide {
+  position: relative;
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  padding: var(--pad);
+  flex: none;
+}
+
+.slide--dark {
+  background: var(--ink);
+  color: var(--on-dark);
+}
+
+.slide--accent {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---------- Typography ---------- */
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.slide--dark .eyebrow,
+.slide--accent .eyebrow {
+  color: var(--accent-bright);
+}
+
+.slide--accent .eyebrow {
+  color: rgba(255, 255, 255, 0.66);
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: 92px;
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+}
+
+h2 {
+  font-family: var(--font-display);
+  font-size: 68px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+h3 {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.lede {
+  font-size: 34px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 22ch;
+}
+
+.slide--dark .lede {
+  color: var(--on-dark-2);
+  max-width: 26ch;
+}
+
+.body {
+  font-size: 29px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.tiny {
+  font-size: 23px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.hl {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.slide--dark .hl {
+  color: var(--accent-bright);
+}
+
+/* ---------- Layout helpers ---------- */
+
+.grow {
+  flex: 1;
+  min-height: 0;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.stack-24 > * + * {
+  margin-top: 24px;
+}
+
+.stack-40 > * + * {
+  margin-top: 40px;
+}
+
+/* ---------- Radar motif (from the logo mark) ---------- */
+
+.radar {
+  position: absolute;
+  right: -260px;
+  bottom: -260px;
+  width: 900px;
+  height: 900px;
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+.radar--tl {
+  right: auto;
+  bottom: auto;
+  left: -320px;
+  top: -300px;
+  opacity: 0.1;
+}
+
+/* ---------- Footer ---------- */
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 21px;
+  color: var(--ink-4);
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+
+.slide--dark .foot {
+  color: var(--on-dark-3);
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.slide--accent .foot {
+  color: rgba(255, 255, 255, 0.55);
+  border-top-color: rgba(255, 255, 255, 0.18);
+}
+
+.foot__brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-size: 24px;
+  color: var(--ink-2);
+}
+
+.slide--dark .foot__brand {
+  color: var(--on-dark-2);
+}
+
+.slide--accent .foot__brand {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.foot__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.slide--dark .foot__dot,
+.slide--accent .foot__dot {
+  background: var(--accent-bright);
+}
+
+/* ---------- Slide 2: the tab mess ---------- */
+
+.tabmess {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.window {
+  position: absolute;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.14);
+  overflow: hidden;
+}
+
+.window__bar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 12px 16px;
+  background: #ebe9e4;
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.tab {
+  font-size: 17px;
+  color: var(--ink-3);
+  background: #f7f6f3;
+  border: 1px solid var(--line);
+  border-radius: 7px 7px 0 0;
+  padding: 8px 14px;
+  white-space: nowrap;
+  flex: none;
+}
+
+.tab--active {
+  background: #fff;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.window__body {
+  padding: 22px;
+}
+
+.ghost-row {
+  height: 15px;
+  border-radius: 4px;
+  background: var(--line-soft);
+  margin-bottom: 14px;
+}
+
+.sheet {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 17px;
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+}
+
+.sheet td,
+.sheet th {
+  border: 1px solid var(--line);
+  padding: 9px 12px;
+  text-align: left;
+}
+
+.sheet th {
+  background: #f0efeb;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+/* ---------- Slide 3: the page-40 bar chart ---------- */
+
+.corpus {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 8px 0;
+}
+
+.corpus__row {
+  height: 13px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.corpus__row--hit {
+  background: var(--accent-bright);
+  box-shadow: 0 0 40px rgba(45, 212, 191, 0.6);
+  height: 17px;
+}
+
+.corpus__label {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-family: var(--font-mono);
+  font-size: 24px;
+  color: var(--accent-bright);
+}
+
+/* ---------- Slide 4: pipeline ---------- */
+
+/* Five steps plus four arrows have to clear a two-line heading and the footer inside
+   1158px of slide. The gap is the slack: widen it and the pipeline spills over both. */
+.pipe {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pipe__step {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--accent);
+  border-radius: 12px;
+  padding: 22px 34px;
+}
+
+.pipe__step--muted {
+  border-left-color: var(--line);
+  background: transparent;
+}
+
+.pipe__n {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  color: var(--accent);
+  width: 34px;
+  flex: none;
+}
+
+.pipe__t {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.pipe__d {
+  font-size: 24px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+
+.pipe__arrow {
+  text-align: center;
+  color: var(--ink-4);
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* ---------- Product mock: ranked table ---------- */
+
+.mock {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.mock__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 28px;
+  background: #f0efeb;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 20px;
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.jobs {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 25px;
+}
+
+.jobs th {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  font-weight: 500;
+  text-align: left;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--line);
+}
+
+.jobs td {
+  padding: 22px 28px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink-2);
+  vertical-align: middle;
+}
+
+.jobs tr:last-child td {
+  border-bottom: none;
+}
+
+/* Dates and labels must never wrap — a two-line "15 sep" reads as a layout bug. */
+.jobs td.nowrap,
+.jobs th.nowrap {
+  white-space: nowrap;
+}
+
+.jobs .t {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  background: var(--accent-subtle);
+  color: var(--accent-text);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+}
+
+.score--top {
+  background: var(--accent);
+  color: #fff;
+}
+
+.chip {
+  display: inline-block;
+  white-space: nowrap;
+  padding: 7px 14px;
+  border-radius: 9999px;
+  background: #f0efeb;
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  color: var(--ink-3);
+}
+
+.chip--free {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.chip--funded {
+  background: var(--accent-subtle);
+  border-color: #99f6e4;
+  color: var(--accent-text);
+}
+
+.chip--paid {
+  background: var(--amber-bg);
+  border-color: #e8d29a;
+  color: #92700e;
+}
+
+/* ---------- Callout ---------- */
+
+.callout {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 34px 38px;
+}
+
+.callout--dark {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.bullets {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.bullets li {
+  display: flex;
+  gap: 20px;
+  font-size: 29px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.bullets li::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+  margin-top: 15px;
+}
+
+.slide--dark .bullets li {
+  color: var(--on-dark-2);
+}
+
+.slide--dark .bullets li::before {
+  background: var(--accent-bright);
+}
+
+/* ---------- Final slide ---------- */
+
+.cta {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: var(--font-mono);
+  font-size: 27px;
+  color: var(--on-dark);
+}
+
+.cta__row {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+}
+
+.cta__k {
+  color: var(--on-dark-3);
+  width: 130px;
+  flex: none;
+  font-size: 22px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.badges {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: 21px;
+  padding: 11px 20px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: var(--on-dark-2);
+}
+
+/* ---------- Print / PDF export ---------- */
+
+@page {
+  size: 1080px 1350px;
+  margin: 0;
+}
+
+@media print {
+  /* Chrome drops every background and forces black text unless colour adjustment is
+     exact. Without this the dark slides print as white pages with grey headlines. */
+  html,
+  body,
+  .slide,
+  .slide * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    background: none;
+    display: block;
+    padding: 0;
+    gap: 0;
+  }
+
+  .slide {
+    break-after: page;
+    page-break-after: always;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none;
+  }
+
+  .slide:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .screen-only {
+    display: none !important;
+  }
+}
+
+/* ---------- On-screen helper bar (hidden in PDF) ---------- */
+
+.screen-only {
+  width: 1080px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1.6;
+  background: #3f3f46;
+  border: 1px solid #71717a;
+  border-radius: 10px;
+  padding: 20px 24px;
+}
+
+.screen-only b {
+  color: var(--accent-bright);
+}

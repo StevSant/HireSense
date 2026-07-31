@@ -11,6 +11,7 @@ managers who may value the product and engineering work.
 - [Launch checklist](launch-checklist.md)
 - [English publishing copy](copy-en.md)
 - [Spanish publishing copy](copy-es.md)
+- [LinkedIn carousel (EN + ES, printable to PDF)](carousel/README.md)
 
 ## Current state
 

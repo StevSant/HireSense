@@ -162,7 +162,9 @@
                   </span>
                 </td>
                 <td class="title">
-                  <span class="kind-chip" [title]="kindTitle(item.kind)">{{ kindLabel(item.kind) }}</span>
+                  <span class="kind-chip" [title]="kindTitle(item.kind)">{{
+                    kindLabel(item.kind)
+                  }}</span>
                   <div class="title-text">{{ item.title }}</div>
                   @if (organizationLabel(item); as org) {
                     <div class="cell-muted">{{ org }}</div>
@@ -195,7 +197,9 @@
                     <div>—</div>
                   }
                   @if (deadlineLabel(item); as deadline) {
-                    <div class="deadline">{{ deadlinePrefix(item) }} {{ deadline | date: 'mediumDate' }}</div>
+                    <div class="deadline">
+                      {{ deadlinePrefix(item) }} {{ deadline | date: 'mediumDate' }}
+                    </div>
                   }
                 </td>
                 <td>

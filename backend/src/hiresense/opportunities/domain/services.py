@@ -155,9 +155,7 @@ class OpportunityIngestionService:
                 for opp in items
             ]
             if matched_only:
-                scored = [
-                    pair for pair in scored if matches_profile(pair[0], skill_set or set())
-                ]
+                scored = [pair for pair in scored if matches_profile(pair[0], skill_set or set())]
             reverse = direction == "desc"
 
             def sort_key(pair: tuple[Opportunity, float | None]):

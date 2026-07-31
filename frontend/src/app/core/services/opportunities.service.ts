@@ -46,7 +46,8 @@ export class OpportunitiesService {
     if (params.country) httpParams = httpParams.set('country', params.country);
     if (params.q) httpParams = httpParams.set('q', params.q);
     if (params.fundedOnly) httpParams = httpParams.set('funded_only', 'true');
-    if (params.deadlineBefore) httpParams = httpParams.set('deadline_before', params.deadlineBefore);
+    if (params.deadlineBefore)
+      httpParams = httpParams.set('deadline_before', params.deadlineBefore);
     if (params.deadlineAfter) httpParams = httpParams.set('deadline_after', params.deadlineAfter);
     if (params.hideStale === false) httpParams = httpParams.set('hide_stale', 'false');
     if (params.matchedOnly === false) httpParams = httpParams.set('matched_only', 'false');
@@ -64,6 +65,9 @@ export class OpportunitiesService {
   }
 
   fetch(): Observable<FetchOpportunitiesResponse> {
-    return this.http.post<FetchOpportunitiesResponse>(`${environment.apiUrl}/opportunities/fetch`, {});
+    return this.http.post<FetchOpportunitiesResponse>(
+      `${environment.apiUrl}/opportunities/fetch`,
+      {},
+    );
   }
 }

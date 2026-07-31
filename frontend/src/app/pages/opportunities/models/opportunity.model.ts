@@ -1,10 +1,5 @@
 export type OpportunityKind =
-  | 'conference'
-  | 'cfp'
-  | 'grant'
-  | 'fellowship'
-  | 'summer_school'
-  | 'event';
+  'conference' | 'cfp' | 'grant' | 'fellowship' | 'summer_school' | 'event';
 
 export interface Opportunity {
   id: string;

@@ -145,9 +145,7 @@ class OpportunitiesRepository(SqlRepository):
             stmt = stmt.where(cast(OpportunityOrm.topics, String).ilike(f"%{needle}%"))
         for excluded in exclude_topics or []:
             if excluded:
-                stmt = stmt.where(
-                    not_(cast(OpportunityOrm.topics, String).ilike(f"%{excluded}%"))
-                )
+                stmt = stmt.where(not_(cast(OpportunityOrm.topics, String).ilike(f"%{excluded}%")))
         if q:
             like = f"%{q}%"
             stmt = stmt.where(
@@ -320,9 +318,7 @@ class OpportunitiesRepository(SqlRepository):
                     orm.fetched_at = now
                     session.add(orm)
                     by_key[key] = orm
-                    outcomes.append(
-                        UpsertOutcome(opportunity=opp, result=UpsertResult.INSERTED)
-                    )
+                    outcomes.append(UpsertOutcome(opportunity=opp, result=UpsertResult.INSERTED))
                     continue
                 resolved = opp.model_copy(update={"id": row.id})
                 result = self._apply_to_row(row, resolved, content_hash(resolved), now)

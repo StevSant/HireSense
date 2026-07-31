@@ -89,7 +89,8 @@ describe('OpportunitiesComponent', () => {
   it('shows an error state when loading fails', () => {
     const fixture = mount({
       list: () => throwError(() => new Error('boom')),
-      fetch: () => of({ sources: {}, inserted: 0, updated: 0, reopened: 0, unchanged: 0, errors: [] }),
+      fetch: () =>
+        of({ sources: {}, inserted: 0, updated: 0, reopened: 0, unchanged: 0, errors: [] }),
     });
     expect(fixture.nativeElement.querySelector('.section-error')).not.toBeNull();
   });

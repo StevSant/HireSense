@@ -12,10 +12,7 @@ class WorkdayNormalizer:
         detail = d.get("detail") or {}
         posting = detail.get("jobPostingInfo") or {}
         location = (
-            d.get("locationsText")
-            or posting.get("location")
-            or posting.get("locationName")
-            or ""
+            d.get("locationsText") or posting.get("location") or posting.get("locationName") or ""
         )
         description = (
             posting.get("jobDescription")

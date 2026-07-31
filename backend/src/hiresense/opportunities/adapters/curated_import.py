@@ -40,9 +40,7 @@ class CuratedImportAdapter:
             source_id = self._stable_id(record, idx)
             if not source_id:
                 continue
-            results.append(
-                RawOpportunity(source="curated", source_id=source_id, raw_data=record)
-            )
+            results.append(RawOpportunity(source="curated", source_id=source_id, raw_data=record))
         return results
 
     def _load(self, path: Path) -> list[dict[str, Any]]:

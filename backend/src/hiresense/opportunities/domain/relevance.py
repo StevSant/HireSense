@@ -151,9 +151,7 @@ def _skills_cover_topic(topic: str, skills: set[str]) -> bool:
     if any(topic_n in s or s in topic_n for s in skill_tokens if len(s) >= 3):
         return True
     aliases = _TOPIC_ALIASES.get(topic_n, {topic_n})
-    return any(
-        alias in skill_tokens or any(alias in s for s in skill_tokens) for alias in aliases
-    )
+    return any(alias in skill_tokens or any(alias in s for s in skill_tokens) for alias in aliases)
 
 
 def matches_profile(opp: Opportunity, candidate_skills: set[str]) -> bool:

@@ -48,11 +48,7 @@ export class OpportunitiesComponent implements OnInit {
   readonly page = signal(1);
   readonly pageSize = signal(20);
 
-  sort = createSortState<OppSortField>(
-    'match',
-    'desc',
-    ['title', 'country', 'language', 'source'],
-  );
+  sort = createSortState<OppSortField>('match', 'desc', ['title', 'country', 'language', 'source']);
 
   kind = '';
   topic = '';
@@ -77,9 +73,7 @@ export class OpportunitiesComponent implements OnInit {
       this.status !== 'open',
   );
 
-  readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.total() / this.pageSize())),
-  );
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize())));
 
   ngOnInit(): void {
     this.load();
@@ -233,7 +227,8 @@ export class OpportunitiesComponent implements OnInit {
     if (item.funding?.trim() || item.kind === 'grant' || item.kind === 'fellowship') {
       return 'Funded';
     }
-    const blob = `${item.title} ${item.description} ${item.funding ?? ''} ${item.url} ${item.apply_url ?? ''}`.toLowerCase();
+    const blob =
+      `${item.title} ${item.description} ${item.funding ?? ''} ${item.url} ${item.apply_url ?? ''}`.toLowerCase();
     if (
       /\bfree(\s+to\s+attend)?\b|\bno[- ]?fee\b|\bgratis\b|\bcomplimentary\b|\bfree[- ]?(admission|entry|event|conference)/.test(
         blob,

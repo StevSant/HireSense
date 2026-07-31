@@ -69,7 +69,9 @@ class AutoPortalAdapter:
             board_id = self._extract_last_segment(portal, "workable")
         else:
             board_id = portal.board_id
-        return portal.model_copy(update={"platform": platform, "board_id": board_id or portal.board_id})
+        return portal.model_copy(
+            update={"platform": platform, "board_id": board_id or portal.board_id}
+        )
 
     @staticmethod
     def _extract_last_segment(portal: PortalEntry, _platform: str) -> str:

@@ -223,9 +223,7 @@ class InMemoryOpportunitiesRepository:
             old_hash = content_hash(existing)
             was_closed = existing.status == "closed"
             if new_hash == old_hash and existing.status == status:
-                outcomes.append(
-                    UpsertOutcome(opportunity=existing, result=UpsertResult.UNCHANGED)
-                )
+                outcomes.append(UpsertOutcome(opportunity=existing, result=UpsertResult.UNCHANGED))
                 continue
             updated = opp.model_copy(update={"id": existing_id, "status": status})
             self._by_id[existing_id] = updated

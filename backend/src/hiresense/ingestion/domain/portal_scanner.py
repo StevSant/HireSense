@@ -132,7 +132,9 @@ class PortalScanner:
         for portal in portals:
             adapter = self._adapters.get(portal.platform)
             effective_platform = (
-                adapter.detect_platform(portal) if adapter is not None and hasattr(adapter, "detect_platform") else portal.platform
+                adapter.detect_platform(portal)
+                if adapter is not None and hasattr(adapter, "detect_platform")
+                else portal.platform
             )
             normalizer = self._normalizers.get(effective_platform)
 

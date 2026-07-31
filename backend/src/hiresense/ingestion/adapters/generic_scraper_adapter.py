@@ -38,7 +38,9 @@ class GenericScraperAdapter:
         link_selector = portal.selectors.get("job_links") or "a[href*='job'], a[href*='careers']"
         title_selector = portal.selectors.get("title") or "h1"
         location_selector = portal.selectors.get("location") or "[class*='location']"
-        description_selector = portal.selectors.get("description") or "main, article, .job-description"
+        description_selector = (
+            portal.selectors.get("description") or "main, article, .job-description"
+        )
         href_regex = portal.selectors.get("href_regex")
         href_pattern = re.compile(href_regex) if href_regex else None
         skip_detail = (portal.selectors.get("skip_detail") or "").lower() in {"1", "true", "yes"}
@@ -93,7 +95,9 @@ class GenericScraperAdapter:
     async def _load_html(self, url: str, render_mode: str) -> str:
         if render_mode == "browser":
             if self._renderer is None:
-                raise ValueError("Browser rendering requested but no Playwright renderer is configured")
+                raise ValueError(
+                    "Browser rendering requested but no Playwright renderer is configured"
+                )
             return await self._renderer.render(url)
         response = await self._http.get(url, timeout=self._timeout)
         response.raise_for_status()

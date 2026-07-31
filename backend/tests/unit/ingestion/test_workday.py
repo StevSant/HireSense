@@ -71,7 +71,10 @@ async def test_workday_fetches_jobs_from_portal_url() -> None:
     assert jobs[0].source == "workday"
     assert jobs[0].source_id == "JR-123"
     assert jobs[0].raw_data["company"] == "Acme"
-    assert client.calls[0] == ("POST", "https://example.myworkdayjobs.com/wday/cxs/en-US/Careers/jobs")
+    assert client.calls[0] == (
+        "POST",
+        "https://example.myworkdayjobs.com/wday/cxs/en-US/Careers/jobs",
+    )
 
 
 def test_workday_source_metadata() -> None:

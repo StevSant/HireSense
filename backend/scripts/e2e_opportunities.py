@@ -35,10 +35,7 @@ def main() -> int:
         print("sources", summary.get("sources"))
         print(
             "counts",
-            {
-                k: summary.get(k)
-                for k in ("inserted", "updated", "reopened", "unchanged", "errors")
-            },
+            {k: summary.get(k) for k in ("inserted", "updated", "reopened", "unchanged", "errors")},
         )
 
         listed = client.get(
@@ -61,7 +58,11 @@ def main() -> int:
         )
         funded.raise_for_status()
         funded_body = funded.json()
-        print("funded_q_khipu", funded_body.get("total"), [i["title"] for i in funded_body["items"][:5]])
+        print(
+            "funded_q_khipu",
+            funded_body.get("total"),
+            [i["title"] for i in funded_body["items"][:5]],
+        )
 
         # Frontend proxy path
         fe = httpx.get("http://127.0.0.1:4200/", timeout=30.0)

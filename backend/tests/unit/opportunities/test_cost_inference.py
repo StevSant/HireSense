@@ -4,9 +4,7 @@ from hiresense.opportunities.domain.cost import infer_attendance_cost
 
 
 def test_infer_funded_and_free() -> None:
-    assert (
-        infer_attendance_cost(title="Khipu", funding="Travel covered", kind="event") == "Funded"
-    )
+    assert infer_attendance_cost(title="Khipu", funding="Travel covered", kind="event") == "Funded"
     assert infer_attendance_cost(title="Free Python Meetup", url="https://example.com") == "Free"
     assert infer_attendance_cost(kind="grant") == "Funded"
 

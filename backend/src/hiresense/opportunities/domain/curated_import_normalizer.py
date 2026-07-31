@@ -82,4 +82,3 @@ class CuratedImportNormalizer:
         if is_stale(opp):
             opp = opp.model_copy(update={"status": "closed"})
         return opp
-

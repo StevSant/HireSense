@@ -89,49 +89,41 @@ El carrusel de 8 diapositivas que acompaña a la publicación principal está en
 Ver [`carousel/README.md`](carousel/README.md).
 
 Recuerda que LinkedIn corta el texto a ~2-3 líneas antes del "…ver más": el gancho tiene que
-funcionar solo. Pon los enlaces en el primer comentario, no en el cuerpo.
+funcionar solo. La publicación principal lleva sus dos enlaces (demo y repositorio) en el
+cuerpo, a propósito: son la acción que se pide. Cualquier enlace adicional va al primer
+comentario.
 
 ### Publicación principal
 
-> ¿Cuántas pestañas de portales de empleo tienes abiertas ahora mismo?
+> ¿Cuántas pestañas de empleo tienes abiertas ahora mismo?
 >
-> Yo llegué a tener siete, más una hoja de cálculo, cuatro versiones del currículum y cero
-> idea de qué estaba funcionando. Así que dejé de buscar trabajo por un rato y construí la
-> herramienta que me faltaba.
+> Yo llegué a tener siete, varias versiones de mi CV y cero claridad sobre qué estaba
+> funcionando. Por eso construí **HireSense**.
 >
-> Hoy publico **HireSense**, una plataforma de código abierto y autoalojable para personas
-> que están buscando trabajo.
+> Es una plataforma **open source y autoalojable** que:
 >
-> Reúne vacantes de portales públicos y de los sistemas de empleo de las empresas, elimina
-> duplicados y ordena **todas** las oportunidades según su compatibilidad con tu perfil,
-> combinando búsqueda semántica con pgvector, coincidencia de habilidades y evaluación con
-> LLMs controlando el costo.
+> - Reúne vacantes de portales y ATS de empresas, y elimina duplicados.
+> - Las ordena según su compatibilidad con tu perfil.
+> - Gestiona postulaciones, currículums, cartas y entrevistas.
+> - Descubre conferencias, CFPs y programas financiados.
 >
-> Después gestiona el resto del proceso: seguimiento de postulaciones, currículums y cartas
-> personalizadas, preparación para entrevistas, contactos profesionales y análisis del
-> mercado.
+> La hice autoalojable porque tu CV, salario esperado e historial de postulaciones deberían
+> permanecer bajo tu control.
 >
-> Y desde esta semana también descubre lo que no es una vacante: conferencias, CFPs y
-> programas financiados, filtrados por tema, país y fecha límite, con etiqueta de costo.
-> Porque a veces lo que mueve una carrera no es una postulación más, es una charla.
+> **Stack:** Python, FastAPI, Angular, PostgreSQL/pgvector, Docker, LangChain, OpenTelemetry
+> y Grafana.
 >
-> La hice autoalojable porque tu currículum, tus expectativas salariales y tu historial de
-> postulaciones son datos personales y deberían quedarse contigo.
+> Es la primera versión pública. Me interesa especialmente saber:
 >
-> Stack: Python, FastAPI, Angular, PostgreSQL/pgvector, Docker, LangChain, OpenTelemetry y
-> Grafana.
+> ¿La instalación se entiende?
+> ¿El ranking de vacantes te resulta útil?
 >
-> Es la primera versión pública y me ayudaría muchísimo feedback sobre dos cosas: ¿la
-> instalación se entiende? ¿La forma de ordenar las vacantes te parece útil?
+> Demo: https://hiresense-demo.vercel.app/
+> Repositorio: StevSant/HireSense
 >
-> Demo (solo lectura, datos sintéticos): https://hiresense-demo.vercel.app
+> Si te sirve, una estrella o un issue en el repositorio ayudan mucho.
 >
-> Repositorio: https://github.com/StevSant/HireSense
->
-> Si te resulta útil, una estrella en el repo o un issue para principiantes ayudan más de lo
-> que parece.
->
-> #CodigoAbierto #OpenSource #Python #BusquedaLaboral #Careers
+> #OpenSource #Python #BusquedaLaboral #IA #Jobs
 
 ### Publicación de novedades
 

@@ -85,45 +85,41 @@ The 8-slide carousel that goes with the primary post lives in
 [`carousel/carousel-en.html`](carousel/carousel-en.html) — export it to PDF from Chrome. See
 [`carousel/README.md`](carousel/README.md).
 
-Remember that LinkedIn truncates after ~2–3 lines: the hook has to work on its own. Put the
-links in the first comment, not the post body.
+Remember that LinkedIn truncates after ~2–3 lines: the hook has to work on its own. The
+primary post carries its two links (demo and repository) in the body on purpose — they are
+the action being asked for. Any further link goes in the first comment.
 
 ### Primary launch post
 
-> How many job-board tabs do you have open right now?
+> How many job tabs do you have open right now?
 >
-> I got to seven, plus a spreadsheet, four CV versions, and no idea what was actually
-> working. So I stopped job hunting for a while and built the tool I was missing.
+> I got to seven, several versions of my CV, and zero clarity on what was actually working.
+> So I built **HireSense**.
 >
-> Today I'm releasing **HireSense**, an open-source, self-hosted workspace for job seekers.
+> It's an **open-source, self-hosted** platform that:
 >
-> It collects roles from public job boards and company ATS portals, removes duplicates, and
-> ranks **the entire corpus** against your profile using pgvector semantic search, skill
-> matching, and cost-aware LLM scoring.
+> - Collects roles from job boards and company ATS portals, and removes duplicates.
+> - Ranks them by how well they match your profile.
+> - Manages applications, CVs, cover letters, and interviews.
+> - Discovers conferences, CFPs, and funded programs.
 >
-> From there it handles the rest of the process: application tracking, tailored CVs and
-> cover letters, interview preparation, outreach, and market analytics.
+> I made it self-hosted because your CV, salary expectations, and application history should
+> stay under your control.
 >
-> As of this week it also finds the things that aren't job posts: conferences, CFPs, and
-> funded programs, filtered by topic, country, and deadline, with a cost label. Sometimes
-> the thing that moves a career isn't one more application — it's a talk.
->
-> I made it self-hosted because a CV, salary expectations, job preferences, and application
-> history are deeply personal data that should stay with you.
->
-> Stack: Python, FastAPI, Angular, PostgreSQL/pgvector, Docker, LangChain, OpenTelemetry,
+> **Stack:** Python, FastAPI, Angular, PostgreSQL/pgvector, Docker, LangChain, OpenTelemetry
 > and Grafana.
 >
-> This is the first public preview. I'd especially value feedback on two things: is the
-> installation clear, and does the ranking approach actually feel useful?
+> This is the first public release. I'd especially like to know:
 >
-> Live demo (read-only, synthetic data): https://hiresense-demo.vercel.app
+> Is the installation clear?
+> Does the job ranking actually feel useful?
 >
-> Repository: https://github.com/StevSant/HireSense
+> Demo: https://hiresense-demo.vercel.app/
+> Repository: StevSant/HireSense
 >
-> If it's useful, a star or a beginner-friendly issue helps more than you'd think.
+> If it's useful, a star or an issue on the repository helps a lot.
 >
-> #OpenSource #SelfHosted #Python #JobSearch
+> #OpenSource #Python #JobSearch #AI #Jobs
 
 ### What's-new post
 

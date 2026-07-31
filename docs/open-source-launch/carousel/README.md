@@ -78,5 +78,6 @@ and never swap real company names or live listings into these slides.
       drops the root `vercel.json` would break it again.
 - [ ] The post's first line matches slide 1 — LinkedIn truncates after ~2–3 lines, so the
       hook has to work alone.
-- [ ] Links go in the first comment, not the post body.
+- [ ] Only the demo and repository links are in the post body; anything else goes in the
+      first comment.
 - [ ] One call to action, not five.

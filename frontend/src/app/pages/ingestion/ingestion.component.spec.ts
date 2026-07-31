@@ -138,6 +138,43 @@ describe('IngestionComponent — connections badge', () => {
   });
 });
 
+describe('IngestionComponent — fetch completion feedback', () => {
+  let httpMock: HttpTestingController;
+
+  beforeEach(async () => {
+    TestBed.resetTestingModule();
+    localStorage.clear();
+    await TestBed.configureTestingModule({
+      imports: [IngestionComponent],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => httpMock.verify());
+
+  it('reports new jobs and reloads the saved list without rescoring after fetch completes', () => {
+    const fixture = TestBed.createComponent(IngestionComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    flushBootstrapGets(httpMock);
+    httpMock.match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`)[0].flush(jobsPayload());
+
+    component.fetchJobs();
+    httpMock.expectOne(`${environment.apiUrl}/ingestion/fetch`).flush({ count: 3, jobs: [] });
+
+    const reload = httpMock.expectOne(
+      (r) =>
+        r.url === `${environment.apiUrl}/ingestion/jobs` &&
+        r.request.params.get('rescore') === 'false',
+    );
+    reload.flush(jobsPayload());
+
+    expect(component.fetching()).toBe(false);
+    expect(component.fetchNotice()).toContain('3 new job(s)');
+  });
+});
 describe('IngestionComponent — exactly one initial job request', () => {
   let httpMock: HttpTestingController;
 

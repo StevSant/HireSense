@@ -108,6 +108,8 @@ export class IngestionComponent implements OnInit {
   revalidating = signal(false);
   // Info banner shown while a background closure sweep is running.
   revalidateNotice = signal('');
+  // Explains why the visible ranked page may look unchanged after a fetch.
+  fetchNotice = signal('');
   error = signal('');
 
   // Per-job tracking feedback: the id of the job currently being tracked, so
@@ -296,13 +298,19 @@ export class IngestionComponent implements OnInit {
     this.loading.set(true);
     this.fetching.set(true);
     this.error.set('');
+    this.fetchNotice.set('');
     this.ingestionService
       .fetchJobs()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
+        next: (res) => {
           this.fetching.set(false);
-          this.loadJobs();
+          this.fetchNotice.set(
+            `Fetch complete: ${res.count} new job(s) ingested. The saved list was refreshed; closed-listing checks continue in the background.`,
+          );
+          // The fetch already completed its expensive work. Reuse cached scores
+          // for the immediate refresh so the new rows are visible promptly.
+          this.loadJobs(false);
         },
         error: (err) => {
           this.error.set(err.error?.detail || 'Failed to fetch jobs');

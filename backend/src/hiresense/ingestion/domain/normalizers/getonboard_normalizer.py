@@ -81,11 +81,12 @@ class GetOnBoardNormalizer:
             "Cuba",
         )
         language = "es" if any(c in latam_countries for c in countries) else "en"
+        company_ref = attrs.get("company") or relationships.get("company") or {}
+        company_data = company_ref.get("data") if isinstance(company_ref, dict) else {}
+        company_id = company_data.get("id", "") if isinstance(company_data, dict) else ""
         return {
             "title": attrs.get("title", ""),
-            "company": attrs.get(
-                "company_name", str(relationships.get("company", {}).get("data", {}).get("id", ""))
-            ),
+            "company": str(attrs.get("company_name") or company_id),
             "description": description,
             "skills": tags,
             "location": location,

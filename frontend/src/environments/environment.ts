@@ -18,4 +18,7 @@ export const environment = {
   // optimization, matching analysis, outreach generation, ...) — external
   // model latency legitimately exceeds the default budget.
   httpTimeoutLlmMs: 120000,
+  // Full board ingestion is a multi-minute network operation; keep the client
+  // attached long enough to receive its completion response.
+  httpTimeoutFetchMs: 600000,
 };

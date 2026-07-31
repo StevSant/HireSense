@@ -88,7 +88,7 @@ class GetOnBoardAdapter:
         via ``/companies/{id}`` under a bounded semaphore (one round-trip per
         distinct company instead of a serial loop over every job), cache the
         results, and stash each name under ``attributes.company_name``, which
-        the normalizer already reads. Failures degrade to a blank company rather
+        the normalizer already reads. Failures preserve the source company id rather
         than breaking the whole fetch.
         """
         # Distinct, resolution-order-preserving ids still needing a name.

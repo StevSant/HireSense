@@ -53,3 +53,8 @@ docker-compose.override.yml
 # Alembic
 alembic/versions/*.pyc
 .worktrees/
+
+# Vercel (local project link — never commit)
+.vercel/
+.env.local
+.env*.local

@@ -1,0 +1,18 @@
+# The public demo is a frontend-only static build. Everything below is either
+# irrelevant to that build or far too large to upload.
+
+.git
+.github
+.codex-worktrees
+.claude
+.playwright-mcp
+
+backend
+docs
+agent-os
+
+**/node_modules
+**/.venv
+**/__pycache__
+**/dist
+**/.angular

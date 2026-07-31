@@ -89,7 +89,7 @@ async def test_getonboard_caches_company_lookups() -> None:
 
 @pytest.mark.asyncio
 async def test_getonboard_company_unresolved_leaves_blank() -> None:
-    # Company fetch yields no name → no company_name injected; normalizer blank.
+    # Company fetch yields no name → preserve the source company id as a stable fallback.
     http = FakeHttpClient(_jobs_page(123), {})  # 123 not in name map
     adapter = GetOnBoardAdapter(http_client=http, base_url="https://api", categories=None)
 
@@ -97,7 +97,7 @@ async def test_getonboard_company_unresolved_leaves_blank() -> None:
 
     assert "company_name" not in jobs[0].raw_data["attributes"]
     out = GetOnBoardNormalizer().normalize(jobs[0])
-    assert out["company"] == ""
+    assert out["company"] == "123"
 
 
 class _RichCompanyHttpClient:

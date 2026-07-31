@@ -22,6 +22,7 @@ from hiresense.bootstrap.interview import InterviewBuild, build_interview
 from hiresense.bootstrap.matching import MatchingBuild, build_matching
 from hiresense.bootstrap.network import NetworkBuild, build_network
 from hiresense.bootstrap.notifications import NotificationBuild, build_notifications
+from hiresense.bootstrap.opportunities import OpportunitiesBuild, build_opportunities
 from hiresense.bootstrap.optimization import OptimizationBuild, build_optimization
 from hiresense.bootstrap.outreach import OutreachBuild, build_outreach
 from hiresense.bootstrap.portfolio import PortfolioBuild, build_portfolio
@@ -46,6 +47,7 @@ __all__ = [
     "MatchingBuild",
     "NetworkBuild",
     "NotificationBuild",
+    "OpportunitiesBuild",
     "OptimizationBuild",
     "OutreachBuild",
     "PortfolioBuild",
@@ -67,6 +69,7 @@ __all__ = [
     "build_matching",
     "build_network",
     "build_notifications",
+    "build_opportunities",
     "build_optimization",
     "build_outreach",
     "build_portfolio",

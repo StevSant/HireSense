@@ -19,3 +19,6 @@ class PortalsSettings(BaseSettings):
     # Recruitee public Offers API. {company} is templated with the company
     # subdomain (the portal board_id) at fetch time.
     recruitee_api_url: str = "https://{company}.recruitee.com/api"
+    # Workday public recruiting API. Most tenants are discovered from the
+    # company's public careers URL and rewritten to /wday/cxs/{tenant}/{site}/jobs.
+    workday_api_url: str = "https://example.myworkdayjobs.com/wday/cxs"

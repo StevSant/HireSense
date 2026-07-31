@@ -28,6 +28,7 @@ from hiresense.bootstrap import (
     build_matching,
     build_network,
     build_notifications,
+    build_opportunities,
     build_optimization,
     build_outreach,
     build_portfolio,
@@ -60,6 +61,7 @@ from hiresense.network.api import router as network_router
 from hiresense.autopilot.api import router as autopilot_router
 from hiresense.inbox.api import router as inbox_router
 from hiresense.notifications.api import router as notifications_router
+from hiresense.opportunities.api import router as opportunities_router
 from hiresense.portfolio.api import router as portfolio_router
 from hiresense.preference.api import router as preference_router
 from hiresense.profile.api import router as profile_router
@@ -284,6 +286,11 @@ def create_app() -> FastAPI:
     app.state.analytics = analytics.provider
     app.include_router(analytics_router)
 
+    # --- Opportunities (conferences, CFPs, grants, curated funded events) ---
+    opportunities = build_opportunities(infra)
+    app.state.opportunities = opportunities.provider
+    app.include_router(opportunities_router)
+
     # --- Interview ---
     interview = build_interview(infra, tracked)
     app.state.interview = interview.provider
@@ -365,6 +372,7 @@ def create_app() -> FastAPI:
         notification_service=notifications.service,
         inbox_processing_service=inbox.service,
         autopilot_pipeline_service=autopilot.service if autopilot is not None else None,
+        opportunities_service=opportunities.service,
     )
     app.state.scheduler = scheduler_build.provider
     app.state.scheduler_runner = scheduler_build.runner

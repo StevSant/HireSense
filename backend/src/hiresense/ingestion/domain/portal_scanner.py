@@ -131,7 +131,12 @@ class PortalScanner:
 
         for portal in portals:
             adapter = self._adapters.get(portal.platform)
-            normalizer = self._normalizers.get(portal.platform)
+            effective_platform = (
+                adapter.detect_platform(portal)
+                if adapter is not None and hasattr(adapter, "detect_platform")
+                else portal.platform
+            )
+            normalizer = self._normalizers.get(effective_platform)
 
             if adapter is None:
                 logger.warning("No adapter for platform: %s", portal.platform)
@@ -139,14 +144,24 @@ class PortalScanner:
             if normalizer is None:
                 logger.warning("No normalizer for platform: %s", portal.platform)
                 continue
+            source_type = (
+                adapter.source_type().value
+                if adapter is not None and hasattr(adapter, "source_type")
+                else "api"
+            )
+            if portal.platform == "auto":
+                source_type = "scraper" if effective_platform == "scraper" else "api"
 
             try:
-                raw_jobs = await adapter.fetch_jobs(portal.board_id, portal.name)
+                if hasattr(adapter, "fetch_portal"):
+                    raw_jobs = await adapter.fetch_portal(portal)
+                else:
+                    raw_jobs = await adapter.fetch_jobs(portal.board_id, portal.name)
             except Exception as exc:
                 errors.append(
                     ScanError(
                         portal=portal.name,
-                        platform=portal.platform,
+                        platform=effective_platform,
                         error=str(exc),
                     )
                 )
@@ -157,14 +172,14 @@ class PortalScanner:
                 total_fetched += 1
                 normalized_data = add_work_authorization_facts(normalizer.normalize(raw))
                 classification = classify_application(
-                    normalized_data.get("url"), platform=portal.platform
+                    normalized_data.get("url"), platform=effective_platform
                 )
                 job = NormalizedJob(
                     id=str(uuid.uuid4()),
                     source=portal.name,
-                    source_type="api",
+                    source_type=source_type,
                     source_id=raw.source_id,
-                    platform=portal.platform,
+                    platform=effective_platform,
                     categories=list(portal.categories),
                     apply_url=classification.apply_url,
                     application_method=classification.application_method,

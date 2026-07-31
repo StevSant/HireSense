@@ -13,6 +13,7 @@ export class PaginationComponent {
   pageSize = input.required<number>();
   total = input.required<number>();
   totalPages = input.required<number>();
+  itemLabel = input<string>('jobs');
 
   pageChange = output<number>();
   pageSizeChange = output<number>();

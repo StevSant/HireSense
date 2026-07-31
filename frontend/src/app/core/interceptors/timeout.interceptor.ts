@@ -2,12 +2,17 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { catchError, throwError, timeout, TimeoutError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-// URL patterns for LLM-backed endpoints, which can legitimately run far
-// longer than a normal CRUD call (external model latency, prompt size).
+// URL patterns for long-running endpoints, which can legitimately run far
+// longer than a normal CRUD call (external model latency, source APIs, prompt size).
 // Every pattern requires a segment boundary after the literal text so a
 // prefix never accidentally swallows an unrelated route (e.g. bare
 // `/cover-letter` must not match the CRUD `/cover-letter-templates` routes).
+const INGESTION_FETCH_URL_PATTERN = /\/ingestion\/fetch(?:$|[/?])/;
+
 const LLM_SLOW_URL_PATTERNS: RegExp[] = [
+  // Ingestion lists rescore jobs and may perform network/embedding/LLM work.
+  /\/ingestion\/jobs(?:$|[/?])/,
+  /\/ingestion\/(?:scan-portals|revalidate)(?:$|[/?])/,
   /\/interview\/prepare(?:$|[/?])/,
   /\/research(?:$|[/?])/,
   /\/optimization(?:$|[/?])/,
@@ -26,9 +31,14 @@ function isLlmSlowUrl(url: string): boolean {
   return LLM_SLOW_URL_PATTERNS.some((pattern) => pattern.test(url));
 }
 
+function isIngestionFetchUrl(url: string): boolean {
+  return INGESTION_FETCH_URL_PATTERN.test(url);
+}
+
 /**
  * Bounds every HTTP request so a hung call — most commonly a slow LLM
- * generation — can't spin a loading spinner forever. LLM-backed endpoints get
+ * generation — can't spin a loading spinner forever. Full ingestion gets
+ * `environment.httpTimeoutFetchMs`; other LLM-backed endpoints get
  * `environment.httpTimeoutLlmMs`; everything else gets the shorter
  * `environment.httpTimeoutMs`. On expiry, emits a synthetic 408
  * HttpErrorResponse so the existing `err.error?.detail` / `err.status`
@@ -42,7 +52,11 @@ function isLlmSlowUrl(url: string): boolean {
  * ErrorReportingService/telemetry.
  */
 export const timeoutInterceptor: HttpInterceptorFn = (req, next) => {
-  const ms = isLlmSlowUrl(req.url) ? environment.httpTimeoutLlmMs : environment.httpTimeoutMs;
+  const ms = isIngestionFetchUrl(req.url)
+    ? environment.httpTimeoutFetchMs
+    : isLlmSlowUrl(req.url)
+      ? environment.httpTimeoutLlmMs
+      : environment.httpTimeoutMs;
   return next(req).pipe(
     timeout(ms),
     catchError((error: unknown) => {

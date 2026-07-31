@@ -9,9 +9,24 @@ from pydantic import BaseModel
 
 class PortalEntry(BaseModel):
     name: str
-    platform: Literal["greenhouse", "lever", "ashby", "workable", "smartrecruiters", "recruitee"]
+    platform: Literal[
+        "greenhouse",
+        "lever",
+        "ashby",
+        "workable",
+        "smartrecruiters",
+        "recruitee",
+        "workday",
+        "thoughtworks",
+        "globant",
+        "auto",
+        "scraper",
+    ]
     board_id: str
     categories: list[str] = []
+    careers_url: str | None = None
+    render: Literal["http", "browser"] = "http"
+    selectors: dict[str, str] = {}
     enabled: bool = True
 
 

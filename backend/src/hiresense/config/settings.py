@@ -14,6 +14,7 @@ from hiresense.config.groups import (
     LLMSettings,
     MatchingSettings,
     ObservabilitySettings,
+    OpportunitiesSettings,
     OutreachSettings,
     PortalsSettings,
     PortfolioSettings,
@@ -45,6 +46,7 @@ class Settings(
     ApplicationsSettings,
     PortfolioSettings,
     ResearchSettings,
+    OpportunitiesSettings,
 ):
     """Composed application settings — flat attribute access over all groups."""
 

@@ -30,7 +30,7 @@ describe('timeoutInterceptor', () => {
 
   it('emits a synthetic 408 when a default-timeout request hangs past httpTimeoutMs', () => {
     let captured: unknown;
-    http.get('/api/ingestion/jobs').subscribe({
+    http.get('/api/profile/current').subscribe({
       next: () => {
         throw new Error('expected the request to time out');
       },
@@ -39,7 +39,7 @@ describe('timeoutInterceptor', () => {
       },
     });
 
-    const req = httpMock.expectOne('/api/ingestion/jobs');
+    const req = httpMock.expectOne('/api/profile/current');
     vi.advanceTimersByTime(environment.httpTimeoutMs);
 
     expect(req.cancelled).toBe(true);
@@ -48,16 +48,47 @@ describe('timeoutInterceptor', () => {
 
   it('does not time out a default-timeout request that resolves before httpTimeoutMs', () => {
     let received: unknown;
-    http.get('/api/ingestion/jobs').subscribe((res) => {
+    http.get('/api/profile/current').subscribe((res) => {
       received = res;
     });
 
     vi.advanceTimersByTime(environment.httpTimeoutMs - 1);
-    httpMock.expectOne('/api/ingestion/jobs').flush({ ok: true });
+    httpMock.expectOne('/api/profile/current').flush({ ok: true });
 
     expect(received).toEqual({ ok: true });
   });
 
+  it('keeps a source ingestion fetch alive beyond the normal LLM timeout budget', () => {
+    let received: unknown;
+    http.post('/api/ingestion/fetch', {}).subscribe((res) => {
+      received = res;
+    });
+
+    // A full source pass can take several minutes while external boards are
+    // paged and enriched, so it must not be cut off at the 120s LLM budget.
+    vi.advanceTimersByTime(environment.httpTimeoutLlmMs + 1000);
+    const req = httpMock.expectOne('/api/ingestion/fetch');
+    expect(req.cancelled).toBeFalsy();
+    req.flush({ count: 0, jobs: [] });
+
+    expect(received).toEqual({ count: 0, jobs: [] });
+  });
+  it('times out a source ingestion fetch only after its dedicated fetch budget', () => {
+    let captured: unknown;
+    http.post('/api/ingestion/fetch', {}).subscribe({
+      error: (e) => {
+        captured = e;
+      },
+    });
+
+    vi.advanceTimersByTime(environment.httpTimeoutFetchMs - 1);
+    const req = httpMock.expectOne('/api/ingestion/fetch');
+    expect(req.cancelled).toBeFalsy();
+
+    vi.advanceTimersByTime(1);
+    expect(req.cancelled).toBe(true);
+    expect(captured).toMatchObject({ status: 408 });
+  });
   it('does not time out an LLM-slow request before httpTimeoutLlmMs elapses', () => {
     let received: unknown;
     http.post('/api/interview/prepare', {}).subscribe((res) => {
@@ -88,6 +119,9 @@ describe('timeoutInterceptor', () => {
     '/api/applications/app-1/cover-letter',
     '/api/profile/translate',
     '/api/profile/upload-file',
+    '/api/ingestion/jobs',
+    '/api/ingestion/scan-portals',
+    '/api/ingestion/revalidate',
   ])('gives %s the LLM timeout budget, not the default one', (url) => {
     let captured: unknown;
     http.post(url, {}).subscribe({
@@ -128,7 +162,7 @@ describe('timeoutInterceptor', () => {
 
   it('passes through a real (non-timeout) HTTP error unchanged', () => {
     let captured: unknown;
-    http.get('/api/ingestion/jobs').subscribe({
+    http.get('/api/profile/current').subscribe({
       next: () => {
         throw new Error('expected the request to fail');
       },
@@ -138,7 +172,7 @@ describe('timeoutInterceptor', () => {
     });
 
     httpMock
-      .expectOne('/api/ingestion/jobs')
+      .expectOne('/api/profile/current')
       .flush('nope', { status: 500, statusText: 'Server Error' });
 
     expect(captured).toMatchObject({ status: 500 });
@@ -177,7 +211,7 @@ describe('timeoutInterceptor registered before errorLoggingInterceptor (telemetr
 
   it('reports the synthetic 408 to ErrorReportingService when a request times out', () => {
     let captured: unknown;
-    http.get('/api/ingestion/jobs').subscribe({
+    http.get('/api/profile/current').subscribe({
       next: () => {
         throw new Error('expected the request to time out');
       },
@@ -186,7 +220,7 @@ describe('timeoutInterceptor registered before errorLoggingInterceptor (telemetr
       },
     });
 
-    const req = httpMock.expectOne('/api/ingestion/jobs');
+    const req = httpMock.expectOne('/api/profile/current');
     vi.advanceTimersByTime(environment.httpTimeoutMs);
 
     expect(req.cancelled).toBe(true);
@@ -196,7 +230,7 @@ describe('timeoutInterceptor registered before errorLoggingInterceptor (telemetr
     expect(reportedErr).toMatchObject({ status: 408 });
     expect(context).toMatchObject({
       source: 'http',
-      url: '/api/ingestion/jobs',
+      url: '/api/profile/current',
       status: 408,
       method: 'GET',
     });
@@ -204,7 +238,7 @@ describe('timeoutInterceptor registered before errorLoggingInterceptor (telemetr
 
   it('still reports normal (non-timeout) HTTP errors', () => {
     let captured: unknown;
-    http.get('/api/ingestion/jobs').subscribe({
+    http.get('/api/profile/current').subscribe({
       next: () => {
         throw new Error('expected the request to fail');
       },
@@ -214,7 +248,7 @@ describe('timeoutInterceptor registered before errorLoggingInterceptor (telemetr
     });
 
     httpMock
-      .expectOne('/api/ingestion/jobs')
+      .expectOne('/api/profile/current')
       .flush('nope', { status: 500, statusText: 'Server Error' });
 
     expect(captured).toMatchObject({ status: 500 });

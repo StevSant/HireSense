@@ -10,11 +10,14 @@ from hiresense.ingestion.adapters import (
     AdzunaAdapter,
     ArbeitnowAdapter,
     AshbyAdapter,
+    AutoPortalAdapter,
     CrunchBoardAdapter,
     CSVImportAdapter,
     DiceAdapter,
+    GenericScraperAdapter,
     GetOnBoardAdapter,
     GlassdoorAdapter,
+    GlobantAdapter,
     GreenhouseAdapter,
     HimalayasAdapter,
     HNHiringAdapter,
@@ -28,8 +31,10 @@ from hiresense.ingestion.adapters import (
     RemotiveAdapter,
     SmartRecruitersAdapter,
     TheMuseAdapter,
+    ThoughtworksAdapter,
     WellfoundAdapter,
     WeWorkRemotelyAdapter,
+    WorkdayAdapter,
     WorkableAdapter,
     YCJobsAdapter,
 )
@@ -51,8 +56,10 @@ from hiresense.ingestion.domain.normalizers import (
     CrunchBoardNormalizer,
     CSVNormalizer,
     DiceNormalizer,
+    GenericScraperNormalizer,
     GetOnBoardNormalizer,
     GlassdoorNormalizer,
+    GlobantNormalizer,
     GreenhouseNormalizer,
     HimalayasNormalizer,
     HNHiringNormalizer,
@@ -66,14 +73,17 @@ from hiresense.ingestion.domain.normalizers import (
     RemotiveNormalizer,
     SmartRecruitersNormalizer,
     TheMuseNormalizer,
+    ThoughtworksNormalizer,
     WellfoundNormalizer,
     WeWorkRemotelyNormalizer,
+    WorkdayNormalizer,
     WorkableNormalizer,
     YCJobsNormalizer,
 )
 from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
 from hiresense.ingestion.domain.source_health import SourceHealthTracker
 from hiresense.ingestion.infrastructure import JobMatchCacheRepository, JobsRepository
+from hiresense.ingestion.infrastructure import PlaywrightPageRenderer
 from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
 from hiresense.bootstrap.shared_infra import SharedInfra
 
@@ -328,6 +338,13 @@ def build_ingestion(
     portals_config_path = Path(hiresense.__file__).parent / s.portals_config_path
     portals_config = load_portals_config(portals_config_path)
 
+    page_renderer = PlaywrightPageRenderer(timeout_ms=int(s.portal_scan_timeout * 1000))
+    scraper_adapter = GenericScraperAdapter(
+        http_client=http_client,
+        renderer=page_renderer,
+        timeout=s.portal_scan_timeout,
+    )
+
     portal_adapters = {
         "greenhouse": GreenhouseAdapter(
             http_client=http_client,
@@ -359,7 +376,21 @@ def build_ingestion(
             base_url=s.recruitee_api_url,
             timeout=s.portal_scan_timeout,
         ),
+        "workday": WorkdayAdapter(
+            http_client=http_client,
+            timeout=s.portal_scan_timeout,
+        ),
+        "thoughtworks": ThoughtworksAdapter(
+            http_client=http_client,
+            timeout=s.portal_scan_timeout,
+        ),
+        "globant": GlobantAdapter(
+            http_client=http_client,
+            timeout=s.portal_scan_timeout,
+        ),
+        "scraper": scraper_adapter,
     }
+    portal_adapters["auto"] = AutoPortalAdapter(portal_adapters, scraper_adapter)
 
     portal_normalizers = {
         "greenhouse": GreenhouseNormalizer(),
@@ -368,6 +399,11 @@ def build_ingestion(
         "workable": WorkableNormalizer(),
         "smartrecruiters": SmartRecruitersNormalizer(),
         "recruitee": RecruiteeNormalizer(),
+        "workday": WorkdayNormalizer(),
+        "thoughtworks": ThoughtworksNormalizer(),
+        "globant": GlobantNormalizer(),
+        "scraper": GenericScraperNormalizer(),
+        "auto": GenericScraperNormalizer(),
     }
 
     portal_scanner = PortalScanner(

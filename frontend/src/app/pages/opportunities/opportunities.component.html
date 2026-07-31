@@ -1,0 +1,243 @@
+<div class="opportunities-page">
+  <header class="opportunities-header">
+    <div>
+      <p class="opportunities-eyebrow">Career intelligence</p>
+      <h1 class="opportunities-title">Opportunities</h1>
+      <p class="opportunities-lede">
+        Conferences, CFPs, grants, and funded programs matched to your profile.
+      </p>
+    </div>
+    <button class="primary-btn" type="button" (click)="runFetch()" [disabled]="fetchRunning()">
+      {{ fetchRunning() ? 'Refreshing…' : 'Refresh sources' }}
+    </button>
+  </header>
+
+  <div class="filters-bar">
+    <div class="filter-item">
+      <label class="filter-label" for="opp-kind">Kind</label>
+      <select id="opp-kind" class="filter-control" [(ngModel)]="kind" (change)="applyFilters()">
+        <option value="">All</option>
+        <option value="conference">Conference</option>
+        <option value="cfp">CFP</option>
+        <option value="grant">Grant</option>
+        <option value="fellowship">Fellowship</option>
+        <option value="summer_school">Summer school</option>
+        <option value="event">Event</option>
+      </select>
+    </div>
+
+    <div class="filter-item">
+      <label class="filter-label" for="opp-keyword">Keyword</label>
+      <input
+        id="opp-keyword"
+        class="filter-control"
+        [(ngModel)]="q"
+        (keyup.enter)="applyFilters()"
+        placeholder="Search title, description…"
+      />
+    </div>
+
+    <div class="filter-item">
+      <label class="filter-label" for="opp-topics">Topics include</label>
+      <input
+        id="opp-topics"
+        class="filter-control"
+        [(ngModel)]="topic"
+        (keyup.enter)="applyFilters()"
+        placeholder="ai, python, security…"
+      />
+    </div>
+
+    <div class="filter-item">
+      <label class="filter-label" for="opp-exclude">Topics exclude</label>
+      <input
+        id="opp-exclude"
+        class="filter-control"
+        [(ngModel)]="excludeTopics"
+        (keyup.enter)="applyFilters()"
+        placeholder="php, ruby…"
+      />
+    </div>
+
+    <div class="filter-item">
+      <label class="filter-label" for="opp-country">Country</label>
+      <input
+        id="opp-country"
+        class="filter-control"
+        [(ngModel)]="country"
+        (keyup.enter)="applyFilters()"
+        placeholder="Chile, Mexico, Online…"
+      />
+    </div>
+
+    <div class="filter-item">
+      <label class="filter-label" for="opp-status">Status</label>
+      <select id="opp-status" class="filter-control" [(ngModel)]="status" (change)="applyFilters()">
+        <option value="open">Open</option>
+        <option value="closed">Closed</option>
+        <option value="">Any</option>
+      </select>
+    </div>
+
+    <div class="filter-item filter-item-clear">
+      <button type="button" class="btn-apply" (click)="applyFilters()">Apply</button>
+      @if (hasFilters()) {
+        <button type="button" class="btn-clear" (click)="clearFilters()">Clear all</button>
+      }
+    </div>
+  </div>
+
+  <div class="prefs-bar">
+    <label class="strict-toggle">
+      <input type="checkbox" [(ngModel)]="matchedOnly" (change)="onToggleChange()" />
+      <span>Match my skills</span>
+    </label>
+    <label class="strict-toggle">
+      <input type="checkbox" [(ngModel)]="hideStale" (change)="onToggleChange()" />
+      <span>Hide past deadlines</span>
+    </label>
+    <label class="strict-toggle">
+      <input type="checkbox" [(ngModel)]="fundedOnly" (change)="onToggleChange()" />
+      <span>Funded only</span>
+    </label>
+  </div>
+
+  @if (fetchSummary(); as summary) {
+    <div class="summary-strip">
+      <span>{{ summary.inserted }} inserted</span>
+      <span>{{ summary.updated }} updated</span>
+      <span>{{ summary.reopened }} reopened</span>
+      <span>{{ summary.unchanged }} unchanged</span>
+    </div>
+  }
+  @if (error(); as message) {
+    <p class="section-error">{{ message }}</p>
+  }
+
+  <section class="results-card">
+    <div class="list-head">
+      <h2 class="card-title">Results</h2>
+      <p class="result-count">{{ total() | number }} total</p>
+    </div>
+
+    @if (loading()) {
+      <p class="section-loading">Loading opportunities…</p>
+    } @else if (!items().length) {
+      <p class="section-empty">No opportunities match your current filters yet.</p>
+    } @else {
+      <div class="table-container">
+        <table>
+          <colgroup>
+            <col class="col-match" />
+            <col class="col-title" />
+            <col class="col-country" />
+            <col class="col-language" />
+            <col class="col-cost" />
+            <col class="col-when" />
+            <col class="col-source" />
+            <col class="col-actions" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th appSortHeader [state]="sort" field="match" (sorted)="onSorted()">Match</th>
+              <th appSortHeader [state]="sort" field="title" (sorted)="onSorted()">Title</th>
+              <th appSortHeader [state]="sort" field="country" (sorted)="onSorted()">Country</th>
+              <th appSortHeader [state]="sort" field="language" (sorted)="onSorted()">Language</th>
+              <th appSortHeader [state]="sort" field="cost" (sorted)="onSorted()">Cost</th>
+              <th appSortHeader [state]="sort" field="when" (sorted)="onSorted()">When</th>
+              <th appSortHeader [state]="sort" field="source" (sorted)="onSorted()">Source</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.id) {
+              <tr class="clickable-row" [class.closed]="item.status === 'closed'">
+                <td>
+                  <span class="score-badge" [class]="scoreBadgeClass(item.relevance_score)">
+                    @if (item.relevance_score !== null) {
+                      {{ item.relevance_score | percent: '1.0-0' }}
+                    } @else {
+                      —
+                    }
+                  </span>
+                </td>
+                <td class="title">
+                  <span class="kind-chip" [title]="kindTitle(item.kind)">{{
+                    kindLabel(item.kind)
+                  }}</span>
+                  <div class="title-text">{{ item.title }}</div>
+                  @if (organizationLabel(item); as org) {
+                    <div class="cell-muted">{{ org }}</div>
+                  }
+                  @if (cityLabel(item); as city) {
+                    <div class="cell-muted">{{ city }}</div>
+                  }
+                  @if (item.topics.length) {
+                    <div class="tag-row">
+                      @for (topic of item.topics; track topic) {
+                        <span class="skill-tag">{{ topic }}</span>
+                      }
+                    </div>
+                  }
+                </td>
+                <td>{{ countryLabel(item) }}</td>
+                <td>{{ languageLabel(item) }}</td>
+                <td>
+                  <span class="cost-badge" [class]="costClass(item)" [title]="costHint(item)">
+                    {{ costLabel(item) }}
+                  </span>
+                  @if (item.funding) {
+                    <div class="cell-muted funding-note">{{ item.funding }}</div>
+                  }
+                </td>
+                <td class="date-cell">
+                  @if (item.start_date) {
+                    <div>{{ item.start_date | date: 'mediumDate' }}</div>
+                  } @else {
+                    <div>—</div>
+                  }
+                  @if (deadlineLabel(item); as deadline) {
+                    <div class="deadline">
+                      {{ deadlinePrefix(item) }} {{ deadline | date: 'mediumDate' }}
+                    </div>
+                  }
+                </td>
+                <td>
+                  <span class="badge source-badge-{{ item.source }}">{{ item.source }}</span>
+                </td>
+                <td class="actions-cell">
+                  <a class="link" [href]="item.url" target="_blank" rel="noreferrer">View</a>
+                  @if (item.apply_url) {
+                    <a
+                      class="btn-track"
+                      [href]="item.apply_url"
+                      target="_blank"
+                      rel="noreferrer"
+                      [title]="
+                        item.kind === 'cfp'
+                          ? 'Open the call for papers / speakers form'
+                          : 'Open the application page'
+                      "
+                    >
+                      {{ applyActionLabel(item) }}
+                    </a>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-pagination
+        [page]="page()"
+        [pageSize]="pageSize()"
+        [total]="total()"
+        [totalPages]="totalPages()"
+        itemLabel="opportunities"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)"
+      />
+    }
+  </section>
+</div>

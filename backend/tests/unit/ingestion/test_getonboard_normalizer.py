@@ -53,3 +53,20 @@ def test_worldwide_remote_has_no_country_restriction() -> None:
     assert out["remote_modality"] == "remote"
     assert out["countries"] == []
     assert out["location"] == "Remote"
+
+
+def test_company_id_fallback_survives_unresolved_company_enrichment() -> None:
+    out = GetOnBoardNormalizer().normalize(
+        _raw(
+            {
+                "title": "Backend Engineer",
+                "company": {"data": {"id": 123}},
+                "remote": True,
+                "remote_modality": "remote_local",
+                "countries": [],
+                "description": "desc",
+            }
+        )
+    )
+
+    assert out["company"] == "123"

@@ -11,28 +11,71 @@ and is safe to share publicly.
 
 Do not publish metrics or source counts without checking them immediately before posting.
 
+## What's new (verified 2026-07-31)
+
+Fresh material for the announcements. Name features, never unverified counts.
+
+- **Opportunity Discover.** New `/opportunities` context: conferences, CFPs, and funded
+  programs from confs.tech and curated imports. Filters by topic, country, deadline, and
+  funded-only; sorting by relevance against your profile; and an attendance-cost label
+  (`Free`, `Funded`, `Paid`, `Likely paid`) inferred even when the source publishes no fee.
+- **New automated job sources:** Dice (official MCP), Y Combinator Work at a Startup
+  (public JSON), and CrunchBoard (official RSS).
+- **Opt-in, ToS-respecting imports** for Indeed, Wellfound, Glassdoor, and Monster, which
+  have no usable public job-search API. No bot-wall or login bypassing.
+- **Company portals:** adapters for Workday, Thoughtworks, and Globant, an `auto` detector
+  that picks the right ATS from a careers URL, and a generic scraper with browser rendering
+  for JavaScript-heavy sites.
+- **Source transparency:** a per-source capability registry (`GET /ingestion/sources`) and
+  per-source health with last run, counts, and errors (`GET /ingestion/sources/health`).
+  Deduplication now records which sources saw each role and ranks direct ATS above
+  aggregators.
+- **Profile-aware ranking:** single and batch evaluation now use the profile you have
+  selected instead of scoring without candidate context.
+- **Sturdier ingestion:** long fetches and job revalidation run in the background instead of
+  blocking the request.
+
+## Opening hooks
+
+A bank of first lines. Use one per post, and don't reuse the same one across networks.
+
+- How many job-board tabs do you have open right now?
+- Tired of digging through hundreds of listings to find the three that actually fit you?
+- Your next job is probably already posted. It's just on page 40.
+- Job hunting isn't an effort problem anymore. It's a noise problem.
+- Your CV, salary expectations, and application history live in six different products. Are
+  we all fine with that?
+- Applying is the easy part. Figuring out what's worth applying to is the actual work.
+
 ## Core positioning
 
 ### Primary tagline
 
 > Turn the job-board firehose into a private, ranked shortlist.
 
+### Alternatives
+
+- Hundreds of listings in. One shortlist that actually makes sense out.
+- Your entire job search in one place — and that place is yours.
+
 ### One-sentence description
 
 > HireSense is a self-hosted job-search workspace for candidates that ingests and
-> deduplicates listings, ranks the whole corpus with pgvector and cost-aware LLM scoring,
-> and manages applications end to end.
+> deduplicates listings from job boards, company ATS portals, and now conferences, CFPs, and
+> funded programs, ranks the whole corpus with pgvector and cost-aware LLM scoring, and
+> manages applications end to end.
 
 ### GitHub About description
 
 > Self-hosted job search for candidates: ingest and deduplicate listings, rank them with
-> pgvector and LLMs, and manage applications end to end.
+> pgvector and LLMs, discover conferences and CFPs, and manage applications end to end.
 
 ### Social-preview text
 
 ```text
 HireSense
-Private, ranked job search—end to end.
+Hundreds of listings in.
+One shortlist that actually fits.
 Open source · Self-hosted
 ```
 
@@ -40,46 +83,77 @@ Open source · Self-hosted
 
 ### Primary launch post
 
-> I got tired of managing a job search across five different tools, so I built one.
+> How many job-board tabs do you have open right now?
 >
-> Today I’m releasing **HireSense**, an open-source, self-hosted workspace for job
-> seekers.
+> I got to seven, plus a spreadsheet, four CV versions, and no idea what was actually
+> working. So I stopped job hunting for a while and built the tool I was missing.
+>
+> Today I'm releasing **HireSense**, an open-source, self-hosted workspace for job seekers.
 >
 > It collects roles from public job boards and company ATS portals, removes duplicates, and
-> ranks the complete job corpus against your profile using pgvector semantic search, skill
+> ranks **the entire corpus** against your profile using pgvector semantic search, skill
 > matching, and cost-aware LLM scoring.
 >
-> From there, it helps manage the rest of the process: application tracking, tailored CVs
-> and cover letters, interview preparation, outreach, and market analytics.
+> From there it handles the rest of the process: application tracking, tailored CVs and
+> cover letters, interview preparation, outreach, and market analytics.
+>
+> As of this week it also finds the things that aren't job posts: conferences, CFPs, and
+> funded programs, filtered by topic, country, and deadline, with a cost label. Sometimes
+> the thing that moves a career isn't one more application — it's a talk.
 >
 > I made it self-hosted because a CV, salary expectations, job preferences, and application
-> history are deeply personal data.
+> history are deeply personal data that should stay with you.
 >
-> The stack includes Python, FastAPI, Angular, PostgreSQL/pgvector, Docker, LangChain,
-> OpenTelemetry, and Grafana.
+> Stack: Python, FastAPI, Angular, PostgreSQL/pgvector, Docker, LangChain, OpenTelemetry,
+> and Grafana.
 >
-> This is the first public preview. I would especially value feedback on the installation
-> experience and the ranking approach.
+> This is the first public preview. I'd especially value feedback on two things: is the
+> installation clear, and does the ranking approach actually feel useful?
 >
 > Live demo (read-only, synthetic data): https://hiresense-demo.vercel.app
 >
 > Repository: https://github.com/StevSant/HireSense
 >
-> If it is useful, consider starring it or contributing to one of the beginner-friendly
-> issues.
+> If it's useful, a star or a beginner-friendly issue helps more than you'd think.
 >
 > #OpenSource #SelfHosted #Python #JobSearch
 
+### What's-new post
+
+> A job posting isn't the only door.
+>
+> I just shipped **Discover** in HireSense: alongside job listings, it now finds
+> conferences, CFPs, and funded programs, with filters by topic, country, and deadline,
+> sorting by relevance against your profile, and a cost label that tells you whether it's
+> free, funded, or paid — even when the source never publishes a fee.
+>
+> The same batch added new job sources: Dice, Y Combinator Work at a Startup, and
+> CrunchBoard running automatically, plus adapters for Workday, Thoughtworks, and Globant
+> portals and a detector that recognizes a company's ATS straight from its careers page.
+>
+> And something less flashy that I care about just as much: every source now reports its own
+> health — last run, how many roles it returned, what error it hit — and deduplication
+> records which sources saw each role, ranking the company's own ATS above aggregators.
+>
+> Still open source, still self-hosted: https://github.com/StevSant/HireSense
+>
+> Which source are you missing? It's literally one new adapter.
+>
+> #OpenSource #Python #JobSearch #DevCommunity
+
 ### Short follow-up post
 
-> One design decision in HireSense matters more than the AI label: ranking happens
-> across the full job corpus before pagination.
+> Your best match is on page 40, and you're never getting there.
 >
-> Otherwise, an excellent match can remain buried on page 40 simply because only the
-> current page was scored.
+> That's the real problem HireSense solves, and it has nothing to do with slapping "AI" on a
+> product. It's about **when** ranking happens.
 >
-> The pipeline uses pgvector for semantic pre-ranking, skill overlap for a fast structured
-> signal, and tiered LLM scoring only where the extra cost is justified.
+> If an app only scores the page you're currently looking at, a great role stays buried
+> purely because it showed up late in the feed. So the pipeline semantically pre-ranks the
+> full corpus before pagination.
+>
+> It uses pgvector for semantic pre-ranking, skill overlap as a fast structured signal, and
+> tiered LLM scoring only where the extra cost buys real signal.
 >
 > I wrote up the architecture and trade-offs here:
 > https://github.com/StevSant/HireSense/blob/main/backend/ARCHITECTURE.md
@@ -103,18 +177,25 @@ Do not publish these in several communities at the same time.
 
 **Title**
 
-> I built a self-hosted job-search workspace with pgvector ranking and an end-to-end application pipeline
+> Why should my CV and application history live on someone else's server? I built a
+> self-hosted job-search workspace with pgvector ranking
 
 **Body**
 
 > I wanted a job-search workflow where my CV, preferences, salary expectations, and
-> application history did not have to live in another SaaS product, so I built HireSense.
+> application history did not have to live in another SaaS product that also monetizes them,
+> so I built HireSense.
 >
-> It ingests roles from public job boards and company ATS portals, deduplicates them by stable
-> identity, ranks the full corpus with pgvector plus skill and optional LLM scoring, and
-> tracks applications through interview and offer stages. It also includes tailored document
-> generation, interview preparation, scheduling, analytics, and OpenTelemetry/Grafana
-> observability.
+> It ingests roles from public job boards and company ATS portals, deduplicates them by
+> stable identity, ranks the full corpus with pgvector plus skill and optional LLM scoring,
+> and tracks applications through interview and offer stages. It also includes tailored
+> document generation, interview preparation, scheduling, analytics, and
+> OpenTelemetry/Grafana observability.
+>
+> Recent additions: new sources (Dice, YC Work at a Startup, CrunchBoard), Workday /
+> Thoughtworks / Globant portal adapters with an auto-detector for unknown careers pages, a
+> per-source health endpoint so you can see which ingestion broke without opening logs, and
+> a Discover section for conferences, CFPs, and funded programs.
 >
 > The stack runs with Docker Compose: FastAPI, Angular, PostgreSQL/pgvector, and Grafana. A
 > local heuristic mode is available for trying the workflow without a paid LLM provider.
@@ -133,12 +214,16 @@ Do not publish these in several communities at the same time.
 
 **Body**
 
-> I’m preparing the first public release of HireSense, a self-hosted job-search system
-> built around FastAPI, Angular, PostgreSQL/pgvector, and a hexagonal backend architecture.
+> I'm preparing the first public release of HireSense, a self-hosted job-search system built
+> around FastAPI, Angular, PostgreSQL/pgvector, and a hexagonal backend architecture.
 >
 > The repository already includes an MIT license, security policy, contribution guide, Code
 > of Conduct, issue forms, CI, and architecture documentation. The main contribution areas
 > are source adapters, ranking quality, onboarding, accessibility, and documentation.
+>
+> Source adapters in particular are a genuinely good first contribution: each one is a port
+> implementation plus a normalizer plus a capability entry, with a documented recipe in
+> `docs/job-sources.md` and unit tests that never hit the live network.
 >
 > Repository: https://github.com/StevSant/HireSense
 >
@@ -149,13 +234,12 @@ Do not publish these in several communities at the same time.
 
 **Title**
 
-> I turned my fragmented job-search workflow into an open-source, self-hosted application
+> Applying is the easy part — I turned the hard part of job hunting into an open-source app
 
 **Body**
 
 > My job search kept expanding into separate spreadsheets, job-board tabs, CV copies,
-> interview notes, and reminders. I started HireSense to put that workflow in one
-> place.
+> interview notes, and reminders. I started HireSense to put that workflow in one place.
 >
 > The most interesting engineering problem was not generating text. It was reducing the
 > firehose: deduplicating jobs, ranking the complete corpus instead of one page, controlling
@@ -163,7 +247,8 @@ Do not publish these in several communities at the same time.
 >
 > It has grown into a FastAPI + Angular application with PostgreSQL/pgvector, Docker,
 > application tracking, tailored artifacts, interview preparation, analytics, automation,
-> and observability.
+> and observability — plus a recent Discover section for conferences, CFPs, and funded
+> programs, because not every career move is an application.
 >
 > Repository: https://github.com/StevSant/HireSense
 >
@@ -181,29 +266,33 @@ smooth local trial.
 ### Short description
 
 > HireSense is an open-source, self-hosted workspace that finds and deduplicates job
-> listings, ranks them against your profile, and supports the application process from
-> tailored documents to interview preparation and analytics.
+> listings, ranks them against your profile, surfaces relevant conferences and CFPs, and
+> supports the application process from tailored documents to interview preparation and
+> analytics.
 
 ### Maker first comment
 
-> Hi Product Hunt — I built HireSense after realizing that job hunting had become a
-> collection of disconnected tools: job boards for discovery, spreadsheets for tracking,
-> document copies for every application, separate interview notes, and no useful view of what
-> was working.
+> Hi Product Hunt — how many job-board tabs do you have open right now?
 >
-> The core idea is to reduce noise before adding more automation. HireSense ingests
-> roles from public boards and company ATS portals, deduplicates them, semantically pre-ranks
-> the complete corpus with pgvector, and uses skill matching and optional tiered LLM scoring
-> to build a shortlist.
+> I built HireSense after realizing that job hunting had become a collection of disconnected
+> tools: job boards for discovery, spreadsheets for tracking, document copies for every
+> application, separate interview notes, and no useful view of what was working.
+>
+> The core idea is to reduce noise before adding more automation. HireSense ingests roles
+> from public boards and company ATS portals, deduplicates them, semantically pre-ranks the
+> complete corpus with pgvector, and uses skill matching and optional tiered LLM scoring to
+> build a shortlist.
 >
 > It then supports the workflow around that shortlist: tracking, tailored CVs and cover
-> letters, interview preparation, outreach, automation, and market analytics.
+> letters, interview preparation, outreach, automation, and market analytics. A recent
+> addition surfaces conferences, CFPs, and funded programs with a cost label, since a talk
+> or a program can move a career as much as an application does.
 >
 > It is MIT-licensed and self-hosted because candidate data is personal. The public preview
 > source code is available at https://github.com/StevSant/HireSense.
 >
 > I would value feedback on two things: whether the first-run experience is clear, and which
-> part of the job-search workflow you would want to automate—or deliberately keep manual.
+> part of the job-search workflow you would want to automate — or deliberately keep manual.
 
 Do not ask anyone to upvote. Invite people to try it and comment.
 
@@ -214,7 +303,8 @@ submission from this file. Write the final text personally after reading the cur
 [Show HN guidelines](https://news.ycombinator.com/showhn.html) and
 [general guidelines](https://news.ycombinator.com/newsguidelines.html).
 
-An honest title should use this structure:
+Note that HN dislikes marketing hooks. Do not carry the question openers from this file into
+a Show HN post — use a plain, factual title:
 
 ```text
 Show HN: HireSense – Self-hosted job search with pgvector and tiered LLM scoring
@@ -227,7 +317,8 @@ Write a short discussion in your own words covering:
 3. Why whole-corpus ranking differs from scoring only a visible page.
 4. How pgvector, skill signals, and tiered models balance quality and cost.
 5. Why the project is self-hosted.
-6. One limitation or unfinished area you genuinely want feedback on.
+6. Which sources are genuinely automatable versus import-only, and why.
+7. One limitation or unfinished area you genuinely want feedback on.
 
 Avoid emoji, marketing adjectives, unsupported metrics, and requests for votes or comments.
 Stay available to answer technical questions after submitting.
@@ -238,11 +329,12 @@ Stay available to answer technical questions after submitting.
 
 **Title**
 
-> How I built a cost-aware job-ranking pipeline with pgvector and tiered LLM scoring
+> Your best match is on page 40: building a cost-aware job-ranking pipeline with pgvector
+> and tiered LLM scoring
 
 **Subtitle**
 
-> Why ranking the whole corpus before pagination produced a better shortlist—and how cheap
+> Why ranking the whole corpus before pagination produced a better shortlist — and how cheap
 > filters keep expensive model calls proportional to signal.
 
 **Outline**
@@ -266,6 +358,10 @@ Stay available to answer technical questions after submitting.
 ### Additional article titles
 
 - Why my job-search app ranks the entire corpus before showing page one
+- When the source won't tell you the price: inferring whether a conference is free, funded,
+  or paid
+- Seven job boards, seven ways of saying no: what you can actually integrate and what you
+  have to import by hand
 - Designing a self-hosted AI application around candidate privacy
 - Stable identity, content hashes, and the surprisingly hard problem of stale job listings
 - Using hexagonal architecture in a FastAPI application with many external adapters
@@ -275,22 +371,35 @@ Stay available to answer technical questions after submitting.
 
 ### X / Bluesky / Mastodon
 
-> I built HireSense: an open-source, self-hosted job-search workspace that deduplicates
-> listings, ranks the full corpus with pgvector + optional LLM scoring, and manages the
-> application process end to end.
+> Your next job is probably already posted. It's on page 40 and you're never getting there.
+>
+> So I built HireSense: open source, self-hosted, deduplicates listings, ranks **the whole
+> corpus** with pgvector before paginating, finds conferences and CFPs, and manages
+> applications end to end.
 >
 > Source: https://github.com/StevSant/HireSense
 >
 > Demo: https://hiresense-demo.vercel.app
 
+### Short variant (what's new)
+
+> New in HireSense: Discover for conferences, CFPs, and funded programs — filter by topic,
+> country, and deadline, with a cost label even when the source never publishes a fee.
+>
+> Plus new job sources: Dice, YC Work at a Startup, and CrunchBoard.
+>
+> https://github.com/StevSant/HireSense
+
 ### YouTube title
 
-> I built a self-hosted job-search platform with FastAPI, Angular, and pgvector
+> I built the app I wish I'd had while job hunting (FastAPI + Angular + pgvector)
 
 ### YouTube description
 
-> HireSense turns job listings into a deduplicated, ranked shortlist, then supports
+> Tired of scrolling hundreds of listings to find three that fit? HireSense turns that
+> firehose into a deduplicated shortlist ranked against your profile, then supports
 > application tracking, tailored documents, interview preparation, outreach, and analytics.
+> It also surfaces conferences, CFPs, and funded programs.
 >
 > Source code and documentation: https://github.com/StevSant/HireSense
 >
@@ -303,7 +412,15 @@ Use one call to action per post:
 - **Feedback:** What would stop you from trying or self-hosting this?
 - **Ranking:** Which matters most to you: match quality, explainability, or cost?
 - **Product:** Which part of job searching should remain manual?
+- **Sources:** Which job board are you missing? Adding one is a single new adapter.
 - **Contribution:** Is the contribution path clear enough for a first pull request?
 - **Support:** If this is useful, star the repository so you can find future releases.
 
-Do not combine all five in one post.
+Do not combine all of them in one post.
+
+## Wording guidance
+
+Hooks can be direct and have personality, but the promise underneath must stay checkable:
+describe what the tool does, not what it guarantees you'll get. Avoid "revolutionary",
+"guarantees interviews", "beats any ATS", "auto-applies to everything", "replaces
+recruiters", and any accuracy or savings claim without a verifiable measurement.

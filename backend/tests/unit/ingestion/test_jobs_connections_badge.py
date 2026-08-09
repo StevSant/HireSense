@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.ingestion.api import get_ingestion_orchestrator, get_portal_scanner, router
+from hiresense.ingestion.api import get_job_query, get_portal_scanner, router
 from hiresense.ingestion.api.dependencies import get_semantic_scoring
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.network.api.dependencies import get_contacts_repository
@@ -103,7 +103,7 @@ class FakeContactsRepository:
 def _make_app_with_network() -> FastAPI:
     """App wired with a fake contacts repository."""
     app = FastAPI()
-    app.dependency_overrides[get_ingestion_orchestrator] = lambda: FakeOrchestrator()
+    app.dependency_overrides[get_job_query] = lambda: FakeOrchestrator()
     app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileService()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
@@ -116,7 +116,7 @@ def _make_app_with_network() -> FastAPI:
 def _make_app_without_network() -> FastAPI:
     """Bare app — no contacts repository override (dependency returns None)."""
     app = FastAPI()
-    app.dependency_overrides[get_ingestion_orchestrator] = lambda: FakeOrchestrator()
+    app.dependency_overrides[get_job_query] = lambda: FakeOrchestrator()
     app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileService()
     app.dependency_overrides[get_semantic_scoring] = lambda: None

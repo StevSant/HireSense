@@ -23,12 +23,13 @@ from sqlalchemy.orm import sessionmaker
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.infrastructure.database import Base
 from hiresense.ingestion.api import (
-    get_ingestion_orchestrator,
+    get_job_query,
     get_portal_scanner,
     router,
 )
 from hiresense.ingestion.api.dependencies import get_semantic_scoring
 from hiresense.ingestion.domain.models import RawJobListing
+from hiresense.ingestion.domain.job_query_service import JobQueryService
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.ingestion.infrastructure import JobsRepository
 from hiresense.ingestion.infrastructure.models import IngestedJob  # noqa: F401 (registers table)
@@ -126,7 +127,9 @@ async def test_ingested_jobs_persist_and_surface_via_api() -> None:
 
     # 2) Read them back through the REAL HTTP route over the same repo.
     app = FastAPI()
-    app.dependency_overrides[get_ingestion_orchestrator] = lambda: orchestrator
+    # Same repository instance the orchestrator just ingested through.
+    job_query = JobQueryService(repository=repo)
+    app.dependency_overrides[get_job_query] = lambda: job_query
     app.dependency_overrides[get_portal_scanner] = lambda: _EmptyScanner()
     app.dependency_overrides[get_profile_service] = lambda: _FakeProfileService()
     app.dependency_overrides[get_semantic_scoring] = lambda: None

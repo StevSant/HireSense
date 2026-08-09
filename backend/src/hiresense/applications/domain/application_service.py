@@ -24,12 +24,12 @@ class ApplicationService:
         self,
         repository: ApplicationRepositoryPort,
         tracking_service: Any,
-        ingestion_orchestrator: Any,
+        job_query: Any,
         skill_extractor: SkillExtractor,
     ) -> None:
         self._repo = repository
         self._tracking = tracking_service
-        self._ingestion = ingestion_orchestrator
+        self._job_query = job_query
         self._extractor = skill_extractor
 
     def list_all_cover_letters(
@@ -41,7 +41,7 @@ class ApplicationService:
         return self._repo.count_all_cover_letters()
 
     async def create_from_ingested(self, job_id: str) -> ApplicationAggregate:
-        job = self._ingestion.get_job_by_id(job_id)
+        job = self._job_query.get_job_by_id(job_id)
         if job is None:
             raise NotFoundError(f"Job {job_id} not found")
         tracked = self._tracking.track_from_ingestion(job_id)

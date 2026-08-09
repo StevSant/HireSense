@@ -162,6 +162,32 @@ async def test_unparseable_llm_response_raises() -> None:
 
 
 @pytest.mark.asyncio
+async def test_malformed_json_inside_a_fence_raises_rather_than_leaking_a_decode_error() -> None:
+    # The fenced block parses as neither JSON nor a bracketed span, so the shared
+    # extractor returns None and the service raises its own domain error.
+    repo = FakeRepo()
+    service = CompanyResearchService(
+        repository=repo, llm=FakeLLM('```json\n{"funding_stage": "seed",,}\n```')
+    )
+
+    with pytest.raises(CompanyResearchError):
+        await service.research("Anthropic")
+
+    assert len(repo.created) == 0
+
+
+@pytest.mark.asyncio
+async def test_json_array_response_is_rejected_as_not_an_object() -> None:
+    repo = FakeRepo()
+    service = CompanyResearchService(repository=repo, llm=FakeLLM('["seed", "series a"]'))
+
+    with pytest.raises(CompanyResearchError):
+        await service.research("Anthropic")
+
+    assert len(repo.created) == 0
+
+
+@pytest.mark.asyncio
 async def test_persistence_failure_raises_rather_than_returning_unsaved_research() -> None:
     """The DB write sits inside the same guarded block as the LLM call — a failed
     save must not come back looking like a successful lookup either."""

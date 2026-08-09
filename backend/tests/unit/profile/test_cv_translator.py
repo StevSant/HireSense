@@ -1,5 +1,7 @@
 import pytest
 
+from hiresense.adapters.llm import NullLLM
+from hiresense.ports import LLMNotConfiguredError
 from hiresense.profile.domain.cv_translator import CVTranslator
 
 
@@ -35,6 +37,10 @@ async def test_translate_prompt_preserves_commands_and_names_languages() -> None
 
 @pytest.mark.asyncio
 async def test_translate_raises_when_llm_unconfigured() -> None:
-    translator = CVTranslator(llm=None)
-    with pytest.raises(RuntimeError):
+    # The composition layer injects a NullLLM when no provider is configured,
+    # so the not-configured failure comes from the LLM, not a guard here. Still
+    # a RuntimeError, so the route keeps mapping it to a 503.
+    translator = CVTranslator(llm=NullLLM(feature="cv_translator"))
+    with pytest.raises(LLMNotConfiguredError):
         await translator.translate("\\section*{SUMMARY}", "en", "es")
+    assert issubclass(LLMNotConfiguredError, RuntimeError)

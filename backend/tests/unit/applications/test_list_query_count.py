@@ -108,7 +108,7 @@ def _service(repo: ApplicationRepository, apps: list[TrackedApplication]) -> App
     return ApplicationService(
         repository=repo,
         tracking_service=_FakeTracking(apps),
-        ingestion_orchestrator=None,
+        job_query=None,
         skill_extractor=None,
     )
 

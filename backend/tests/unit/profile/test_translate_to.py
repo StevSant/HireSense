@@ -4,6 +4,7 @@ from hiresense.ports import LatexCompileError
 from hiresense.profile.domain.latex_parser import LaTeXParser
 from hiresense.profile.domain.services import ProfileService
 from hiresense.profile.domain.skill_extractor import SkillExtractor
+from hiresense.profile.infrastructure import InMemoryProfileRepository
 
 SAMPLE_TEX = r"""
 \documentclass{article}
@@ -41,6 +42,7 @@ def _service(translator: FakeTranslator, compiler: FakeCompiler) -> ProfileServi
         skill_extractor=SkillExtractor(),
         translator=translator,
         latex_compiler=compiler,
+        repository=InMemoryProfileRepository(),
     )
 
 

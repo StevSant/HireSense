@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
+from hiresense.ingestion.api.dependencies import get_job_query
 from hiresense.kernel import register_domain_exception_handlers
 from hiresense.kernel.exceptions import ConflictError, NotFoundError
 from hiresense.tracking.api.dependencies import get_tracking_service
@@ -146,7 +146,7 @@ def make_app(fake: FakeTrackingService) -> FastAPI:
     app = FastAPI()
     register_domain_exception_handlers(app)
     app.dependency_overrides[get_tracking_service] = lambda: fake
-    app.dependency_overrides[get_ingestion_orchestrator] = lambda: FakeOrchestrator()
+    app.dependency_overrides[get_job_query] = lambda: FakeOrchestrator()
     app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
     return app

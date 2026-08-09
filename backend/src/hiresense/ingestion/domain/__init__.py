@@ -18,6 +18,7 @@ from hiresense.ingestion.domain.job_filter import (
 )
 from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.job_quality import JobQuality
+from hiresense.ingestion.domain.job_query_service import JobQueryService
 from hiresense.ingestion.domain.job_quality_classifier import JobQualityClassifier
 from hiresense.ingestion.domain.job_quality_verdict import JobQualityVerdict
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
@@ -64,6 +65,7 @@ __all__ = [
     "JobQuality",
     "JobQualityClassifier",
     "JobQualityVerdict",
+    "JobQueryService",
     "JobListCriteria",
     "JobQueryParams",
     "PaginatedResult",

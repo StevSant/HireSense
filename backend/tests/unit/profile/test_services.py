@@ -1,5 +1,6 @@
 import pytest
 from hiresense.profile.domain.services import ProfileService
+from hiresense.profile.infrastructure import InMemoryProfileRepository
 from hiresense.profile.domain.latex_parser import LaTeXParser
 from hiresense.profile.domain.skill_extractor import SkillExtractor
 
@@ -38,7 +39,9 @@ BSc Computer Science
 async def test_profile_service_parse_and_create() -> None:
     parser = LaTeXParser()
     extractor = SkillExtractor()
-    service = ProfileService(parser=parser, skill_extractor=extractor)
+    service = ProfileService(
+        parser=parser, skill_extractor=extractor, repository=InMemoryProfileRepository()
+    )
     profile = await service.parse_and_create(SAMPLE_TEX, language="en")
     assert profile.name == "JOHN DOE"
     assert profile.email == "john@example.com"
@@ -51,7 +54,9 @@ async def test_profile_service_parse_and_create() -> None:
 async def test_profile_service_get_profile() -> None:
     parser = LaTeXParser()
     extractor = SkillExtractor()
-    service = ProfileService(parser=parser, skill_extractor=extractor)
+    service = ProfileService(
+        parser=parser, skill_extractor=extractor, repository=InMemoryProfileRepository()
+    )
     created = await service.parse_and_create(SAMPLE_TEX)
     retrieved = await service.get_profile(created.id)
     assert retrieved is not None
@@ -63,6 +68,8 @@ async def test_profile_service_get_profile() -> None:
 async def test_profile_service_get_nonexistent() -> None:
     parser = LaTeXParser()
     extractor = SkillExtractor()
-    service = ProfileService(parser=parser, skill_extractor=extractor)
+    service = ProfileService(
+        parser=parser, skill_extractor=extractor, repository=InMemoryProfileRepository()
+    )
     result = await service.get_profile("nonexistent-id")
     assert result is None

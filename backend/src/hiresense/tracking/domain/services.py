@@ -27,11 +27,9 @@ _EDITABLE_DETAIL_FIELDS = {
 
 
 class TrackingService:
-    def __init__(
-        self, repository: TrackingRepositoryPort, ingestion_orchestrator: Any, event_bus: Any
-    ) -> None:
+    def __init__(self, repository: TrackingRepositoryPort, job_query: Any, event_bus: Any) -> None:
         self._repo = repository
-        self._ingestion = ingestion_orchestrator
+        self._job_query = job_query
         self._event_bus = event_bus
 
     def track_job(
@@ -61,7 +59,7 @@ class TrackingService:
         return self._repo.create(app)
 
     def track_from_ingestion(self, job_id: str) -> TrackedApplication:
-        job = self._ingestion.get_job_by_id(job_id)
+        job = self._job_query.get_job_by_id(job_id)
         if job is None:
             raise NotFoundError(f"Job {job_id} not found")
         job_uuid = uuid_mod.UUID(job_id)

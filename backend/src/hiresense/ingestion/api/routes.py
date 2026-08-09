@@ -13,6 +13,7 @@ from hiresense.ingestion.api.dependencies import (
     get_backfill_service,
     get_deep_analysis,
     get_ingestion_orchestrator,
+    get_job_query,
     get_portal_scanner,
     get_portals_config,
     get_pre_ranker,
@@ -28,6 +29,7 @@ from hiresense.ingestion.domain.job_filter import (
     filter_and_paginate,
 )
 from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
+from hiresense.ingestion.domain.job_query_service import JobQueryService
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.job_sort import sort_jobs
 from hiresense.ingestion.domain.job_scorer import (
@@ -99,7 +101,7 @@ async def _gather_profile(
 async def _persist_score_updates_by_bucket(
     updates: list[ScoreUpdate],
     bucket_by_job_id: dict[str, Literal["boards", "portals"]],
-    orchestrator: IngestionOrchestrator,
+    job_query: JobQueryService,
     scanner: PortalScanner,
 ) -> None:
     """Persist score changes through the repository that owns each job."""
@@ -111,7 +113,7 @@ async def _persist_score_updates_by_bucket(
 
     persist_tasks = []
     if board_updates := updates_by_bucket["boards"]:
-        persist_tasks.append(asyncio.to_thread(orchestrator.persist_scores_batch, board_updates))
+        persist_tasks.append(asyncio.to_thread(job_query.persist_scores_batch, board_updates))
     if portal_updates := updates_by_bucket["portals"]:
         persist_tasks.append(asyncio.to_thread(scanner.persist_scores_batch, portal_updates))
     if persist_tasks:
@@ -281,7 +283,7 @@ async def revalidate_jobs(
 async def list_jobs(
     request: Request,
     tab: Annotated[Literal["boards", "portals", "all"], Query()],
-    orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
+    job_query: Annotated[JobQueryService, Depends(get_job_query)],
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
     portfolio_enrichment: Annotated[
@@ -343,11 +345,11 @@ async def list_jobs(
     # path where an aggregator listing and the company's ATS listing can meet.
     if tab == "all":
         board_jobs, portal_jobs = await asyncio.gather(
-            asyncio.to_thread(orchestrator.list_jobs, criteria),
+            asyncio.to_thread(job_query.list_jobs, criteria),
             asyncio.to_thread(scanner.list_jobs, criteria),
         )
     elif tab == "boards":
-        board_jobs = await asyncio.to_thread(orchestrator.list_jobs, criteria)
+        board_jobs = await asyncio.to_thread(job_query.list_jobs, criteria)
         portal_jobs = []
     else:
         board_jobs = []
@@ -426,7 +428,7 @@ async def list_jobs(
         score_updates = changed_score_updates(all_jobs, original_scores)
         if score_updates:
             await _persist_score_updates_by_bucket(
-                score_updates, bucket_by_job_id, orchestrator, scanner
+                score_updates, bucket_by_job_id, job_query, scanner
             )
 
     # GLOBAL apply of already-cached Tier-1 LLM scores BEFORE pagination. The
@@ -556,7 +558,7 @@ async def list_jobs(
         await _persist_score_updates_by_bucket(
             [ScoreUpdate(j.id, j.match_score, j.semantic_score) for j in result.jobs],
             bucket_by_job_id,
-            orchestrator,
+            job_query,
             scanner,
         )
         # Page-level re-sort so the order reflects the post-semantic match_score
@@ -612,7 +614,7 @@ async def list_jobs(
 )
 async def analyze_job(
     job_id: str,
-    orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
+    job_query: Annotated[JobQueryService, Depends(get_job_query)],
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
     portfolio_enrichment: Annotated[
@@ -625,7 +627,7 @@ async def analyze_job(
     # Offload the sync SQLAlchemy lookups to a worker thread so the query
     # duration doesn't block the event loop (matches the list endpoint) (#157).
     job = await asyncio.to_thread(
-        lambda: orchestrator.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
+        lambda: job_query.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
     )
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -640,7 +642,7 @@ async def analyze_job(
 @router.get("/jobs/{job_id}", response_model=NormalizedJob)
 async def get_job(
     job_id: str,
-    orchestrator: Annotated[IngestionOrchestrator, Depends(get_ingestion_orchestrator)],
+    job_query: Annotated[JobQueryService, Depends(get_job_query)],
     scanner: Annotated[PortalScanner, Depends(get_portal_scanner)],
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
     portfolio_enrichment: Annotated[
@@ -651,7 +653,7 @@ async def get_job(
     # Offload the sync SQLAlchemy lookups to a worker thread so the query
     # duration doesn't block the event loop (matches the list endpoint) (#157).
     job = await asyncio.to_thread(
-        lambda: orchestrator.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
+        lambda: job_query.get_job_by_id(job_id) or scanner.get_job_by_id(job_id)
     )
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")

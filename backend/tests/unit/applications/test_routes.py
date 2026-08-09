@@ -21,7 +21,7 @@ from hiresense.applications.domain.aggregate import (
     MatchView,
 )
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
+from hiresense.ingestion.api.dependencies import get_job_query
 from hiresense.kernel import SlidingWindowRateLimiter, register_domain_exception_handlers
 from hiresense.kernel.exceptions import ConflictError, NotFoundError, ValidationError
 from hiresense.tracking.domain import InvalidStatusTransitionError
@@ -220,7 +220,7 @@ def client(
     app.dependency_overrides[require_auth] = lambda: True
     app.dependency_overrides[get_application_service] = lambda: application_service
     app.dependency_overrides[get_artifact_service] = lambda: artifact_service
-    app.dependency_overrides[get_ingestion_orchestrator] = lambda: FakeOrchestrator()
+    app.dependency_overrides[get_job_query] = lambda: FakeOrchestrator()
     return TestClient(app)
 
 
@@ -500,7 +500,7 @@ def _client_with_apply(
     app.dependency_overrides[require_auth] = lambda: True
     app.dependency_overrides[get_application_service] = lambda: application_service
     app.dependency_overrides[get_apply_service] = lambda: apply_service
-    app.dependency_overrides[get_ingestion_orchestrator] = lambda: FakeOrchestrator()
+    app.dependency_overrides[get_job_query] = lambda: FakeOrchestrator()
     return TestClient(app)
 
 
@@ -579,7 +579,7 @@ def test_artifact_routes_are_rate_limited_when_hammered(
     app.dependency_overrides[require_auth] = lambda: True
     app.dependency_overrides[get_application_service] = lambda: application_service
     app.dependency_overrides[get_artifact_service] = lambda: artifact_service
-    app.dependency_overrides[get_ingestion_orchestrator] = lambda: FakeOrchestrator()
+    app.dependency_overrides[get_job_query] = lambda: FakeOrchestrator()
     app.state.rate_limiter = SlidingWindowRateLimiter(max_requests=1, window_seconds=60.0)
     limited_client = TestClient(app)
 

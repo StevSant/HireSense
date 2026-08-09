@@ -46,7 +46,7 @@ class PreferenceService:
 
     def attach_job_lookup(self, job_lookup: Any) -> None:
         """Late-bind the job-title lookup used by the LLM explanation summary.
-        Two-phase wiring: the ingestion orchestrator is built after the
+        Two-phase wiring: the ingestion job-query service is built after the
         preference service, so it is attached once available."""
         self._job_lookup = job_lookup
 

@@ -40,6 +40,24 @@ async def test_returns_empty_list_on_invalid_json() -> None:
 
 
 @pytest.mark.asyncio
+async def test_recovers_array_embedded_in_prose() -> None:
+    # The shared kernel extractor also recovers an unfenced array, which the
+    # old fence-only strip could not.
+    llm = FakeLLM(response='Sure! ["python", "redis"] are the skills.')
+    extractor = SkillExtractor(llm=llm)
+    skills = await extractor.extract("Some job desc.")
+    assert skills == ["python", "redis"]
+
+
+@pytest.mark.asyncio
+async def test_returns_empty_list_when_json_is_not_an_array() -> None:
+    llm = FakeLLM(response='{"skills": ["python"]}')
+    extractor = SkillExtractor(llm=llm)
+    skills = await extractor.extract("Some job desc.")
+    assert skills == []
+
+
+@pytest.mark.asyncio
 async def test_returns_empty_list_when_llm_is_none() -> None:
     extractor = SkillExtractor(llm=None)
     skills = await extractor.extract("Some job desc.")

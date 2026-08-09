@@ -1,4 +1,4 @@
-"""Tests for persist_scores_batch on IngestionOrchestrator and PortalScanner (Work Unit G).
+"""Tests for persist_scores_batch on JobQueryService and PortalScanner (Work Unit G).
 
 Written BEFORE implementation (TDD RED phase).
 Verifies REQ-08: domain services expose a batched persist method that
@@ -16,7 +16,7 @@ import pytest
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.portal_config import PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
-from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.ingestion.domain.job_query_service import JobQueryService
 from hiresense.ingestion.infrastructure import InMemoryJobsRepository
 from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
 
@@ -48,50 +48,40 @@ def _make_portal_scanner(repo: InMemoryJobsRepository) -> PortalScanner:
     )
 
 
-def _make_orchestrator(repo: InMemoryJobsRepository) -> IngestionOrchestrator:
-    return IngestionOrchestrator(
-        sources=[],
-        normalizers={},
-        event_bus=FakeEventBus(),
-        repository=repo,
-    )
+def _make_job_query(repo: InMemoryJobsRepository) -> JobQueryService:
+    return JobQueryService(repository=repo)
 
 
 # ---------------------------------------------------------------------------
-# IngestionOrchestrator tests
+# JobQueryService tests
 # ---------------------------------------------------------------------------
 
 
-class TestOrchestratorPersistScoresBatch:
+class TestJobQueryPersistScoresBatch:
     def test_persist_scores_batch_method_exists(self) -> None:
-        """IngestionOrchestrator must have a persist_scores_batch method."""
+        """JobQueryService must have a persist_scores_batch method."""
         repo = InMemoryJobsRepository()
-        orchestrator = _make_orchestrator(repo)
-        assert hasattr(orchestrator, "persist_scores_batch"), (
-            "IngestionOrchestrator must expose persist_scores_batch"
+        job_query = _make_job_query(repo)
+        assert hasattr(job_query, "persist_scores_batch"), (
+            "JobQueryService must expose persist_scores_batch"
         )
 
-    def test_orchestrator_persist_scores_batch_delegates_to_repo(self) -> None:
+    def test_job_query_persist_scores_batch_delegates_to_repo(self) -> None:
         """persist_scores_batch must call repo.bulk_update_scores exactly once."""
         mock_repo = MagicMock()
         mock_repo.bulk_update_scores = MagicMock()
 
-        orchestrator = IngestionOrchestrator(
-            sources=[],
-            normalizers={},
-            event_bus=FakeEventBus(),
-            repository=mock_repo,
-        )
+        job_query = JobQueryService(repository=mock_repo)
 
         updates = [
             ScoreUpdate(job_id="a", match_score=0.8, semantic_score=0.9),
             ScoreUpdate(job_id="b", match_score=0.3, semantic_score=0.4),
         ]
-        orchestrator.persist_scores_batch(updates)
+        job_query.persist_scores_batch(updates)
 
         mock_repo.bulk_update_scores.assert_called_once_with(updates)
 
-    def test_orchestrator_persist_scores_batch_with_real_repo(self) -> None:
+    def test_job_query_persist_scores_batch_with_real_repo(self) -> None:
         """End-to-end: persist_scores_batch reaches the in-memory store."""
         repo = InMemoryJobsRepository()
         job_a = _make_job("A")
@@ -99,12 +89,12 @@ class TestOrchestratorPersistScoresBatch:
         repo.upsert(job_a)
         repo.upsert(job_b)
 
-        orchestrator = _make_orchestrator(repo)
+        job_query = _make_job_query(repo)
         updates = [
             ScoreUpdate(job_id=job_a.id, match_score=0.7, semantic_score=0.8),
             ScoreUpdate(job_id=job_b.id, match_score=0.2, semantic_score=0.3),
         ]
-        orchestrator.persist_scores_batch(updates)
+        job_query.persist_scores_batch(updates)
 
         stored_a = repo.get_by_id(job_a.id)
         stored_b = repo.get_by_id(job_b.id)
@@ -113,11 +103,11 @@ class TestOrchestratorPersistScoresBatch:
         assert stored_a.match_score == pytest.approx(0.7)
         assert stored_b.semantic_score == pytest.approx(0.3)
 
-    def test_orchestrator_persist_scores_batch_empty_noop(self) -> None:
+    def test_job_query_persist_scores_batch_empty_noop(self) -> None:
         """An empty update list must be accepted without error."""
         repo = InMemoryJobsRepository()
-        orchestrator = _make_orchestrator(repo)
-        orchestrator.persist_scores_batch([])  # must not raise
+        job_query = _make_job_query(repo)
+        job_query.persist_scores_batch([])  # must not raise
 
 
 # ---------------------------------------------------------------------------

@@ -3,6 +3,7 @@ from __future__ import annotations
 from hiresense.profile.domain.contact_info import ContactInfo
 from hiresense.profile.domain.models import CandidateProfile, CVSection
 from hiresense.profile.domain.services import ProfileService
+from hiresense.profile.infrastructure import InMemoryProfileRepository
 
 
 class FakeLatexParser:
@@ -14,14 +15,14 @@ class FakeSkillExtractor:
 
 
 def _make_service_with_in_memory_profiles(*profiles: CandidateProfile) -> ProfileService:
-    service = ProfileService(
+    repository = InMemoryProfileRepository()
+    for p in profiles:
+        repository.create(p)
+    return ProfileService(
         parser=FakeLatexParser(),
         skill_extractor=FakeSkillExtractor(),
-        repository=None,
+        repository=repository,
     )
-    for p in profiles:
-        service._profiles[p.id] = p
-    return service
 
 
 def _make_profile(

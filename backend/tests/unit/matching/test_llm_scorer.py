@@ -88,6 +88,28 @@ async def test_llm_scorer_extracts_json_from_markdown() -> None:
     assert result.rationale == "Decent"
 
 
+@pytest.mark.asyncio
+async def test_llm_scorer_extracts_object_embedded_in_prose() -> None:
+    # The shared kernel extractor also recovers an unfenced object, which the
+    # old per-scorer regex (fenced-only) could not.
+    llm = FakeLLM('Sure — {"score": 0.4, "rationale": "Weak"} is my call.')
+    scorer = ConcreteLLMScorer(llm=llm, weight=10)
+    result = await scorer.score({"title": "SWE"})
+    assert result.score == 0.4
+    assert result.rationale == "Weak"
+
+
+@pytest.mark.asyncio
+async def test_llm_scorer_falls_back_when_json_is_not_an_object() -> None:
+    # A bare scalar/array parses as JSON but has no "score"; it must degrade to
+    # the neutral fallback rather than blowing up on a membership test.
+    llm = FakeLLM("0.85")
+    scorer = ConcreteLLMScorer(llm=llm, weight=10)
+    result = await scorer.score({"title": "SWE"})
+    assert result.score == 0.5
+    assert "Failed to parse" in result.rationale
+
+
 def test_truncate_defaults_to_4000_chars() -> None:
     scorer = ConcreteLLMScorer(llm=None, weight=10)
     text = "x" * 50_000

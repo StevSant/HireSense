@@ -4,6 +4,7 @@ from hiresense.adapters.latex import LatexCompiler
 from hiresense.profile.domain.latex_parser import LaTeXParser, ParsedCV, ParsedSection
 from hiresense.profile.domain.services import ProfileService
 from hiresense.profile.domain.skill_extractor import SkillExtractor
+from hiresense.profile.infrastructure import InMemoryProfileRepository
 
 
 class FakePDFParser:
@@ -34,6 +35,7 @@ async def test_pdf_upload_wraps_plaintext_in_compilable_latex(tmp_path) -> None:
         pdf_parser=FakePDFParser(parsed),
         latex_compiler=LatexCompiler(),
         cv_directory=str(tmp_path),
+        repository=InMemoryProfileRepository(),
     )
 
     profile = await service.parse_file_and_create(b"%PDF-1.4 fake", "cv.pdf", "en")
@@ -52,6 +54,7 @@ async def test_pdf_upload_without_compiler_falls_back_to_raw_text(tmp_path) -> N
         skill_extractor=SkillExtractor(),
         pdf_parser=FakePDFParser(parsed),
         cv_directory=str(tmp_path),
+        repository=InMemoryProfileRepository(),
     )
 
     profile = await service.parse_file_and_create(b"%PDF-1.4 fake", "cv.pdf", "en")
@@ -67,6 +70,7 @@ async def test_tex_upload_is_stored_verbatim(tmp_path) -> None:
         skill_extractor=SkillExtractor(),
         latex_compiler=LatexCompiler(),
         cv_directory=str(tmp_path),
+        repository=InMemoryProfileRepository(),
     )
 
     profile = await service.parse_file_and_create(source.encode(), "cv.tex", "en")

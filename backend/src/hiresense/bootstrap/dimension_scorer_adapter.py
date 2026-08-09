@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 class MatchingDimensionScorerAdapter:
     """Bootstrap adapter implementing the preference ``DimensionScorerPort``.
 
-    Given a ``job_id``, it fetches the job (via the ingestion orchestrator, the
-    same get-job seam ``attach_job_lookup`` uses) and the current candidate
+    Given a ``job_id``, it fetches the job (via the ingestion job-query service,
+    the same get-job seam ``attach_job_lookup`` uses) and the current candidate
     profile (via the profile service), then runs the *same* matching dimension
     scorers the orchestrator uses for ``job x profile``, collecting
     ``{result.dimension: result.score}``.

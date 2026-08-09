@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
+from hiresense.ingestion.domain.job_query_service import JobQueryService
 from hiresense.ingestion.domain.portal_config import PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
 from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
@@ -15,6 +16,7 @@ class IngestionProvider:
     def __init__(
         self,
         orchestrator: IngestionOrchestrator,
+        job_query: JobQueryService,
         portal_scanner: PortalScanner,
         portals_config: PortalsConfig,
         semantic_scoring: SemanticScoringService | None = None,
@@ -25,6 +27,7 @@ class IngestionProvider:
         backfill_service: EmbeddingBackfillService | None = None,
     ) -> None:
         self._orchestrator = orchestrator
+        self._job_query = job_query
         self._portal_scanner = portal_scanner
         self._portals_config = portals_config
         self._semantic_scoring = semantic_scoring
@@ -36,6 +39,9 @@ class IngestionProvider:
 
     def get_orchestrator(self) -> IngestionOrchestrator:
         return self._orchestrator
+
+    def get_job_query(self) -> JobQueryService:
+        return self._job_query
 
     def get_portal_scanner(self) -> PortalScanner:
         return self._portal_scanner

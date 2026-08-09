@@ -1,15 +1,16 @@
 // Card, chart and list styles shared by the analytics tabs. Each tab points
 // its styleUrl here because Angular scopes component styles.
 
-/* --- Page header --- */
-
 /* --- Grid + cards --- */
 
-/* Two equal columns (Pay | Focus, Market | Skill gap); Performance spans both.
+/* Each routed tab's host element is the grid: its cards are direct children, so
+   the grid lives on :host rather than on a wrapper div. Two equal columns pair
+   the cards a tab owns (Pay | Market band, Focus | Skill gap); a card marked
+   .analytics-card-wide spans both.
 
-   align-items: start so a short card (Pay) never stretches to match a tall one (Focus). */
+   align-items: start so a short card never stretches to match a tall one. */
 
-.analytics-grid {
+:host {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.1rem;
@@ -17,7 +18,7 @@
 }
 
 @media (max-width: 760px) {
-  .analytics-grid {
+  :host {
     grid-template-columns: 1fr;
   }
 }
@@ -262,5 +263,3 @@
   font-size: 0.78rem;
   flex: none;
 }
-
-/* Market context demoted into a collapsible footer. */

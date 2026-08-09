@@ -42,7 +42,10 @@ describe('AnalyticsPortfolioTabComponent', () => {
   };
 
   it('renders a row per visit when configured', () => {
-    const fixture = mount(makeAnalyticsService(), makePortfolioService(() => of(VISITS)));
+    const fixture = mount(
+      makeAnalyticsService(),
+      makePortfolioService(() => of(VISITS)),
+    );
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelectorAll('.engagement-row').length).toBe(1);
     expect(el.textContent).toContain('4 views');

@@ -35,8 +35,7 @@
     <h3 class="sub">
       Salary range
       @if (m.salary_distribution.currency) {
-        ({{ m.salary_distribution.currency }}, {{ m.salary_distribution.disclosed_pct }}%
-        disclosed)
+        ({{ m.salary_distribution.currency }}, {{ m.salary_distribution.disclosed_pct }}% disclosed)
       }
     </h3>
     @if (m.salary_distribution.median_annual !== null) {

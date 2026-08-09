@@ -33,13 +33,30 @@
     <span aria-hidden="true">▾</span>
   </button>
 
-  <ul class="combobox-listbox" role="listbox" [id]="id + '-listbox'" [hidden]="!open()">
+  <!--
+    Pressing the mouse inside the list must not move DOM focus off the input:
+    the option would take focus, then close() hides the listbox, and a focused
+    node that stops being rendered drops focus to <body>. Suppressing the
+    default mousedown keeps the input focused through a mouse pick, matching
+    the keyboard path.
+  -->
+  <ul
+    class="combobox-listbox"
+    role="listbox"
+    [id]="id + '-listbox'"
+    [hidden]="!open()"
+    (mousedown)="$event.preventDefault()"
+  >
     @for (option of filtered(); track option.value; let i = $index) {
       <!--
         In the ARIA combobox pattern the input keeps DOM focus and points at the
         active row via aria-activedescendant, so options are deliberately not
         keyboard targets — Arrow/Enter/Escape are handled on the input above.
         The click handler is the mouse affordance for that same behaviour.
+
+        aria-selected tracks the *active* row (the one aria-activedescendant
+        points at), which is what the APG pattern announces while arrowing; the
+        .selected class is the separate, visual "this is your current choice".
       -->
       <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events -->
       <li
@@ -49,7 +66,7 @@
         [id]="optionId(i)"
         [class.active]="i === activeIndex()"
         [class.selected]="option.value === value()"
-        [attr.aria-selected]="option.value === value()"
+        [attr.aria-selected]="i === activeIndex()"
         (mouseenter)="activeIndex.set(i)"
         (click)="select(option)"
       >

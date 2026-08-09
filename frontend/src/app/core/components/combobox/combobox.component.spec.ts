@@ -116,7 +116,7 @@ describe('ComboboxComponent', () => {
     expect(listbox(fixture).hidden).toBe(true);
   });
 
-  it('emits on click and marks the chosen option aria-selected', () => {
+  it('emits on click and opens with the chosen option active', () => {
     const fixture = mount({ value: 'c' });
     let emitted: string | null = null;
     fixture.componentInstance.valueChange.subscribe((v) => (emitted = v));
@@ -129,6 +129,44 @@ describe('ComboboxComponent', () => {
     fixture.detectChanges();
 
     expect(emitted).toBe('a');
+  });
+
+  it('moves aria-selected with the active option, not the committed value', () => {
+    const fixture = mount({ value: 'a' });
+
+    input(fixture).dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+    // Opens on the committed value, so active and selected coincide.
+    expect(optionEls(fixture)[0].getAttribute('aria-selected')).toBe('true');
+
+    key(fixture, 'ArrowDown');
+
+    // aria-selected follows aria-activedescendant; the old row must clear it,
+    // otherwise a screen reader never announces the row being arrowed onto.
+    const els = optionEls(fixture);
+    expect(input(fixture).getAttribute('aria-activedescendant')).toBe(els[1].id);
+    expect(els[1].getAttribute('aria-selected')).toBe('true');
+    expect(els[0].getAttribute('aria-selected')).toBe('false');
+  });
+
+  it('keeps focus on the input when an option is picked with the mouse', () => {
+    const fixture = mount();
+    // Attached to the document so focus assertions are meaningful.
+    document.body.appendChild(fixture.nativeElement);
+
+    input(fixture).focus();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(input(fixture));
+
+    const mousedown = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+    optionEls(fixture)[1].dispatchEvent(mousedown);
+    fixture.detectChanges();
+
+    // preventDefault on mousedown is what stops the option from taking focus.
+    expect(mousedown.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(input(fixture));
+
+    fixture.nativeElement.remove();
   });
 
   it('closes on Escape without emitting, and restores the selected label', () => {

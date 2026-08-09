@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import String, and_, cast, func, select
 
@@ -25,6 +26,29 @@ def _calls_order_by(sort: str | None):
     if column is None or direction not in ("asc", "desc"):
         return LLMUsageLog.created_at.desc()
     return column.asc() if direction == "asc" else column.desc()
+
+
+def _calls_filters(
+    *,
+    provider: str | None,
+    model: str | None,
+    feature_key: str | None,
+    since: datetime | None,
+    until: datetime | None,
+) -> list[Any]:
+    """Shared WHERE clauses so the listing and its count can never drift apart."""
+    conditions: list[Any] = []
+    if provider:
+        conditions.append(LLMUsageLog.provider == provider)
+    if model:
+        conditions.append(LLMUsageLog.model == model)
+    if feature_key:
+        conditions.append(LLMUsageLog.feature_key == feature_key)
+    if since is not None:
+        conditions.append(LLMUsageLog.created_at >= since)
+    if until is not None:
+        conditions.append(LLMUsageLog.created_at < until)
+    return conditions
 
 
 def _to_domain(row: LLMUsageLog) -> UsageRecord:
@@ -176,19 +200,38 @@ class LLMUsageLogRepository(SqlRepository):
         until: datetime | None = None,
         sort: str | None = None,
     ) -> list[UsageRecord]:
-        conditions = []
-        if provider:
-            conditions.append(LLMUsageLog.provider == provider)
-        if model:
-            conditions.append(LLMUsageLog.model == model)
-        if feature_key:
-            conditions.append(LLMUsageLog.feature_key == feature_key)
-        if since is not None:
-            conditions.append(LLMUsageLog.created_at >= since)
-        if until is not None:
-            conditions.append(LLMUsageLog.created_at < until)
+        conditions = _calls_filters(
+            provider=provider,
+            model=model,
+            feature_key=feature_key,
+            since=since,
+            until=until,
+        )
         stmt = select(LLMUsageLog)
         if conditions:
             stmt = stmt.where(and_(*conditions))
         stmt = stmt.order_by(_calls_order_by(sort)).limit(limit).offset(offset)
         return self._select_all(stmt, _to_domain)
+
+    def count_recent(
+        self,
+        *,
+        provider: str | None = None,
+        model: str | None = None,
+        feature_key: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
+    ) -> int:
+        """Rows `list_recent` would match ignoring limit/offset — the paging total."""
+        conditions = _calls_filters(
+            provider=provider,
+            model=model,
+            feature_key=feature_key,
+            since=since,
+            until=until,
+        )
+        stmt = select(func.count()).select_from(LLMUsageLog)
+        if conditions:
+            stmt = stmt.where(and_(*conditions))
+        with self._session_factory() as session:
+            return int(session.scalar(stmt) or 0)

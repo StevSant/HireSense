@@ -77,9 +77,16 @@ def recent_calls(
         days=days,
         sort=sort,
     )
+    total = aggregator.count_recent_calls(
+        provider=provider,
+        model=model,
+        feature_key=feature_key,
+        days=days,
+    )
     return RecentCallsResponse(
         limit=limit,
         offset=offset,
+        total=total,
         calls=[
             UsageCallView(
                 id=str(r.id),

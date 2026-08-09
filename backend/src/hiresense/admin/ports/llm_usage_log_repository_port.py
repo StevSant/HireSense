@@ -43,3 +43,13 @@ class LLMUsageLogRepositoryPort(Protocol):
         since: datetime | None = None,
         until: datetime | None = None,
     ) -> list[UsageRecord]: ...
+
+    def count_recent(
+        self,
+        *,
+        provider: str | None = None,
+        model: str | None = None,
+        feature_key: str | None = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
+    ) -> int: ...

@@ -193,7 +193,7 @@
         [ngModel]="filterFeature()"
         (ngModelChange)="filterFeature.set($event)"
       />
-      <button class="btn" (click)="loadRecent()" type="button">Apply</button>
+      <button class="btn" (click)="reloadRecent()" type="button">Apply</button>
     </div>
 
     @if (recent(); as r) {
@@ -204,7 +204,7 @@
           <table class="calls-table">
             <thead>
               <tr>
-                <th appSortHeader [state]="callsSort" field="created" (sorted)="loadRecent()">
+                <th appSortHeader [state]="callsSort" field="created" (sorted)="reloadRecent()">
                   Time
                 </th>
                 <th>Feature</th>
@@ -215,7 +215,7 @@
                   appSortHeader
                   [state]="callsSort"
                   field="input_tokens"
-                  (sorted)="loadRecent()"
+                  (sorted)="reloadRecent()"
                 >
                   In
                 </th>
@@ -224,7 +224,7 @@
                   appSortHeader
                   [state]="callsSort"
                   field="output_tokens"
-                  (sorted)="loadRecent()"
+                  (sorted)="reloadRecent()"
                 >
                   Out
                 </th>
@@ -233,7 +233,7 @@
                   appSortHeader
                   [state]="callsSort"
                   field="cost"
-                  (sorted)="loadRecent()"
+                  (sorted)="reloadRecent()"
                 >
                   Cost
                 </th>
@@ -242,7 +242,7 @@
                   appSortHeader
                   [state]="callsSort"
                   field="latency"
-                  (sorted)="loadRecent()"
+                  (sorted)="reloadRecent()"
                 >
                   Latency
                 </th>
@@ -276,6 +276,17 @@
             </tbody>
           </table>
         </div>
+
+        <app-paginator
+          [page]="callsPage()"
+          [pageSize]="recentLimit()"
+          [total]="callsTotal()"
+          [totalPages]="callsTotalPages()"
+          [pageSizeOptions]="callsPageSizeOptions"
+          itemLabel="calls"
+          (pageChange)="onCallsPageChange($event)"
+          (pageSizeChange)="onCallsPageSizeChange($event)"
+        />
       }
     } @else {
       <div class="state">Loading…</div>

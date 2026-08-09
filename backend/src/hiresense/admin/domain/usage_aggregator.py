@@ -66,6 +66,23 @@ class UsageAggregator:
             sort=sort,
         )
 
+    def count_recent_calls(
+        self,
+        *,
+        provider: str | None = None,
+        model: str | None = None,
+        feature_key: str | None = None,
+        days: int | None = None,
+    ) -> int:
+        """Total rows behind `recent_calls` under the same filters."""
+        since = None if days is None else datetime.now(timezone.utc) - timedelta(days=days)
+        return self._repo.count_recent(
+            provider=provider,
+            model=model,
+            feature_key=feature_key,
+            since=since,
+        )
+
     def export_csv(
         self,
         *,

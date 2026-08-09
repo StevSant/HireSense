@@ -12,6 +12,10 @@ import { UsageBucket } from './models/usage-bucket.model';
 import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { createSortState } from '../../core/utils/sort-state';
 import { sortItems } from '../../core/utils/sort-items';
+import { PaginatorComponent } from '../../core/components/paginator';
+
+/** Mirrors the backend's `limit` bounds for /admin/usage/calls (max 500). */
+const CALLS_PAGE_SIZE_OPTIONS = [50, 100, 250, 500];
 
 type Dimension = 'provider' | 'model' | 'feature';
 type BreakdownSortField = 'key' | 'calls' | 'total_tokens' | 'cost_usd';
@@ -20,7 +24,7 @@ type CallsSortField = 'created' | 'cost' | 'latency' | 'input_tokens' | 'output_
 @Component({
   selector: 'app-admin-usage',
   standalone: true,
-  imports: [CommonModule, FormsModule, SortableHeaderDirective],
+  imports: [CommonModule, FormsModule, SortableHeaderDirective, PaginatorComponent],
   templateUrl: './admin-usage.component.html',
   styleUrl: './admin-usage.component.scss',
 })
@@ -74,8 +78,39 @@ export class AdminUsageComponent implements OnInit {
     }
   }
 
-  // Recent calls are server-paginated (limit/offset), so sorting re-queries.
+  // Recent calls are server-paginated (limit/offset), so sorting and paging
+  // both re-query rather than reordering a local slice.
   callsSort = createSortState<CallsSortField>('created', 'desc', []);
+
+  callsPage = signal(1);
+  callsTotal = computed(() => this.recent()?.total ?? 0);
+  callsTotalPages = computed(() => Math.max(1, Math.ceil(this.callsTotal() / this.recentLimit())));
+
+  // The backend caps a usage page at 500.
+  readonly callsPageSizeOptions = CALLS_PAGE_SIZE_OPTIONS;
+
+  onCallsPageChange(page: number): void {
+    this.callsPage.set(page);
+    this.loadRecent();
+  }
+
+  onCallsPageSizeChange(size: number): void {
+    this.recentLimit.set(size);
+    this.callsPage.set(1);
+    this.loadRecent();
+  }
+
+  /**
+   * Re-query from page 1.
+   *
+   * Anything that changes which rows match — the filter form, a sort header —
+   * must reset the offset, otherwise the user stays on page 5 of a result set
+   * that may now be one page long and sees an empty table.
+   */
+  reloadRecent(): void {
+    this.callsPage.set(1);
+    this.loadRecent();
+  }
 
   private readonly destroyRef = inject(DestroyRef);
 
@@ -141,7 +176,7 @@ export class AdminUsageComponent implements OnInit {
     this.api
       .recentCalls({
         limit: this.recentLimit(),
-        offset: 0,
+        offset: (this.callsPage() - 1) * this.recentLimit(),
         provider: this.filterProvider() || undefined,
         model: this.filterModel() || undefined,
         feature_key: this.filterFeature() || undefined,

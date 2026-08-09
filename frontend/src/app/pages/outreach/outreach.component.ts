@@ -108,10 +108,10 @@ export class OutreachComponent implements OnInit {
   loadApplications(): void {
     this.applicationsError.set('');
     this.applicationsService
-      .list()
+      .listAll()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (apps) => {
+        next: ({ items: apps }) => {
           this.applications.set(apps);
           const fromQuery = this.route.snapshot.queryParamMap.get('application_id');
           if (fromQuery && apps.some((a) => a.id === fromQuery)) {

@@ -13,7 +13,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { OpportunitiesService } from '../../core/services/opportunities.service';
 import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { createSortState } from '../../core/utils/sort-state';
-import { PaginationComponent } from '../ingestion/components/pagination/pagination.component';
+import { PaginatorComponent } from '../../core/components/paginator';
 import { FetchOpportunitiesResponse } from './models/fetch-opportunities-response.model';
 import { Opportunity } from './models/opportunity.model';
 
@@ -27,7 +27,7 @@ type OppSortField = 'match' | 'title' | 'country' | 'language' | 'cost' | 'when'
     FormsModule,
     DatePipe,
     PercentPipe,
-    PaginationComponent,
+    PaginatorComponent,
     SortableHeaderDirective,
   ],
   templateUrl: './opportunities.component.html',

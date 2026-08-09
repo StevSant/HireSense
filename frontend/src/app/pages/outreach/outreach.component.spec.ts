@@ -70,7 +70,7 @@ describe('OutreachComponent', () => {
       ...opts.outreach,
     };
     const applications = {
-      list: vi.fn(() => of([makeApp()])),
+      listAll: vi.fn(() => of({ items: [makeApp()], total: 1 })),
       ...opts.applications,
     };
     const network = {
@@ -103,16 +103,16 @@ describe('OutreachComponent', () => {
   });
 
   it('surfaces an error state when loading applications fails', () => {
-    const list = vi.fn(() => throwError(() => ({ error: { detail: 'nope' } })));
-    const { cmp } = mount({ applications: { list } });
+    const listAll = vi.fn(() => throwError(() => ({ error: { detail: 'nope' } })));
+    const { cmp } = mount({ applications: { listAll } });
 
     expect(cmp.applications().length).toBe(0);
     expect(cmp.applicationsError()).toBe('nope');
   });
 
   it('falls back to a generic applications-load message when the error has no detail', () => {
-    const list = vi.fn(() => throwError(() => ({})));
-    const { cmp } = mount({ applications: { list } });
+    const listAll = vi.fn(() => throwError(() => ({})));
+    const { cmp } = mount({ applications: { listAll } });
 
     expect(cmp.applicationsError()).toBe('Could not load your applications.');
   });
@@ -150,7 +150,7 @@ describe('OutreachComponent', () => {
       listEvents: () => of([]),
       dueFollowups: () => of([]),
     };
-    const applications = { list: () => of([makeApp()]) };
+    const applications = { listAll: () => of({ items: [makeApp()], total: 1 }) };
     const network = { match: () => of({ company_normalized: 'acme corp', contacts: [] }) };
 
     TestBed.configureTestingModule({
@@ -187,7 +187,7 @@ describe('OutreachComponent', () => {
     const app2 = makeApp({ id: 'app-2', company: 'Globex' });
     const { cmp } = mount({
       appId: 'app-1',
-      applications: { list: vi.fn(() => of([makeApp(), app2])) },
+      applications: { listAll: vi.fn(() => of({ items: [makeApp(), app2], total: 2 })) },
       outreach: { generate: vi.fn(() => of({ message: 'Generated draft' })) },
     });
 

@@ -77,6 +77,7 @@ const BREAKDOWN_PROVIDER: BreakdownResponse = {
 const RECENT: RecentCallsResponse = {
   limit: 50,
   offset: 0,
+  total: 1,
   calls: [
     {
       id: 'c1',

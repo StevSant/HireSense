@@ -68,10 +68,15 @@
       }
     </div>
 
-    <nav class="pagination" aria-label="Portfolio projects pages">
-      <button type="button" class="btn" (click)="prev()" [disabled]="!canPrev()">Prev</button>
-      <span class="page-indicator">{{ showingFrom() }}–{{ showingTo() }} of {{ total() }}</span>
-      <button type="button" class="btn" (click)="next()" [disabled]="!canNext()">Next</button>
-    </nav>
+    <app-paginator
+      [page]="page()"
+      [pageSize]="pageSize()"
+      [total]="total()"
+      [totalPages]="totalPages()"
+      [pageSizeOptions]="pageSizeOptions"
+      itemLabel="projects"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    />
   }
 </section>

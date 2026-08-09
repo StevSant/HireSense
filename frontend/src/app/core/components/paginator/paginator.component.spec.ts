@@ -1,19 +1,28 @@
 import { TestBed } from '@angular/core/testing';
-import { PaginationComponent } from './pagination.component';
+import { PaginatorComponent } from './paginator.component';
 
-describe('PaginationComponent', () => {
+describe('PaginatorComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PaginationComponent],
+      imports: [PaginatorComponent],
     }).compileComponents();
   });
 
-  function mount(opts: { page: number; pageSize: number; total: number; totalPages: number }) {
-    const fixture = TestBed.createComponent(PaginationComponent);
+  function mount(opts: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    pageSizeOptions?: readonly number[];
+  }) {
+    const fixture = TestBed.createComponent(PaginatorComponent);
     fixture.componentRef.setInput('page', opts.page);
     fixture.componentRef.setInput('pageSize', opts.pageSize);
     fixture.componentRef.setInput('total', opts.total);
     fixture.componentRef.setInput('totalPages', opts.totalPages);
+    if (opts.pageSizeOptions) {
+      fixture.componentRef.setInput('pageSizeOptions', opts.pageSizeOptions);
+    }
     fixture.detectChanges();
     return fixture;
   }
@@ -22,6 +31,13 @@ describe('PaginationComponent', () => {
     return fixture.nativeElement.querySelectorAll(
       'button.btn-page',
     ) as NodeListOf<HTMLButtonElement>;
+  }
+
+  function sizeOptions(fixture: ReturnType<typeof mount>): string[] {
+    const options = fixture.nativeElement.querySelectorAll(
+      'select.page-size-select option',
+    ) as NodeListOf<HTMLOptionElement>;
+    return [...options].map((o) => o.value);
   }
 
   it('computes the showing range from page/pageSize/total', () => {
@@ -98,5 +114,21 @@ describe('PaginationComponent', () => {
     select.dispatchEvent(new Event('change'));
 
     expect(emitted).toBe(50);
+  });
+
+  it('offers 20/50/100 page sizes by default', () => {
+    const fixture = mount({ page: 1, pageSize: 20, total: 55, totalPages: 3 });
+    expect(sizeOptions(fixture)).toEqual(['20', '50', '100']);
+  });
+
+  it('renders the host-supplied page sizes instead of the defaults', () => {
+    const fixture = mount({
+      page: 1,
+      pageSize: 12,
+      total: 55,
+      totalPages: 5,
+      pageSizeOptions: [12, 24],
+    });
+    expect(sizeOptions(fixture)).toEqual(['12', '24']);
   });
 });

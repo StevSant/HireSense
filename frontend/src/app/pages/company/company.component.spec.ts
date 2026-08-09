@@ -108,6 +108,26 @@ describe('CompanyComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('82%');
   });
 
+  it('walks the pages with rescore disabled', () => {
+    // This page paginates over a fixed filter and reads the persisted score, so
+    // it must not ask the server to re-run the blocking LLM call per job — with
+    // rescore on, a company with hundreds of jobs costs hundreds of calls.
+    const calls: unknown[][] = [];
+    const service = {
+      queryJobs: (...args: unknown[]) => {
+        calls.push(args);
+        return of(page(args[0] === 'boards' ? [job()] : []));
+      },
+    };
+    mount(service);
+
+    expect(calls.length).toBeGreaterThan(0);
+    for (const args of calls) {
+      // queryJobs(tab, page, pageSize, filters, includeClosed, rescore)
+      expect(args[5]).toBe(false);
+    }
+  });
+
   it('merges boards + portals and de-dupes by id', () => {
     const service = {
       queryJobs: (tab: string) =>

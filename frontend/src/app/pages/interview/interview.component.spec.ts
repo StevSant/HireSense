@@ -80,7 +80,7 @@ describe('InterviewComponent', () => {
         { provide: AnalyticsService, useValue: analytics },
         { provide: ActivatedRoute, useValue: route },
         // Required by the embedded <app-applications-prep-list>
-        { provide: ApplicationsService, useValue: { list: () => of([]) } },
+        { provide: ApplicationsService, useValue: { listAll: () => of({ items: [], total: 0 }) } },
         { provide: Router, useValue: { navigate: () => {} } },
       ],
     });
@@ -203,7 +203,7 @@ describe('InterviewComponent', () => {
         { provide: InterviewService, useValue: interview },
         { provide: IngestionService, useValue: ingestion },
         { provide: ActivatedRoute, useValue: route },
-        { provide: ApplicationsService, useValue: { list: () => of([]) } },
+        { provide: ApplicationsService, useValue: { listAll: () => of({ items: [], total: 0 }) } },
         { provide: Router, useValue: { navigate: () => {} } },
       ],
     });
@@ -250,7 +250,7 @@ describe('InterviewComponent story sorting/filtering', () => {
           useValue: { getJob: () => of({ title: '', company: '', description: '' }) },
         },
         { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } },
-        { provide: ApplicationsService, useValue: { list: () => of([]) } },
+        { provide: ApplicationsService, useValue: { listAll: () => of({ items: [], total: 0 }) } },
         { provide: Router, useValue: { navigate: () => {} } },
       ],
     });

@@ -20,8 +20,12 @@ import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { CompanyLinkComponent } from '../../core/components/company-link';
 import { createSortState } from '../../core/utils/sort-state';
 import { sortItems } from '../../core/utils/sort-items';
+import { PaginatorComponent } from '../../core/components/paginator';
 
 type AppSortField = 'title' | 'company' | 'status' | 'match' | 'created';
+
+// Rows per page in the applications table before the user changes it.
+const DEFAULT_PAGE_SIZE = 20;
 
 interface StatusTab {
   readonly value: ApplicationStatus | '';
@@ -50,6 +54,7 @@ const STATUS_TABS: readonly StatusTab[] = [
     ApplicationCreateDialogComponent,
     SortableHeaderDirective,
     CompanyLinkComponent,
+    PaginatorComponent,
   ],
   templateUrl: './applications.component.html',
   styleUrl: './applications.component.scss',
@@ -79,6 +84,16 @@ export class ApplicationsComponent implements OnInit {
   sort = createSortState<AppSortField>('created', 'desc', ['title', 'company', 'status']);
   query = signal('');
   statusFilter = signal<ApplicationStatus | ''>('');
+
+  // Client-side paging over the filtered rows — the table is a slice, but the
+  // search, sort and status badges still see every loaded application.
+  page = signal(1);
+  pageSize = signal(DEFAULT_PAGE_SIZE);
+
+  // Set when the server holds more applications than the load walk pulled in
+  // (environment.listMaxItems), so the UI can say so instead of implying the
+  // list is complete.
+  truncatedAt = signal<number | null>(null);
 
   readonly statusTabs = STATUS_TABS;
   readonly statusOptions: ApplicationStatus[] = [
@@ -127,12 +142,28 @@ export class ApplicationsComponent implements OnInit {
     return counts;
   });
 
-  visibleApplications = computed(() => {
+  // Every row that survives the search + status filter, sorted. The whole list
+  // is loaded up front (see load()), so this stays client-side.
+  filteredApplications = computed(() => {
     let rows = this.searchFiltered();
     const status = this.statusFilter();
     if (status) rows = rows.filter((a) => a.status === status);
     const field = this.sort.field();
     return sortItems(rows, (a) => this.sortValue(a, field), this.sort.dir());
+  });
+
+  totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredApplications().length / this.pageSize())),
+  );
+
+  // Clamped read of `page`: narrowing the filter can strand the user past the
+  // last page, and this pulls them back without an extra effect.
+  currentPage = computed(() => Math.min(this.page(), this.totalPages()));
+
+  // The slice actually rendered into the table.
+  visibleApplications = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return this.filteredApplications().slice(start, start + this.pageSize());
   });
 
   private sortValue(a: ApplicationListItem, field: AppSortField): string | number | null {
@@ -152,10 +183,21 @@ export class ApplicationsComponent implements OnInit {
 
   onQueryInput(event: Event): void {
     this.query.set((event.target as HTMLInputElement).value);
+    this.page.set(1);
   }
 
   selectStatus(value: ApplicationStatus | ''): void {
     this.statusFilter.set(value);
+    this.page.set(1);
+  }
+
+  onPageChange(page: number): void {
+    this.page.set(page);
+  }
+
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.page.set(1);
   }
 
   statusCount(value: ApplicationStatus | ''): number {
@@ -185,11 +227,12 @@ export class ApplicationsComponent implements OnInit {
     this.loading.set(true);
     this.manualError.set('');
     this.service
-      .list()
+      .listAll()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (rows) => {
-          this.applications.set(rows);
+        next: ({ items, total }) => {
+          this.applications.set(items);
+          this.truncatedAt.set(items.length < total ? total : null);
           this.loading.set(false);
         },
         error: (err) => {

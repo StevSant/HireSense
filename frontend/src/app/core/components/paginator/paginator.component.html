@@ -7,9 +7,9 @@
     <label class="page-size-label">
       Rows per page:
       <select [value]="pageSize()" (change)="onPageSizeChange($event)" class="page-size-select">
-        <option value="20">20</option>
-        <option value="50">50</option>
-        <option value="100">100</option>
+        @for (size of pageSizeOptions(); track size) {
+          <option [value]="size">{{ size }}</option>
+        }
       </select>
     </label>
 

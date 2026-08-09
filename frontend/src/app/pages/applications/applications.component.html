@@ -273,7 +273,24 @@
           }
         </tbody>
       </table>
+
+      <app-paginator
+        [page]="currentPage()"
+        [pageSize]="pageSize()"
+        [total]="filteredApplications().length"
+        [totalPages]="totalPages()"
+        itemLabel="applications"
+        (pageChange)="onPageChange($event)"
+        (pageSizeChange)="onPageSizeChange($event)"
+      />
     </div>
+
+    @if (truncatedAt(); as serverTotal) {
+      <p class="alert alert-warning truncation-notice" role="status">
+        Showing the first {{ applications().length }} of {{ serverTotal }} applications. Filters,
+        sorting and the status counts above only cover the loaded rows.
+      </p>
+    }
 
     @if (leaderboard().length > 0) {
       <section class="leaderboard">

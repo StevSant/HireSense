@@ -10,7 +10,7 @@ import {
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin } from 'rxjs';
+import { Observable, forkJoin, map } from 'rxjs';
 import { IngestionService } from '../../core/services/ingestion.service';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { ResearchService } from '../../core/services/research.service';
@@ -22,9 +22,11 @@ import { CompanyIntelComponent } from './components/company-intel/company-intel.
 import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { createSortState } from '../../core/utils/sort-state';
 import { scoreClass } from '../../core/utils/score-class';
+import { fetchAllPages } from '../../core/utils/fetch-all-pages';
+import { PagedResult } from '../../core/models/paged-result.model';
 
 const PERCENT = 100;
-/** A single company's open-job count is small once filtered — one large page is enough. */
+/** Backend caps an ingestion page at 100; the walk below covers the rest. */
 const COMPANY_PAGE_SIZE = 100;
 const TOP_LOCATIONS = 4;
 
@@ -68,8 +70,9 @@ export class CompanyComponent implements OnInit {
   // Jobs the user marked "not interested" this session — dimmed locally.
   dimmedJobIds = signal<Set<string>>(new Set<string>());
 
-  // Client-side sort — all jobs load in one page, so column clicks reorder in
-  // place with no backend refetch (default Match descending).
+  // Client-side sort — every matching job is loaded up front (both tabs walked
+  // to completion), so column clicks reorder in place with no backend refetch
+  // (default Match descending).
   sort = createSortState<SortField>('match', 'desc', ['title', 'location', 'source']);
 
   scoredCount = computed(() => this.jobs().filter((j) => this.displayScore(j) !== null).length);
@@ -122,20 +125,14 @@ export class CompanyComponent implements OnInit {
         },
       });
     forkJoin({
-      boards: this.ingestion.queryJobs('boards', 1, COMPANY_PAGE_SIZE, {
-        company: name,
-        sort: 'match_desc',
-      }),
-      portals: this.ingestion.queryJobs('portals', 1, COMPANY_PAGE_SIZE, {
-        company: name,
-        sort: 'match_desc',
-      }),
+      boards: this.allJobsFor('boards', name),
+      portals: this.allJobsFor('portals', name),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ boards, portals }) => {
           const byId = new Map<string, NormalizedJob>();
-          for (const j of [...boards.jobs, ...portals.jobs]) byId.set(j.id, j);
+          for (const j of [...boards.items, ...portals.items]) byId.set(j.id, j);
           this.jobs.set([...byId.values()]);
           this.loading.set(false);
         },
@@ -144,6 +141,42 @@ export class CompanyComponent implements OnInit {
           this.loading.set(false);
         },
       });
+  }
+
+  /**
+   * Every job this company has on one tab.
+   *
+   * `queryJobs` is page-numbered, so the offset the walker hands back is
+   * converted to a 1-based page. Previously this took a single 100-row page per
+   * tab and presented the result as complete — a company with more than that
+   * silently lost rows from the table, the location breakdown and the average
+   * match score.
+   *
+   * Walked with `rescore: false`: this is pagination over a fixed filter, the
+   * case that flag exists for. The server still runs the full skill+ANN+min_score
+   * pipeline (so the set and its order are unchanged) but reuses cached LLM
+   * scores instead of blocking on one call per uncached job — otherwise a
+   * company with several hundred jobs turns one page view into hundreds of
+   * blocking calls. `scoreOf` reads the persisted score, so nothing is lost.
+   */
+  private allJobsFor(
+    tab: 'boards' | 'portals',
+    name: string,
+  ): Observable<PagedResult<NormalizedJob>> {
+    return fetchAllPages<NormalizedJob>(
+      (limit, offset) =>
+        this.ingestion
+          .queryJobs(
+            tab,
+            Math.floor(offset / limit) + 1,
+            limit,
+            { company: name, sort: 'match_desc' },
+            false,
+            false,
+          )
+          .pipe(map((res) => ({ items: res.jobs, total: res.total }))),
+      { pageSize: COMPANY_PAGE_SIZE },
+    );
   }
 
   refreshResearch(): void {

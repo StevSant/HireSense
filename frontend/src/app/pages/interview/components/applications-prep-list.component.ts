@@ -24,11 +24,11 @@ export class ApplicationsPrepListComponent implements OnInit {
   ngOnInit(): void {
     this.loading.set(true);
     this.service
-      .list()
+      .listAll()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (rows) => {
-          this.applications.set(rows);
+        next: ({ items }) => {
+          this.applications.set(items);
           this.loading.set(false);
         },
         error: () => this.loading.set(false),

@@ -128,3 +128,6 @@ class RecentCallsResponse(BaseModel):
     calls: list[UsageCallView]
     limit: int
     offset: int
+    # Rows matching the active filters, ignoring limit/offset — lets the client
+    # render a real pager instead of guessing whether another page exists.
+    total: int = 0

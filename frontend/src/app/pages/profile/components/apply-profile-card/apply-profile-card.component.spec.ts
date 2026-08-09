@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 import { ApplyProfileCardComponent } from './apply-profile-card.component';
 import { CandidateProfile } from '../../models/candidate-profile.model';
 import { ProfileService } from '../../../../core/services/profile.service';
@@ -92,5 +92,60 @@ describe('ApplyProfileCardComponent', () => {
     const fixture = mount();
     fixture.componentInstance.save();
     expect(setApplyProfile).not.toHaveBeenCalled();
+  });
+
+  it('keeps in-progress edits when the profile input is refetched', () => {
+    const fixture = mount();
+    const c = fixture.componentInstance;
+
+    c.set('desired_salary', '50k$ year');
+
+    // A background refetch mints a new profile object with the same content.
+    fixture.componentRef.setInput('profile', makeProfile());
+    fixture.detectChanges();
+
+    expect(c.form().desired_salary).toBe('50k$ year');
+    expect(c.isDirty()).toBe(true);
+
+    c.save();
+    expect(setApplyProfile).toHaveBeenCalledTimes(1);
+    expect(setApplyProfile.mock.calls[0][0].desired_salary).toBe('50k$ year');
+  });
+
+  it('re-syncs from the input while the form is untouched', () => {
+    const fixture = mount();
+
+    fixture.componentRef.setInput(
+      'profile',
+      makeProfile({ apply_profile: { start_availability: 'Immediately' } as never }),
+    );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.form().start_availability).toBe('Immediately');
+  });
+
+  it('clears the saving flag when the request is torn down without emitting', () => {
+    setApplyProfile.mockReturnValue(NEVER);
+    const fixture = mount();
+    const c = fixture.componentInstance;
+
+    c.set('desired_salary', '50k$ year');
+    c.save();
+    expect(c.saving()).toBe(true);
+
+    fixture.destroy();
+    expect(c.saving()).toBe(false);
+  });
+
+  it('clears the saving flag and surfaces the error when the request fails', () => {
+    setApplyProfile.mockReturnValue(throwError(() => ({ error: { detail: 'No profile found' } })));
+    const fixture = mount();
+    const c = fixture.componentInstance;
+
+    c.set('desired_salary', '50k$ year');
+    c.save();
+
+    expect(c.saving()).toBe(false);
+    expect(c.error()).toBe('No profile found');
   });
 });

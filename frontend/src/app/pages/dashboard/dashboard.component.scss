@@ -156,6 +156,43 @@ $mobile-breakpoint: 768px;
     border-top: 1px solid var(--border-sidebar);
   }
 
+  .sidebar-identity {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.625rem;
+    min-width: 0;
+  }
+
+  .sidebar-username {
+    color: var(--text-on-dark);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // The Account tab's .role-badge is tuned for light surfaces; the sidebar is
+  // dark, so it gets a translucent treatment instead of reusing that palette.
+  .role-badge {
+    flex-shrink: 0;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-on-dark-muted);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+
+    &--admin {
+      background: rgba(139, 122, 246, 0.22);
+      color: #c4b5fd;
+    }
+  }
+
   .logout-btn {
     width: 100%;
     padding: 0.5rem;

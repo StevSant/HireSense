@@ -89,7 +89,18 @@ export class ProfileService {
       .put<CandidateProfile>(`${environment.apiUrl}/profile/apply-profile`, applyProfile)
       .pipe(
         tap((profile) => {
-          this.profiles.update((all) => ({ ...all, [profile.language]: profile }));
+          // The apply profile is one-per-person: the backend writes it onto every
+          // language row and echoes back whichever row is newest. Keying the cache
+          // by the response's language would leave the other languages stale, so
+          // fan the saved answers out across all cached profiles.
+          this.profiles.update((all) => {
+            const next: Record<string, CandidateProfile> = {};
+            for (const [language, cached] of Object.entries(all)) {
+              next[language] = { ...cached, apply_profile: profile.apply_profile };
+            }
+            next[profile.language] = profile;
+            return next;
+          });
         }),
       );
   }

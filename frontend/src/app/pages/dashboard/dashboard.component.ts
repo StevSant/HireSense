@@ -20,6 +20,11 @@ export class DashboardComponent {
 
   sidebarOpen = signal(false);
   readonly demoMode = environment.demo;
+  // Surfaced in the sidebar footer: the standalone Account tab that used to be
+  // the only place showing who you are signed in as has been removed.
+  readonly username = this.auth.username;
+  readonly role = this.auth.role;
+  readonly isAdmin = this.auth.isAdmin;
   // router.url at construction time is already the post-redirect URL; the NavigationEnd
   // subscription uses urlAfterRedirects for the same reason on later navigations.
   activeHub = signal(hubForUrl(this.router.url));

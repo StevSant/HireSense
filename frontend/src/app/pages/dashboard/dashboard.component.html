@@ -122,6 +122,14 @@
       }
     </nav>
     <div class="sidebar-footer">
+      @if (username(); as name) {
+        <div class="sidebar-identity">
+          <span class="sidebar-username">{{ name }}</span>
+          @if (role(); as userRole) {
+            <span class="role-badge" [class.role-badge--admin]="isAdmin()">{{ userRole }}</span>
+          }
+        </div>
+      }
       <button (click)="logout()" class="logout-btn">Sign Out</button>
     </div>
   </aside>

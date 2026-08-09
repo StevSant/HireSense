@@ -16,12 +16,11 @@ import { ApplyProfileCardComponent } from './components/apply-profile-card/apply
 import { ManualFieldsFormComponent } from './components/manual-fields-form/manual-fields-form.component';
 import { CoverLetterLibraryComponent } from './components/cover-letter-library/cover-letter-library.component';
 import { CoverLetterTemplatesComponent } from './components/cover-letter-templates/cover-letter-templates.component';
-import { AccountComponent } from '../account/account.component';
 import { PortfolioCardComponent } from './components/portfolio-card/portfolio-card.component';
 import { NetworkCardComponent } from './components/network-card/network-card.component';
 import { ProfileSetupCardComponent } from './components/profile-setup-card/profile-setup-card.component';
 
-type ProfilePageTab = 'cv' | 'personal' | 'cover-letters' | 'account';
+type ProfilePageTab = 'cv' | 'personal' | 'cover-letters';
 
 @Component({
   selector: 'app-profile',
@@ -34,7 +33,6 @@ type ProfilePageTab = 'cv' | 'personal' | 'cover-letters' | 'account';
     ManualFieldsFormComponent,
     CoverLetterLibraryComponent,
     CoverLetterTemplatesComponent,
-    AccountComponent,
     PortfolioCardComponent,
     NetworkCardComponent,
     ProfileSetupCardComponent,

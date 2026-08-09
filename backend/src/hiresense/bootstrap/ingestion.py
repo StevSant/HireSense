@@ -382,10 +382,12 @@ def build_ingestion(
         ),
         "thoughtworks": ThoughtworksAdapter(
             http_client=http_client,
+            base_url=s.thoughtworks_api_url,
             timeout=s.portal_scan_timeout,
         ),
         "globant": GlobantAdapter(
             http_client=http_client,
+            base_url=s.globant_api_url,
             timeout=s.portal_scan_timeout,
         ),
         "scraper": scraper_adapter,

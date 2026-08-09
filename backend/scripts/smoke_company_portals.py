@@ -7,6 +7,7 @@ import re
 
 import httpx
 
+from hiresense.config import Settings
 from hiresense.ingestion.adapters.generic_scraper_adapter import GenericScraperAdapter
 from hiresense.ingestion.adapters.globant_adapter import GlobantAdapter
 from hiresense.ingestion.adapters.thoughtworks_adapter import ThoughtworksAdapter
@@ -14,12 +15,17 @@ from hiresense.ingestion.domain.portal_config import PortalEntry
 
 
 async def main() -> int:
+    settings = Settings()
     async with httpx.AsyncClient(
         timeout=45.0,
         follow_redirects=True,
         headers={"User-Agent": "HireSenseSmoke/1.0"},
     ) as client:
-        tw = ThoughtworksAdapter(http_client=client, timeout=45.0)
+        tw = ThoughtworksAdapter(
+            http_client=client,
+            base_url=settings.thoughtworks_api_url,
+            timeout=45.0,
+        )
         tw_jobs = await tw.fetch_portal(
             PortalEntry(
                 name="Thoughtworks",
@@ -31,7 +37,12 @@ async def main() -> int:
         print("thoughtworks", len(tw_jobs))
         assert len(tw_jobs) > 10
 
-        gl = GlobantAdapter(http_client=client, timeout=45.0, max_pages=2)
+        gl = GlobantAdapter(
+            http_client=client,
+            base_url=settings.globant_api_url,
+            timeout=45.0,
+            max_pages=2,
+        )
         gl_jobs = await gl.fetch_portal(
             PortalEntry(
                 name="Globant",

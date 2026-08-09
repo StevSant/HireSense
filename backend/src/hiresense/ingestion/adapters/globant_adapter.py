@@ -18,9 +18,9 @@ class GlobantAdapter:
     def __init__(
         self,
         http_client: Any,
+        base_url: str,
+        timeout: float,
         *,
-        base_url: str = "https://career.globant.com/api/sap/job-requisition",
-        timeout: float = 30.0,
         max_pages: int = 50,
     ) -> None:
         self._http = http_client

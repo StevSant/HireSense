@@ -58,3 +58,9 @@ alembic/versions/*.pyc
 .vercel/
 .env.local
 .env*.local
+
+# Coverage artifacts
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/

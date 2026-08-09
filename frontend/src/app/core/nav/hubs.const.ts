@@ -38,12 +38,14 @@ export const HUBS: readonly Hub[] = [
     label: 'Insights',
     tabs: [{ label: 'Analytics', path: '/dashboard/analytics' }],
   },
-  // Single sentinel tab: used by hubForUrl for URL->hub resolution only; the profile
-  // hub renders its own internal signal tabs, so HubTabsComponent is suppressed for it.
   {
     id: 'profile',
     label: 'Profile',
-    tabs: [{ label: 'Profile', path: '/dashboard/profile' }],
+    tabs: [
+      { label: 'CV', path: '/dashboard/profile/cv' },
+      { label: 'Personal details', path: '/dashboard/profile/personal' },
+      { label: 'Cover letters', path: '/dashboard/profile/cover-letters' },
+    ],
   },
   {
     id: 'admin',

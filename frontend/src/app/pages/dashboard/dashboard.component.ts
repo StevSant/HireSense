@@ -31,8 +31,7 @@ export class DashboardComponent {
 
   hubTabs = computed(() => {
     const id = this.activeHub();
-    // 'profile' uses its own internal signal tabs; suppress the shared hub tab bar for it.
-    if (!id || id === 'profile') return null;
+    if (!id) return null;
     return HUBS.find((hub) => hub.id === id) ?? null;
   });
 

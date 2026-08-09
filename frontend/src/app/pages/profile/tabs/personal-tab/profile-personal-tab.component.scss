@@ -1,0 +1,87 @@
+@use '../profile-tab-shared' as *;
+
+// --- "Coming soon" card (shared with Cover letters tab) ---
+.coming-soon-card {
+  position: relative;
+  background: $surface;
+  border: 1px dashed $border;
+  border-radius: $radius;
+  padding: 1.5rem 1.75rem;
+  color: $text-mid;
+
+  h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    color: $text-dark;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: $text-light;
+  }
+}
+
+.coming-soon-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.2rem 0.55rem;
+  background: $primary-light;
+  color: $primary-dark;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+// --- Cover letters: per-job explainer card ---
+.per-job-card {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.per-job-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: $primary-light;
+  color: $primary;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.per-job-body {
+  flex: 1;
+  min-width: 0;
+
+  h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+    color: $text-dark;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: $text-mid;
+  }
+}
+
+.per-job-cta {
+  text-decoration: none;
+  display: inline-flex;
+}

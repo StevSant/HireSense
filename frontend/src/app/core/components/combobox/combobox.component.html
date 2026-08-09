@@ -1,0 +1,79 @@
+<div class="combobox" [class.open]="open()">
+  <input
+    #input
+    type="text"
+    class="combobox-input"
+    role="combobox"
+    autocomplete="off"
+    [id]="id"
+    [attr.aria-expanded]="open()"
+    [attr.aria-controls]="id + '-listbox'"
+    aria-autocomplete="list"
+    [attr.aria-activedescendant]="activeOptionId()"
+    [attr.aria-label]="ariaLabel() || null"
+    [attr.aria-labelledby]="labelledBy() || null"
+    [attr.placeholder]="placeholder() || null"
+    [disabled]="disabled()"
+    [value]="displayValue()"
+    (input)="onInput($event)"
+    (focus)="onFocus()"
+    (keydown)="onKeydown($event)"
+  />
+
+  <button
+    type="button"
+    class="combobox-toggle"
+    tabindex="-1"
+    [attr.aria-label]="open() ? 'Close options' : 'Open options'"
+    [attr.aria-expanded]="open()"
+    [attr.aria-controls]="id + '-listbox'"
+    [disabled]="disabled()"
+    (click)="onToggle()"
+  >
+    <span aria-hidden="true">▾</span>
+  </button>
+
+  <!--
+    Pressing the mouse inside the list must not move DOM focus off the input:
+    the option would take focus, then close() hides the listbox, and a focused
+    node that stops being rendered drops focus to <body>. Suppressing the
+    default mousedown keeps the input focused through a mouse pick, matching
+    the keyboard path.
+  -->
+  <ul
+    class="combobox-listbox"
+    role="listbox"
+    [id]="id + '-listbox'"
+    [hidden]="!open()"
+    (mousedown)="$event.preventDefault()"
+  >
+    @for (option of filtered(); track option.value; let i = $index) {
+      <!--
+        In the ARIA combobox pattern the input keeps DOM focus and points at the
+        active row via aria-activedescendant, so options are deliberately not
+        keyboard targets — Arrow/Enter/Escape are handled on the input above.
+        The click handler is the mouse affordance for that same behaviour.
+
+        aria-selected tracks the *active* row (the one aria-activedescendant
+        points at), which is what the APG pattern announces while arrowing; the
+        .selected class is the separate, visual "this is your current choice".
+      -->
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events -->
+      <li
+        class="combobox-option"
+        role="option"
+        tabindex="-1"
+        [id]="optionId(i)"
+        [class.active]="i === activeIndex()"
+        [class.selected]="option.value === value()"
+        [attr.aria-selected]="i === activeIndex()"
+        (mouseenter)="activeIndex.set(i)"
+        (click)="select(option)"
+      >
+        {{ option.label }}
+      </li>
+    } @empty {
+      <li class="combobox-empty" role="presentation">{{ emptyText() }}</li>
+    }
+  </ul>
+</div>

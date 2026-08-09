@@ -1,0 +1,88 @@
+.combobox {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.combobox-input {
+  width: 100%;
+  padding: 0.5rem 2rem 0.5rem 0.65rem;
+  border: 1px solid var(--border, #e2e5ea);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: inherit;
+  font: inherit;
+  cursor: text;
+
+  &:focus-visible {
+    outline: 2px solid var(--primary, #4f46e5);
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.combobox-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 2rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--text-light, #6b7280);
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.combobox-listbox {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  border: 1px solid var(--border, #e2e5ea);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.combobox-option {
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  // Long job titles shouldn't blow out the popup width.
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &.active {
+    background: var(--primary-light, #e0e7ff);
+  }
+
+  &.selected {
+    font-weight: 600;
+  }
+}
+
+.combobox-empty {
+  padding: 0.45rem 0.6rem;
+  color: var(--text-light, #6b7280);
+}

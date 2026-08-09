@@ -6,14 +6,24 @@ on:
     paths:
       - "docs/**"
       - "mkdocs.yml"
-      - "readme.md"
+      # Path filters are case-sensitive — the file is README.md, not readme.md.
+      - "README.md"
+      - ".github/workflows/docs.yml"
+  # Build (but don't deploy) on PRs, so a --strict failure is caught before merge.
+  pull_request:
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "README.md"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
-# Only one concurrent Pages deployment; don't cancel an in-flight publish.
+# Only one concurrent Pages deployment; don't cancel an in-flight publish. PR
+# builds get their own per-ref group so a validation run never queues behind
+# (or blocks) a real publish from main.
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: pages-${{ github.event_name == 'pull_request' && github.ref || 'publish' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -36,6 +46,8 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: build
+    # PRs validate the strict build only — publishing stays on main.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       pages: write

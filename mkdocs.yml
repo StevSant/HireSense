@@ -5,10 +5,12 @@ repo_url: https://github.com/StevSant/HireSense
 repo_name: StevSant/HireSense
 edit_uri: edit/main/docs/
 
-# Keep working notes out of the public site (images under assets/ are still copied).
+# Keep working notes and internal launch material out of the public site
+# (images under assets/ are still copied).
 exclude_docs: |
   reference/
   superpowers/
+  open-source-launch/
 
 theme:
   name: material
@@ -45,12 +47,19 @@ markdown_extensions:
       permalink: true
   - pymdownx.highlight:
       anchor_linenums: true
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      # Route ```mermaid fences to a <pre class="mermaid"> block instead of the
+      # syntax highlighter, so mkdocs-material loads Mermaid.js and renders them.
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.inlinehilite
   - pymdownx.details
 
 nav:
   - Home: index.md
+  - Job sources: job-sources.md
 
 plugins:
   - search

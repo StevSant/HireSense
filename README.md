@@ -9,6 +9,10 @@ profile with **pgvector semantic search + tiered LLM scoring**, and runs the who
 on your own infrastructure: tracking, CV & cover-letter generation, interview prep,
 outreach, and analytics.
 
+[![CI](https://img.shields.io/github/actions/workflow/status/StevSant/HireSense/ci.yml?branch=main&style=flat-square&label=CI&logo=githubactions&logoColor=white)](https://github.com/StevSant/HireSense/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/github/actions/workflow/status/StevSant/HireSense/docs.yml?branch=main&style=flat-square&label=docs&logo=materialformkdocs&logoColor=white)](https://stevsant.github.io/HireSense/)
+[![Coverage](https://img.shields.io/badge/coverage-%E2%89%A585%25-2dd4bf?style=flat-square&logo=pytest&logoColor=white)](https://github.com/StevSant/HireSense/actions/workflows/ci.yml)
+
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Angular 22](https://img.shields.io/badge/Angular-22-DD0031?style=flat-square&logo=angular&logoColor=white)](https://angular.dev/)
@@ -103,25 +107,70 @@ with skill overlap and tiered LLM scoring — then helps you act on the results,
 
 ## 🚀 Quick Start
 
-Choose the path that fits you:
+### Prerequisites
 
-| Best for | Command |
+| Requirement | Why |
 |---|---|
-| **Trying it out** (everything in Docker) | `docker compose up --build` |
-| **Backend development** | `cd backend && uv sync && uv run app` |
-| **Frontend development** | `cd frontend && npm install && npm start` |
+| [**Docker**](https://docs.docker.com/get-started/get-docker/) + Compose v2 | Runs the whole stack, and is the easiest way to get Postgres + pgvector. |
+| [**uv**](https://docs.astral.sh/uv/getting-started/installation/) | The only supported Python toolchain (Python 3.12+; `uv` installs it for you). Needed for backend development. |
+| [**Node.js ≥ 22.22.3**](https://nodejs.org/) | Angular 22 / the Angular CLI refuse older Node with an opaque error. Needed for frontend development. |
+| **PostgreSQL 16 + [`pgvector`](https://github.com/pgvector/pgvector)** | **Required — there is no SQLite fallback.** `DATABASE_URL` must point at Postgres in *both* `APP_MODE`s, because ANN semantic search runs in the database. `docker compose up db` provides it. |
 
-**Docker** brings up the full stack — `db` (Postgres + pgvector), `app` (FastAPI :8000),
-`frontend` (Angular :4200), and Grafana (:3000). First, set up backend config:
+### 1. Configure — you need **two** `.env` files
+
+They are separate on purpose: Compose reads the repo-root one to interpolate
+`docker-compose.yml`; the app container reads the backend one via `env_file`.
 
 ```bash
-cp backend/.env.example backend/.env    # fill in auth / LLM / database secrets
-docker compose up --build
+git clone https://github.com/StevSant/HireSense.git
+cd HireSense
+
+cp .env.example .env                    # repo root — Compose vars (POSTGRES_PASSWORD, ports)
+cp backend/.env.example backend/.env    # application config (auth, LLM, DATABASE_URL, …)
 ```
 
-> **No LLM key?** HireSense runs in `APP_MODE=local` by default — with a blank `LLM_API_KEY`
-> it falls back to heuristic-only matching and default dev credentials, so you can explore
-> the app before wiring up any external services. See [Configuration](#configuration).
+### 2. Replace the placeholder secrets — startup rejects them
+
+`POSTGRES_PASSWORD` has **no default** in `docker-compose.yml` (it uses `${POSTGRES_PASSWORD:?}`),
+so Compose fails loudly until the root `.env` sets it. And the backend refuses to boot while
+`AUTH_PASSWORD` or `JWT_SECRET_KEY` still hold their shipped sample values (`changeme`,
+`change-this-to-a-random-secret`) — a copied-but-unedited `.env` fails fast instead of
+exposing the instance behind guessable credentials.
+
+Generate real values with the one-liner `backend/.env.example` points at:
+
+```bash
+uv run --no-project python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Set, at minimum:
+
+- `.env` → `POSTGRES_PASSWORD`
+- `backend/.env` → `AUTH_PASSWORD`, `JWT_SECRET_KEY`
+
+### 3. Run it
+
+```bash
+docker compose up --build -d                                     # wait for `app` to report healthy
+docker compose exec app uv run python -m alembic upgrade head    # create the schema — NOT automatic
+docker compose logs -f app                                       # optional: follow the API logs
+```
+
+That brings up `db` (Postgres + pgvector), `app` (FastAPI, <http://localhost:8000>),
+`frontend` (Angular, <http://localhost:4200>) and Grafana (<http://localhost:3000>).
+
+> **Note:** Compose deliberately runs the stack with `APP_MODE=production` (it is a real
+> deployment), so every required value must be present — see step 2. The `local`
+> default described under [Configuration](#configuration) applies to the
+> `uv run app` dev server, not to Compose.
+
+Working on the code instead of just running it? See
+[Local development](#-local-development).
+
+> **No LLM key?** With `APP_MODE=local` (the dev-server default) and a blank `LLM_API_KEY`,
+> matching falls back to heuristic-only scoring and auth generates ephemeral dev credentials
+> with a loud warning — so you can explore the app before wiring up any external service.
+> `DATABASE_URL` is still required. See [Configuration](#configuration).
 
 ## 🧠 How it works
 
@@ -172,14 +221,47 @@ Hexagonal / clean architecture with **bounded-context modules** (`ingestion`, `m
 - **`infrastructure/`** holds SQLAlchemy ORM classes and repositories that map ORM ↔ domain.
 - **Wiring** happens only in `bootstrap/`; the domain never reaches for infrastructure.
 
+```mermaid
+flowchart TB
+    boards["Job boards &amp; ATS portals<br/>30 JobSourcePort adapters"]
+
+    subgraph contexts["Bounded contexts — src/hiresense/&lt;module&gt;/"]
+        direction LR
+        ingestion["ingestion<br/>fetch · dedupe · close"]
+        matching["matching<br/>ANN pre-rank → skills → tiered LLM"]
+        applications["applications<br/>tailored CV · cover letter"]
+        tracking["tracking<br/>Saved → Applied → Offer"]
+        ingestion --> matching --> applications --> tracking
+    end
+
+    subgraph layers["…each layered the same way"]
+        direction TB
+        api["api/ — FastAPI routes, schemas, Depends"]
+        domain["domain/ — pure Pydantic + business logic,<br/>typed against ports (Protocols)"]
+        infra["infrastructure/ — SQLAlchemy ORM,<br/>repositories, adapters"]
+        api -->|calls| domain
+        infra -->|implements ports, depends inward| domain
+    end
+
+    bootstrap["bootstrap/ — the only place<br/>implementations are wired"]
+    externals[("PostgreSQL 16 + pgvector<br/>LLM provider · embeddings")]
+
+    boards --> ingestion
+    contexts --- layers
+    infra --> externals
+    bootstrap -.->|injects adapters| layers
+```
+
 Full detail — dependency rules, ports/adapters, the LLM decorator chain, and an "adding a
 new module" recipe — lives in **[`backend/ARCHITECTURE.md`](backend/ARCHITECTURE.md)**.
 
 ## 💻 Local development
 
-**Backend** (from `backend/`, always via [`uv`](https://docs.astral.sh/uv/)):
+**Backend** — the dev server needs a live Postgres, so start the `db` service first
+(from `backend/`, always via [`uv`](https://docs.astral.sh/uv/)):
 
 ```bash
+docker compose up -d db                  # Postgres + pgvector on 127.0.0.1:5432
 uv sync                                  # install deps (incl. dev group)
 uv run python -m alembic upgrade head    # apply migrations
 uv run app                               # dev server (uvicorn, reload, :8000)
@@ -187,10 +269,13 @@ uv run python -m pytest                  # tests (run DB-free against in-memory 
 uv run ruff check .                      # lint
 ```
 
+Point `DATABASE_URL` in `backend/.env` at the host-published DB:
+`postgresql+asyncpg://hiresense:<your POSTGRES_PASSWORD>@localhost:5432/hiresense`.
+
 > **Note:** on some setups bare `uv run pytest` / `uv run alembic` fail — use the
 > `uv run python -m …` form shown above.
 
-**Frontend** (from `frontend/`):
+**Frontend** (from `frontend/`, Node ≥ 22.22.3; a backend on :8000 is proxied in):
 
 ```bash
 npm install
@@ -198,6 +283,10 @@ npm start        # dev server (proxies /api → backend via proxy.conf.json)
 npm run build    # production build
 npm test         # Vitest
 ```
+
+Before opening a PR, run the **full** gate list in
+[`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md#tests-and-linting) — `npm test` and
+`npm run build` skip prettier and `ng lint`, which CI enforces.
 
 ### Configuration
 
@@ -222,8 +311,8 @@ Contributions are welcome! HireSense follows a spec → plan → implement flow:
 2. New features get a spec + implementation plan before code.
 3. Commits follow [Conventional Commits](https://www.conventionalcommits.org/), scoped by
    module (e.g. `feat(outreach): …`).
-4. Run `uv run ruff check .` and `uv run python -m pytest` (backend) and `npm test` +
-   `npx ng lint` (frontend) before opening a PR.
+4. Run every gate CI enforces before opening a PR — the full list is in
+   [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md#tests-and-linting).
 
 New here? Browse the [open issues](https://github.com/StevSant/HireSense/issues) for a good
 place to start.

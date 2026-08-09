@@ -1,0 +1,15 @@
+<section class="analytics-card">
+  <h2 class="card-title">Market</h2>
+  @if (marketError()) {
+    <p class="section-error">Couldn't load market intel.</p>
+  } @else if (market(); as m) {
+    <h3 class="sub">Top skills in demand</h3>
+    <app-bar-chart [rows]="skillRows(m)" emptyText="No skills in the corpus yet." />
+    <h3 class="sub">Remote vs on-site</h3>
+    <app-bar-chart [rows]="remoteRows(m)" emptyText="No modality data." />
+    <h3 class="sub">Postings per week</h3>
+    <app-trend-line [points]="m.posting_trend" />
+  } @else {
+    <p class="section-loading">Loading…</p>
+  }
+</section>

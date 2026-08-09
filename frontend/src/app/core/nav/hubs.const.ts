@@ -36,7 +36,13 @@ export const HUBS: readonly Hub[] = [
   {
     id: 'insights',
     label: 'Insights',
-    tabs: [{ label: 'Analytics', path: '/dashboard/analytics' }],
+    tabs: [
+      { label: 'Pay', path: '/dashboard/analytics/pay' },
+      { label: 'Fit', path: '/dashboard/analytics/fit' },
+      { label: 'Pipeline', path: '/dashboard/analytics/pipeline' },
+      { label: 'Market', path: '/dashboard/analytics/market' },
+      { label: 'Portfolio', path: '/dashboard/analytics/portfolio' },
+    ],
   },
   {
     id: 'profile',

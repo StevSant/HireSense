@@ -20,7 +20,6 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
 $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 $transition: 0.2s ease;
 
-
 // --- Loading ---
 .loading-state {
   display: flex;
@@ -46,13 +45,11 @@ $transition: 0.2s ease;
   }
 }
 
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
-
 
 // --- Buttons ---
 .btn-primary {
@@ -87,7 +84,6 @@ $transition: 0.2s ease;
   }
 }
 
-
 .btn-spinner {
   width: 16px;
   height: 16px;
@@ -96,7 +92,6 @@ $transition: 0.2s ease;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
-
 
 .btn-secondary {
   padding: 0.5rem 1.15rem;
@@ -117,7 +112,6 @@ $transition: 0.2s ease;
   }
 }
 
-
 // --- Alert ---
 .alert-error {
   background: $danger-bg;
@@ -129,12 +123,10 @@ $transition: 0.2s ease;
   border: 1px solid rgba($danger, 0.1);
 }
 
-
 .btn-sm {
   padding: 0.3rem 0.75rem;
   font-size: 0.8rem;
 }
-
 
 // --- Personal details tab ---
 .details-card {
@@ -145,7 +137,6 @@ $transition: 0.2s ease;
   margin-bottom: 1.25rem;
 }
 
-
 .details-card-header {
   display: flex;
   align-items: center;
@@ -154,13 +145,11 @@ $transition: 0.2s ease;
   margin-bottom: 1.25rem;
 }
 
-
 .details-card-title {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
 }
-
 
 .details-grid {
   display: grid;
@@ -169,11 +158,9 @@ $transition: 0.2s ease;
   margin-bottom: 1.25rem;
 }
 
-
 .details-item {
   min-width: 0;
 }
-
 
 .details-label {
   display: block;
@@ -185,7 +172,6 @@ $transition: 0.2s ease;
   font-weight: 600;
 }
 
-
 .details-value {
   display: block;
   font-size: 0.95rem;
@@ -193,7 +179,6 @@ $transition: 0.2s ease;
   font-weight: 500;
   word-break: break-word;
 }
-
 
 .details-link {
   color: $primary;
@@ -206,13 +191,11 @@ $transition: 0.2s ease;
   }
 }
 
-
 .details-empty {
   color: $text-light;
   font-style: italic;
   font-weight: 400;
 }
-
 
 .details-source-note {
   margin: 0;
@@ -223,7 +206,6 @@ $transition: 0.2s ease;
   font-style: italic;
 }
 
-
 // --- Empty state (shared across tabs) ---
 .empty-state {
   background: $surface;
@@ -233,7 +215,6 @@ $transition: 0.2s ease;
   text-align: center;
 }
 
-
 .empty-state-title {
   margin: 0 0 0.4rem;
   font-size: 1.05rem;
@@ -241,13 +222,11 @@ $transition: 0.2s ease;
   color: $text-dark;
 }
 
-
 .empty-state-hint {
   margin: 0;
   font-size: 0.9rem;
   color: $text-light;
 }
-
 
 // --- Inline link-styled button (e.g. "CV tab" link inside empty state) ---
 .link-button {

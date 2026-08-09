@@ -1,6 +1,5 @@
 @use '../profile-tab-shared' as *;
 
-
 // --- "Coming soon" card (shared with Cover letters tab) ---
 .coming-soon-card {
   position: relative;
@@ -25,7 +24,6 @@
   }
 }
 
-
 .coming-soon-badge {
   position: absolute;
   top: 1rem;
@@ -40,7 +38,6 @@
   text-transform: uppercase;
 }
 
-
 // --- Cover letters: per-job explainer card ---
 .per-job-card {
   display: flex;
@@ -53,7 +50,6 @@
   margin-bottom: 1.25rem;
 }
 
-
 .per-job-icon {
   display: flex;
   align-items: center;
@@ -65,7 +61,6 @@
   border-radius: 10px;
   flex-shrink: 0;
 }
-
 
 .per-job-body {
   flex: 1;
@@ -85,7 +80,6 @@
     color: $text-mid;
   }
 }
-
 
 .per-job-cta {
   text-decoration: none;

@@ -1,6 +1,5 @@
 @use '../profile-tab-shared' as *;
 
-
 // --- Upload Card ---
 .upload-card {
   background: $surface;
@@ -9,14 +8,12 @@
   overflow: hidden;
 }
 
-
 // --- Tab Bar ---
 .tab-bar {
   display: flex;
   border-bottom: 1px solid $border;
   background: $bg;
 }
-
 
 .tab {
   flex: 1;
@@ -62,12 +59,10 @@
   }
 }
 
-
 // --- Tab Content ---
 .tab-content {
   padding: 1.5rem;
 }
-
 
 // --- Language Selector ---
 .language-selector {
@@ -102,7 +97,6 @@
     }
   }
 }
-
 
 // --- Dropzone ---
 .dropzone {
@@ -143,14 +137,12 @@
   }
 }
 
-
 .dropzone-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.35rem;
 }
-
 
 .dropzone-icon {
   margin-bottom: 0.5rem;
@@ -163,7 +155,6 @@
   }
 }
 
-
 .dropzone-title {
   font-size: 1rem;
   font-weight: 600;
@@ -171,13 +162,11 @@
   margin: 0;
 }
 
-
 .dropzone-hint {
   font-size: 0.85rem;
   color: $text-light;
   margin: 0;
 }
-
 
 .browse-link {
   color: $primary;
@@ -192,13 +181,11 @@
   }
 }
 
-
 .dropzone-formats {
   font-size: 0.75rem;
   color: #9ca3af;
   margin: 0.25rem 0 0;
 }
-
 
 // --- File Preview ---
 .file-preview {
@@ -206,7 +193,6 @@
   align-items: center;
   gap: 0.75rem;
 }
-
 
 .file-icon {
   display: flex;
@@ -222,7 +208,6 @@
     color: $primary;
   }
 }
-
 
 .file-details {
   flex: 1;
@@ -243,7 +228,6 @@
     color: $text-light;
   }
 }
-
 
 .file-remove {
   display: flex;
@@ -267,7 +251,6 @@
   }
 }
 
-
 // --- Textarea ---
 .form-group {
   margin-bottom: 1.25rem;
@@ -280,7 +263,6 @@
     color: $text-mid;
   }
 }
-
 
 .tex-input {
   width: 100%;
@@ -310,7 +292,6 @@
   }
 }
 
-
 // --- Profile View ---
 .profile-view {
   background: $surface;
@@ -318,7 +299,6 @@
   border-radius: $radius;
   box-shadow: $shadow-sm;
 }
-
 
 .profile-header {
   display: flex;
@@ -328,7 +308,6 @@
   padding-bottom: 1.25rem;
   border-bottom: 1px solid $border;
 }
-
 
 .profile-identity {
   display: flex;
@@ -344,7 +323,6 @@
   }
 }
 
-
 .avatar {
   width: 44px;
   height: 44px;
@@ -359,14 +337,12 @@
   flex-shrink: 0;
 }
 
-
 .profile-location {
   display: block;
   font-size: 0.82rem;
   color: $text-light;
   margin-top: 0.1rem;
 }
-
 
 .info-grid {
   display: grid;
@@ -413,7 +389,6 @@
   }
 }
 
-
 .language-badge {
   display: inline-block;
   align-self: flex-start;
@@ -425,7 +400,6 @@
   font-weight: 600;
   letter-spacing: 0.04em;
 }
-
 
 .section {
   display: grid;
@@ -458,7 +432,6 @@
   }
 }
 
-
 @media (max-width: 720px) {
   .section {
     grid-template-columns: 1fr;
@@ -466,13 +439,11 @@
   }
 }
 
-
 .skills {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
 }
-
 
 .skill-tag {
   padding: 0.3rem 0.65rem;
@@ -484,7 +455,6 @@
   letter-spacing: 0.01em;
 }
 
-
 // --- Language tabs ---
 .language-tabs {
   display: flex;
@@ -492,7 +462,6 @@
   gap: 0.5rem;
   margin-bottom: 1.5rem;
 }
-
 
 .language-tabs-label {
   font-size: 0.7rem;
@@ -502,7 +471,6 @@
   font-weight: 600;
   margin-right: 0.25rem;
 }
-
 
 .lang-tab {
   padding: 0.35rem 0.9rem;
@@ -527,7 +495,6 @@
   }
 }
 
-
 // --- Inline upload (when adding another language) ---
 .inline-upload {
   background: $bg;
@@ -536,7 +503,6 @@
   padding: 1.25rem;
   margin-bottom: 1.25rem;
 }
-
 
 .inline-upload-header {
   display: flex;
@@ -552,7 +518,6 @@
     letter-spacing: 0;
   }
 }
-
 
 .profile-header-actions {
   display: flex;

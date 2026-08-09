@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import json
 import logging
 import re
 from typing import Any
 
+from hiresense.kernel import extract_json
 from hiresense.ports.llm import LLMTimeoutError
 from hiresense.research.domain.errors import CompanyResearchError
 from hiresense.research.domain.firmographics import Firmographics
@@ -213,14 +213,10 @@ class CompanyResearchService:
         )
 
     def _parse_response(self, response: str) -> dict:
-        try:
-            return json.loads(response)
-        except json.JSONDecodeError:
-            pass
-        md = re.search(r"```(?:json)?\s*\n?({.*?})\s*\n?```", response, re.DOTALL)
-        if md:
-            return json.loads(md.group(1))
-        raise ValueError("Could not parse LLM response as JSON")
+        data = extract_json(response)
+        if not isinstance(data, dict):
+            raise ValueError("Could not parse LLM response as JSON")
+        return data
 
     @staticmethod
     def _make_fallback(

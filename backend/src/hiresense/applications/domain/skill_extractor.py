@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
 import logging
-import re
 from typing import Any
 
+from hiresense.kernel import extract_json
 from hiresense.kernel.prompt_boundary import PromptBoundary
 
 logger = logging.getLogger(__name__)
@@ -39,22 +38,12 @@ class SkillExtractor:
             logger.exception("Skill extraction LLM call failed")
             return []
 
-        raw = self._strip_markdown_fence(response)
-        try:
-            parsed = json.loads(raw)
-        except json.JSONDecodeError:
-            logger.warning("Skill extractor got non-JSON response: %r", raw[:200])
-            return []
-
+        parsed = extract_json(response)
         if not isinstance(parsed, list):
+            logger.warning("Skill extractor got non-JSON-array response: %r", response[:200])
             return []
 
         return self._normalize(parsed)
-
-    @staticmethod
-    def _strip_markdown_fence(text: str) -> str:
-        match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", text, re.DOTALL)
-        return match.group(1).strip() if match else text.strip()
 
     @staticmethod
     def _normalize(skills: list[Any]) -> list[str]:

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json
 import logging
-import re
 import uuid as uuid_mod
 
 from pydantic import BaseModel
@@ -10,6 +8,7 @@ from pydantic import BaseModel
 from hiresense.interview.domain.errors import InterviewPrepError
 from hiresense.interview.domain.models import Competency, Story
 from hiresense.interview.ports import StoryRepositoryPort
+from hiresense.kernel import extract_json
 from hiresense.kernel.prompt_boundary import PromptBoundary
 from hiresense.ports.llm import LLMTimeoutError
 
@@ -134,15 +133,8 @@ class InterviewPrepService:
                     "Return only valid JSON."
                 ),
             )
-            data = None
-            try:
-                data = json.loads(response)
-            except json.JSONDecodeError:
-                md = re.search(r"```(?:json)?\s*\n?({.*?})\s*\n?```", response, re.DOTALL)
-                if md:
-                    data = json.loads(md.group(1))
-
-            if data is None:
+            data = extract_json(response)
+            if not isinstance(data, dict):
                 raise ValueError("Could not parse LLM response")
 
             matched = [

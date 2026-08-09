@@ -24,12 +24,21 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _parse_id(profile_id: str) -> uuid.UUID | None:
+    """Profile ids reach the service as raw path strings. A malformed one is a
+    lookup miss (the caller gets `None`, i.e. a 404), not a crash."""
+    try:
+        return uuid.UUID(profile_id)
+    except ValueError:
+        return None
+
+
 class ProfileService:
     def __init__(
         self,
         parser: LaTeXParser,
         skill_extractor: SkillExtractor,
-        repository: ProfileRepositoryPort | None = None,
+        repository: ProfileRepositoryPort,
         pdf_parser: PDFParser | None = None,
         cv_directory: str = "./cvs",
         translator: Any | None = None,
@@ -42,7 +51,6 @@ class ProfileService:
         self._cv_directory = Path(cv_directory)
         self._translator = translator
         self._latex_compiler = latex_compiler
-        self._profiles: dict[str, CandidateProfile] = {}
 
     async def parse_and_create(self, tex_content: str, language: str = "en") -> CandidateProfile:
         parsed = self._parser.parse(tex_content)
@@ -69,11 +77,7 @@ class ProfileService:
             **shared_links,
         )
 
-        if self._repository is not None:
-            self._repository.create(profile)
-        else:
-            self._profiles[profile.id] = profile
-
+        self._repository.create(profile)
         return profile
 
     async def parse_file_and_create(
@@ -122,11 +126,7 @@ class ProfileService:
             **shared_links,
         )
 
-        if self._repository is not None:
-            self._repository.create(profile, original_filename=filename)
-        else:
-            self._profiles[profile.id] = profile
-
+        self._repository.create(profile, original_filename=filename)
         return profile
 
     def _render_parsed_to_tex(self, parsed: ParsedCV) -> str:
@@ -192,11 +192,7 @@ class ProfileService:
             **shared_links,
         )
 
-        if self._repository is not None:
-            self._repository.create(profile)
-        else:
-            self._profiles[profile.id] = profile
-
+        self._repository.create(profile)
         return TranslationOutcome(profile=profile, pdf_ok=pdf_ok, compile_error=compile_error)
 
     async def compile_pdf(self, language: str) -> bytes:
@@ -210,28 +206,19 @@ class ProfileService:
 
     def _find_source_for_translation(self, target_language: str) -> CandidateProfile | None:
         """Latest profile whose language differs from the target."""
-        if self._repository is not None:
-            candidates = self._repository.list_all()  # newest-first
-        else:
-            candidates = list(reversed(list(self._profiles.values())))
-        for profile in candidates:
+        for profile in self._repository.list_all():  # newest-first
             if profile.language != target_language:
                 return profile
         return None
 
     async def get_profile(self, profile_id: str) -> CandidateProfile | None:
-        if self._repository is not None:
-            return self._repository.get_by_id(uuid.UUID(profile_id))
-        return self._profiles.get(profile_id)
+        parsed_id = _parse_id(profile_id)
+        if parsed_id is None:
+            return None
+        return self._repository.get_by_id(parsed_id)
 
     async def get_current_profile(self, language: str | None = None) -> CandidateProfile | None:
-        if self._repository is not None:
-            return self._repository.get_latest(language=language)
-        # In-memory fallback
-        profiles = list(self._profiles.values())
-        if language:
-            profiles = [p for p in profiles if p.language == language]
-        return profiles[-1] if profiles else None
+        return self._repository.get_latest(language=language)
 
     def get_for_language(self, language: str) -> ProfileLanguageView | None:
         """Sync uniform view of the latest profile for a given language.
@@ -261,10 +248,7 @@ class ProfileService:
         return ContactInfo(name=profile.name, email=profile.email, phone=profile.phone)
 
     def _get_latest_for_language_sync(self, language: str) -> CandidateProfile | None:
-        if self._repository is not None:
-            return self._repository.get_latest(language=language)
-        profiles = [p for p in self._profiles.values() if p.language == language]
-        return profiles[-1] if profiles else None
+        return self._repository.get_latest(language=language)
 
     EDITABLE_FIELDS = (
         "name",
@@ -305,24 +289,14 @@ class ProfileService:
         shared = {k: v for k, v in sanitised.items() if k in self._SHARED_FIELDS}
         per_language = {k: v for k, v in sanitised.items() if k not in self._SHARED_FIELDS}
 
-        if self._repository is not None:
-            if shared:
-                self._repository.update_all(shared)
-            if per_language:
-                return self._repository.update(uuid.UUID(profile_id), per_language)
-            return self._repository.get_by_id(uuid.UUID(profile_id))
-
-        # In-memory fallback (tests / legacy path)
-        profile = self._profiles.get(profile_id)
-        if profile is None:
-            return None
         if shared:
-            for pid, p in list(self._profiles.items()):
-                self._profiles[pid] = p.model_copy(update=shared)
+            self._repository.update_all(shared)
+        parsed_id = _parse_id(profile_id)
+        if parsed_id is None:
+            return None
         if per_language:
-            current = self._profiles[profile_id]
-            self._profiles[profile_id] = current.model_copy(update=per_language)
-        return self._profiles[profile_id]
+            return self._repository.update(parsed_id, per_language)
+        return self._repository.get_by_id(parsed_id)
 
     async def set_apply_profile(self, apply_profile: ApplyProfile) -> CandidateProfile | None:
         """Store the one-per-person Apply Assist answer bank.
@@ -332,18 +306,10 @@ class ProfileService:
         None when no profile exists yet (the answer bank extends an existing CV
         profile).
         """
-        if self._repository is not None:
-            updated = self._repository.update_all({"apply_profile": apply_profile.model_dump()})
-            if updated == 0:
-                return None
-            return self._repository.get_latest()
-
-        # In-memory fallback (tests / legacy path)
-        if not self._profiles:
+        updated = self._repository.update_all({"apply_profile": apply_profile.model_dump()})
+        if updated == 0:
             return None
-        for pid, p in list(self._profiles.items()):
-            self._profiles[pid] = p.model_copy(update={"apply_profile": apply_profile})
-        return next(reversed(self._profiles.values()))
+        return self._repository.get_latest()
 
     async def get_prefill(self, language: str | None = None) -> dict[str, object] | None:
         """Canonical application-form field values for the current profile — the
@@ -356,10 +322,7 @@ class ProfileService:
 
     async def list_profiles(self) -> list[CandidateProfile]:
         """Return the latest profile per language (deduplicated)."""
-        if self._repository is not None:
-            all_profiles = self._repository.list_all()
-        else:
-            all_profiles = list(self._profiles.values())
+        all_profiles = self._repository.list_all()
 
         # Keep only the latest (first, since ordered by created_at DESC) per language
         seen_languages: set[str] = set()
@@ -375,12 +338,7 @@ class ProfileService:
     def _inherit_shared_links(self) -> dict[str, str | None]:
         """Read shared link fields from any existing profile so newly uploaded
         language variants don't lose the user's LinkedIn/GitHub/portfolio."""
-        source: CandidateProfile | None = None
-        if self._repository is not None:
-            source = self._repository.get_latest()
-        else:
-            profiles = list(self._profiles.values())
-            source = profiles[-1] if profiles else None
+        source = self._repository.get_latest()
         if source is None:
             return {}
         return {field: getattr(source, field) for field in self._SHARED_FIELDS}

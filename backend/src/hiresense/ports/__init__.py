@@ -10,6 +10,7 @@ from hiresense.ports.llm import (
     LLMTimeoutError,
     MeteredLLMPort,
 )
+from hiresense.ports.llm_not_configured_error import LLMNotConfiguredError
 from hiresense.ports.vector_store import ScoredResult, VectorStorePort
 
 __all__ = [
@@ -20,6 +21,7 @@ __all__ = [
     "LatexCompileError",
     "LatexCompilerPort",
     "LLMInvocationError",
+    "LLMNotConfiguredError",
     "LLMPort",
     "LLMResult",
     "LLMTimeoutError",

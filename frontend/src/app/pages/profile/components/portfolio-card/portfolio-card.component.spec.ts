@@ -132,8 +132,14 @@ describe('PortfolioCardComponent', () => {
     fixture.detectChanges();
     flushProjects([project({ id: 'a', source_key: 'a' })], '2026-06-09T00:00:00Z', 30);
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.querySelector('.page-indicator')?.textContent).toContain('1–1 of 30');
-    const next = [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Next')!;
+    // The shared paginator splits this: a range summary plus a page counter.
+    // The range comes from page x pageSize (not the rows this fake happened to
+    // return), so it stays stable while a page is still loading.
+    expect(el.querySelector('.pagination-info')?.textContent).toContain('1–12 of 30');
+    expect(el.querySelector('.page-indicator')?.textContent).toContain('Page 1 of 3');
+    const next = [...el.querySelectorAll('button')].find((b) =>
+      b.textContent?.trim().startsWith('Next'),
+    )!;
     expect(next.disabled).toBe(false);
     next.click();
     httpMock
@@ -148,6 +154,7 @@ describe('PortfolioCardComponent', () => {
         last_synced_at: null,
       });
     fixture.detectChanges();
-    expect(el.querySelector('.page-indicator')?.textContent).toContain('13–13 of 30');
+    expect(el.querySelector('.pagination-info')?.textContent).toContain('13–24 of 30');
+    expect(el.querySelector('.page-indicator')?.textContent).toContain('Page 2 of 3');
   });
 });

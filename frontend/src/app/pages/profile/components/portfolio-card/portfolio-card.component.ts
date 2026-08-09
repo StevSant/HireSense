@@ -11,13 +11,17 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { PortfolioService } from '../../../../core/services/portfolio.service';
 import { PortfolioProject } from '../../models/portfolio-project.model';
+import { PaginatorComponent } from '../../../../core/components/paginator';
 
 // Max tech chips shown per card before collapsing the rest into a "+N more" pill.
 const MAX_VISIBLE_TECH = 6;
 
+// Project cards are tall, so the page sizes stay well below the list defaults.
+const PAGE_SIZE_OPTIONS = [12, 24, 48];
+
 @Component({
   selector: 'app-portfolio-card',
-  imports: [DatePipe],
+  imports: [DatePipe, PaginatorComponent],
   templateUrl: './portfolio-card.component.html',
   styleUrl: './portfolio-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,7 +30,8 @@ export class PortfolioCardComponent implements OnInit {
   private service = inject(PortfolioService);
   private destroyRef = inject(DestroyRef);
 
-  readonly pageSize = 12;
+  readonly pageSize = signal(PAGE_SIZE_OPTIONS[0]);
+  readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
 
   readonly projects = signal<PortfolioProject[]>([]);
   readonly total = signal(0);
@@ -35,12 +40,9 @@ export class PortfolioCardComponent implements OnInit {
   readonly syncing = signal(false);
   readonly error = signal('');
 
-  readonly showingFrom = computed(() => (this.total() === 0 ? 0 : this.offset() + 1));
-  readonly showingTo = computed(() =>
-    Math.min(this.offset() + this.projects().length, this.total()),
-  );
-  readonly canPrev = computed(() => this.offset() > 0);
-  readonly canNext = computed(() => this.offset() + this.pageSize < this.total());
+  // The shared paginator speaks pages; this endpoint speaks offsets.
+  readonly page = computed(() => Math.floor(this.offset() / this.pageSize()) + 1);
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize())));
 
   ngOnInit(): void {
     this.load();
@@ -82,15 +84,14 @@ export class PortfolioCardComponent implements OnInit {
     );
   }
 
-  prev(): void {
-    if (!this.canPrev()) return;
-    this.offset.set(Math.max(0, this.offset() - this.pageSize));
+  onPageChange(page: number): void {
+    this.offset.set(Math.max(0, (page - 1) * this.pageSize()));
     this.load();
   }
 
-  next(): void {
-    if (!this.canNext()) return;
-    this.offset.set(this.offset() + this.pageSize);
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.offset.set(0);
     this.load();
   }
 
@@ -120,7 +121,7 @@ export class PortfolioCardComponent implements OnInit {
 
   private load(): void {
     this.service
-      .listProjects(this.pageSize, this.offset())
+      .listProjects(this.pageSize(), this.offset())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {

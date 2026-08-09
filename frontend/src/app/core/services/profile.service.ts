@@ -16,6 +16,15 @@ export class ProfileService {
   /** Active profile — the one currently displayed/used for matching. */
   readonly activeLanguage = signal<string>('en');
 
+  /**
+   * False until the first profile fetch settles.
+   *
+   * The profile tabs are separate routed components, so they cannot read a
+   * loading flag off a shared parent. The shell bootstraps once and flips this;
+   * each tab derives its spinner from it and no tab refetches on navigation.
+   */
+  readonly loaded = signal(false);
+
   readonly profile = computed(() => {
     const all = this.profiles();
     const lang = this.activeLanguage();

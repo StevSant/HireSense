@@ -24,6 +24,30 @@ export const routes: Routes = [
         path: 'profile',
         loadComponent: () =>
           import('./pages/profile/profile.component').then((m) => m.ProfileComponent),
+        children: [
+          { path: '', redirectTo: 'cv', pathMatch: 'full' },
+          {
+            path: 'cv',
+            loadComponent: () =>
+              import('./pages/profile/tabs/cv-tab/profile-cv-tab.component').then(
+                (m) => m.ProfileCvTabComponent,
+              ),
+          },
+          {
+            path: 'personal',
+            loadComponent: () =>
+              import('./pages/profile/tabs/personal-tab/profile-personal-tab.component').then(
+                (m) => m.ProfilePersonalTabComponent,
+              ),
+          },
+          {
+            path: 'cover-letters',
+            loadComponent: () =>
+              import('./pages/profile/tabs/cover-letters-tab/profile-cover-letters-tab.component').then(
+                (m) => m.ProfileCoverLettersTabComponent,
+              ),
+          },
+        ],
       },
       {
         path: 'applications',

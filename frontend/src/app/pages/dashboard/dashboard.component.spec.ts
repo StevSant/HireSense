@@ -70,7 +70,7 @@ describe('DashboardComponent', () => {
     expect(active.textContent).toContain('Pipeline');
   });
 
-  it('exposes the hub tab bar for routed hubs but not for profile', () => {
+  it('exposes the hub tab bar for every routed hub, including profile', () => {
     const fixture = mount();
     const cmp = fixture.componentInstance;
 
@@ -80,8 +80,15 @@ describe('DashboardComponent', () => {
     cmp.activeHub.set('admin');
     expect(cmp.hubTabs()?.id).toBe('admin');
 
+    // Profile used to be suppressed here because it rendered its own signal
+    // tabs; it now uses the shared routed tab bar like every other hub.
     cmp.activeHub.set('profile');
-    expect(cmp.hubTabs()).toBeNull();
+    expect(cmp.hubTabs()?.id).toBe('profile');
+    expect(cmp.hubTabs()?.tabs.map((t) => t.label)).toEqual([
+      'CV',
+      'Personal details',
+      'Cover letters',
+    ]);
 
     cmp.activeHub.set(null);
     expect(cmp.hubTabs()).toBeNull();

@@ -1,0 +1,102 @@
+  @if (profile(); as p) {
+    <div class="details-card">
+      <app-profile-setup-card [profile]="p" />
+    </div>
+    @if (!editingPersonal()) {
+      <div class="details-card">
+        <div class="details-card-header">
+          <h3 class="details-card-title">Personal details</h3>
+          <button type="button" class="btn-secondary" (click)="editingPersonal.set(true)">
+            Edit
+          </button>
+        </div>
+        <div class="details-grid">
+          <div class="details-item">
+            <span class="details-label">Name</span>
+            <span class="details-value">{{ p.name || '—' }}</span>
+          </div>
+          <div class="details-item">
+            <span class="details-label">Email</span>
+            <span class="details-value">{{ p.email || '—' }}</span>
+          </div>
+          <div class="details-item">
+            <span class="details-label">Phone</span>
+            <span class="details-value">{{ p.phone || '—' }}</span>
+          </div>
+          <div class="details-item">
+            <span class="details-label">Location</span>
+            <span class="details-value">{{ p.location || '—' }}</span>
+          </div>
+          <div class="details-item">
+            <span class="details-label">Primary language</span>
+            <span class="details-value">{{ p.language === 'es' ? 'Espanol' : 'English' }}</span>
+          </div>
+          <div class="details-item">
+            <span class="details-label">LinkedIn</span>
+            @if (p.linkedin_url) {
+              <a
+                class="details-value details-link"
+                [href]="p.linkedin_url"
+                target="_blank"
+                rel="noopener"
+                >{{ p.linkedin_url }}</a
+              >
+            } @else {
+              <span class="details-value details-empty">Not set</span>
+            }
+          </div>
+          <div class="details-item">
+            <span class="details-label">GitHub</span>
+            @if (p.github_url) {
+              <a
+                class="details-value details-link"
+                [href]="p.github_url"
+                target="_blank"
+                rel="noopener"
+                >{{ p.github_url }}</a
+              >
+            } @else {
+              <span class="details-value details-empty">Not set</span>
+            }
+          </div>
+          <div class="details-item">
+            <span class="details-label">Portfolio</span>
+            @if (p.portfolio_url) {
+              <a
+                class="details-value details-link"
+                [href]="p.portfolio_url"
+                target="_blank"
+                rel="noopener"
+                >{{ p.portfolio_url }}</a
+              >
+            } @else {
+              <span class="details-value details-empty">Not set</span>
+            }
+          </div>
+        </div>
+        <p class="details-source-note">Parsed from your uploaded CV.</p>
+      </div>
+    } @else {
+      <div class="details-card">
+        <app-manual-fields-form
+          [profile]="p"
+          (saved)="editingPersonal.set(false)"
+          (cancelled)="editingPersonal.set(false)"
+        />
+      </div>
+    }
+    <div class="details-card">
+      <app-apply-profile-card [profile]="p" />
+    </div>
+  } @else {
+    <div class="empty-state">
+      <p class="empty-state-title">No profile yet</p>
+      <p class="empty-state-hint">
+        Upload a CV in the
+        <a class="link-button" routerLink="/dashboard/profile/cv">CV tab</a> to
+        see your parsed details here.
+      </p>
+    </div>
+  }
+  <app-portfolio-card />
+  <app-network-card />

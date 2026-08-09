@@ -1,0 +1,267 @@
+// Styles shared by more than one profile tab: the loading state, the button
+// and alert primitives, the details-card grid, and the empty state.
+// Each tab component @use-s this because Angular scopes styles per component.
+
+// --- Variables ---
+$primary: #4f46e5;
+$primary-dark: #4338ca;
+$primary-light: #e0e7ff;
+$primary-bg: #f5f3ff;
+$text-dark: #1a1a2e;
+$text-mid: #444;
+$text-light: #6b7280;
+$border: #e2e5ea;
+$surface: #ffffff;
+$bg: #f8f9fb;
+$danger: #dc2626;
+$danger-bg: #fef2f2;
+$radius: 10px;
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+$transition: 0.2s ease;
+
+
+// --- Loading ---
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: $text-light;
+
+  .loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid $border;
+    border-top-color: $primary;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-size: 0.9rem;
+    margin: 0;
+  }
+}
+
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+// --- Buttons ---
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
+  background: $primary;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    background $transition,
+    transform 0.1s ease,
+    box-shadow $transition;
+
+  &:hover:not(:disabled) {
+    background: $primary-dark;
+    box-shadow: 0 2px 8px rgba($primary, 0.25);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+
+.btn-secondary {
+  padding: 0.5rem 1.15rem;
+  background: $surface;
+  color: $primary;
+  border: 1px solid rgba($primary, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition:
+    background $transition,
+    border-color $transition;
+
+  &:hover {
+    background: $primary-bg;
+    border-color: rgba($primary, 0.5);
+  }
+}
+
+
+// --- Alert ---
+.alert-error {
+  background: $danger-bg;
+  color: $danger;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  border: 1px solid rgba($danger, 0.1);
+}
+
+
+.btn-sm {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+
+// --- Personal details tab ---
+.details-card {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 1.75rem;
+  margin-bottom: 1.25rem;
+}
+
+
+.details-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+
+.details-card-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem 2rem;
+  margin-bottom: 1.25rem;
+}
+
+
+.details-item {
+  min-width: 0;
+}
+
+
+.details-label {
+  display: block;
+  font-size: 0.6875rem;
+  color: $text-light;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+
+.details-value {
+  display: block;
+  font-size: 0.95rem;
+  color: $text-dark;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+
+.details-link {
+  color: $primary;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+
+  &:hover {
+    text-decoration: underline;
+    color: $primary-dark;
+  }
+}
+
+
+.details-empty {
+  color: $text-light;
+  font-style: italic;
+  font-weight: 400;
+}
+
+
+.details-source-note {
+  margin: 0;
+  padding-top: 1rem;
+  border-top: 1px solid $border;
+  font-size: 0.8rem;
+  color: $text-light;
+  font-style: italic;
+}
+
+
+// --- Empty state (shared across tabs) ---
+.empty-state {
+  background: $surface;
+  border-radius: $radius;
+  box-shadow: $shadow-sm;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+
+.empty-state-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: $text-dark;
+}
+
+
+.empty-state-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: $text-light;
+}
+
+
+// --- Inline link-styled button (e.g. "CV tab" link inside empty state) ---
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: $primary;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: $primary-dark;
+  }
+}

@@ -268,11 +268,11 @@ describe('IngestionComponent — visibility-gated revalidation poll', () => {
     jobsReqs(httpMock)[0].flush(jobsPayload());
 
     setVisibility('hidden');
-    vi.advanceTimersByTime(15000);
+    vi.advanceTimersByTime(environment.closureRevalidatePollMs);
     expect(jobsReqs(httpMock).length).toBe(0);
 
     setVisibility('visible');
-    vi.advanceTimersByTime(15000);
+    vi.advanceTimersByTime(environment.closureRevalidatePollMs);
     const polled = jobsReqs(httpMock);
     expect(polled.length).toBe(1);
     polled[0].flush(jobsPayload());

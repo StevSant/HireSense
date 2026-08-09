@@ -14,6 +14,7 @@ import { CandidateProfile } from '../../models/candidate-profile.model';
 import { ManualFieldsFormState } from '../../models/manual-fields-form-state.model';
 import { ProfileManualFieldsUpdate } from '../../models/profile-manual-fields-update.model';
 import { ProfileService } from '../../../../core/services/profile.service';
+import { environment } from '../../../../../environments/environment';
 
 const FIELDS: readonly (keyof ManualFieldsFormState)[] = [
   'name',
@@ -117,7 +118,7 @@ export class ManualFieldsFormComponent {
           this.form.set(snap);
           this.baseline.set(snap);
           this.savedFlash.set(true);
-          setTimeout(() => this.savedFlash.set(false), 2200);
+          setTimeout(() => this.savedFlash.set(false), environment.transientFeedbackMs);
           this.saved.emit();
         },
         error: (err) => {

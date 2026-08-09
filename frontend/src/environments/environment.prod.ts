@@ -10,4 +10,7 @@ export const environment = {
   httpTimeoutFetchMs: 600000,
   listPageSize: 100,
   listMaxItems: 2000,
+  transientFeedbackMs: 2000,
+  closureRevalidatePollMs: 15000,
+  closureRevalidatePollTicks: 8,
 };

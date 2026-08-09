@@ -1,66 +1,16 @@
 /* ============================================================
    HireSense Design System — "Refined Ink"
-   ============================================================ */
+   ============================================================
 
-:root {
-  /* --- Surface --- */
-  --bg-root: #f5f4f0;
-  --bg-card: #ffffff;
-  --bg-inset: #f0efeb;
-  --bg-sidebar: #111318;
-  --bg-sidebar-hover: rgba(255, 255, 255, 0.04);
-  --bg-sidebar-active: rgba(255, 255, 255, 0.08);
+   The token values themselves live in styles/_tokens.scss. `_root` publishes
+   them as :root custom properties — included here and ONLY here, because
+   Angular gives every component stylesheet its own bundle and a second
+   include would duplicate the whole block. Component stylesheets `@use
+   'styles/index'` instead, which forwards the tokens and mixins without
+   emitting CSS. */
 
-  /* --- Border --- */
-  --border-default: #e2e0db;
-  --border-subtle: #eae8e4;
-  --border-sidebar: rgba(255, 255, 255, 0.08);
-
-  /* --- Text --- */
-  --text-primary: #18181b;
-  --text-secondary: #52525b;
-  --text-muted: #a1a1aa;
-  --text-on-dark: rgba(255, 255, 255, 0.92);
-  --text-on-dark-muted: rgba(255, 255, 255, 0.5);
-
-  /* --- Accent --- */
-  --accent: #0f766e;
-  --accent-hover: #0d6560;
-  --accent-subtle: #ccfbf1;
-  --accent-soft: #5eead4; /* visible soft teal — range fills, secondary bars */
-  --accent-text: #065f46;
-
-  /* --- Semantic --- */
-  --success: #16a34a;
-  --success-bg: #f0fdf4;
-  --danger: #dc2626;
-  --danger-bg: #fef2f2;
-  --danger-border: #fecaca;
-  --warning: #ca8a04;
-  --warning-bg: #fefce8;
-  --info-bg: #f0f9ff;
-  --info-text: #0369a1;
-
-  /* --- Typography --- */
-  --font-display: 'Outfit', system-ui, sans-serif;
-  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'Consolas', monospace;
-
-  /* --- Radius --- */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-full: 9999px;
-
-  /* --- Shadow --- */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
-
-  /* --- Transition --- */
-  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
-  --duration: 0.2s;
-}
+@use './styles/root';
+@use './styles/index' as *;
 
 /* ---- Reset ---- */
 *,
@@ -93,20 +43,18 @@ h4 {
   letter-spacing: -0.01em;
 }
 
-/* ---- Shared: Buttons ---- */
+/* ---- Shared: Buttons ----
+   These are the ONE definition of each button variant. Component stylesheets
+   must not redeclare them: Angular's emulated encapsulation appends an
+   [_ngcontent-*] attribute to component rules, so a component copy always
+   outranks this one and the design system silently loses. Need a genuine
+   variant? Add a new class here, or a modifier that layers on top. */
 .btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  @include button-base;
   padding: 0.5rem 1.25rem;
   background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: var(--radius-md);
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
   transition:
     background var(--duration) var(--ease),
     transform var(--duration) var(--ease);
@@ -119,26 +67,14 @@ h4 {
   &:active:not(:disabled) {
     transform: translateY(0);
   }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 }
 
 .btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  @include button-base;
   padding: 0.5rem 1.1rem;
   background: var(--bg-card);
   color: var(--text-primary);
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
   transition: all var(--duration) var(--ease);
 
   &:hover {
@@ -148,17 +84,13 @@ h4 {
 }
 
 .btn-danger {
-  display: inline-flex;
-  align-items: center;
+  @include button-base;
+  gap: 0;
   padding: 0.3rem 0.75rem;
   background: var(--danger-bg);
   color: var(--danger);
   border: 1px solid var(--danger-border);
-  border-radius: var(--radius-md);
-  font-family: var(--font-body);
   font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
   transition: background var(--duration) var(--ease);
 
   &:hover {
@@ -190,27 +122,7 @@ input,
 textarea,
 select,
 .form-input {
-  width: 100%;
-  padding: 0.5625rem 0.875rem;
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  transition:
-    border-color var(--duration) var(--ease),
-    box-shadow var(--duration) var(--ease);
-
-  &:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
-  }
-
-  &::placeholder {
-    color: var(--text-muted);
-  }
+  @include field-base;
 }
 
 textarea {
@@ -279,17 +191,13 @@ textarea#tex {
 
 /* ---- Shared: Cards ---- */
 .card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  @include card-base;
   padding: 1.5rem;
 }
 
 /* ---- Shared: Tables ---- */
 .table-container {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  @include card-base;
   /* Wide tables scroll inside the card instead of stretching the page. */
   overflow-x: auto;
   overflow-y: hidden;
@@ -406,12 +314,10 @@ table {
 
 /* ---- Shared: Empty/Loading ---- */
 .empty-state {
+  @include card-base;
   text-align: center;
   padding: 3rem 2rem;
   color: var(--text-muted);
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
   font-size: 0.9375rem;
 }
 
@@ -422,13 +328,11 @@ table {
 }
 
 .loading-card {
+  @include card-base;
   display: flex;
   align-items: center;
   gap: 1.25rem;
   padding: 2rem 2.5rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
   margin-bottom: 1rem;
   animation: pulseCard 2s ease-in-out infinite;
 
@@ -538,7 +442,10 @@ th.sortable-header {
 }
 
 th.sortable-header:hover {
-  color: var(--text-default);
+  /* `th` sits at --text-secondary; hover darkens it to signal it's clickable.
+     This used to name --text-default, which is not a token, so the rule was
+     inert and sortable headers had no hover affordance at all. */
+  color: var(--text-primary);
 }
 
 th.sortable-header::after {
@@ -559,6 +466,6 @@ th.sortable-header[aria-sort='descending']::after {
 }
 
 th.sortable-header:focus-visible {
-  outline: 2px solid var(--accent, #4f8cff);
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }

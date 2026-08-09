@@ -1,14 +1,4 @@
-$primary: #4f46e5;
-$primary-dark: #4338ca;
-$primary-light: #e0e7ff;
-$text-dark: #1a1a2e;
-$text-mid: #444;
-$text-light: #6b7280;
-$border: #e2e5ea;
-$surface: #ffffff;
-$bg-soft: #f8f9fb;
-$danger: #dc2626;
-$danger-bg: #fef2f2;
+@use '../../../../../styles/index' as *;
 
 :host {
   display: block;
@@ -25,26 +15,26 @@ $danger-bg: #fef2f2;
     margin: 0 0 0.25rem;
     font-size: 1rem;
     font-weight: 600;
-    color: $text-dark;
+    color: $text-primary;
   }
 }
 
 .library-hint {
   margin: 0;
   font-size: 0.85rem;
-  color: $text-light;
+  color: $text-secondary;
   max-width: 60ch;
 }
 
 .search-input {
   flex: 0 0 320px;
   padding: 0.55rem 0.85rem;
-  border: 1px solid $border;
+  border: 1px solid $border-default;
   border-radius: 8px;
   font-size: 0.875rem;
   font-family: inherit;
-  background: $surface;
-  color: $text-dark;
+  background: $bg-card;
+  color: $text-primary;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
@@ -55,8 +45,8 @@ $danger-bg: #fef2f2;
 
   &:focus {
     outline: none;
-    border-color: $primary;
-    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    border-color: $accent;
+    box-shadow: 0 0 0 3px rgba($accent, 0.12);
   }
 }
 
@@ -64,9 +54,9 @@ $danger-bg: #fef2f2;
 .library-error {
   padding: 2rem 1.5rem;
   text-align: center;
-  color: $text-light;
+  color: $text-secondary;
   font-size: 0.9rem;
-  border: 1px dashed $border;
+  border: 1px dashed $border-default;
   border-radius: 8px;
 }
 
@@ -86,21 +76,21 @@ $danger-bg: #fef2f2;
 }
 
 .letter-row {
-  border: 1px solid $border;
+  border: 1px solid $border-default;
   border-radius: 10px;
-  background: $surface;
+  background: $bg-card;
   overflow: hidden;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
 
   &:hover {
-    border-color: rgba($primary, 0.35);
+    border-color: rgba($accent, 0.35);
   }
 
   &.expanded {
-    border-color: rgba($primary, 0.6);
-    box-shadow: 0 4px 16px rgba($primary, 0.08);
+    border-color: rgba($accent, 0.6);
+    box-shadow: 0 4px 16px rgba($accent, 0.08);
   }
 }
 
@@ -122,27 +112,27 @@ $danger-bg: #fef2f2;
   align-items: center;
   gap: 0.4rem 0.6rem;
   font-size: 0.875rem;
-  color: $text-mid;
+  color: $text-secondary;
 }
 
 .letter-company {
   font-weight: 600;
-  color: $text-dark;
+  color: $text-primary;
 }
 
 .letter-divider {
-  color: $text-light;
+  color: $text-secondary;
   opacity: 0.6;
 }
 
 .letter-title {
-  color: $text-mid;
+  color: $text-secondary;
 }
 
 .letter-tone {
   padding: 0.1rem 0.5rem;
-  background: $primary-light;
-  color: $primary-dark;
+  background: $accent-subtle;
+  color: $accent-hover;
   border-radius: 999px;
   font-size: 0.7rem;
   font-weight: 600;
@@ -152,31 +142,31 @@ $danger-bg: #fef2f2;
 .letter-date {
   margin-left: auto;
   font-size: 0.78rem;
-  color: $text-light;
+  color: $text-secondary;
 }
 
 .letter-preview {
   margin: 0.4rem 0 0;
   font-size: 0.85rem;
-  color: $text-light;
+  color: $text-secondary;
   line-height: 1.5;
 }
 
 .letter-body {
   padding: 0 1rem 1rem;
-  border-top: 1px solid rgba($border, 0.7);
+  border-top: 1px solid rgba($border-default, 0.7);
   margin-top: -1px;
 }
 
 .letter-text {
   margin: 0.85rem 0 0;
   padding: 0.85rem 1rem;
-  background: $bg-soft;
+  background: $bg-inset;
   border-radius: 8px;
   font-family: inherit;
   font-size: 0.875rem;
   line-height: 1.6;
-  color: $text-dark;
+  color: $text-primary;
   white-space: pre-wrap;
   max-height: 360px;
   overflow-y: auto;
@@ -191,7 +181,7 @@ $danger-bg: #fef2f2;
 
 .btn-copy {
   padding: 0.45rem 0.9rem;
-  background: $primary;
+  background: $accent;
   color: white;
   border: none;
   border-radius: 8px;
@@ -201,19 +191,19 @@ $danger-bg: #fef2f2;
   transition: background 0.15s ease;
 
   &:hover {
-    background: $primary-dark;
+    background: $accent-hover;
   }
 }
 
 .btn-link {
   padding: 0.45rem 0.6rem;
-  color: $primary;
+  color: $accent;
   font-size: 0.825rem;
   font-weight: 500;
   text-decoration: none;
   border-radius: 6px;
 
   &:hover {
-    background: $primary-light;
+    background: $accent-subtle;
   }
 }

@@ -1,0 +1,92 @@
+// ============================================================
+// HireSense Design System — "Refined Ink" · design tokens
+// ============================================================
+//
+// The SINGLE source of truth for every colour, radius, shadow and timing in
+// the app. Values live here as Sass variables (not CSS custom properties) so
+// component stylesheets can feed them to colour functions — `rgba($accent,
+// 0.12)` is not expressible against `var(--accent)`.
+//
+// `_root.scss` re-emits every token below as a `--custom-property` on :root.
+// That file is included exactly once, by src/styles.scss. THIS file emits no
+// CSS at all, so it is safe for any component to `@use` it.
+//
+// Rules of use in component stylesheets:
+//   * plain value      → prefer `var(--accent)`   (stays runtime-overridable)
+//   * inside a colour fn → use `rgba($accent, .1)` (Sass needs the literal)
+
+// --- Surface ---
+$bg-root: #f5f4f0;
+$bg-card: #ffffff;
+$bg-inset: #f0efeb;
+$bg-sidebar: #111318;
+$bg-sidebar-hover: rgba(255, 255, 255, 0.04);
+$bg-sidebar-active: rgba(255, 255, 255, 0.08);
+
+// --- Border ---
+$border-default: #e2e0db;
+$border-subtle: #eae8e4;
+$border-sidebar: rgba(255, 255, 255, 0.08);
+
+// --- Text ---
+$text-primary: #18181b;
+$text-secondary: #52525b;
+$text-muted: #a1a1aa;
+$text-on-dark: rgba(255, 255, 255, 0.92);
+$text-on-dark-muted: rgba(255, 255, 255, 0.5);
+
+// --- Accent (the brand colour — teal) ---
+//
+// A single ramp, one step per role, replacing the indigo family that used to
+// be retyped per component ($primary / -dark / -light / -bg). Steps are the
+// Tailwind teal scale so the intervals are even rather than eyeballed:
+//
+//   $accent        teal-700  base  — button fills, links, focus rings
+//   $accent-hover  teal-800  dark  — hover fills, and accent text on a tint
+//   $accent-subtle teal-100  light — chip / pill backgrounds
+//   $accent-bg     teal-50   tint  — notice strips, hover washes
+//
+// $accent-hover is teal-800 (not a half-step) specifically to hold contrast:
+// it carries the two highest-contrast-demand roles (white-on-fill at hover,
+// and accent text on $accent-subtle / $accent-bg), and teal-800 matches or
+// beats the indigo it replaced on both. See the ramp note in the task report.
+$accent: #0f766e;
+$accent-hover: #115e59;
+$accent-subtle: #ccfbf1; // chip / pill backgrounds
+$accent-bg: #f0fdfa; // faintest tint — notice strips, hover washes
+// Decorative fills only (chart bars, gradient ends). At 1.48:1 on white this
+// is below the 3:1 WCAG 1.4.11 bar, so it must never be the sole carrier of
+// meaning or the only thing delineating a control.
+$accent-soft: #5eead4;
+$accent-text: #065f46; // accent-coloured text on a light background
+
+// --- Semantic ---
+$success: #16a34a;
+$success-bg: #f0fdf4;
+$danger: #dc2626;
+$danger-bg: #fef2f2;
+$danger-border: #fecaca;
+$warning: #ca8a04;
+$warning-bg: #fefce8;
+$info-bg: #f0f9ff;
+$info-text: #0369a1;
+
+// --- Typography ---
+$font-display: 'Outfit', system-ui, sans-serif;
+$font-body: 'IBM Plex Sans', system-ui, sans-serif;
+$font-mono: 'IBM Plex Mono', 'Consolas', monospace;
+
+// --- Radius ---
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-full: 9999px;
+
+// --- Shadow ---
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+$shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+// --- Transition ---
+$ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+$duration: 0.2s;

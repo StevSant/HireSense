@@ -6,6 +6,7 @@ import { CoverLetterRunnerService } from '../../../core/services/cover-letter-ru
 import { openExternalUrl } from '../../../core/utils/open-external-url';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
 import { CoverLetterTone } from '../models/cover-letter-tone.model';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-apply-tab',
@@ -51,7 +52,7 @@ export class ApplyTabComponent {
     try {
       await navigator.clipboard.writeText(body);
       this.copyFlash.set(true);
-      setTimeout(() => this.copyFlash.set(false), 1800);
+      setTimeout(() => this.copyFlash.set(false), environment.transientFeedbackMs);
     } catch {
       this.error.set('Clipboard access denied — use Download or select & copy.');
     }

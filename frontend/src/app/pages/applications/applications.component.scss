@@ -104,7 +104,7 @@
   color: #6b7280;
 
   a {
-    color: #2563eb;
+    color: var(--accent);
     text-decoration: none;
   }
   a:hover {
@@ -527,12 +527,12 @@
   }
 
   &.expanded {
-    border-color: #c7d2fe;
-    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.08);
+    border-color: var(--accent-subtle);
+    box-shadow: var(--shadow-md);
   }
 
   &:focus-visible {
-    outline: 2px solid #6366f1;
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
 }

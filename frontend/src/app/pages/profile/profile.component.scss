@@ -1,20 +1,4 @@
-// --- Variables ---
-$primary: #4f46e5;
-$primary-dark: #4338ca;
-$primary-light: #e0e7ff;
-$primary-bg: #f5f3ff;
-$text-dark: #1a1a2e;
-$text-mid: #444;
-$text-light: #6b7280;
-$border: #e2e5ea;
-$surface: #ffffff;
-$bg: #f8f9fb;
-$danger: #dc2626;
-$danger-bg: #fef2f2;
-$radius: 10px;
-$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-$transition: 0.2s ease;
+@use '../../../styles/index' as *;
 
 // --- Page Layout ---
 // Profile uses a wider container than the global 1200px default because the
@@ -31,14 +15,14 @@ $transition: 0.2s ease;
   h1 {
     font-size: 1.6rem;
     font-weight: 700;
-    color: $text-dark;
+    color: $text-primary;
     margin: 0 0 0.35rem;
     letter-spacing: -0.02em;
   }
 
   .page-subtitle {
     font-size: 0.9rem;
-    color: $text-light;
+    color: $text-secondary;
     margin: 0;
   }
 }

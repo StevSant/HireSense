@@ -1,14 +1,4 @@
-$primary: #4f46e5;
-$primary-dark: #4338ca;
-$primary-light: #e0e7ff;
-$primary-bg: #f5f3ff;
-$text-dark: #1a1a2e;
-$text-mid: #444;
-$text-light: #6b7280;
-$border: #e2e5ea;
-$surface: #ffffff;
-$danger: #dc2626;
-$danger-bg: #fef2f2;
+@use '../../../../../styles/index' as *;
 
 :host {
   display: block;
@@ -25,14 +15,14 @@ $danger-bg: #fef2f2;
     margin: 0 0 0.25rem;
     font-size: 1rem;
     font-weight: 600;
-    color: $text-dark;
+    color: $text-primary;
   }
 }
 
 .form-hint {
   margin: 0;
   font-size: 0.85rem;
-  color: $text-light;
+  color: $text-secondary;
 }
 
 .saved-flash {
@@ -80,17 +70,17 @@ $danger-bg: #fef2f2;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 600;
-  color: $text-light;
+  color: $text-secondary;
 }
 
 input {
   padding: 0.55rem 0.75rem;
-  border: 1px solid $border;
+  border: 1px solid $border-default;
   border-radius: 8px;
   font-size: 0.9rem;
   font-family: inherit;
-  color: $text-dark;
-  background: $surface;
+  color: $text-primary;
+  background: $bg-card;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
@@ -101,8 +91,8 @@ input {
 
   &:focus {
     outline: none;
-    border-color: $primary;
-    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    border-color: $accent;
+    box-shadow: 0 0 0 3px rgba($accent, 0.12);
   }
 }
 
@@ -122,13 +112,13 @@ input {
   gap: 0.6rem;
   margin-top: 1.5rem;
   padding-top: 1.25rem;
-  border-top: 1px solid $border;
+  border-top: 1px solid $border-default;
 }
 
 .btn-ghost {
   padding: 0.5rem 1rem;
   background: transparent;
-  color: $text-light;
+  color: $text-secondary;
   border: 1px solid transparent;
   border-radius: 8px;
   font-size: 0.85rem;
@@ -139,7 +129,7 @@ input {
     background 0.15s ease;
 
   &:hover:not(:disabled) {
-    color: $text-dark;
+    color: $text-primary;
     background: rgba(0, 0, 0, 0.04);
   }
 
@@ -149,26 +139,4 @@ input {
   }
 }
 
-.btn-primary {
-  padding: 0.55rem 1.25rem;
-  background: $primary;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    box-shadow 0.15s ease;
-
-  &:hover:not(:disabled) {
-    background: $primary-dark;
-    box-shadow: 0 2px 8px rgba($primary, 0.25);
-  }
-
-  &:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-}
+// `.btn-primary` comes from src/styles.scss — see the note there.

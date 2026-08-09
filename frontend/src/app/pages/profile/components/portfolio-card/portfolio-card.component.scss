@@ -1,14 +1,4 @@
-$primary: #4f46e5;
-$primary-dark: #4338ca;
-$primary-light: #e0e7ff;
-$text-dark: #1a1a2e;
-$text-light: #6b7280;
-$border: #e2e5ea;
-$surface: #ffffff;
-$danger: #dc2626;
-$danger-bg: #fef2f2;
-$radius: 10px;
-$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+@use '../../../../../styles/index' as *;
 
 :host {
   display: block;
@@ -16,8 +6,8 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
 
 // Matches .details-card from profile.component.scss
 .portfolio-card {
-  background: $surface;
-  border-radius: $radius;
+  background: $bg-card;
+  border-radius: $radius-lg;
   box-shadow: $shadow-sm;
   padding: 1.75rem;
   margin-bottom: 1.25rem;
@@ -33,16 +23,16 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: $text-dark;
+    color: $text-primary;
   }
 }
 
 // Inline sync button — secondary style matching .btn-secondary in profile.component.scss
 .btn {
   padding: 0.4rem 1rem;
-  background: $surface;
-  color: $primary;
-  border: 1px solid rgba($primary, 0.3);
+  background: $bg-card;
+  color: $accent;
+  border: 1px solid rgba($accent, 0.3);
   border-radius: 8px;
   cursor: pointer;
   font-size: 0.8125rem;
@@ -53,8 +43,8 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
     border-color 0.15s ease;
 
   &:hover:not(:disabled) {
-    background: #f5f3ff;
-    border-color: rgba($primary, 0.5);
+    background: var(--accent-bg);
+    border-color: rgba($accent, 0.5);
   }
 
   &:disabled {
@@ -66,7 +56,7 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
 .muted {
   margin: 0 0 0.75rem;
   font-size: 0.85rem;
-  color: $text-light;
+  color: $text-secondary;
 }
 
 .error {
@@ -90,15 +80,15 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   flex-direction: column;
   gap: 0.55rem;
   padding: 1rem;
-  border: 1px solid $border;
-  border-radius: $radius;
-  background: $surface;
+  border: 1px solid $border-default;
+  border-radius: $radius-lg;
+  background: $bg-card;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
 
   &:hover {
-    border-color: rgba($primary, 0.4);
+    border-color: rgba($accent, 0.4);
     box-shadow: $shadow-sm;
   }
 }
@@ -114,14 +104,14 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   margin: 0;
   font-size: 0.9rem;
   font-weight: 600;
-  color: $text-dark;
+  color: $text-primary;
 }
 
 .project-desc {
   margin: 0;
   font-size: 0.8rem;
   line-height: 1.4;
-  color: $text-light;
+  color: $text-secondary;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -136,8 +126,8 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
 
 .tag-more {
   background: transparent;
-  color: $text-light;
-  border: 1px dashed $border;
+  color: $text-secondary;
+  border: 1px dashed $border-default;
 }
 
 .project-links {
@@ -153,9 +143,9 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
   gap: 0.45rem;
   margin-top: 0.5rem;
   padding-top: 0.5rem;
-  border-top: 1px solid $border;
+  border-top: 1px solid $border-default;
   font-size: 0.75rem;
-  color: $text-light;
+  color: $text-secondary;
   cursor: pointer;
   user-select: none;
 
@@ -179,14 +169,14 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
 
 .page-indicator {
   font-size: 0.8125rem;
-  color: $text-light;
+  color: $text-secondary;
 }
 
 // Matches .skill-tag from profile.component.scss
 .tag {
   padding: 0.25rem 0.6rem;
-  background: $primary-light;
-  color: $primary-dark;
+  background: $accent-subtle;
+  color: $accent-hover;
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 500;
@@ -194,8 +184,8 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
 
 .badge {
   padding: 0.2rem 0.5rem;
-  background: rgba($primary, 0.1);
-  color: $primary-dark;
+  background: rgba($accent, 0.1);
+  color: $accent-hover;
   border-radius: 4px;
   font-size: 0.7rem;
   font-weight: 700;
@@ -204,13 +194,13 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 a {
-  color: $primary;
+  color: $accent;
   font-size: 0.8125rem;
   font-weight: 500;
   text-decoration: none;
 
   &:hover {
     text-decoration: underline;
-    color: $primary-dark;
+    color: $accent-hover;
   }
 }

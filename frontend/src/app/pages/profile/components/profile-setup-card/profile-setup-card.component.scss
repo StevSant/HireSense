@@ -1,5 +1,5 @@
 .profile-setup {
-  border: 1px solid color-mix(in srgb, var(--accent, #4f46e5) 22%, var(--border, #e2e5ea));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border-default));
   border-radius: 10px;
   padding: 1.2rem;
   background: linear-gradient(135deg, #f7f7ff 0%, #fff 60%);
@@ -17,7 +17,7 @@
   }
 
   h3 {
-    color: var(--text, #1a1a2e);
+    color: var(--text-primary);
     font-size: 1rem;
     font-weight: 650;
   }
@@ -25,7 +25,7 @@
 
 .profile-setup-kicker {
   margin-bottom: 0.2rem !important;
-  color: var(--accent, #4f46e5);
+  color: var(--accent);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -36,7 +36,7 @@
   min-width: 2.4rem;
   padding: 0.28rem 0.45rem;
   border-radius: 999px;
-  background: var(--accent, #4f46e5);
+  background: var(--accent);
   color: #fff;
   font-size: 0.76rem;
   font-weight: 700;
@@ -54,7 +54,7 @@
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #4f46e5, #6366f1);
+    background: linear-gradient(90deg, var(--accent), var(--accent-soft));
     transition: width 180ms ease;
   }
 }
@@ -75,7 +75,7 @@
 
   strong {
     display: block;
-    color: var(--text, #1a1a2e);
+    color: var(--text-primary);
     font-size: 0.87rem;
   }
 
@@ -91,7 +91,7 @@
   width: 0.6rem;
   height: 0.6rem;
   margin-top: 0.3rem;
-  border: 2px solid var(--accent, #4f46e5);
+  border: 2px solid var(--accent);
   border-radius: 50%;
 }
 

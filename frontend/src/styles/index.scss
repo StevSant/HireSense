@@ -1,0 +1,13 @@
+// The entry point every stylesheet in the app pulls in:
+//
+//   @use '<relative>/styles/index' as *;
+//
+// Forwards the design tokens and the shared mixins. Emits no CSS, so including
+// it from a component adds nothing to that component's bundle.
+//
+// NOTE: `styles/_root.scss` is deliberately NOT forwarded here — it emits the
+// :root custom-property block and must be included exactly once, which
+// src/styles.scss does.
+
+@forward 'tokens';
+@forward 'mixins';

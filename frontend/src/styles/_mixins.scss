@@ -1,0 +1,55 @@
+// Shared style primitives. Emits nothing until a mixin is `@include`d, so this
+// file is safe for any component stylesheet to `@use` (via styles/index).
+
+@use 'tokens' as *;
+
+// The chrome every button in the app shares: inline-flex box, body font,
+// pointer cursor, and the disabled treatment. Colour and padding are the
+// caller's business — see `.btn-primary` / `.btn-secondary` in src/styles.scss.
+@mixin button-base {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// A raised content surface: white panel, hairline border, large radius.
+@mixin card-base {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+// Text inputs, textareas and selects: same box, same focus ring.
+@mixin field-base {
+  width: 100%;
+  padding: 0.5625rem 0.875rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  transition:
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba($accent, 0.1);
+  }
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+}

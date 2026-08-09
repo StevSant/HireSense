@@ -1,0 +1,32 @@
+<section class="analytics-card analytics-card-wide">
+  <h2 class="card-title">Performance — your pipeline</h2>
+  @if (funnelError()) {
+    <p class="section-error">Couldn't load the funnel.</p>
+  } @else if (funnel(); as f) {
+    <div class="perf-cols">
+      <div class="perf-col"><app-funnel-chart [metrics]="f" /></div>
+      <div class="perf-col perf-sources">
+        <h3 class="sub">Outcomes by source</h3>
+        @if (f.by_source.length) {
+          <ul class="source-list">
+            @for (o of f.by_source; track o.source) {
+              <li class="source-card">
+                <div class="source-card-top">
+                  <span class="source-name">{{ o.source }}</span>
+                  <span class="source-apps">{{ o.applications }} tracked</span>
+                </div>
+                <span class="source-rate" [class.zero]="o.reached_interview === 0">
+                  {{ interviewPct(o) }}% <span class="source-rate-unit">→ interview</span>
+                </span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="section-empty">Track jobs to compare sources.</p>
+        }
+      </div>
+    </div>
+  } @else {
+    <p class="section-loading">Loading…</p>
+  }
+</section>

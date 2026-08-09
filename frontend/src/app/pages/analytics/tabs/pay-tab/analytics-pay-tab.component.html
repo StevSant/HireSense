@@ -1,0 +1,58 @@
+<section class="analytics-card">
+  <div class="card-head">
+    <h2 class="card-title">Pay — your market band</h2>
+    <div class="period-toggle" role="group" aria-label="Pay period">
+      <button
+        type="button"
+        [class.active]="payPeriod() === 'annual'"
+        (click)="setPayPeriod('annual')"
+      >
+        Annual
+      </button>
+      <button
+        type="button"
+        [class.active]="payPeriod() === 'monthly'"
+        (click)="setPayPeriod('monthly')"
+      >
+        Monthly
+      </button>
+    </div>
+  </div>
+  @if (compError()) {
+    <p class="section-error">Couldn't load compensation.</p>
+  } @else if (comp(); as c) {
+    <app-comp-benchmark [comp]="c" [period]="payPeriod()" />
+  } @else {
+    <p class="section-loading">Loading…</p>
+  }
+</section>
+
+<section class="analytics-card">
+  <h2 class="card-title">Market salary range</h2>
+  @if (marketError()) {
+    <p class="section-error">Couldn't load market intel.</p>
+  } @else if (market(); as m) {
+    <h3 class="sub">
+      Salary range
+      @if (m.salary_distribution.currency) {
+        ({{ m.salary_distribution.currency }}, {{ m.salary_distribution.disclosed_pct }}% disclosed)
+      }
+    </h3>
+    @if (m.salary_distribution.median_annual !== null) {
+      <p class="salary-line">
+        {{ fmt(m.salary_distribution.min_annual) }} –
+        <strong>{{ fmt(m.salary_distribution.median_annual) }}</strong> –
+        {{ fmt(m.salary_distribution.max_annual) }}
+      </p>
+    } @else {
+      <p class="section-loading">No parseable salaries.</p>
+    }
+    @if (m.salary_distribution.inferred_count > 0) {
+      <p class="salary-basis-note">
+        Some postings' period was inferred (annual assumed where unstated).
+      </p>
+    }
+  } @else {
+    <p class="section-loading">Loading…</p>
+  }
+</section>

@@ -1,19 +1,25 @@
-import { Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 
+// Page sizes offered when a host does not narrow them. Hosts whose endpoint
+// caps the page lower (or whose rows are expensive to render) pass their own.
+const DEFAULT_PAGE_SIZE_OPTIONS: readonly number[] = [20, 50, 100];
+
 @Component({
-  selector: 'app-pagination',
+  selector: 'app-paginator',
   standalone: true,
   imports: [DecimalPipe],
-  templateUrl: './pagination.component.html',
-  styleUrl: './pagination.component.scss',
+  templateUrl: './paginator.component.html',
+  styleUrl: './paginator.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PaginationComponent {
+export class PaginatorComponent {
   page = input.required<number>();
   pageSize = input.required<number>();
   total = input.required<number>();
   totalPages = input.required<number>();
   itemLabel = input<string>('jobs');
+  pageSizeOptions = input<readonly number[]>(DEFAULT_PAGE_SIZE_OPTIONS);
 
   pageChange = output<number>();
   pageSizeChange = output<number>();

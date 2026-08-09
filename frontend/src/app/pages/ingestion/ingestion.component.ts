@@ -9,7 +9,7 @@ import { NormalizedJob } from './models/normalized-job.model';
 import { PortalEntry } from './models/portal-entry.model';
 import { ScanPortalsRequest } from './models/scan-portals-request.model';
 import { ScanError } from './models/scan-result.model';
-import { PaginationComponent } from './components/pagination/pagination.component';
+import { PaginatorComponent } from '../../core/components/paginator';
 import { scoreClass } from '../../core/utils/score-class';
 import { JobFiltersComponent } from './components/job-filters/job-filters.component';
 import { JobDetailPanelComponent } from './components/job-detail-panel/job-detail-panel.component';
@@ -46,7 +46,7 @@ const FALLBACK_BOARD_SOURCES = [
   selector: 'app-ingestion',
   standalone: true,
   imports: [
-    PaginationComponent,
+    PaginatorComponent,
     JobFiltersComponent,
     JobDetailPanelComponent,
     DatePipe,

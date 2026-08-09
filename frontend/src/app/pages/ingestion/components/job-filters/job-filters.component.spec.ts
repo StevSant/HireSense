@@ -56,11 +56,27 @@ describe('JobFiltersComponent', () => {
     expect(emitted).toEqual([{ user_location: 'Chile', strict_location: true }]);
   });
 
+  // The source picker is a filtering combobox (app-combobox), not a native
+  // select — the list grows with every adapter and ATS portal ingested.
+  function openSourceCombobox(fixture: ReturnType<typeof mount>) {
+    const input = fixture.nativeElement.querySelector(
+      'app-combobox input.combobox-input',
+    ) as HTMLInputElement;
+    input.dispatchEvent(new Event('focus'));
+    fixture.detectChanges();
+    return input;
+  }
+
+  function sourceOptionEls(fixture: ReturnType<typeof mount>): HTMLElement[] {
+    return [...fixture.nativeElement.querySelectorAll('app-combobox .combobox-option')];
+  }
+
   it('renders an option per source plus the "All sources" default', () => {
     const fixture = mount({}, ['remotive', 'jobicy']);
-    const options = fixture.nativeElement.querySelectorAll('select.filter-control option');
+    openSourceCombobox(fixture);
+    const options = sourceOptionEls(fixture);
     expect(options.length).toBe(3);
-    expect((options[0] as HTMLOptionElement).textContent?.trim()).toBe('All sources');
+    expect(options[0].textContent?.trim()).toBe('All sources');
   });
 
   it('emits the source filter on select change', () => {
@@ -68,11 +84,10 @@ describe('JobFiltersComponent', () => {
     let emitted: JobFilters | null = null;
     fixture.componentInstance.filtersChange.subscribe((f) => (emitted = f));
 
-    const select = fixture.nativeElement.querySelector(
-      'select.filter-control',
-    ) as HTMLSelectElement;
-    select.value = 'remotive';
-    select.dispatchEvent(new Event('change'));
+    openSourceCombobox(fixture);
+    sourceOptionEls(fixture)
+      .find((o) => o.textContent?.trim() === 'remotive')!
+      .click();
 
     expect(emitted).toEqual({ source: 'remotive' });
   });
@@ -82,11 +97,10 @@ describe('JobFiltersComponent', () => {
     let emitted: JobFilters | null = null;
     fixture.componentInstance.filtersChange.subscribe((f) => (emitted = f));
 
-    const select = fixture.nativeElement.querySelector(
-      'select.filter-control',
-    ) as HTMLSelectElement;
-    select.value = 'remotive';
-    select.dispatchEvent(new Event('change'));
+    openSourceCombobox(fixture);
+    sourceOptionEls(fixture)
+      .find((o) => o.textContent?.trim() === 'remotive')!
+      .click();
 
     expect(emitted).toEqual({ keyword: 'python', source: 'remotive' });
   });
@@ -96,11 +110,10 @@ describe('JobFiltersComponent', () => {
     let emitted: JobFilters | null = null;
     fixture.componentInstance.filtersChange.subscribe((f) => (emitted = f));
 
-    const select = fixture.nativeElement.querySelector(
-      'select.filter-control',
-    ) as HTMLSelectElement;
-    select.value = '';
-    select.dispatchEvent(new Event('change'));
+    openSourceCombobox(fixture);
+    sourceOptionEls(fixture)
+      .find((o) => o.textContent?.trim() === 'All sources')!
+      .click();
 
     expect(emitted).toEqual({ source: undefined });
   });
@@ -112,9 +125,9 @@ describe('JobFiltersComponent', () => {
       let emitted: JobFilters | null = null;
       fixture.componentInstance.filtersChange.subscribe((f) => (emitted = f));
 
-      const input = fixture.nativeElement.querySelectorAll(
-        'input[type="text"]',
-      )[0] as HTMLInputElement;
+      const input = fixture.nativeElement.querySelector(
+        'input.filter-control[type="text"]',
+      ) as HTMLInputElement;
       input.value = '  react  ';
       input.dispatchEvent(new Event('input'));
 

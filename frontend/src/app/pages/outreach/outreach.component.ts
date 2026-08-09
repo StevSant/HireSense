@@ -24,11 +24,12 @@ import { GenerateResponse } from './models/generate-response.model';
 import { createSortState } from '../../core/utils/sort-state';
 import { sortItems } from '../../core/utils/sort-items';
 import { parseSortToken } from '../../core/utils/parse-sort-token';
+import { ComboboxComponent, ComboboxOption } from '../../core/components/combobox';
 
 @Component({
   selector: 'app-outreach',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, ComboboxComponent],
   templateUrl: './outreach.component.html',
   styleUrl: './outreach.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,6 +44,13 @@ export class OutreachComponent implements OnInit {
 
   // Target picker
   applications = signal<ApplicationListItem[]>([]);
+
+  applicationOptions = computed<ComboboxOption[]>(() =>
+    this.applications().map((app) => ({
+      value: app.id,
+      label: `${app.title} @ ${app.company}`,
+    })),
+  );
   applicationsError = signal('');
   selectedApplicationId = signal('');
 

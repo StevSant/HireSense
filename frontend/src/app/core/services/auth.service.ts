@@ -27,6 +27,8 @@ export class AuthService {
   private sessionProbe: Observable<SessionUser | null> | null = null;
 
   readonly isAuthenticated = computed(() => this.statusSignal() === 'authenticated');
+  readonly user = this.userSignal.asReadonly();
+  readonly username = computed(() => this.userSignal()?.username ?? null);
   readonly role = computed(() => this.userSignal()?.role ?? null);
   readonly isAdmin = computed(() => this.role() === 'admin');
 

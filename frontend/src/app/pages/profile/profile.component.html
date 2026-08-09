@@ -41,18 +41,6 @@
     >
       Cover letters
     </button>
-    <button
-      type="button"
-      role="tab"
-      id="tab-account"
-      class="page-tab"
-      [class.active]="pageTab() === 'account'"
-      [attr.aria-selected]="pageTab() === 'account'"
-      aria-controls="panel-account"
-      (click)="pageTab.set('account')"
-    >
-      Account
-    </button>
   </div>
 
   @if (pageTab() === 'cv') {
@@ -634,12 +622,6 @@
       <div class="details-card">
         <app-cover-letter-templates />
       </div>
-    </section>
-  }
-
-  @if (pageTab() === 'account') {
-    <section class="tab-panel" id="panel-account" role="tabpanel" aria-labelledby="tab-account">
-      <app-account />
     </section>
   }
 </div>

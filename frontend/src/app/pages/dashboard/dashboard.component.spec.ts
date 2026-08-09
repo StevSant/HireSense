@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { DashboardComponent } from './dashboard.component';
@@ -7,6 +8,9 @@ import { environment } from '../../../environments/environment';
 function makeAuth(over: Partial<Record<string, unknown>> = {}) {
   return {
     logout: () => {},
+    username: signal<string | null>('ada-user'),
+    role: signal<string | null>('user'),
+    isAdmin: signal(false),
     ...over,
   };
 }
@@ -94,6 +98,32 @@ describe('DashboardComponent', () => {
 
     cmp.closeSidebar();
     expect(cmp.sidebarOpen()).toBe(false);
+  });
+
+  it('shows the signed-in username and role in the sidebar footer', () => {
+    const fixture = mount();
+    const identity = fixture.nativeElement.querySelector('.sidebar-footer .sidebar-identity');
+
+    expect(identity.textContent).toContain('ada-user');
+    expect(identity.querySelector('.role-badge').textContent).toContain('user');
+    expect(identity.querySelector('.role-badge--admin')).toBeNull();
+  });
+
+  it('marks the role badge as admin for admin sessions', () => {
+    const fixture = mount(
+      makeAuth({ role: signal<string | null>('admin'), isAdmin: signal(true) }),
+    );
+
+    expect(
+      fixture.nativeElement.querySelector('.sidebar-footer .role-badge--admin'),
+    ).not.toBeNull();
+  });
+
+  it('omits the identity block when no session user is loaded', () => {
+    const fixture = mount(makeAuth({ username: signal<string | null>(null) }));
+
+    expect(fixture.nativeElement.querySelector('.sidebar-identity')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.logout-btn')).not.toBeNull();
   });
 
   it('delegates logout to the auth service', () => {

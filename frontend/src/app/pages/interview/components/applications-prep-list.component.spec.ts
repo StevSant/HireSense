@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { Subject, of, throwError } from 'rxjs';
+import { Observable, Subject, map, of, throwError } from 'rxjs';
 import { ApplicationsPrepListComponent } from './applications-prep-list.component';
 import { ApplicationsService } from '../../../core/services/applications.service';
 
@@ -22,7 +22,12 @@ function makeApp(over: Partial<Record<string, unknown>> = {}) {
 
 describe('ApplicationsPrepListComponent', () => {
   function mount(opts: { list?: () => unknown } = {}) {
-    const service = { list: opts.list ?? (() => of([makeApp()])) };
+    // listAll() resolves to {items,total}; these specs describe the rows only.
+    const rows = opts.list ?? (() => of([makeApp()]));
+    const service = {
+      listAll: () =>
+        (rows() as Observable<unknown[]>).pipe(map((items) => ({ items, total: items.length }))),
+    };
     TestBed.configureTestingModule({
       imports: [ApplicationsPrepListComponent],
       providers: [provideRouter([]), { provide: ApplicationsService, useValue: service }],

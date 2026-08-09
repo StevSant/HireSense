@@ -21,4 +21,12 @@ export const environment = {
   // Full board ingestion is a multi-minute network operation; keep the client
   // attached long enough to receive its completion response.
   httpTimeoutFetchMs: 600000,
+  // Page size used when a screen walks an endpoint to completion (see
+  // fetch-all-pages.ts). Matches the backend's DEFAULT_PAGE_SIZE so the common
+  // single-page case costs exactly one request.
+  listPageSize: 100,
+  // Hard ceiling on rows pulled by that walk. Screens that sort/filter/count
+  // client-side need the whole list, but must not spin forever against a huge
+  // table — past this they show a truncation notice instead.
+  listMaxItems: 2000,
 };

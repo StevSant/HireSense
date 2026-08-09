@@ -1,7 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { PagedResult } from '../models/paged-result.model';
+import { fetchAllPages } from '../utils/fetch-all-pages';
+import { toPagedResult } from '../utils/to-paged-result';
 import { ApplicationAggregate } from '../../pages/applications/models/application-aggregate.model';
 import { ApplicationListItem } from '../../pages/applications/models/application-list-item.model';
 import { ApplicationMatch } from '../../pages/applications/models/application-match.model';
@@ -15,12 +18,44 @@ export class ApplicationsService {
   private http = inject(HttpClient);
   private base = `${environment.apiUrl}/applications`;
 
-  list(): Observable<ApplicationListItem[]> {
-    return this.http.get<ApplicationListItem[]>(this.base);
+  /** One page of applications, with the server's unfiltered total. */
+  listPage(limit: number, offset: number): Observable<PagedResult<ApplicationListItem>> {
+    return this.http
+      .get<ApplicationListItem[]>(this.base, {
+        params: new HttpParams().set('limit', limit).set('offset', offset),
+        observe: 'response',
+      })
+      .pipe(map(toPagedResult));
   }
 
-  listAllCoverLetters(): Observable<CoverLetterLibraryItem[]> {
-    return this.http.get<CoverLetterLibraryItem[]>(`${this.base}/cover-letters`);
+  /**
+   * Every application, walked page by page.
+   *
+   * The screens that consume this (the list, the outreach picker, the interview
+   * prep list) sort, filter and count client-side, so fetching only the default
+   * first page silently dropped rows and made the status-tab badge counts wrong
+   * once the user passed one page of applications.
+   */
+  listAll(): Observable<PagedResult<ApplicationListItem>> {
+    return fetchAllPages((limit, offset) => this.listPage(limit, offset));
+  }
+
+  /** One page of the cross-application cover letter library. */
+  listCoverLettersPage(
+    limit: number,
+    offset: number,
+  ): Observable<PagedResult<CoverLetterLibraryItem>> {
+    return this.http
+      .get<CoverLetterLibraryItem[]>(`${this.base}/cover-letters`, {
+        params: new HttpParams().set('limit', limit).set('offset', offset),
+        observe: 'response',
+      })
+      .pipe(map(toPagedResult));
+  }
+
+  /** The whole cover letter library — the card sorts and searches it locally. */
+  listAllCoverLetters(): Observable<PagedResult<CoverLetterLibraryItem>> {
+    return fetchAllPages((limit, offset) => this.listCoverLettersPage(limit, offset));
   }
 
   get(id: string): Observable<ApplicationAggregate> {

@@ -16,13 +16,18 @@ import { CoverLetterLibraryItem } from '../../../applications/models/cover-lette
 import { createSortState } from '../../../../core/utils/sort-state';
 import { sortItems } from '../../../../core/utils/sort-items';
 import { parseSortToken } from '../../../../core/utils/parse-sort-token';
+import { PaginatorComponent } from '../../../../core/components/paginator';
 
 type LibrarySortField = 'created' | 'company' | 'title';
+
+// Letters are tall rows (each carries a preview), so page smaller than a table.
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 @Component({
   selector: 'app-cover-letter-library',
   standalone: true,
-  imports: [FormsModule, RouterLink, DatePipe],
+  imports: [FormsModule, RouterLink, DatePipe, PaginatorComponent],
   templateUrl: './cover-letter-library.component.html',
   styleUrl: './cover-letter-library.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,6 +45,13 @@ export class CoverLetterLibraryComponent implements OnInit {
 
   sort = createSortState<LibrarySortField>('created', 'desc', ['company', 'title']);
 
+  // Client-side paging over the searched/sorted library.
+  page = signal(1);
+  pageSize = signal(DEFAULT_PAGE_SIZE);
+
+  // Server total when the load walk stopped short of it (environment.listMaxItems).
+  truncatedAt = signal<number | null>(null);
+
   filtered = computed(() => {
     const q = this.query().trim().toLowerCase();
     let all = this.letters();
@@ -54,6 +66,32 @@ export class CoverLetterLibraryComponent implements OnInit {
     const field = this.sort.field();
     return sortItems(all, (l) => this.sortValue(l, field), this.sort.dir());
   });
+
+  totalPages = computed(() => Math.max(1, Math.ceil(this.filtered().length / this.pageSize())));
+
+  // Clamped so narrowing the search can't strand the user past the last page.
+  currentPage = computed(() => Math.min(this.page(), this.totalPages()));
+
+  visible = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return this.filtered().slice(start, start + this.pageSize());
+  });
+
+  readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
+
+  onQueryChange(value: string): void {
+    this.query.set(value);
+    this.page.set(1);
+  }
+
+  onPageChange(page: number): void {
+    this.page.set(page);
+  }
+
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.page.set(1);
+  }
 
   private sortValue(l: CoverLetterLibraryItem, field: LibrarySortField): string | null {
     switch (field) {
@@ -76,8 +114,9 @@ export class CoverLetterLibraryComponent implements OnInit {
       .listAllCoverLetters()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (list) => {
-          this.letters.set(list);
+        next: ({ items, total }) => {
+          this.letters.set(items);
+          this.truncatedAt.set(items.length < total ? total : null);
           this.loading.set(false);
         },
         error: (err) => {

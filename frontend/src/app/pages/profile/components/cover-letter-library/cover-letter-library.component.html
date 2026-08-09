@@ -12,7 +12,7 @@
       class="search-input"
       placeholder="Search by company, title, or body..."
       [ngModel]="query()"
-      (ngModelChange)="query.set($event)"
+      (ngModelChange)="onQueryChange($event)"
       aria-label="Search cover letters"
     />
     <select
@@ -42,7 +42,7 @@
   <div class="library-empty">No matches for “{{ query() }}”.</div>
 } @else {
   <ul class="letter-list">
-    @for (letter of filtered(); track letter.id) {
+    @for (letter of visible(); track letter.id) {
       <li class="letter-row" [class.expanded]="expandedId() === letter.id">
         <button class="letter-summary" type="button" (click)="toggle(letter.id)">
           <div class="letter-meta">
@@ -79,4 +79,22 @@
       </li>
     }
   </ul>
+
+  <app-paginator
+    [page]="currentPage()"
+    [pageSize]="pageSize()"
+    [total]="filtered().length"
+    [totalPages]="totalPages()"
+    [pageSizeOptions]="pageSizeOptions"
+    itemLabel="cover letters"
+    (pageChange)="onPageChange($event)"
+    (pageSizeChange)="onPageSizeChange($event)"
+  />
+
+  @if (truncatedAt(); as serverTotal) {
+    <p class="library-hint" role="status">
+      Showing the first {{ letters().length }} of {{ serverTotal }} cover letters — search and sort
+      only cover the loaded rows.
+    </p>
+  }
 }

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, provideRouter } from '@angular/router';
-import { Subject, of, throwError } from 'rxjs';
+import { Observable, Subject, map, of, throwError } from 'rxjs';
 import { ApplicationsComponent } from './applications.component';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { TrackingService } from '../../core/services/tracking.service';
@@ -55,6 +55,19 @@ function makeResearch(over: Partial<CompanyResearch> = {}): CompanyResearch {
   };
 }
 
+/**
+ * Adapt a plain-rows fake to the paged shape `listAll()` now returns.
+ *
+ * Specs stay written in terms of the rows under test; the walk to the last page
+ * is exercised in applications.service.spec.ts where it belongs.
+ */
+function pagedFrom(rows: () => unknown) {
+  return () =>
+    (rows() as Observable<ApplicationListItem[]>).pipe(
+      map((items) => ({ items, total: items.length })),
+    );
+}
+
 describe('ApplicationsComponent', () => {
   function mount(
     opts: {
@@ -66,7 +79,7 @@ describe('ApplicationsComponent', () => {
       refresh?: () => unknown;
     } = {},
   ) {
-    const list = vi.fn(opts.list ?? (() => of([makeItem()])));
+    const list = vi.fn(pagedFrom(opts.list ?? (() => of([makeItem()]))));
     const remove = vi.fn(opts.remove ?? (() => of(undefined)));
     const update = vi.fn(opts.update ?? ((id: string) => of(makeItem({ id, status: 'applied' }))));
     const batchEvaluate = vi.fn(opts.batchEvaluate ?? (() => of({ total_jobs: 1, results: [] })));
@@ -77,7 +90,7 @@ describe('ApplicationsComponent', () => {
       imports: [ApplicationsComponent],
       providers: [
         provideRouter([]),
-        { provide: ApplicationsService, useValue: { list, remove } },
+        { provide: ApplicationsService, useValue: { listAll: list, remove } },
         { provide: TrackingService, useValue: { update, batchEvaluate } },
         { provide: ResearchService, useValue: { research, refresh } },
       ],
@@ -207,7 +220,10 @@ describe('ApplicationsComponent', () => {
       providers: [
         { provide: Router, useValue: { navigate } },
         { provide: ActivatedRoute, useValue: route },
-        { provide: ApplicationsService, useValue: { list: () => of([]), remove: vi.fn() } },
+        {
+          provide: ApplicationsService,
+          useValue: { listAll: pagedFrom(() => of([])), remove: vi.fn() },
+        },
         { provide: TrackingService, useValue: { update: vi.fn(), batchEvaluate: vi.fn() } },
         { provide: ResearchService, useValue: { research: vi.fn(), refresh: vi.fn() } },
       ],
@@ -237,7 +253,7 @@ describe('ApplicationsComponent status tabs / filtering', () => {
         provideRouter([]),
         {
           provide: ApplicationsService,
-          useValue: { list: () => of(rows), remove: () => of(undefined) },
+          useValue: { listAll: pagedFrom(() => of(rows)), remove: () => of(undefined) },
         },
         {
           provide: TrackingService,
@@ -330,7 +346,7 @@ describe('ApplicationsComponent merged pipeline capabilities', () => {
       research?: () => unknown;
     } = {},
   ) {
-    const list = vi.fn(opts.list ?? (() => of([makeItem()])));
+    const list = vi.fn(pagedFrom(opts.list ?? (() => of([makeItem()]))));
     const update = vi.fn(opts.update ?? (() => of(makeItem({ status: 'applied' }))));
     const batchEvaluate = vi.fn(opts.batchEvaluate ?? (() => of({ total_jobs: 1, results: [] })));
     const research = vi.fn(opts.research ?? (() => of(makeResearch())));
@@ -339,7 +355,7 @@ describe('ApplicationsComponent merged pipeline capabilities', () => {
       imports: [ApplicationsComponent],
       providers: [
         provideRouter([]),
-        { provide: ApplicationsService, useValue: { list, remove: () => of(undefined) } },
+        { provide: ApplicationsService, useValue: { listAll: list, remove: () => of(undefined) } },
         { provide: TrackingService, useValue: { update, batchEvaluate } },
         { provide: ResearchService, useValue: { research, refresh: () => of(makeResearch()) } },
       ],
@@ -413,7 +429,7 @@ describe('ApplicationsComponent merged pipeline capabilities', () => {
         provideRouter([]),
         {
           provide: ApplicationsService,
-          useValue: { list: () => of([item]), remove: () => of(undefined) },
+          useValue: { listAll: pagedFrom(() => of([item])), remove: () => of(undefined) },
         },
         {
           provide: TrackingService,

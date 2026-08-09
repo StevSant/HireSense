@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { CoverLetterLibraryComponent } from '../../components/cover-letter-library/cover-letter-library.component';
 import { CoverLetterTemplatesComponent } from '../../components/cover-letter-templates/cover-letter-templates.component';
 
@@ -6,7 +7,7 @@ import { CoverLetterTemplatesComponent } from '../../components/cover-letter-tem
 @Component({
   selector: 'app-profile-cover-letters-tab',
   standalone: true,
-  imports: [CoverLetterLibraryComponent, CoverLetterTemplatesComponent],
+  imports: [RouterLink, CoverLetterLibraryComponent, CoverLetterTemplatesComponent],
   templateUrl: './profile-cover-letters-tab.component.html',
   styleUrl: './profile-cover-letters-tab.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

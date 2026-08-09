@@ -151,6 +151,13 @@ export class CompanyComponent implements OnInit {
    * tab and presented the result as complete — a company with more than that
    * silently lost rows from the table, the location breakdown and the average
    * match score.
+   *
+   * Walked with `rescore: false`: this is pagination over a fixed filter, the
+   * case that flag exists for. The server still runs the full skill+ANN+min_score
+   * pipeline (so the set and its order are unchanged) but reuses cached LLM
+   * scores instead of blocking on one call per uncached job — otherwise a
+   * company with several hundred jobs turns one page view into hundreds of
+   * blocking calls. `scoreOf` reads the persisted score, so nothing is lost.
    */
   private allJobsFor(
     tab: 'boards' | 'portals',
@@ -159,10 +166,14 @@ export class CompanyComponent implements OnInit {
     return fetchAllPages<NormalizedJob>(
       (limit, offset) =>
         this.ingestion
-          .queryJobs(tab, Math.floor(offset / limit) + 1, limit, {
-            company: name,
-            sort: 'match_desc',
-          })
+          .queryJobs(
+            tab,
+            Math.floor(offset / limit) + 1,
+            limit,
+            { company: name, sort: 'match_desc' },
+            false,
+            false,
+          )
           .pipe(map((res) => ({ items: res.jobs, total: res.total }))),
       { pageSize: COMPANY_PAGE_SIZE },
     );

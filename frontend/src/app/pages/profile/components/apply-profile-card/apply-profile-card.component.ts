@@ -6,9 +6,11 @@ import {
   inject,
   input,
   signal,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { finalize } from 'rxjs';
 import { ApplyProfile } from '../../models/apply-profile.model';
 import { CandidateProfile } from '../../models/candidate-profile.model';
 import { ScreeningAnswer } from '../../models/screening-answer.model';
@@ -90,6 +92,13 @@ export class ApplyProfileCardComponent {
   constructor() {
     effect(() => {
       const snap = snapshot(this.profile());
+      // Re-syncing while the user is mid-edit would wipe their answers *and*
+      // reset baseline, making isDirty() false so save() early-returns and the
+      // form silently never persists. Background refetches mint new profile
+      // identities routinely, so hold the local edits until they are saved.
+      // untracked(): reading form/baseline here must not make this effect
+      // re-run on every keystroke.
+      if (untracked(() => this.isDirty())) return;
       this.form.set(snap);
       this.baseline.set(snap);
     });
@@ -163,10 +172,15 @@ export class ApplyProfileCardComponent {
     this.error.set('');
     this.profileService
       .setApplyProfile(this.toPayload(this.form()))
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        // finalize() also covers unsubscribe. takeUntilDestroyed tears the
+        // stream down without calling next or error, which would otherwise
+        // strand the button on "Saving…" forever with no feedback.
+        finalize(() => this.saving.set(false)),
+      )
       .subscribe({
         next: (saved) => {
-          this.saving.set(false);
           const snap = snapshot(saved);
           this.form.set(snap);
           this.baseline.set(snap);
@@ -174,7 +188,6 @@ export class ApplyProfileCardComponent {
           setTimeout(() => this.savedFlash.set(false), 2200);
         },
         error: (err) => {
-          this.saving.set(false);
           this.error.set(err?.error?.detail ?? 'Failed to save your apply profile');
         },
       });

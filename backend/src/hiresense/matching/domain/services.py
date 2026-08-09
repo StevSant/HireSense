@@ -56,9 +56,14 @@ class MatchingOrchestrator:
         embedding: Any | None = None,
         preference: Any | None = None,
         combined_scorer: Any | None = None,
+        breakdown_weights: dict[str, float] | None = None,
     ) -> None:
         self._llm = llm
         self._event_bus = event_bus
+        # Percentages for the four heuristic sub-scores, normalized to fractions.
+        # None keeps ScoreBreakdown's own defaults, so a bare orchestrator (tests,
+        # bare apps) scores exactly as before.
+        self._breakdown_weights = breakdown_weights
         self._dimension_scorers = dimension_scorers or []
         self._embedding = embedding
         # Optional, duck-typed preference port: exposes weight_overrides() ->
@@ -264,7 +269,7 @@ class MatchingOrchestrator:
             id=match_id,
             job_id=job_id,
             cv_id=cv_id,
-            overall_score=breakdown.weighted_average(),
+            overall_score=breakdown.weighted_average(self._breakdown_weights),
             breakdown=breakdown,
             matched_skills=skill_result.matched,
             missing_skills=skill_result.missing,

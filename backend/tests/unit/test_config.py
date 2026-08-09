@@ -17,8 +17,8 @@ def test_settings_loads_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.embedding_model == "all-mpnet-base-v2"
     assert settings.embedding_device == "cpu"
     assert settings.vector_store_provider == "pgvector"
-    assert settings.weight_semantic == 15
-    assert settings.weight_skill_match == 20
+    assert settings.weight_semantic == 35
+    assert settings.weight_skill_match == 30
 
 
 def test_settings_enabled_sources_parsed(monkeypatch: pytest.MonkeyPatch) -> None:

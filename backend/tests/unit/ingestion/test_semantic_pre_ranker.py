@@ -480,3 +480,87 @@ class TestSemanticPreRankerEmptyEmbedding:
 
         assert [j.id for j in result] == ["a", "b"]
         assert vs.last_call is None
+
+
+# ---------------------------------------------------------------------------
+# Visibility of the silent passthrough
+# ---------------------------------------------------------------------------
+
+
+class _Counter:
+    def __init__(self) -> None:
+        self.calls: list[tuple[float, dict]] = []
+
+    def add(self, value, attributes=None) -> None:
+        self.calls.append((value, attributes or {}))
+
+
+class _CountingMetrics:
+    def __init__(self) -> None:
+        self.automation_failures_total = _Counter()
+
+
+def _patch_metrics(monkeypatch) -> _CountingMetrics:
+    metrics = _CountingMetrics()
+    monkeypatch.setattr(
+        "hiresense.ingestion.domain.semantic_pre_ranker.get_domain_metrics",
+        lambda: metrics,
+    )
+    return metrics
+
+
+class TestPassthroughIsVisible:
+    """A passthrough means the module's entire purpose silently did not happen —
+    the caller cannot tell it apart from a genuinely skill-ordered list, so a
+    failure must leave a counted signal, not only a log line."""
+
+    @pytest.mark.asyncio
+    async def test_search_failure_increments_automation_failures(self, monkeypatch) -> None:
+        metrics = _patch_metrics(monkeypatch)
+        ranker = SemanticPreRanker(
+            FakeVectorStore(raises=RuntimeError("DB unavailable")),
+            FakeEmbeddingPort(),
+            top_k_cap=100,
+            skill_weight=0.5,
+            semantic_weight=0.5,
+        )
+
+        jobs = [_job("a"), _job("b")]
+        result = await ranker.rerank(jobs, {}, PROFILE_SKILLS, PROFILE_SUMMARY, "boards")
+
+        assert result == jobs
+        assert metrics.automation_failures_total.calls == [(1, {"component": "semantic_prerank"})]
+
+    @pytest.mark.asyncio
+    async def test_profile_embedding_failure_increments_automation_failures(
+        self, monkeypatch
+    ) -> None:
+        metrics = _patch_metrics(monkeypatch)
+        ranker = SemanticPreRanker(
+            FakeVectorStore(),
+            FakeEmbeddingPort(raises=RuntimeError("model not loaded")),
+            top_k_cap=100,
+            skill_weight=0.5,
+            semantic_weight=0.5,
+        )
+
+        jobs = [_job("a")]
+        result = await ranker.rerank(jobs, {}, PROFILE_SKILLS, PROFILE_SUMMARY, "boards")
+
+        assert result == jobs
+        assert metrics.automation_failures_total.calls == [(1, {"component": "semantic_prerank"})]
+
+    @pytest.mark.asyncio
+    async def test_successful_rerank_records_no_failure(self, monkeypatch) -> None:
+        metrics = _patch_metrics(monkeypatch)
+        ranker = SemanticPreRanker(
+            FakeVectorStore(results=[ScoredResult(id="a", score=0.9, metadata={})]),
+            FakeEmbeddingPort(),
+            top_k_cap=100,
+            skill_weight=0.5,
+            semantic_weight=0.5,
+        )
+
+        await ranker.rerank([_job("a")], {"a": 0.5}, PROFILE_SKILLS, PROFILE_SUMMARY, "boards")
+
+        assert metrics.automation_failures_total.calls == []

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import json
+import logging
 
 import pytest
 
+from hiresense.ports.llm import LLMTimeoutError
+from hiresense.research.domain import CompanyResearchError
 from hiresense.research.domain.models import CompanyResearch
 from hiresense.research.domain.services import CompanyResearchService
 
@@ -118,20 +121,73 @@ async def test_research_no_llm_returns_fallback_not_persisted() -> None:
     assert len(repo.created) == 0
 
 
-@pytest.mark.asyncio
-async def test_research_llm_failure_returns_fallback_not_persisted() -> None:
-    class FailingLLM:
-        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
-            raise RuntimeError("API down")
+class FailingLLM:
+    async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+        raise RuntimeError("API down")
 
+
+@pytest.mark.asyncio
+async def test_research_llm_failure_raises_instead_of_returning_a_placeholder() -> None:
+    """The old "Research unavailable" record was served as a 200 and was
+    shape-identical to a real result, so an outage read as genuine research."""
     repo = FakeRepo()
     service = CompanyResearchService(repository=repo, llm=FailingLLM())
 
-    result = await service.research("Anthropic")
+    with pytest.raises(CompanyResearchError):
+        await service.research("Anthropic")
 
-    assert result.funding_stage == "Research unavailable"
-    assert result.pros == "Research unavailable"
     assert len(repo.created) == 0
+
+
+@pytest.mark.asyncio
+async def test_research_failure_is_logged_with_the_company_name(caplog) -> None:
+    service = CompanyResearchService(repository=FakeRepo(), llm=FailingLLM())
+
+    with caplog.at_level(logging.ERROR, logger="hiresense.research.domain.services"):
+        with pytest.raises(CompanyResearchError):
+            await service.research("Anthropic")
+
+    assert any("Anthropic" in record.getMessage() for record in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_unparseable_llm_response_raises() -> None:
+    repo = FakeRepo()
+    service = CompanyResearchService(repository=repo, llm=FakeLLM("not json at all"))
+
+    with pytest.raises(CompanyResearchError):
+        await service.research("Anthropic")
+
+    assert len(repo.created) == 0
+
+
+@pytest.mark.asyncio
+async def test_persistence_failure_raises_rather_than_returning_unsaved_research() -> None:
+    """The DB write sits inside the same guarded block as the LLM call — a failed
+    save must not come back looking like a successful lookup either."""
+
+    class _FailingRepo(FakeRepo):
+        def create(self, research: CompanyResearch) -> CompanyResearch:
+            raise RuntimeError("db down")
+
+    service = CompanyResearchService(repository=_FailingRepo(), llm=FakeLLM(_LLM_RESPONSE))
+
+    with pytest.raises(CompanyResearchError):
+        await service.research("Anthropic")
+
+
+@pytest.mark.asyncio
+async def test_llm_timeout_propagates_untouched() -> None:
+    """A timeout keeps its own type so the API answers 504, not 503."""
+
+    class _TimingOutLLM:
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            raise LLMTimeoutError(timeout=1.0, provider="anthropic")
+
+    service = CompanyResearchService(repository=FakeRepo(), llm=_TimingOutLLM())
+
+    with pytest.raises(LLMTimeoutError):
+        await service.research("Anthropic")
 
 
 @pytest.mark.asyncio

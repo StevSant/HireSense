@@ -32,6 +32,7 @@ from hiresense.ingestion.domain.embedding_text import embed_profile_cached
 from hiresense.ingestion.domain.job_scorer import combine_fit_score
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.kernel import LRUCache
+from hiresense.observability import get_domain_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +117,9 @@ class SemanticPreRanker:
         # Obtain profile embedding (cached or cold-start)
         profile_vec = await self._get_profile_embedding(candidate_skills, candidate_summary)
         if profile_vec is None:
+            # embed_profile_cached only returns None after logging a failure —
+            # same silent-passthrough problem as a failed search below.
+            get_domain_metrics().automation_failures_total.add(1, {"component": "semantic_prerank"})
             return jobs
 
         # Apply the learned taste vector (preference loop). Passthrough when no
@@ -140,7 +144,12 @@ class SemanticPreRanker:
                 filters={"bucket": bucket},
             )
         except Exception:
+            # Passthrough means this module's entire purpose — reordering by
+            # semantic fit — silently did not happen, and the caller cannot tell
+            # a failed rerank from a genuinely skill-ordered list. Count it so a
+            # persistently broken vector store is visible, not just logged.
             logger.exception("SemanticPreRanker: vector store search failed — passthrough")
+            get_domain_metrics().automation_failures_total.add(1, {"component": "semantic_prerank"})
             return jobs
 
         if not results:

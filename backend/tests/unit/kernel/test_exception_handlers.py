@@ -9,8 +9,10 @@ from hiresense.kernel.exceptions import (
     ConflictError,
     DomainError,
     NotFoundError,
+    UpstreamUnavailableError,
     ValidationError,
 )
+from hiresense.research.domain import CompanyResearchError
 
 
 def _client_raising(exc: Exception) -> TestClient:
@@ -45,3 +47,26 @@ def test_domain_errors_subclass_value_error() -> None:
     assert issubclass(DomainError, ValueError)
     for exc_type in (NotFoundError, ConflictError, ValidationError):
         assert issubclass(exc_type, DomainError)
+
+
+def test_upstream_unavailable_maps_to_503() -> None:
+    """A feature whose upstream failed must answer 503, not hand back a
+    fabricated result as a 200."""
+    resp = _client_raising(UpstreamUnavailableError("company research failed")).get("/boom")
+
+    assert resp.status_code == 503
+    assert resp.json() == {"detail": "company research failed"}
+
+
+def test_module_specific_subclasses_need_no_handler_of_their_own() -> None:
+    resp = _client_raising(CompanyResearchError("company research failed")).get("/boom")
+
+    assert resp.status_code == 503
+
+
+def test_upstream_unavailable_is_not_a_value_error() -> None:
+    """DomainError subclasses ValueError for backward compatibility; if this one
+    did too, the many ``except ValueError`` router blocks would silently
+    downgrade an outage to a misleading 400."""
+    assert not issubclass(UpstreamUnavailableError, ValueError)
+    assert not issubclass(UpstreamUnavailableError, DomainError)

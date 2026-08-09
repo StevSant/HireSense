@@ -47,7 +47,29 @@ npm run build                            # production build
 npm test                                 # Vitest via ng test
 npm test -- --include "**/foo.spec.ts"   # single spec file
 npm test -- --filter "test name"         # single test by name
+npx ng lint                              # NOT run by npm test or npm run build — CI runs it
+npm run format:check                     # prettier gate, also CI-enforced
 ```
+
+**Node version.** The frontend needs Node 22 (via `fnm`). Under a newer default Node,
+`npm test` fails with `[vitest-pool]: Failed to start forks worker` / "Timeout waiting
+for worker to respond" — an opaque error that looks like a broken test rather than a
+runtime mismatch. `fnm exec --using=22` does not work from a non-interactive shell; put
+it on `PATH` instead:
+
+```bash
+export PATH="$HOME/AppData/Roaming/fnm/node-versions/v22.23.1/installation:$PATH"
+```
+
+**Prettier before pushing.** CI runs `prettier --check "src/**/*.{ts,html,css,scss,json}"`.
+Two traps when checking locally:
+
+- Never build the file list from `git status --porcelain` — it collapses untracked
+  directories into one entry, so every file inside a newly created folder is silently
+  skipped and only CI catches it. Format all of `src`, or list files from
+  `git diff --name-only origin/main...HEAD`.
+- A bare `npx prettier --check "src/**/*"` flags all ~435 files on a CRLF checkout while
+  passing in CI (LF). Pass `--end-of-line auto` when checking explicit paths.
 
 ### Docker
 

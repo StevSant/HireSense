@@ -29,7 +29,9 @@ describe('ComboboxComponent', () => {
     [...f.nativeElement.querySelectorAll('.combobox-option')] as HTMLElement[];
 
   function key(f: ReturnType<typeof mount>, k: string) {
-    input(f).dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    input(f).dispatchEvent(
+      new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }),
+    );
     f.detectChanges();
   }
 

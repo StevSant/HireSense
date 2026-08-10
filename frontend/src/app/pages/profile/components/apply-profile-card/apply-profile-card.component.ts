@@ -11,9 +11,9 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
-import { ApplyProfile } from '../../models/apply-profile.model';
-import { CandidateProfile } from '../../models/candidate-profile.model';
-import { ScreeningAnswer } from '../../models/screening-answer.model';
+import { ApplyProfile } from '@core/contracts/apply-profile.model';
+import { CandidateProfile } from '@core/contracts/candidate-profile.model';
+import { ScreeningAnswer } from '@core/contracts/screening-answer.model';
 import { ProfileService } from '../../../../core/services/profile.service';
 import { environment } from '../../../../../environments/environment';
 

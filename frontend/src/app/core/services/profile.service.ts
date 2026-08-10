@@ -2,11 +2,11 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ApplyProfile } from '../../pages/profile/models/apply-profile.model';
-import { CandidateProfile } from '../../pages/profile/models/candidate-profile.model';
-import { ProfileManualFieldsUpdate } from '../../pages/profile/models/profile-manual-fields-update.model';
-import { UploadCVRequest } from '../../pages/profile/models/upload-cv-request.model';
-import { TranslateResponse } from '../../pages/profile/models/translate-response.model';
+import { ApplyProfile } from '@core/contracts/apply-profile.model';
+import { CandidateProfile } from '@core/contracts/candidate-profile.model';
+import { ProfileManualFieldsUpdate } from '@core/contracts/profile-manual-fields-update.model';
+import { UploadCVRequest } from '@core/contracts/upload-cv-request.model';
+import { TranslateResponse } from '@core/contracts/translate-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProfileService {

@@ -3,7 +3,7 @@ import { of, throwError } from 'rxjs';
 import { JobTabComponent } from './job-tab.component';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { TrackingService } from '../../../core/services/tracking.service';
-import { ApplicationAggregate } from '../models/application-aggregate.model';
+import { ApplicationAggregate } from '@core/contracts/application-aggregate.model';
 
 function makeAggregate(over: Partial<ApplicationAggregate> = {}): ApplicationAggregate {
   return {

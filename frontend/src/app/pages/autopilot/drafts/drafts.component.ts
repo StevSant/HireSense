@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AutopilotService } from '../../../core/services/autopilot.service';
-import { AutopilotDraft } from '../../../core/models/autopilot.model';
+import { AutopilotDraft } from '@core/contracts/autopilot.model';
 
 @Component({
   selector: 'app-autopilot-drafts',

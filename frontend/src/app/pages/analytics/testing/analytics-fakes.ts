@@ -1,5 +1,5 @@
 import { of } from 'rxjs';
-import { PortfolioEngagementResponse } from '../../profile/models/portfolio-engagement.model';
+import { PortfolioEngagementResponse } from '@core/contracts/portfolio-engagement.model';
 
 // Shared fixtures for the analytics shell and tab specs.
 export function makeAnalyticsService(over: Partial<Record<string, unknown>> = {}) {

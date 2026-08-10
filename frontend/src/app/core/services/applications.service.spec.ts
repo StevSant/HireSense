@@ -3,8 +3,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ApplicationsService } from './applications.service';
 import { environment } from '../../../environments/environment';
-import { ApplicationListItem } from '../../pages/applications/models/application-list-item.model';
-import { PagedResult } from '../models/paged-result.model';
+import { ApplicationListItem } from '@core/contracts/application-list-item.model';
+import { PagedResult } from '@core/contracts/paged-result.model';
 
 const BASE = `${environment.apiUrl}/applications`;
 

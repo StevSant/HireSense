@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { ProfileCvTabComponent } from './profile-cv-tab.component';
 import { ProfileService } from '../../../../core/services/profile.service';
-import { TranslateResponse } from '../../models/translate-response.model';
+import { TranslateResponse } from '@core/contracts/translate-response.model';
 import { makeProfile } from '../../testing/make-profile';
 
 describe('ProfileCvTabComponent', () => {

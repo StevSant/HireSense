@@ -6,7 +6,7 @@ import {
   linkedSignal,
   output,
 } from '@angular/core';
-import { CompanyResearch } from '../../../tracking/models/company-research.model';
+import { CompanyResearch } from '@core/contracts/company-research.model';
 
 // Sentinel strings the backend writes when research couldn't be produced.
 // Distinguish "no LLM configured" (actionable: add a key) from a transient

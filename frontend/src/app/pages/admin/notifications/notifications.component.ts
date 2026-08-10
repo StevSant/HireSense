@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { NotificationService } from '../../../core/services/notification.service';
-import { NotificationStatus } from '../../../core/models/notification.model';
+import { NotificationStatus } from '@core/contracts/notification.model';
 
 @Component({
   selector: 'app-notifications',

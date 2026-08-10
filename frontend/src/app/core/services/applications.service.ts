@@ -2,16 +2,16 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { PagedResult } from '../models/paged-result.model';
+import { PagedResult } from '@core/contracts/paged-result.model';
 import { fetchAllPages } from '../utils/fetch-all-pages';
 import { toPagedResult } from '../utils/to-paged-result';
-import { ApplicationAggregate } from '../../pages/applications/models/application-aggregate.model';
-import { ApplicationListItem } from '../../pages/applications/models/application-list-item.model';
-import { ApplicationMatch } from '../../pages/applications/models/application-match.model';
-import { CvOptimization } from '../../pages/applications/models/cv-optimization.model';
-import { ApplicationInterviewPrep } from '../../pages/applications/models/application-interview-prep.model';
-import { CoverLetter } from '../../pages/applications/models/cover-letter.model';
-import { CoverLetterLibraryItem } from '../../pages/applications/models/cover-letter-library-item.model';
+import { ApplicationAggregate } from '@core/contracts/application-aggregate.model';
+import { ApplicationListItem } from '@core/contracts/application-list-item.model';
+import { ApplicationMatch } from '@core/contracts/application-match.model';
+import { CvOptimization } from '@core/contracts/cv-optimization.model';
+import { ApplicationInterviewPrep } from '@core/contracts/application-interview-prep.model';
+import { CoverLetter } from '@core/contracts/cover-letter.model';
+import { CoverLetterLibraryItem } from '@core/contracts/cover-letter-library-item.model';
 
 @Injectable({ providedIn: 'root' })
 export class ApplicationsService {

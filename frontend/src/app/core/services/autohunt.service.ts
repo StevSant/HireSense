@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { Digest } from '../../pages/autohunt/models/digest.model';
+import { Digest } from '@core/contracts/digest.model';
 
 @Injectable({ providedIn: 'root' })
 export class AutohuntService {

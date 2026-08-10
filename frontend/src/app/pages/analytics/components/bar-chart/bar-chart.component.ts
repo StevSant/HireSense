@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
-import { BarRow } from '../../models/bar-row.model';
+import { BarRow } from '@core/contracts/bar-row.model';
 
 @Component({
   selector: 'app-bar-chart',

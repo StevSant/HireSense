@@ -2,13 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { FunnelMetrics } from '../../pages/analytics/models/funnel-metrics.model';
-import { MarketIntel } from '../../pages/analytics/models/market-intel.model';
-import { SkillGap } from '../../pages/analytics/models/skill-gap.model';
-import { UpskillingPlan } from '../../pages/interview/models/upskilling-plan.model';
-import { TargetSalary } from '../../pages/analytics/models/target-salary.model';
-import { CompBenchmark } from '../../pages/analytics/models/comp-benchmark.model';
-import { SearchFocus } from '../../pages/analytics/models/search-focus.model';
+import { FunnelMetrics } from '@core/contracts/funnel-metrics.model';
+import { MarketIntel } from '@core/contracts/market-intel.model';
+import { SkillGap } from '@core/contracts/skill-gap.model';
+import { UpskillingPlan } from '@core/contracts/upskilling-plan.model';
+import { TargetSalary } from '@core/contracts/target-salary.model';
+import { CompBenchmark } from '@core/contracts/comp-benchmark.model';
+import { SearchFocus } from '@core/contracts/search-focus.model';
 
 @Injectable({ providedIn: 'root' })
 export class AnalyticsService {

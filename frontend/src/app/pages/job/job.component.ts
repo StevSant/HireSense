@@ -10,8 +10,8 @@ import {
 import { DatePipe, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NormalizedJob } from '../ingestion/models/normalized-job.model';
-import { JobAnalysis } from '../ingestion/models/job-analysis.model';
+import { NormalizedJob } from '@core/contracts/normalized-job.model';
+import { JobAnalysis } from '@core/contracts/job-analysis.model';
 import { IngestionService } from '../../core/services/ingestion.service';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { DeepAnalysisComponent } from '../ingestion/components/deep-analysis/deep-analysis.component';

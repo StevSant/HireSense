@@ -1,15 +1,15 @@
-import { FunnelMetrics } from '../pages/analytics/models/funnel-metrics.model';
-import { CompBenchmark } from '../pages/analytics/models/comp-benchmark.model';
-import { MarketIntel } from '../pages/analytics/models/market-intel.model';
-import { SearchFocus } from '../pages/analytics/models/search-focus.model';
-import { SkillGap } from '../pages/analytics/models/skill-gap.model';
-import { ApplicationAggregate } from '../pages/applications/models/application-aggregate.model';
-import { ApplicationListItem } from '../pages/applications/models/application-list-item.model';
-import { ApplicationMatch } from '../pages/applications/models/application-match.model';
-import { NormalizedJob } from '../pages/ingestion/models/normalized-job.model';
-import { PaginatedJobsResponse } from '../pages/ingestion/models/paginated-jobs-response.model';
-import { PortfolioEngagementResponse } from '../pages/profile/models/portfolio-engagement.model';
-import { CandidateProfile } from '../pages/profile/models/candidate-profile.model';
+import { FunnelMetrics } from '@core/contracts/funnel-metrics.model';
+import { CompBenchmark } from '@core/contracts/comp-benchmark.model';
+import { MarketIntel } from '@core/contracts/market-intel.model';
+import { SearchFocus } from '@core/contracts/search-focus.model';
+import { SkillGap } from '@core/contracts/skill-gap.model';
+import { ApplicationAggregate } from '@core/contracts/application-aggregate.model';
+import { ApplicationListItem } from '@core/contracts/application-list-item.model';
+import { ApplicationMatch } from '@core/contracts/application-match.model';
+import { NormalizedJob } from '@core/contracts/normalized-job.model';
+import { PaginatedJobsResponse } from '@core/contracts/paginated-jobs-response.model';
+import { PortfolioEngagementResponse } from '@core/contracts/portfolio-engagement.model';
+import { CandidateProfile } from '@core/contracts/candidate-profile.model';
 
 const createdAt = '2026-07-18T14:00:00Z';
 

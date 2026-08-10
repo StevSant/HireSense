@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { NetworkService } from '../../../../core/services/network.service';
-import { NetworkImportResult } from '../../models/network-import-result.model';
+import { NetworkImportResult } from '@core/contracts/network-import-result.model';
 
 @Component({
   selector: 'app-network-card',

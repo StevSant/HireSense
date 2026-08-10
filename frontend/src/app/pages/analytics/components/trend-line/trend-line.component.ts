@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { TrendPoint } from '../../models/market-intel.model';
+import { TrendPoint } from '@core/contracts/market-intel.model';
 
 /** SVG viewBox width in user units. */
 const VIEWBOX_WIDTH = 320;

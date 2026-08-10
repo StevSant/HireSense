@@ -2,10 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { CreateApplicationRequest } from '../models/create-application-request.model';
-import { BatchEvaluationResponse } from '../../pages/tracking/models/batch-evaluation-response.model';
-import { TrackedApplication } from '../../pages/tracking/models/tracked-application.model';
-import { UpdateApplicationRequest } from '../../pages/tracking/models/update-application-request.model';
+import { CreateApplicationRequest } from '@core/contracts/create-application-request.model';
+import { BatchEvaluationResponse } from '@core/contracts/batch-evaluation-response.model';
+import { TrackedApplication } from '@core/contracts/tracked-application.model';
+import { UpdateApplicationRequest } from '@core/contracts/update-application-request.model';
 
 @Injectable({ providedIn: 'root' })
 export class TrackingService {

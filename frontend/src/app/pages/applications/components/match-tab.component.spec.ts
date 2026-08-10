@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { MatchTabComponent } from './match-tab.component';
 import { ApplicationsService } from '../../../core/services/applications.service';
-import { ApplicationAggregate } from '../models/application-aggregate.model';
-import { ApplicationMatch } from '../models/application-match.model';
+import { ApplicationAggregate } from '@core/contracts/application-aggregate.model';
+import { ApplicationMatch } from '@core/contracts/application-match.model';
 
 function makeMatch(over: Partial<ApplicationMatch> = {}): ApplicationMatch {
   return {

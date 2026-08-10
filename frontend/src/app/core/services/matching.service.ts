@@ -2,10 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AnalyzeRequest } from '../../pages/matching/models/analyze-request.model';
-import { EvaluateRequest } from '../../pages/matching/models/evaluate-request.model';
-import { EvaluationResult } from '../../pages/matching/models/evaluation-result.model';
-import { MatchResult } from '../../pages/matching/models/match-result.model';
+import { AnalyzeRequest } from '@core/contracts/analyze-request.model';
+import { EvaluateRequest } from '@core/contracts/evaluate-request.model';
+import { EvaluationResult } from '@core/contracts/evaluation-result.model';
+import { MatchResult } from '@core/contracts/match-result.model';
 
 @Injectable({ providedIn: 'root' })
 export class MatchingService {

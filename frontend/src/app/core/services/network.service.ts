@@ -2,8 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { NetworkImportResult } from '../../pages/profile/models/network-import-result.model';
-import { NetworkMatchResponse } from '../../pages/profile/models/network-match-response.model';
+import { NetworkImportResult } from '@core/contracts/network-import-result.model';
+import { NetworkMatchResponse } from '@core/contracts/network-match-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class NetworkService {

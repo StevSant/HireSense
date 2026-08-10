@@ -3,9 +3,9 @@ import { of, throwError } from 'rxjs';
 
 import { AdminLLMSettingsComponent } from './admin-llm-settings.component';
 import { AdminLLMSettingsService } from '../../core/services/admin-llm-settings.service';
-import { FeatureView } from './models/feature-view.model';
-import { LLMSettings } from './models/llm-settings.model';
-import { LLMTestResult } from './models/llm-test-result.model';
+import { FeatureView } from '@core/contracts/feature-view.model';
+import { LLMSettings } from '@core/contracts/llm-settings.model';
+import { LLMTestResult } from '@core/contracts/llm-test-result.model';
 
 const SETTINGS: LLMSettings = {
   provider: 'openai',

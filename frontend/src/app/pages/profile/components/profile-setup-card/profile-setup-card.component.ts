@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { CandidateProfile } from '../../models/candidate-profile.model';
+import { CandidateProfile } from '@core/contracts/candidate-profile.model';
 
 interface ProfileSetupStep {
   label: string;

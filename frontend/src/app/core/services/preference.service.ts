@@ -2,9 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { FeedbackKind } from '../../pages/ingestion/models/feedback-kind.model';
-import { FeedbackSignal } from '../../pages/ingestion/models/feedback-signal.model';
-import { PreferenceExplanation } from '../../pages/ingestion/models/preference-explanation.model';
+import { FeedbackKind } from '@core/contracts/feedback-kind.model';
+import { FeedbackSignal } from '@core/contracts/feedback-signal.model';
+import { PreferenceExplanation } from '@core/contracts/preference-explanation.model';
 
 @Injectable({ providedIn: 'root' })
 export class PreferenceService {

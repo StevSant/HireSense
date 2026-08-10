@@ -10,7 +10,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { PortfolioService } from '../../../../core/services/portfolio.service';
-import { PortfolioProject } from '../../models/portfolio-project.model';
+import { PortfolioProject } from '@core/contracts/portfolio-project.model';
 import { PaginatorComponent } from '../../../../core/components/paginator';
 
 // Max tech chips shown per card before collapsing the rest into a "+N more" pill.

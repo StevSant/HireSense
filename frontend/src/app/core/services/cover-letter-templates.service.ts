@@ -2,8 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { CoverLetterTemplate } from '../../pages/profile/models/cover-letter-template.model';
-import { CoverLetterTemplateUpsert } from '../../pages/profile/models/cover-letter-template-upsert.model';
+import { CoverLetterTemplate } from '@core/contracts/cover-letter-template.model';
+import { CoverLetterTemplateUpsert } from '@core/contracts/cover-letter-template-upsert.model';
 
 @Injectable({ providedIn: 'root' })
 export class CoverLetterTemplatesService {

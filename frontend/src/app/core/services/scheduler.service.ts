@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { JobRun, ScheduledJob } from '../models/scheduler.model';
+import { JobRun, ScheduledJob } from '@core/contracts/scheduler.model';
 
 @Injectable({ providedIn: 'root' })
 export class SchedulerService {

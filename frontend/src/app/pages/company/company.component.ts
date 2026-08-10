@@ -14,16 +14,16 @@ import { Observable, forkJoin, map } from 'rxjs';
 import { IngestionService } from '../../core/services/ingestion.service';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { ResearchService } from '../../core/services/research.service';
-import { NormalizedJob } from '../ingestion/models/normalized-job.model';
-import { FeedbackKind } from '../ingestion/models/feedback-kind.model';
-import { CompanyResearch } from '../tracking/models/company-research.model';
+import { NormalizedJob } from '@core/contracts/normalized-job.model';
+import { FeedbackKind } from '@core/contracts/feedback-kind.model';
+import { CompanyResearch } from '@core/contracts/company-research.model';
 import { FeedbackControlsComponent } from '../ingestion/components/feedback-controls/feedback-controls.component';
 import { CompanyIntelComponent } from './components/company-intel/company-intel.component';
 import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { createSortState } from '../../core/utils/sort-state';
 import { scoreClass } from '../../core/utils/score-class';
 import { fetchAllPages } from '../../core/utils/fetch-all-pages';
-import { PagedResult } from '../../core/models/paged-result.model';
+import { PagedResult } from '@core/contracts/paged-result.model';
 
 const PERCENT = 100;
 /** Backend caps an ingestion page at 100; the walk below covers the rest. */

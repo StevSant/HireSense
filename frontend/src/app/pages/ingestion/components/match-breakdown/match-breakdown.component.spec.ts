@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MatchBreakdownComponent } from './match-breakdown.component';
-import { AnalysisDimension } from '../../models/analysis-dimension.model';
+import { AnalysisDimension } from '@core/contracts/analysis-dimension.model';
 
 const DIMS: AnalysisDimension[] = [
   { dimension: 'skills_role_fit', score: 0.9, rationale: 'Strong overlap on core stack.' },

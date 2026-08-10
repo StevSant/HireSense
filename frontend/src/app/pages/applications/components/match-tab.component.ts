@@ -1,7 +1,7 @@
 import { Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApplicationsService } from '../../../core/services/applications.service';
-import { ApplicationAggregate } from '../models/application-aggregate.model';
+import { ApplicationAggregate } from '@core/contracts/application-aggregate.model';
 import { SkillChipsComponent } from './skill-chips.component';
 import { scoreColor as toScoreColor } from '../../../core/utils/score-color';
 import { formatScorePercent } from '../../../core/utils/format-score-percent';

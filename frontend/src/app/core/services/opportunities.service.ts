@@ -2,9 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { FetchOpportunitiesResponse } from '../../pages/opportunities/models/fetch-opportunities-response.model';
-import { Opportunity } from '../../pages/opportunities/models/opportunity.model';
-import { PaginatedOpportunitiesResponse } from '../../pages/opportunities/models/paginated-opportunities-response.model';
+import { FetchOpportunitiesResponse } from '@core/contracts/fetch-opportunities-response.model';
+import { Opportunity } from '@core/contracts/opportunity.model';
+import { PaginatedOpportunitiesResponse } from '@core/contracts/paginated-opportunities-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class OpportunitiesService {

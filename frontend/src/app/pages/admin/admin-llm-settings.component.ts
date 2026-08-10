@@ -5,12 +5,12 @@ import { FormsModule } from '@angular/forms';
 
 import { AdminLLMSettingsService } from '../../core/services/admin-llm-settings.service';
 import { LLM_PROVIDERS, MODEL_SUGGESTIONS } from './constants/llm-provider-suggestions';
-import { ExtraParam } from './models/extra-param.model';
-import { FeatureView } from './models/feature-view.model';
-import { LLMProvider } from './models/llm-provider.model';
-import { LLMSettings } from './models/llm-settings.model';
-import { LLMTestResult } from './models/llm-test-result.model';
-import { OverrideDraft } from './models/override-draft.model';
+import { ExtraParam } from '@core/contracts/extra-param.model';
+import { FeatureView } from '@core/contracts/feature-view.model';
+import { LLMProvider } from '@core/contracts/llm-provider.model';
+import { LLMSettings } from '@core/contracts/llm-settings.model';
+import { LLMTestResult } from '@core/contracts/llm-test-result.model';
+import { OverrideDraft } from '@core/contracts/override-draft.model';
 
 @Component({
   selector: 'app-admin-llm-settings',

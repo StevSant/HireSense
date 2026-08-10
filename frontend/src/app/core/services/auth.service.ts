@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { Observable, of } from 'rxjs';
 import { catchError, finalize, map, shareReplay, switchMap, tap } from 'rxjs/operators';
-import { LoginResponse } from '../models/login-response.model';
+import { LoginResponse } from '@core/contracts/login-response.model';
 
 type SessionStatus = 'unknown' | 'authenticated' | 'anonymous';
 

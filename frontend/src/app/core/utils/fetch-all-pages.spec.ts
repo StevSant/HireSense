@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 import { fetchAllPages } from './fetch-all-pages';
-import { PagedResult } from '../models/paged-result.model';
+import { PagedResult } from '@core/contracts/paged-result.model';
 
 // Builds a fetcher over a fixed array, recording the (limit, offset) of each
 // call so tests can assert how the walk stepped through the endpoint.

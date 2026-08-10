@@ -8,7 +8,7 @@ import { IngestionService } from '../../core/services/ingestion.service';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { PreferenceService } from '../../core/services/preference.service';
 import { ResearchService } from '../../core/services/research.service';
-import { CompanyResearch } from '../tracking/models/company-research.model';
+import { CompanyResearch } from '@core/contracts/company-research.model';
 
 function research(over: Partial<CompanyResearch> = {}): CompanyResearch {
   return {

@@ -3,10 +3,10 @@ import { of, throwError } from 'rxjs';
 
 import { AdminUsageComponent } from './admin-usage.component';
 import { AdminUsageService } from '../../core/services/admin-usage.service';
-import { BreakdownResponse } from './models/breakdown-response.model';
-import { DashboardSummary } from './models/dashboard-summary.model';
-import { RecentCallsResponse } from './models/recent-calls-response.model';
-import { TimeseriesResponse } from './models/timeseries-response.model';
+import { BreakdownResponse } from '@core/contracts/breakdown-response.model';
+import { DashboardSummary } from '@core/contracts/dashboard-summary.model';
+import { RecentCallsResponse } from '@core/contracts/recent-calls-response.model';
+import { TimeseriesResponse } from '@core/contracts/timeseries-response.model';
 
 const TOTALS = {
   total_calls: 10,

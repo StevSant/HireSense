@@ -5,8 +5,8 @@ import { ApplicationsComponent } from './applications.component';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { TrackingService } from '../../core/services/tracking.service';
 import { ResearchService } from '../../core/services/research.service';
-import { ApplicationListItem } from './models/application-list-item.model';
-import { CompanyResearch } from '../tracking/models/company-research.model';
+import { ApplicationListItem } from '@core/contracts/application-list-item.model';
+import { CompanyResearch } from '@core/contracts/company-research.model';
 
 function makeItem(over: Partial<ApplicationListItem> = {}): ApplicationListItem {
   return {

@@ -4,11 +4,11 @@ import { IngestionService } from '../../core/services/ingestion.service';
 import { TrackingService } from '../../core/services/tracking.service';
 import { ApplicationsService } from '../../core/services/applications.service';
 import { Router } from '@angular/router';
-import { JobFilters } from './models/job-filters.model';
-import { NormalizedJob } from './models/normalized-job.model';
-import { PortalEntry } from './models/portal-entry.model';
-import { ScanPortalsRequest } from './models/scan-portals-request.model';
-import { ScanError } from './models/scan-result.model';
+import { JobFilters } from '@core/contracts/job-filters.model';
+import { NormalizedJob } from '@core/contracts/normalized-job.model';
+import { PortalEntry } from '@core/contracts/portal-entry.model';
+import { ScanPortalsRequest } from '@core/contracts/scan-portals-request.model';
+import { ScanError } from '@core/contracts/scan-result.model';
 import { PaginatorComponent } from '../../core/components/paginator';
 import { scoreClass } from '../../core/utils/score-class';
 import { JobFiltersComponent } from './components/job-filters/job-filters.component';
@@ -20,11 +20,11 @@ import { catchError, debounceTime, filter, map, switchMap, take } from 'rxjs/ope
 import { environment } from '../../../environments/environment';
 import { FeedbackControlsComponent } from './components/feedback-controls/feedback-controls.component';
 import { PreferenceTuningComponent } from './components/preference-tuning/preference-tuning.component';
-import { FeedbackKind } from './models/feedback-kind.model';
+import { FeedbackKind } from '@core/contracts/feedback-kind.model';
 import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { CompanyLinkComponent } from '../../core/components/company-link';
 import { createSortState } from '../../core/utils/sort-state';
-import { SourceHealth, SourceInfo } from './models/source-capability.model';
+import { SourceHealth, SourceInfo } from '@core/contracts/source-capability.model';
 
 // ATS platforms are scanned from the Portals tab (per-company boards), not the
 // Boards tab, so they are filtered out of the board source dropdown. Mirrors

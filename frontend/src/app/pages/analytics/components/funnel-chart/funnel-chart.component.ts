@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { FunnelMetrics } from '../../models/funnel-metrics.model';
+import { FunnelMetrics } from '@core/contracts/funnel-metrics.model';
 
 /** Floor for the widest stage so an all-empty funnel doesn't divide by zero. */
 const MIN_REACHED = 1;

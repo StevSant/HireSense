@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, input, output } from '@angular/core';
-import { JobFilters } from '../../models/job-filters.model';
-import { SeniorityLevel } from '../../models/seniority-level.model';
+import { JobFilters } from '@core/contracts/job-filters.model';
+import { SeniorityLevel } from '@core/contracts/seniority-level.model';
 import { detectUserLocation } from '../../../../core/utils/detect-user-location';
 import { ComboboxComponent, ComboboxOption } from '../../../../core/components/combobox';
 

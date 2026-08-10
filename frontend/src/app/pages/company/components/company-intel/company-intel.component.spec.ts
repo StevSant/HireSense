@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { CompanyIntelComponent } from './company-intel.component';
-import { CompanyResearch } from '../../../tracking/models/company-research.model';
+import { CompanyResearch } from '@core/contracts/company-research.model';
 
 const research: CompanyResearch = {
   id: '1',

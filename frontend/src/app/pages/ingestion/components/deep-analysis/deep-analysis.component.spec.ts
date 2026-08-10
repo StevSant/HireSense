@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { DeepAnalysisComponent } from './deep-analysis.component';
-import { JobAnalysis } from '../../models/job-analysis.model';
+import { JobAnalysis } from '@core/contracts/job-analysis.model';
 
 const FULL_ANALYSIS: JobAnalysis = {
   job_id: 'j1',

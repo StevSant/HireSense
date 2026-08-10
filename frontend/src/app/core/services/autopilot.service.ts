@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AutopilotDraft } from '../models/autopilot.model';
+import { AutopilotDraft } from '@core/contracts/autopilot.model';
 
 @Injectable({ providedIn: 'root' })
 export class AutopilotService {

@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import {
   PortfolioEngagementResponse,
   PortfolioVisit,
-} from '../../../profile/models/portfolio-engagement.model';
+} from '@core/contracts/portfolio-engagement.model';
 import { ENGAGEMENT_ROW_CAP } from '../../analytics-row-caps';
 import { AnalyticsStore } from '../../analytics.store';
 

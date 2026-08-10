@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { JobFiltersComponent } from './job-filters.component';
-import { JobFilters } from '../../models/job-filters.model';
+import { JobFilters } from '@core/contracts/job-filters.model';
 
 describe('JobFiltersComponent', () => {
   beforeEach(async () => {

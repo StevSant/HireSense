@@ -2,11 +2,11 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { OutreachEvent } from '../../pages/outreach/models/outreach-event.model';
-import { OutreachNudge } from '../../pages/outreach/models/outreach-nudge.model';
-import { GenerateRequest } from '../../pages/outreach/models/generate-request.model';
-import { GenerateResponse } from '../../pages/outreach/models/generate-response.model';
-import { RecordRequest } from '../../pages/outreach/models/record-request.model';
+import { OutreachEvent } from '@core/contracts/outreach-event.model';
+import { OutreachNudge } from '@core/contracts/outreach-nudge.model';
+import { GenerateRequest } from '@core/contracts/generate-request.model';
+import { GenerateResponse } from '@core/contracts/generate-response.model';
+import { RecordRequest } from '@core/contracts/record-request.model';
 
 @Injectable({ providedIn: 'root' })
 export class OutreachService {

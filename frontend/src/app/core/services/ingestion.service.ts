@@ -2,18 +2,15 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { FetchResponse } from '../../pages/ingestion/models/fetch-response.model';
-import { JobAnalysis } from '../../pages/ingestion/models/job-analysis.model';
-import { JobFilters } from '../../pages/ingestion/models/job-filters.model';
-import { NormalizedJob } from '../../pages/ingestion/models/normalized-job.model';
-import { PaginatedJobsResponse } from '../../pages/ingestion/models/paginated-jobs-response.model';
-import { PortalEntry } from '../../pages/ingestion/models/portal-entry.model';
-import { ScanPortalsRequest } from '../../pages/ingestion/models/scan-portals-request.model';
-import { ScanResult } from '../../pages/ingestion/models/scan-result.model';
-import {
-  SourcesHealthResponse,
-  SourcesResponse,
-} from '../../pages/ingestion/models/source-capability.model';
+import { FetchResponse } from '@core/contracts/fetch-response.model';
+import { JobAnalysis } from '@core/contracts/job-analysis.model';
+import { JobFilters } from '@core/contracts/job-filters.model';
+import { NormalizedJob } from '@core/contracts/normalized-job.model';
+import { PaginatedJobsResponse } from '@core/contracts/paginated-jobs-response.model';
+import { PortalEntry } from '@core/contracts/portal-entry.model';
+import { ScanPortalsRequest } from '@core/contracts/scan-portals-request.model';
+import { ScanResult } from '@core/contracts/scan-result.model';
+import { SourcesHealthResponse, SourcesResponse } from '@core/contracts/source-capability.model';
 
 @Injectable({ providedIn: 'root' })
 export class IngestionService {

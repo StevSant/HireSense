@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { CompanyResearch } from '../../pages/tracking/models/company-research.model';
-import { ResearchRequest } from '../../pages/tracking/models/research-request.model';
+import { CompanyResearch } from '@core/contracts/company-research.model';
+import { ResearchRequest } from '@core/contracts/research-request.model';
 
 @Injectable({ providedIn: 'root' })
 export class ResearchService {

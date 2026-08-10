@@ -3,11 +3,11 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { BreakdownResponse } from '../../pages/admin/models/breakdown-response.model';
-import { DashboardSummary } from '../../pages/admin/models/dashboard-summary.model';
-import { RecentCallsFilters } from '../../pages/admin/models/recent-calls-filters.model';
-import { RecentCallsResponse } from '../../pages/admin/models/recent-calls-response.model';
-import { TimeseriesResponse } from '../../pages/admin/models/timeseries-response.model';
+import { BreakdownResponse } from '@core/contracts/breakdown-response.model';
+import { DashboardSummary } from '@core/contracts/dashboard-summary.model';
+import { RecentCallsFilters } from '@core/contracts/recent-calls-filters.model';
+import { RecentCallsResponse } from '@core/contracts/recent-calls-response.model';
+import { TimeseriesResponse } from '@core/contracts/timeseries-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class AdminUsageService {

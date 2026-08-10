@@ -2,9 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { InterviewPrep } from '../../pages/interview/models/interview-prep.model';
-import { PrepareRequest } from '../../pages/interview/models/prepare-request.model';
-import { Story } from '../../pages/interview/models/story.model';
+import { InterviewPrep } from '@core/contracts/interview-prep.model';
+import { PrepareRequest } from '@core/contracts/prepare-request.model';
+import { Story } from '@core/contracts/story.model';
 
 @Injectable({ providedIn: 'root' })
 export class InterviewService {

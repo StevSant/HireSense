@@ -3,12 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { FeatureOverrideRequest } from '../../pages/admin/models/feature-override-request.model';
-import { FeatureView } from '../../pages/admin/models/feature-view.model';
-import { LLMSettings } from '../../pages/admin/models/llm-settings.model';
-import { LLMSettingsTestRequest } from '../../pages/admin/models/llm-settings-test-request.model';
-import { LLMSettingsUpdateRequest } from '../../pages/admin/models/llm-settings-update-request.model';
-import { LLMTestResult } from '../../pages/admin/models/llm-test-result.model';
+import { FeatureOverrideRequest } from '@core/contracts/feature-override-request.model';
+import { FeatureView } from '@core/contracts/feature-view.model';
+import { LLMSettings } from '@core/contracts/llm-settings.model';
+import { LLMSettingsTestRequest } from '@core/contracts/llm-settings-test-request.model';
+import { LLMSettingsUpdateRequest } from '@core/contracts/llm-settings-update-request.model';
+import { LLMTestResult } from '@core/contracts/llm-test-result.model';
 
 @Injectable({ providedIn: 'root' })
 export class AdminLLMSettingsService {

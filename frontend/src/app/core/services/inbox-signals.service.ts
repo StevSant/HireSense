@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { InboxSignal } from '../../pages/applications/models/inbox-signal.model';
+import { InboxSignal } from '@core/contracts/inbox-signal.model';
 
 @Injectable({ providedIn: 'root' })
 export class InboxSignalsService {

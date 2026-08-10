@@ -4,11 +4,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { AdminUsageService } from '../../core/services/admin-usage.service';
-import { BreakdownResponse } from './models/breakdown-response.model';
-import { DashboardSummary } from './models/dashboard-summary.model';
-import { RecentCallsResponse } from './models/recent-calls-response.model';
-import { TimeseriesResponse } from './models/timeseries-response.model';
-import { UsageBucket } from './models/usage-bucket.model';
+import { BreakdownResponse } from '@core/contracts/breakdown-response.model';
+import { DashboardSummary } from '@core/contracts/dashboard-summary.model';
+import { RecentCallsResponse } from '@core/contracts/recent-calls-response.model';
+import { TimeseriesResponse } from '@core/contracts/timeseries-response.model';
+import { UsageBucket } from '@core/contracts/usage-bucket.model';
 import { SortableHeaderDirective } from '../../core/components/sortable-header';
 import { createSortState } from '../../core/utils/sort-state';
 import { sortItems } from '../../core/utils/sort-items';

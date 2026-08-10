@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { ApplicationsService } from './applications.service';
 import { mapLlmError } from './llm-error.util';
-import { ClaimReadiness } from '../../pages/applications/models/cv-optimization.model';
+import { ClaimReadiness } from '@core/contracts/cv-optimization.model';
 
 /**
  * Long-lived coordinator for CV optimization runs.

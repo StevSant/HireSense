@@ -7,8 +7,8 @@ import { ApplicationsService } from '../../core/services/applications.service';
 import { CvOptimizationRunnerService } from '../../core/services/cv-optimization-runner.service';
 import { CoverLetterRunnerService } from '../../core/services/cover-letter-runner.service';
 import { PortfolioService } from '../../core/services/portfolio.service';
-import { ApplicationAggregate } from './models/application-aggregate.model';
-import { PortfolioEngagementResponse } from '../profile/models/portfolio-engagement.model';
+import { ApplicationAggregate } from '@core/contracts/application-aggregate.model';
+import { PortfolioEngagementResponse } from '@core/contracts/portfolio-engagement.model';
 
 function makeAggregate(over: Partial<ApplicationAggregate> = {}): ApplicationAggregate {
   return {

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { CompBenchmark } from '../../models/comp-benchmark.model';
-import { BarRow } from '../../models/bar-row.model';
+import { CompBenchmark } from '@core/contracts/comp-benchmark.model';
+import { BarRow } from '@core/contracts/bar-row.model';
 import { SalaryBandComponent } from '../salary-band/salary-band.component';
 import { BarChartComponent } from '../bar-chart/bar-chart.component';
 import { PayPeriod, periodUnit, toPeriod } from '../../../../core/utils/pay-period';

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { BarChartComponent } from '../../components/bar-chart/bar-chart.component';
 import { TrendLineComponent } from '../../components/trend-line/trend-line.component';
-import { MarketIntel } from '../../models/market-intel.model';
-import { BarRow } from '../../models/bar-row.model';
+import { MarketIntel } from '@core/contracts/market-intel.model';
+import { BarRow } from '@core/contracts/bar-row.model';
 import { MARKET_ROW_CAP, PERCENT } from '../../analytics-row-caps';
 import { AnalyticsStore } from '../../analytics.store';
 

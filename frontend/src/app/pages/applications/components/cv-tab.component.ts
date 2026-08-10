@@ -12,8 +12,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { CvOptimizationRunnerService } from '../../../core/services/cv-optimization-runner.service';
-import { ApplicationAggregate } from '../models/application-aggregate.model';
-import { ClaimBlockerReason } from '../models/cv-optimization.model';
+import { ApplicationAggregate } from '@core/contracts/application-aggregate.model';
+import { ClaimBlockerReason } from '@core/contracts/cv-optimization.model';
 import { environment } from '../../../../environments/environment';
 
 type ViewMode = 'changes' | 'full';

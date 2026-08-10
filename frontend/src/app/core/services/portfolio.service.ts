@@ -2,9 +2,9 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { PortfolioProjectsResponse } from '../../pages/profile/models/portfolio-projects-response.model';
-import { PortfolioSyncResult } from '../../pages/profile/models/portfolio-sync-result.model';
-import { PortfolioEngagementResponse } from '../../pages/profile/models/portfolio-engagement.model';
+import { PortfolioProjectsResponse } from '@core/contracts/portfolio-projects-response.model';
+import { PortfolioSyncResult } from '@core/contracts/portfolio-sync-result.model';
+import { PortfolioEngagementResponse } from '@core/contracts/portfolio-engagement.model';
 
 @Injectable({ providedIn: 'root' })
 export class PortfolioService {

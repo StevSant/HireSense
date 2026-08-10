@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { AutohuntService } from './autohunt.service';
 import { environment } from '../../../environments/environment';
-import { Digest } from '../../pages/autohunt/models/digest.model';
+import { Digest } from '@core/contracts/digest.model';
 
 function makeDigest(over: Partial<Digest> = {}): Digest {
   return {

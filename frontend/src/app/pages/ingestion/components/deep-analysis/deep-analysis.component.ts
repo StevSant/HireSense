@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { JobAnalysis } from '../../models/job-analysis.model';
+import { JobAnalysis } from '@core/contracts/job-analysis.model';
 
 /** Qualitative half of the deep analysis: narrative, pros/cons, and
  *  recommendations. The quantitative scorecard (overall score, verdict,

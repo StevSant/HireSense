@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { OptimizationResult } from '../../pages/optimization/models/optimization-result.model';
+import { OptimizationResult } from '@core/contracts/optimization-result.model';
 
 export interface OptimizeRequest {
   match_id: string;

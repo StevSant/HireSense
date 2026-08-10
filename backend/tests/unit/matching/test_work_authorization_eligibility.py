@@ -4,7 +4,7 @@ import pytest
 
 from hiresense.matching.domain.eligibility import EligibilityStatus
 from hiresense.matching.domain.scorers.base import DimensionResult
-from hiresense.matching.domain.services import MatchingOrchestrator
+from hiresense.matching.domain import DimensionEvaluator
 from hiresense.profile.domain import ApplyProfile, CandidateProfile, WorkAuthorizationStatus
 
 
@@ -41,7 +41,7 @@ def _profile(status: WorkAuthorizationStatus) -> CandidateProfile:
 @pytest.mark.asyncio
 async def test_evaluate_skips_subjective_scorers_for_unsponsored_candidate() -> None:
     scorer = _Scorer()
-    orchestrator = MatchingOrchestrator(llm=None, event_bus=_EventBus())
+    orchestrator = DimensionEvaluator()
 
     result = await orchestrator.evaluate(
         job={
@@ -64,7 +64,7 @@ async def test_evaluate_marks_authorized_candidate_eligible_when_job_requires_ex
     None
 ):
     scorer = _Scorer()
-    orchestrator = MatchingOrchestrator(llm=None, event_bus=_EventBus())
+    orchestrator = DimensionEvaluator()
 
     result = await orchestrator.evaluate(
         job={
@@ -83,7 +83,7 @@ async def test_evaluate_marks_authorized_candidate_eligible_when_job_requires_ex
 @pytest.mark.asyncio
 async def test_evaluate_leaves_missing_authorization_information_unknown() -> None:
     scorer = _Scorer()
-    orchestrator = MatchingOrchestrator(llm=None, event_bus=_EventBus())
+    orchestrator = DimensionEvaluator()
 
     result = await orchestrator.evaluate(
         job={"title": "Backend Engineer", "company": "Acme"},

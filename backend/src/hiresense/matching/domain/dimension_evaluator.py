@@ -1,73 +1,40 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
-import re
-import uuid
 from typing import Any
 
 from opentelemetry import trace
-from pydantic import BaseModel, Field
 
-from hiresense.kernel.events import MatchCompletedEvent
 from hiresense.kernel.exceptions import UpstreamUnavailableError
 from hiresense.matching.domain.eligibility import (
-    EligibilityResult,
     EligibilityStatus,
     determine_work_authorization_eligibility,
 )
-from hiresense.matching.domain.models import MatchResult, ScoreBreakdown
+from hiresense.matching.domain.evaluation_result import EvaluationResult
 from hiresense.matching.domain.scorers.base import DimensionResult
-from hiresense.kernel.prompt_boundary import PromptBoundary
-from hiresense.matching.domain.semantic_scorer import SemanticScorer
-from hiresense.matching.domain.skill_matcher import SkillMatcher
 from hiresense.observability import get_domain_metrics, get_tracer
-from hiresense.ports.llm import LLMTimeoutError
 
 logger = logging.getLogger(__name__)
 _tracer = get_tracer("hiresense.matching")
 
-_MARKDOWN_FENCE_RE = re.compile(r"```(?:json)?\s*\n?(.*?)\n?```", re.DOTALL)
 
+class DimensionEvaluator:
+    """Scores a job x profile across the six weighted LLM dimensions.
 
-def _strip_markdown_fence(text: str) -> str:
-    match = _MARKDOWN_FENCE_RE.search(text)
-    return match.group(1).strip() if match else text.strip()
+    One of the two halves of the former MatchingOrchestrator. That class held
+    two disjoint pipelines — this dimension fan-out and the heuristic
+    breakdown analysis now in MatchAnalyzer — which shared no instance
+    attribute and never called each other.
+    """
 
-
-class EvaluationResult(BaseModel):
-    composite_score: float
-    job_title: str
-    company: str
-    dimensions: list[DimensionResult]
-    eligibility: EligibilityResult = Field(
-        default_factory=lambda: EligibilityResult(
-            status=EligibilityStatus.UNKNOWN,
-            rationale="Work-authorization information was not evaluated.",
-        )
-    )
-
-
-class MatchingOrchestrator:
     def __init__(
         self,
-        llm: Any,
-        event_bus: Any,
         dimension_scorers: list[Any] | None = None,
-        embedding: Any | None = None,
         preference: Any | None = None,
         combined_scorer: Any | None = None,
-        breakdown_weights: dict[str, float] | None = None,
     ) -> None:
-        self._llm = llm
-        self._event_bus = event_bus
-        # Percentages for the four heuristic sub-scores, normalized to fractions.
-        # None keeps ScoreBreakdown's own defaults, so a bare orchestrator (tests,
-        # bare apps) scores exactly as before.
-        self._breakdown_weights = breakdown_weights
         self._dimension_scorers = dimension_scorers or []
-        self._embedding = embedding
         # Optional, duck-typed preference port: exposes weight_overrides() ->
         # {dimension: int delta}. None (or no overrides) => composite is computed
         # exactly as before, so scoring/ranking are byte-identical to today.
@@ -77,8 +44,18 @@ class MatchingOrchestrator:
         # path when set and no explicit `dimension_scorers` override is passed
         # to evaluate(); any failure falls back to the per-scorer fan-out.
         self._combined_scorer = combined_scorer
-        self._semantic_scorer = SemanticScorer()
-        self._skill_matcher = SkillMatcher()
+
+    @property
+    def has_dimension_scorers(self) -> bool:
+        """Whether any per-dimension scorer is wired.
+
+        Public because the preference nudge adapter must answer exactly this
+        before evaluating. It previously reached in for the private
+        `_dimension_scorers` attribute with getattr and a None default, so
+        renaming the field would have silently disabled preference nudging
+        rather than failing.
+        """
+        return bool(self._dimension_scorers)
 
     async def evaluate(
         self, job: Any, profile: Any | None = None, dimension_scorers: list[Any] | None = None
@@ -165,16 +142,16 @@ class MatchingOrchestrator:
         # incomplete response) so matching degrades gracefully rather than
         # losing dimensions.
         if self._combined_scorer is not None:
-            combined = await self._safe_combined_score(job, profile)
+            combined = await self._safe_combined_score(self._combined_scorer, job, profile)
             if combined is not None:
                 return combined
         return await self._fan_out(job, profile, self._dimension_scorers)
 
     async def _safe_combined_score(
-        self, job: Any, profile: Any | None
+        self, combined_scorer: Any, job: Any, profile: Any | None
     ) -> list[DimensionResult] | None:
         try:
-            results = await self._combined_scorer.score_all(job, profile)
+            results = await combined_scorer.score_all(job, profile)
         except Exception:
             logger.exception(
                 "matching: combined dimension scorer raised — falling back to per-dimension scorers"
@@ -228,131 +205,3 @@ class MatchingOrchestrator:
             # 0.5 composite built from nothing at all.
             raise UpstreamUnavailableError("all dimension scorers failed")
         return scored
-
-    async def analyze(
-        self,
-        job_id: str,
-        cv_id: str,
-        job_description: str,
-        job_skills: list[str],
-        cv_summary: str,
-        cv_skills: list[str],
-        cv_embedding: list[float] | None = None,
-        job_embedding: list[float] | None = None,
-        cv_text: str | None = None,
-    ) -> MatchResult:
-        # 1. Semantic score
-        async def semantic() -> float:
-            if cv_embedding and job_embedding:
-                return self._semantic_scorer.score(cv_embedding, job_embedding)
-            if self._embedding and cv_summary and job_description:
-                embeddings = await self._embedding.embed([cv_summary, job_description])
-                return self._semantic_scorer.score(embeddings[0], embeddings[1])
-            return 0.0
-
-        # 2. LLM analysis for experience, language, pros/cons, and a verdict on
-        # which required skills the candidate demonstrably has (present_skills).
-        # Independent of the semantic score, so both run concurrently.
-        semantic_score, llm_analysis = await asyncio.gather(
-            semantic(),
-            self._get_llm_analysis(job_description, job_skills, cv_summary, cv_skills, cv_text),
-        )
-
-        # 3. Skill match. A required skill counts as matched when it is in the
-        # explicit list, appears (word-boundary) in the CV text/summary, or the
-        # LLM judged it present from the experience — covering prose-described
-        # skills that aren't tagged in the skills list.
-        evidence = "\n".join(filter(None, [cv_summary, cv_text]))
-        skill_result = self._skill_matcher.match(
-            cv_skills,
-            job_skills,
-            evidence_text=evidence,
-            inferred_present=llm_analysis.get("present_skills") or [],
-        )
-
-        # 4. Build breakdown
-        breakdown = ScoreBreakdown(
-            semantic_score=semantic_score,
-            skill_score=skill_result.score,
-            experience_score=llm_analysis.get("experience_score", 0.5),
-            language_score=llm_analysis.get("language_score", 0.5),
-        )
-
-        match_id = str(uuid.uuid4())
-        result = MatchResult(
-            id=match_id,
-            job_id=job_id,
-            cv_id=cv_id,
-            overall_score=breakdown.weighted_average(self._breakdown_weights),
-            breakdown=breakdown,
-            matched_skills=skill_result.matched,
-            missing_skills=skill_result.missing,
-            pros=llm_analysis.get("pros", []),
-            cons=llm_analysis.get("cons", []),
-            recommendations=llm_analysis.get("recommendations", []),
-        )
-
-        # 5. Publish event
-        event = MatchCompletedEvent(
-            job_id=job_id,
-            match_id=match_id,
-            score=result.overall_score,
-        )
-        await self._event_bus.publish(event)
-
-        return result
-
-    async def _get_llm_analysis(
-        self,
-        job_description: str,
-        job_skills: list[str],
-        cv_summary: str,
-        cv_skills: list[str],
-        cv_text: str | None = None,
-    ) -> dict[str, Any]:
-        prompt = (
-            "Analyze this job-candidate match.\n\n"
-            f"Job Description: {PromptBoundary.untrusted_job_content(job_description, max_chars=12000)}\n"
-            f"Required Skills: {', '.join(job_skills)}\n\n"
-            f"Candidate Summary: {cv_summary}\n"
-            f"Candidate Skills: {', '.join(cv_skills)}\n\n"
-            f"Candidate CV (full text):\n{PromptBoundary.untrusted_cv_content(cv_text or '')}\n\n"
-            "Return a JSON object with:\n"
-            '- "experience_score": float 0-1\n'
-            '- "language_score": float 0-1\n'
-            '- "present_skills": from the Required Skills list, the exact items the\n'
-            "  candidate demonstrably has based on their skills, summary, or CV text\n"
-            "  (include skills evidenced by experience even if not explicitly listed;\n"
-            "  use the exact required-skill wording; omit any not clearly supported)\n"
-            '- "pros": list of strings\n'
-            '- "cons": list of strings\n'
-            '- "recommendations": list of strings\n'
-            "Return ONLY valid JSON."
-        )
-        try:
-            response = await self._llm.complete(
-                prompt,
-                system=(
-                    "You are a job matching analysis assistant. "
-                    f"{PromptBoundary.untrusted_content_instruction()}"
-                ),
-            )
-            cleaned = _strip_markdown_fence(response)
-            return json.loads(cleaned)
-        except LLMTimeoutError:
-            # Let the timeout surface as a 504 (issue #139) rather than folding it
-            # into a generic analysis failure.
-            raise
-        except json.JSONDecodeError as exc:
-            logger.warning(
-                "Matching LLM returned non-JSON (first 500 chars): %r",
-                (cleaned if "cleaned" in locals() else response)[:500],
-            )
-            raise UpstreamUnavailableError("match analysis failed") from exc
-        except Exception as exc:
-            # Do NOT fall back to experience_score=0.5 / language_score=0.5 — 0.5
-            # is a perfectly plausible score, so the user reads an outage as a
-            # genuine mediocre match and it gets persisted as one (issues
-            # #147/#142). Raise so the API returns a 503.
-            logger.exception("LLM analysis failed")
-            raise UpstreamUnavailableError("match analysis failed") from exc

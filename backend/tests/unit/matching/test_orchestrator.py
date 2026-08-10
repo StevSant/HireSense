@@ -5,7 +5,7 @@ import pytest
 from hiresense.adapters.event_bus.in_memory_bus import InMemoryEventBus
 from hiresense.kernel.events import DomainEvent
 from hiresense.kernel.exceptions import UpstreamUnavailableError
-from hiresense.matching.domain.services import MatchingOrchestrator
+from hiresense.matching.domain import MatchAnalyzer
 from hiresense.ports.llm import LLMTimeoutError
 
 
@@ -35,7 +35,7 @@ async def test_orchestrator_produces_match_result() -> None:
 
     bus.subscribe("match.completed", capture)
 
-    orchestrator = MatchingOrchestrator(llm=FakeLLM(), event_bus=bus, embedding=FakeEmbedder())
+    orchestrator = MatchAnalyzer(llm=FakeLLM(), event_bus=bus, embedding=FakeEmbedder())
     result = await orchestrator.analyze(
         job_id="job-1",
         cv_id="cv-1",
@@ -63,7 +63,7 @@ async def test_orchestrator_matches_skill_from_cv_text_evidence() -> None:
     # "kubernetes" is absent from the explicit skills list but demonstrated in
     # the full CV text, so it should be matched rather than reported missing.
     bus = InMemoryEventBus()
-    orchestrator = MatchingOrchestrator(llm=FakeLLM(), event_bus=bus)
+    orchestrator = MatchAnalyzer(llm=FakeLLM(), event_bus=bus)
     result = await orchestrator.analyze(
         job_id="job-3",
         cv_id="cv-3",
@@ -99,7 +99,7 @@ async def test_orchestrator_uses_llm_present_skills_verdict() -> None:
     # the CV text, but the LLM judges it present from the experience.
     bus = InMemoryEventBus()
     llm = FakeLLMWithPresentSkills()
-    orchestrator = MatchingOrchestrator(llm=llm, event_bus=bus)
+    orchestrator = MatchAnalyzer(llm=llm, event_bus=bus)
     result = await orchestrator.analyze(
         job_id="job-4",
         cv_id="cv-4",
@@ -118,7 +118,7 @@ async def test_orchestrator_uses_llm_present_skills_verdict() -> None:
 @pytest.mark.asyncio
 async def test_orchestrator_without_embedding_port() -> None:
     bus = InMemoryEventBus()
-    orchestrator = MatchingOrchestrator(llm=FakeLLM(), event_bus=bus)
+    orchestrator = MatchAnalyzer(llm=FakeLLM(), event_bus=bus)
     result = await orchestrator.analyze(
         job_id="job-2",
         cv_id="cv-2",
@@ -145,7 +145,7 @@ class _NonJsonLLM:
         return "I'm sorry, I can't help with that."
 
 
-async def _analyze(orchestrator: MatchingOrchestrator):
+async def _analyze(orchestrator: MatchAnalyzer):
     return await orchestrator.analyze(
         job_id="job-1",
         cv_id="cv-1",
@@ -160,7 +160,7 @@ async def _analyze(orchestrator: MatchingOrchestrator):
 async def test_analyze_raises_instead_of_fabricating_mid_range_scores() -> None:
     """0.5/0.5 is a perfectly plausible pair of scores, so the old fallback made
     an outage look like a genuine mediocre match and persisted it as one."""
-    orchestrator = MatchingOrchestrator(
+    orchestrator = MatchAnalyzer(
         llm=_FailingLLM(RuntimeError("API down")), event_bus=InMemoryEventBus()
     )
 
@@ -170,7 +170,7 @@ async def test_analyze_raises_instead_of_fabricating_mid_range_scores() -> None:
 
 @pytest.mark.asyncio
 async def test_analyze_raises_on_unparseable_llm_response() -> None:
-    orchestrator = MatchingOrchestrator(llm=_NonJsonLLM(), event_bus=InMemoryEventBus())
+    orchestrator = MatchAnalyzer(llm=_NonJsonLLM(), event_bus=InMemoryEventBus())
 
     with pytest.raises(UpstreamUnavailableError):
         await _analyze(orchestrator)
@@ -186,7 +186,7 @@ async def test_analyze_publishes_no_match_event_when_analysis_fails() -> None:
         events.append(event)
 
     bus.subscribe("match.completed", capture)
-    orchestrator = MatchingOrchestrator(llm=_FailingLLM(RuntimeError("API down")), event_bus=bus)
+    orchestrator = MatchAnalyzer(llm=_FailingLLM(RuntimeError("API down")), event_bus=bus)
 
     with pytest.raises(UpstreamUnavailableError):
         await _analyze(orchestrator)
@@ -198,7 +198,7 @@ async def test_analyze_publishes_no_match_event_when_analysis_fails() -> None:
 @pytest.mark.asyncio
 async def test_analyze_lets_a_timeout_keep_its_own_type() -> None:
     """Timeouts map to 504, not to the 503 an upstream failure gets."""
-    orchestrator = MatchingOrchestrator(
+    orchestrator = MatchAnalyzer(
         llm=_FailingLLM(LLMTimeoutError(timeout=1.0, provider="anthropic")),
         event_bus=InMemoryEventBus(),
     )

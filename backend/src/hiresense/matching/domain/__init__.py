@@ -9,7 +9,9 @@ from hiresense.matching.domain.eligibility import (
     EligibilityStatus,
     determine_work_authorization_eligibility,
 )
-from hiresense.matching.domain.services import MatchingOrchestrator
+from hiresense.matching.domain.dimension_evaluator import DimensionEvaluator
+from hiresense.matching.domain.evaluation_result import EvaluationResult
+from hiresense.matching.domain.match_analyzer import MatchAnalyzer
 from hiresense.matching.domain.skill_matcher import SkillMatcher, SkillMatchResult
 
 __all__ = [
@@ -19,7 +21,9 @@ __all__ = [
     "DeepDimension",
     "EligibilityResult",
     "EligibilityStatus",
-    "MatchingOrchestrator",
+    "DimensionEvaluator",
+    "EvaluationResult",
+    "MatchAnalyzer",
     "SkillMatchResult",
     "SkillMatcher",
     "normalize_skill",

@@ -22,14 +22,14 @@ class ArtifactService:
     def __init__(
         self,
         repository: ApplicationRepositoryPort,
-        matching_orchestrator: Any,
+        match_analyzer: Any,
         cv_optimizer: Any,
         interview_prep_service: Any,
         profile_service: Any,
         tracking_service: Any | None = None,
     ) -> None:
         self._repo = repository
-        self._matching = matching_orchestrator
+        self._match_analyzer = match_analyzer
         self._optimizer = cv_optimizer
         self._prep = interview_prep_service
         self._profiles = profile_service
@@ -52,7 +52,7 @@ class ArtifactService:
         cv_skills = list(getattr(profile, "skills", []) or [])
         cv_text = getattr(profile, "raw_tex", "") or ""
 
-        result = await self._matching.analyze(
+        result = await self._match_analyzer.analyze(
             job_id=str(application_id),
             cv_id=cv_language,
             job_description=snapshot.description,

@@ -8,7 +8,7 @@ onto each outcome signal at record time), and verifies:
 - below the gate, /preference/weights shows zero overrides and a matching
   composite equals the base-weight composite (backward compatible);
 - once enough outcome signals exist, an override appears on /weights and the
-  same MatchingOrchestrator (sharing the preference port) produces a shifted
+  same DimensionEvaluator (sharing the preference port) produces a shifted
   composite;
 - POST /preference/reset clears both the taste delta and the weight overrides.
 """
@@ -27,7 +27,7 @@ from sqlalchemy.pool import StaticPool
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.infrastructure.database import Base
 from hiresense.matching.domain.scorers.base import DimensionResult
-from hiresense.matching.domain.services import MatchingOrchestrator
+from hiresense.matching.domain import DimensionEvaluator
 from hiresense.preference.api import router as preference_router
 from hiresense.preference.api.dependencies import get_preference_service
 from hiresense.preference.domain import (
@@ -104,7 +104,7 @@ def _build_app(service: PreferenceService) -> FastAPI:
     return app
 
 
-async def _composite(orchestrator: MatchingOrchestrator) -> float:
+async def _composite(orchestrator: DimensionEvaluator) -> float:
     scorers = [
         _FakeScorer("compensation", 1.0, _BASE_COMP_WEIGHT),
         _FakeScorer("culture_fit", 0.0, _BASE_CULTURE_WEIGHT),
@@ -130,7 +130,7 @@ async def test_weight_nudge_flow() -> None:
     service.attach_dimension_scorer(_FakeDimScorer())
 
     # A matching orchestrator sharing the same preference port (as in the app).
-    orchestrator = MatchingOrchestrator(llm=None, event_bus=_FakeEventBus(), preference=service)
+    orchestrator = DimensionEvaluator(preference=service)
 
     app = _build_app(service)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

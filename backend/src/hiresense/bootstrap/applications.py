@@ -19,7 +19,7 @@ def build_applications(
     *,
     tracking_service: Any,
     job_query: Any,
-    matching_orchestrator: Any,
+    match_analyzer: Any,
     cv_optimizer: Any,
     interview_prep_service: Any,
     profile_service: Any,
@@ -38,7 +38,7 @@ def build_applications(
     )
     artifact_service = ArtifactService(
         repository=application_repo,
-        matching_orchestrator=matching_orchestrator,
+        match_analyzer=match_analyzer,
         cv_optimizer=cv_optimizer,
         interview_prep_service=interview_prep_service,
         profile_service=profile_service,

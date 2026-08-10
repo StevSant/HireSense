@@ -7,7 +7,11 @@ from typing import Any
 from hiresense.bootstrap.shared_infra import SharedInfra
 from hiresense.claims.domain import CandidateClaimService
 from hiresense.matching.api.provider import MatchingProvider
-from hiresense.matching.domain import BatchEvaluationService, MatchingOrchestrator
+from hiresense.matching.domain import (
+    BatchEvaluationService,
+    DimensionEvaluator,
+    MatchAnalyzer,
+)
 from hiresense.matching.domain.scorers import (
     ApplicationStrengthScorer,
     CombinedDimensionScorer,
@@ -22,7 +26,8 @@ from hiresense.matching.domain.scorers import (
 @dataclass(frozen=True)
 class MatchingBuild:
     provider: MatchingProvider
-    orchestrator: MatchingOrchestrator
+    dimension_evaluator: DimensionEvaluator
+    match_analyzer: MatchAnalyzer
 
 
 def _breakdown_weights(s: Any) -> dict[str, float]:
@@ -96,21 +101,28 @@ def build_matching(
         job_char_limit=job_char_limit,
     )
 
-    matching_orchestrator = MatchingOrchestrator(
-        llm=tracked("matching_reasoning"),
-        event_bus=infra.event_bus,
+    dimension_evaluator = DimensionEvaluator(
         dimension_scorers=dimension_scorers,
-        embedding=infra.embedding,
         preference=preference,
         combined_scorer=combined_scorer,
+    )
+    match_analyzer = MatchAnalyzer(
+        llm=tracked("matching_reasoning"),
+        event_bus=infra.event_bus,
+        embedding=infra.embedding,
         breakdown_weights=_breakdown_weights(s),
     )
     batch_evaluation_service = BatchEvaluationService(
-        orchestrator=matching_orchestrator,
+        orchestrator=dimension_evaluator,
         concurrency=s.batch_concurrency,
     )
     provider = MatchingProvider(
-        orchestrator=matching_orchestrator,
+        dimension_evaluator=dimension_evaluator,
+        match_analyzer=match_analyzer,
         batch_evaluation_service=batch_evaluation_service,
     )
-    return MatchingBuild(provider=provider, orchestrator=matching_orchestrator)
+    return MatchingBuild(
+        provider=provider,
+        dimension_evaluator=dimension_evaluator,
+        match_analyzer=match_analyzer,
+    )

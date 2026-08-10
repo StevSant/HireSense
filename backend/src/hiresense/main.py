@@ -256,7 +256,7 @@ def create_app() -> FastAPI:
     # stays empty -> matching composite is byte-identical to today.
     preference.service.attach_dimension_scorer(
         MatchingDimensionScorerAdapter(
-            orchestrator=matching.orchestrator,
+            evaluator=matching.dimension_evaluator,
             job_lookup=ingestion.job_query,
             profile_service=profile.service,
         )
@@ -302,7 +302,7 @@ def create_app() -> FastAPI:
         tracked,
         tracking_service=tracking.service,
         job_query=ingestion.job_query,
-        matching_orchestrator=matching.orchestrator,
+        match_analyzer=matching.match_analyzer,
         cv_optimizer=optimization.cv_optimizer,
         interview_prep_service=interview.prep_service,
         profile_service=profile.service,

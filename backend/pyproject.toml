@@ -110,7 +110,6 @@ ignore = [
     "src/hiresense/ingestion/adapters/generic_scraper_adapter.py",
     # `object`-typed provider lookups in api/dependencies.py — every attribute
     # access on a provider is an error until the accessors are generic.
-    "src/hiresense/matching/api/routes.py",
     "src/hiresense/optimization/api/routes.py",
     "src/hiresense/profile/api/routes.py",
     "src/hiresense/applications/api/routes.py",
@@ -128,7 +127,6 @@ ignore = [
     "src/hiresense/ingestion/domain/portal_scanner.py",
     "src/hiresense/ingestion/domain/quick_scoring_service.py",
     "src/hiresense/preference/domain/services.py",
-    "src/hiresense/matching/domain/services.py",
     "src/hiresense/matching/domain/deep_analysis_service.py",
     "src/hiresense/bootstrap/profile.py",
     "src/hiresense/bootstrap/tracked_factory.py",

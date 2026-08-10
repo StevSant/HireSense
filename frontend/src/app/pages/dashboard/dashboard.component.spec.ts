@@ -87,6 +87,8 @@ describe('DashboardComponent', () => {
     expect(cmp.hubTabs()?.tabs.map((t) => t.label)).toEqual([
       'CV',
       'Personal details',
+      'Apply profile',
+      'Sources',
       'Cover letters',
     ]);
 

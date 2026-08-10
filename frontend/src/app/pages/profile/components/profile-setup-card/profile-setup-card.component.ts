@@ -1,9 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { CandidateProfile } from '@core/contracts/candidate-profile.model';
+import { PROFILE_ROUTES } from '@core/nav';
 
 interface ProfileSetupStep {
   label: string;
   guidance: string;
+  /** Tab that owns the control which completes this step. */
+  route: string;
   complete: boolean;
 }
 
@@ -25,6 +29,7 @@ function hasApplicationBasics(profile: CandidateProfile): boolean {
 @Component({
   selector: 'app-profile-setup-card',
   standalone: true,
+  imports: [RouterLink],
   templateUrl: './profile-setup-card.component.html',
   styleUrl: './profile-setup-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,22 +48,26 @@ export class ProfileSetupCardComponent {
     return [
       {
         label: 'Add an email address',
-        guidance: 'Use the Edit control below so employers can contact you.',
+        guidance: 'Open Personal details to add an address employers can contact you at.',
+        route: PROFILE_ROUTES.personal,
         complete: hasText(profile.email),
       },
       {
         label: 'Add your location',
         guidance: 'Location helps us prioritize roles you can realistically pursue.',
+        route: PROFILE_ROUTES.personal,
         complete: hasText(profile.location),
       },
       {
         label: 'Add a professional link',
         guidance: 'A LinkedIn, GitHub, or portfolio link gives hiring teams more context.',
+        route: PROFILE_ROUTES.personal,
         complete: hasProfessionalLink,
       },
       {
         label: 'Add application basics',
         guidance: 'Add work authorization, experience, or availability in your Apply profile.',
+        route: PROFILE_ROUTES.apply,
         complete: hasApplicationBasics(profile),
       },
     ];

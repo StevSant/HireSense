@@ -42,6 +42,20 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'apply',
+            loadComponent: () =>
+              import('./pages/profile/tabs/apply-tab/profile-apply-tab.component').then(
+                (m) => m.ProfileApplyTabComponent,
+              ),
+          },
+          {
+            path: 'sources',
+            loadComponent: () =>
+              import('./pages/profile/tabs/sources-tab/profile-sources-tab.component').then(
+                (m) => m.ProfileSourcesTabComponent,
+              ),
+          },
+          {
             path: 'cover-letters',
             loadComponent: () =>
               import('./pages/profile/tabs/cover-letters-tab/profile-cover-letters-tab.component').then(

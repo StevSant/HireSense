@@ -71,4 +71,22 @@ describe('ProfileComponent (shell)', () => {
     expect(el.querySelector('router-outlet')).not.toBeNull();
     expect(el.querySelector('.page-tabs')).toBeNull();
   });
+
+  // The checklist's steps are completed on different tabs, so the shell owns it
+  // and every tab shows it.
+  it('renders the setup checklist above the outlet once a profile exists', () => {
+    const { fixture } = mount({ profiles: { en: makeProfile() } });
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(el.querySelector('app-profile-setup-card')).not.toBeNull();
+    expect(el.textContent).toContain('Make your profile ready to use');
+  });
+
+  it('omits the checklist when there is no profile to measure', () => {
+    const { fixture } = mount();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-profile-setup-card'),
+    ).toBeNull();
+  });
 });

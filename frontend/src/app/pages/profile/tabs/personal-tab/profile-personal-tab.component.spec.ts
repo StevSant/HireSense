@@ -4,8 +4,6 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { ProfilePersonalTabComponent } from './profile-personal-tab.component';
 import { ProfileService } from '../../../../core/services/profile.service';
-import { PortfolioService } from '../../../../core/services/portfolio.service';
-import { NetworkService } from '../../../../core/services/network.service';
 import { makeProfile } from '../../testing/make-profile';
 
 describe('ProfilePersonalTabComponent', () => {
@@ -21,17 +19,7 @@ describe('ProfilePersonalTabComponent', () => {
 
     TestBed.configureTestingModule({
       imports: [ProfilePersonalTabComponent],
-      providers: [
-        provideRouter([]),
-        { provide: ProfileService, useValue: profileService },
-        {
-          provide: PortfolioService,
-          useValue: {
-            listProjects: () => of({ projects: [], total: 0, last_synced_at: null }),
-          },
-        },
-        { provide: NetworkService, useValue: { summary: () => of(null) } },
-      ],
+      providers: [provideRouter([]), { provide: ProfileService, useValue: profileService }],
     });
     const fixture = TestBed.createComponent(ProfilePersonalTabComponent);
     fixture.detectChanges();
@@ -64,17 +52,21 @@ describe('ProfilePersonalTabComponent', () => {
     expect(el.querySelector('.details-grid')).not.toBeNull();
   });
 
-  it('shows a profile setup guide', () => {
-    const { fixture } = mount({ profiles: { en: makeProfile() } });
-
-    expect(fixture.nativeElement.textContent).toContain('Make your profile ready to use');
-  });
-
-  it('still renders the portfolio and network cards without a parsed profile', () => {
+  it('shows the empty state instead of the details card when no CV has been parsed', () => {
     const { fixture } = mount();
     const el = fixture.nativeElement as HTMLElement;
 
-    expect(el.querySelector('app-portfolio-card')).not.toBeNull();
-    expect(el.querySelector('app-network-card')).not.toBeNull();
+    expect(el.querySelector('app-profile-required-empty-state')).not.toBeNull();
+    expect(el.querySelector('.details-grid')).toBeNull();
+  });
+
+  it('no longer renders the cards that moved to their own tabs', () => {
+    const { fixture } = mount({ profiles: { en: makeProfile() } });
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(el.querySelector('app-apply-profile-card')).toBeNull();
+    expect(el.querySelector('app-portfolio-card')).toBeNull();
+    expect(el.querySelector('app-network-card')).toBeNull();
+    expect(el.querySelector('app-profile-setup-card')).toBeNull();
   });
 });

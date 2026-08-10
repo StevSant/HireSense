@@ -1,7 +1,4 @@
 @if (profile(); as p) {
-  <div class="details-card">
-    <app-profile-setup-card [profile]="p" />
-  </div>
   @if (!editingPersonal()) {
     <div class="details-card">
       <div class="details-card-header">
@@ -83,18 +80,6 @@
       />
     </div>
   }
-  <div class="details-card">
-    <app-apply-profile-card [profile]="p" />
-  </div>
 } @else {
-  <div class="empty-state">
-    <p class="empty-state-title">No profile yet</p>
-    <p class="empty-state-hint">
-      Upload a CV in the
-      <a class="link-button" routerLink="/dashboard/profile/cv">CV tab</a> to see your parsed
-      details here.
-    </p>
-  </div>
+  <app-profile-required-empty-state hint="your parsed details" />
 }
-<app-portfolio-card />
-<app-network-card />

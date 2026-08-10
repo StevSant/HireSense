@@ -1,29 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ProfileService } from '../../../../core/services/profile.service';
-import { ApplyProfileCardComponent } from '../../components/apply-profile-card/apply-profile-card.component';
 import { ManualFieldsFormComponent } from '../../components/manual-fields-form/manual-fields-form.component';
-import { NetworkCardComponent } from '../../components/network-card/network-card.component';
-import { PortfolioCardComponent } from '../../components/portfolio-card/portfolio-card.component';
-import { ProfileSetupCardComponent } from '../../components/profile-setup-card/profile-setup-card.component';
+import { ProfileRequiredEmptyStateComponent } from '../../components/profile-required-empty-state/profile-required-empty-state.component';
 
 /**
  * Profile → Personal details.
  *
- * The portfolio and network cards sit outside the `@if (profile())` block on
- * purpose: both are usable before a CV has been uploaded.
+ * Only the parsed-details view and its edit form. The apply profile, portfolio
+ * and network cards moved to their own tabs: each owned an independent save
+ * action, so stacking them here meant scrolling past unrelated work to reach
+ * the one you wanted.
  */
 @Component({
   selector: 'app-profile-personal-tab',
   standalone: true,
-  imports: [
-    RouterLink,
-    ApplyProfileCardComponent,
-    ManualFieldsFormComponent,
-    NetworkCardComponent,
-    PortfolioCardComponent,
-    ProfileSetupCardComponent,
-  ],
+  imports: [ManualFieldsFormComponent, ProfileRequiredEmptyStateComponent],
   templateUrl: './profile-personal-tab.component.html',
   styleUrl: './profile-personal-tab.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,7 +23,6 @@ export class ProfilePersonalTabComponent {
   private profileService = inject(ProfileService);
 
   profile = this.profileService.profile;
-  initialLoading = computed(() => !this.profileService.loaded());
 
   editingPersonal = signal(false);
 }

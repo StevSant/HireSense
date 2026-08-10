@@ -27,7 +27,7 @@
           <li>
             <span class="profile-setup-marker" aria-hidden="true"></span>
             <div>
-              <strong>{{ step.label }}</strong>
+              <a class="profile-setup-step-link" [routerLink]="step.route">{{ step.label }}</a>
               <p>{{ step.guidance }}</p>
             </div>
           </li>

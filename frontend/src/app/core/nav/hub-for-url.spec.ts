@@ -8,6 +8,8 @@ describe('hubForUrl', () => {
     // Profile's tabs are routed children now; the bare parent redirects to /cv
     // and the dashboard resolves the hub from the post-redirect URL.
     expect(hubForUrl('/dashboard/profile/cv')).toBe('profile');
+    expect(hubForUrl('/dashboard/profile/apply')).toBe('profile');
+    expect(hubForUrl('/dashboard/profile/sources')).toBe('profile');
     expect(hubForUrl('/dashboard/profile/cover-letters')).toBe('profile');
     expect(hubForUrl('/dashboard/admin/usage')).toBe('admin');
   });

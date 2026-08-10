@@ -1,3 +1,5 @@
+import { PROFILE_ROUTES } from './profile-routes.const';
+
 export type HubId = 'discover' | 'pipeline' | 'insights' | 'profile' | 'admin';
 
 export interface HubTab {
@@ -48,9 +50,11 @@ export const HUBS: readonly Hub[] = [
     id: 'profile',
     label: 'Profile',
     tabs: [
-      { label: 'CV', path: '/dashboard/profile/cv' },
-      { label: 'Personal details', path: '/dashboard/profile/personal' },
-      { label: 'Cover letters', path: '/dashboard/profile/cover-letters' },
+      { label: 'CV', path: PROFILE_ROUTES.cv },
+      { label: 'Personal details', path: PROFILE_ROUTES.personal },
+      { label: 'Apply profile', path: PROFILE_ROUTES.apply },
+      { label: 'Sources', path: PROFILE_ROUTES.sources },
+      { label: 'Cover letters', path: PROFILE_ROUTES.coverLetters },
     ],
   },
   {

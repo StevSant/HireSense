@@ -4,5 +4,11 @@
     <p class="page-subtitle">Your CV, personal details, and cover letters in one place.</p>
   </div>
 
+  @if (profile(); as p) {
+    <div class="profile-setup-slot">
+      <app-profile-setup-card [profile]="p" />
+    </div>
+  }
+
   <router-outlet />
 </div>

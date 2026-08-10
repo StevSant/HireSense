@@ -9,6 +9,12 @@
   width: 100%;
 }
 
+// Sits between the header and the routed tab, so it needs the same gap the
+// tabs use between their own stacked cards.
+.profile-setup-slot {
+  margin-bottom: 1.25rem;
+}
+
 .page-header {
   margin-bottom: 1.75rem;
 

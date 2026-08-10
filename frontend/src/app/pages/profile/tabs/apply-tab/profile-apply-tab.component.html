@@ -1,0 +1,7 @@
+@if (profile(); as p) {
+  <div class="details-card">
+    <app-apply-profile-card [profile]="p" />
+  </div>
+} @else {
+  <app-profile-required-empty-state hint="your reusable application answers" />
+}

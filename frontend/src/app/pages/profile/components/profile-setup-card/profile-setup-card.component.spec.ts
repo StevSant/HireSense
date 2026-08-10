@@ -1,5 +1,6 @@
 import { ComponentRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { ProfileSetupCardComponent } from './profile-setup-card.component';
 import { CandidateProfile } from '@core/contracts/candidate-profile.model';
 
@@ -27,6 +28,7 @@ describe('ProfileSetupCardComponent', () => {
   let fixture: ComponentFixture<ProfileSetupCardComponent>;
 
   beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
     fixture = TestBed.createComponent(ProfileSetupCardComponent);
     component = fixture.componentInstance;
     componentRef = fixture.componentRef;
@@ -100,5 +102,25 @@ describe('ProfileSetupCardComponent', () => {
     expect(progress?.getAttribute('aria-valuemax')).toBe('4');
     expect(element.textContent).toContain('Add your location');
     expect(element.textContent).not.toContain('Add an email address');
+  });
+
+  // The checklist renders on every Profile tab, so each step has to carry the
+  // user to whichever tab owns the control that completes it.
+  it('links each remaining step to the tab that completes it', () => {
+    componentRef.setInput('profile', makeProfile());
+    fixture.detectChanges();
+
+    const links = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>(
+        '.profile-setup-step-link',
+      ),
+    ];
+
+    expect(links.map((a) => [a.textContent?.trim(), a.getAttribute('href')])).toEqual([
+      ['Add an email address', '/dashboard/profile/personal'],
+      ['Add your location', '/dashboard/profile/personal'],
+      ['Add a professional link', '/dashboard/profile/personal'],
+      ['Add application basics', '/dashboard/profile/apply'],
+    ]);
   });
 });

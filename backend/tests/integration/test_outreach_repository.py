@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.outreach.domain import OutreachEvent, OutreachEventKind
 from hiresense.outreach.infrastructure import OutreachRepository
 from hiresense.outreach.infrastructure.orm import OutreachEventOrm  # noqa: F401

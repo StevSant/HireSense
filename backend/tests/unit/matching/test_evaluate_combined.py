@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from hiresense.matching.domain.scorers.base import DimensionResult
-from hiresense.matching.domain.services import MatchingOrchestrator
+from hiresense.matching.domain import DimensionEvaluator
 
 _JOB = {"title": "SWE", "company": "Acme", "description": ""}
 
@@ -60,12 +60,7 @@ def _dim(name, score):
 async def test_combined_path_used_by_default_when_configured() -> None:
     fan_out_scorers = [FakeScorer("a", 0.1, 60), FakeScorer("b", 0.1, 40)]
     combined = StubCombinedScorer(results=[_dim("a", 0.8), _dim("b", 0.4)])
-    o = MatchingOrchestrator(
-        llm=None,
-        event_bus=FakeEventBus(),
-        dimension_scorers=fan_out_scorers,
-        combined_scorer=combined,
-    )
+    o = DimensionEvaluator(dimension_scorers=fan_out_scorers, combined_scorer=combined)
     result = await o.evaluate(job=_JOB)
 
     assert combined.calls == 1
@@ -78,12 +73,7 @@ async def test_combined_path_used_by_default_when_configured() -> None:
 async def test_combined_result_gets_weights_from_wiring_not_llm() -> None:
     fan_out_scorers = [FakeScorer("a", 0.5, 70), FakeScorer("b", 0.5, 30)]
     combined = StubCombinedScorer(results=[_dim("a", 1.0), _dim("b", 0.0)])
-    o = MatchingOrchestrator(
-        llm=None,
-        event_bus=FakeEventBus(),
-        dimension_scorers=fan_out_scorers,
-        combined_scorer=combined,
-    )
+    o = DimensionEvaluator(dimension_scorers=fan_out_scorers, combined_scorer=combined)
     result = await o.evaluate(job=_JOB)
 
     weights = {d.dimension: d.weight for d in result.dimensions}
@@ -94,12 +84,7 @@ async def test_combined_result_gets_weights_from_wiring_not_llm() -> None:
 async def test_malformed_combined_response_falls_back_to_fan_out() -> None:
     fan_out_scorers = [FakeScorer("a", 0.8, 60), FakeScorer("b", 0.4, 40)]
     combined = StubCombinedScorer(results=None)  # simulates unparseable response
-    o = MatchingOrchestrator(
-        llm=None,
-        event_bus=FakeEventBus(),
-        dimension_scorers=fan_out_scorers,
-        combined_scorer=combined,
-    )
+    o = DimensionEvaluator(dimension_scorers=fan_out_scorers, combined_scorer=combined)
     result = await o.evaluate(job=_JOB)
 
     assert combined.calls == 1
@@ -111,12 +96,7 @@ async def test_malformed_combined_response_falls_back_to_fan_out() -> None:
 async def test_combined_scorer_exception_falls_back_to_fan_out() -> None:
     fan_out_scorers = [FakeScorer("a", 0.8, 60), FakeScorer("b", 0.4, 40)]
     combined = StubCombinedScorer(raises=RuntimeError("provider exploded"))
-    o = MatchingOrchestrator(
-        llm=None,
-        event_bus=FakeEventBus(),
-        dimension_scorers=fan_out_scorers,
-        combined_scorer=combined,
-    )
+    o = DimensionEvaluator(dimension_scorers=fan_out_scorers, combined_scorer=combined)
     result = await o.evaluate(job=_JOB)
 
     assert all(s.calls == 1 for s in fan_out_scorers)
@@ -126,7 +106,7 @@ async def test_combined_scorer_exception_falls_back_to_fan_out() -> None:
 @pytest.mark.asyncio
 async def test_no_combined_scorer_configured_uses_fan_out_directly() -> None:
     fan_out_scorers = [FakeScorer("a", 0.8, 60), FakeScorer("b", 0.4, 40)]
-    o = MatchingOrchestrator(llm=None, event_bus=FakeEventBus(), dimension_scorers=fan_out_scorers)
+    o = DimensionEvaluator(dimension_scorers=fan_out_scorers)
     result = await o.evaluate(job=_JOB)
 
     assert all(s.calls == 1 for s in fan_out_scorers)
@@ -140,9 +120,7 @@ async def test_explicit_dimension_scorers_override_bypasses_combined_path() -> N
     # scorer wired.
     override_scorers = [FakeScorer("x", 0.9, 50), FakeScorer("y", 0.1, 50)]
     combined = StubCombinedScorer(results=[_dim("x", 0.5), _dim("y", 0.5)])
-    o = MatchingOrchestrator(
-        llm=None,
-        event_bus=FakeEventBus(),
+    o = DimensionEvaluator(
         dimension_scorers=[FakeScorer("x", 0.0, 50), FakeScorer("y", 0.0, 50)],
         combined_scorer=combined,
     )
@@ -162,12 +140,8 @@ async def test_combined_weight_overrides_apply_identically_to_fan_out() -> None:
 
     fan_out_scorers = [FakeScorer("a", 0.8, 60), FakeScorer("b", 0.4, 40)]
     combined = StubCombinedScorer(results=[_dim("a", 0.8), _dim("b", 0.4)])
-    o = MatchingOrchestrator(
-        llm=None,
-        event_bus=FakeEventBus(),
-        dimension_scorers=fan_out_scorers,
-        combined_scorer=combined,
-        preference=FakePreference(),
+    o = DimensionEvaluator(
+        dimension_scorers=fan_out_scorers, combined_scorer=combined, preference=FakePreference()
     )
     result = await o.evaluate(job=_JOB)
     # 0.8*80 + 0.4*40 = 80 / 120 = 0.6667

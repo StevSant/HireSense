@@ -6,7 +6,7 @@ from hiresense.ingestion.adapters import WorkdayAdapter
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.normalizers import WorkdayNormalizer
 from hiresense.ingestion.domain.portal_config import PortalEntry
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 class FakeResponse:

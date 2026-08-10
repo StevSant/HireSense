@@ -9,7 +9,7 @@ did nothing.
 
 import pytest
 
-from hiresense.bootstrap.matching import _breakdown_weights
+from hiresense.composition.matching import _breakdown_weights
 from hiresense.matching.domain.models import ScoreBreakdown
 
 

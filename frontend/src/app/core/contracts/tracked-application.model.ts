@@ -1,0 +1,19 @@
+import { ApplicationStatus } from '@core/contracts/application-status.model';
+
+export interface TrackedApplication {
+  id: string;
+  job_id: string | null;
+  title: string;
+  company: string;
+  url: string | null;
+  status: ApplicationStatus;
+  notes: string | null;
+  applied_at: string | null;
+  created_at: string;
+  updated_at: string;
+  location: string | null;
+  remote_modality: 'remote' | 'hybrid' | 'on_site' | null;
+  salary_range: string | null;
+  source: string | null;
+  posted_date: string | null;
+}

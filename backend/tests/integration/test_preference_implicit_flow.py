@@ -9,7 +9,7 @@ Mirrors the harness in test_preference_flow.py:
   job so the implicit signal carries an embedding and the model activates.
 - Both services share ONE InMemoryEventBus — exactly as the full app wires
   ``infra.event_bus`` — and the preference subscriber is registered on it the
-  same way bootstrap.preference.build_preference does.
+  same way composition.preference.build_preference does.
 - The bus dispatches handlers via asyncio.create_task, so after the PATCH we
   poll a short loop yielding control until the implicit signal lands.
 """
@@ -25,9 +25,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from hiresense.adapters.event_bus import InMemoryEventBus
+from hiresense.shared.adapters.event_bus import InMemoryEventBus
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.ingestion.api.dependencies import get_job_query
 from hiresense.preference.api import router as preference_router
 from hiresense.preference.api.dependencies import get_preference_service
@@ -127,7 +127,7 @@ async def test_status_change_records_implicit_signal() -> None:
         enabled=True,
     )
 
-    # Register the subscriber the same way bootstrap.preference.build_preference does.
+    # Register the subscriber the same way composition.preference.build_preference does.
     async def _on_status_changed(event) -> None:
         kind = status_to_feedback_kind(event.status)
         if kind is None or event.job_id is None:

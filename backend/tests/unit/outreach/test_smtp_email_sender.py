@@ -3,9 +3,9 @@ import ssl
 
 import pytest
 
-from hiresense.adapters import SmtpEmailSender
-from hiresense.kernel import EmailMessage
-from hiresense.ports import EmailUnavailableError
+from hiresense.shared.adapters import SmtpEmailSender
+from hiresense.shared.kernel import EmailMessage
+from hiresense.shared.ports import EmailUnavailableError
 
 
 class _FakeSMTP:

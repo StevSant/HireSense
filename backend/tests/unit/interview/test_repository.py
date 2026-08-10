@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.interview.domain.models import Competency, Story
 from hiresense.interview.infrastructure import StoryOrm, StoryRepository
 

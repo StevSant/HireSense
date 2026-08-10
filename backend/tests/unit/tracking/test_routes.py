@@ -9,8 +9,8 @@ from fastapi.testclient import TestClient
 
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api.dependencies import get_job_query
-from hiresense.kernel import register_domain_exception_handlers
-from hiresense.kernel.exceptions import ConflictError, NotFoundError
+from hiresense.shared.kernel import register_domain_exception_handlers
+from hiresense.shared.kernel.exceptions import ConflictError, NotFoundError
 from hiresense.tracking.api.dependencies import get_tracking_service
 from hiresense.tracking.api.routes import router
 from hiresense.tracking.domain import InvalidStatusTransitionError

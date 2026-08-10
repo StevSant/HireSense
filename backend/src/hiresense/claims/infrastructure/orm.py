@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, String, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 
 
 class CandidateClaimOrm(Base):

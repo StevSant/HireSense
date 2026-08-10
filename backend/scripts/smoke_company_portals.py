@@ -7,7 +7,7 @@ import re
 
 import httpx
 
-from hiresense.config import Settings
+from hiresense.shared.config import Settings
 from hiresense.ingestion.adapters.generic_scraper_adapter import GenericScraperAdapter
 from hiresense.ingestion.adapters.globant_adapter import GlobantAdapter
 from hiresense.ingestion.adapters.thoughtworks_adapter import ThoughtworksAdapter

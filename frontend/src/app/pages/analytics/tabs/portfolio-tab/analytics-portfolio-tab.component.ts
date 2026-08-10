@@ -3,15 +3,16 @@ import { DatePipe } from '@angular/common';
 import {
   PortfolioEngagementResponse,
   PortfolioVisit,
-} from '../../../profile/models/portfolio-engagement.model';
+} from '@core/contracts/portfolio-engagement.model';
 import { ENGAGEMENT_ROW_CAP } from '../../analytics-row-caps';
 import { AnalyticsStore } from '../../analytics.store';
+import { StatusNoteComponent } from '@shared/ui';
 
 /** Analytics -> Portfolio: who has been reading the public portfolio. */
 @Component({
   selector: 'app-analytics-portfolio-tab',
   standalone: true,
-  imports: [DatePipe],
+  imports: [DatePipe, StatusNoteComponent],
   templateUrl: './analytics-portfolio-tab.component.html',
   styleUrl: '../../analytics-tab-shared.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

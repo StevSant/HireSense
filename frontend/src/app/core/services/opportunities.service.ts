@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { FetchOpportunitiesResponse } from '../../pages/opportunities/models/fetch-opportunities-response.model';
-import { Opportunity } from '../../pages/opportunities/models/opportunity.model';
-import { PaginatedOpportunitiesResponse } from '../../pages/opportunities/models/paginated-opportunities-response.model';
+import { ApiClient, API_ROUTES } from '@core/api';
+import { FetchOpportunitiesResponse } from '@core/contracts/fetch-opportunities-response.model';
+import { Opportunity } from '@core/contracts/opportunity.model';
+import { PaginatedOpportunitiesResponse } from '@core/contracts/paginated-opportunities-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class OpportunitiesService {
-  constructor(private http: HttpClient) {}
+  constructor(private api: ApiClient) {}
 
   list(params: {
     page: number;
@@ -55,19 +55,16 @@ export class OpportunitiesService {
     if (params.status) httpParams = httpParams.set('status', params.status);
     if (params.sort) httpParams = httpParams.set('sort', params.sort);
 
-    return this.http.get<PaginatedOpportunitiesResponse>(`${environment.apiUrl}/opportunities`, {
+    return this.api.get<PaginatedOpportunitiesResponse>(API_ROUTES.opportunities.root(), {
       params: httpParams,
     });
   }
 
   get(id: string): Observable<Opportunity> {
-    return this.http.get<Opportunity>(`${environment.apiUrl}/opportunities/${id}`);
+    return this.api.get<Opportunity>(API_ROUTES.opportunities.byId({ id }));
   }
 
   fetch(): Observable<FetchOpportunitiesResponse> {
-    return this.http.post<FetchOpportunitiesResponse>(
-      `${environment.apiUrl}/opportunities/fetch`,
-      {},
-    );
+    return this.api.post<FetchOpportunitiesResponse>(API_ROUTES.opportunities.fetch(), {});
   }
 }

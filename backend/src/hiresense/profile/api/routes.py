@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.ports import LatexCompileError
+from hiresense.shared.ports import LatexCompileError
 from hiresense.profile.api.dependencies import get_profile_service
 from hiresense.profile.domain.apply_profile import ApplyProfile
 from hiresense.profile.domain.models import CandidateProfile

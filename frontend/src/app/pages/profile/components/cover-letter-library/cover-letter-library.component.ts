@@ -12,7 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApplicationsService } from '../../../../core/services/applications.service';
-import { CoverLetterLibraryItem } from '../../../applications/models/cover-letter-library-item.model';
+import { CoverLetterLibraryItem } from '@core/contracts/cover-letter-library-item.model';
 import { createSortState } from '../../../../core/utils/sort-state';
 import { sortItems } from '../../../../core/utils/sort-items';
 import { parseSortToken } from '../../../../core/utils/parse-sort-token';

@@ -5,7 +5,7 @@ import pytest
 from hiresense.ingestion.adapters.crunchboard import CrunchBoardAdapter, parse_crunchboard_title
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.normalizers import CrunchBoardNormalizer
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 RSS = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">

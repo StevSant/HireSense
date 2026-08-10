@@ -10,7 +10,7 @@ from hiresense.ingestion.adapters._jsonl_import import (
     stable_source_id,
 )
 from hiresense.ingestion.domain.models import RawJobListing
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 class StructuredImportAdapter:

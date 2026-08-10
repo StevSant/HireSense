@@ -7,54 +7,22 @@ from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.profile_hash import score_profile_hash
 from hiresense.matching.domain.deep_analysis_result import DeepAnalysisResult
 from hiresense.matching.domain.deep_dimension import DeepDimension
-from hiresense.kernel import extract_json
-from hiresense.ports import LLMPort
+from hiresense.matching.prompts import render_deep_analysis_system_prompt
+from hiresense.shared.kernel.prompts import prompt_fingerprint, verdict_label
+from hiresense.shared.kernel import extract_json
+from hiresense.shared.ports import LLMPort
 
 logger = logging.getLogger(__name__)
 
-_STRONG_THRESHOLD = 0.7
-_MODERATE_THRESHOLD = 0.4
 
-_DIMENSIONS = ("seniority_fit", "skills_role_fit", "growth", "culture", "compensation")
-
-_SYSTEM_PROMPT = (
-    "You are an expert technical recruiter producing an honest, detailed match "
-    "analysis between a CANDIDATE and ONE job. Return ONLY a JSON object:\n"
-    "{\n"
-    '  "overall_score": <0.0-1.0>,\n'
-    '  "verdict": "strong|moderate|weak",\n'
-    '  "dimensions": [{"dimension": "<name>", "score": <0-1>, "rationale": "..."}],\n'
-    '  "matched_skills": ["..."], "missing_skills": ["..."],\n'
-    '  "pros": ["..."], "cons": ["..."], "recommendations": ["..."],\n'
-    '  "narrative": "2-4 sentence honest summary"\n'
-    "}\n"
-    f"Use exactly these dimension names: {', '.join(_DIMENSIONS)}.\n\n"
-    "Apply these gating rules — overall_score MUST reflect them, not topical "
-    "keyword overlap:\n"
-    "1. SENIORITY: infer the candidate's level from their experience; if the job "
-    "is clearly more senior (Senior/Staff/Lead/Principal/Director), seniority_fit "
-    "and overall_score must be low. Never assume mid-level.\n"
-    "2. CORE SKILLS: if the candidate lacks the job's primary language or core "
-    "discipline, skills_role_fit and overall_score must be low; list it under "
-    "missing_skills. Shared peripheral tools do not compensate.\n"
-    "3. DISCIPLINE: a different discipline (e.g. SRE/infra vs backend) is a weak "
-    "fit unless the CV shows direct hands-on experience in it.\n"
-    "Be specific and concrete; recommendations should be actionable next steps."
-)
+def _deep_prompt_fingerprint() -> str:
+    return prompt_fingerprint(render_deep_analysis_system_prompt())
 
 
 def _str_list(raw: Any) -> list[str]:
     if not isinstance(raw, list):
         return []
     return [str(x).strip() for x in raw if str(x).strip()]
-
-
-def _verdict_from_score(score: float) -> str:
-    if score >= _STRONG_THRESHOLD:
-        return "strong"
-    if score >= _MODERATE_THRESHOLD:
-        return "moderate"
-    return "weak"
 
 
 class DeepAnalysisService:
@@ -103,7 +71,7 @@ class DeepAnalysisService:
 
         prompt = self._build_prompt(job, candidate_skills, candidate_summary)
         try:
-            response = await self._llm.complete(prompt, system=_SYSTEM_PROMPT)
+            response = await self._llm.complete(prompt, system=render_deep_analysis_system_prompt())
         except Exception:
             logger.exception("Deep analysis LLM call failed for job %s", job.id)
             return self._heuristic(job, "Deep analysis failed — showing heuristic score.")
@@ -163,7 +131,7 @@ class DeepAnalysisService:
                 continue
 
         verdict = data.get("verdict")
-        verdict = str(verdict) if isinstance(verdict, str) else _verdict_from_score(overall)
+        verdict = str(verdict) if isinstance(verdict, str) else verdict_label(overall)
         return DeepAnalysisResult(
             job_id=job_id,
             overall_score=overall,
@@ -182,13 +150,13 @@ class DeepAnalysisService:
         return DeepAnalysisResult(
             job_id=job.id,
             overall_score=score,
-            verdict=_verdict_from_score(score),
+            verdict=verdict_label(score),
             narrative=narrative,
         )
 
     def _safe_get_cached(self, job_id: str, profile_hash: str) -> DeepAnalysisResult | None:
         try:
-            payload = self._cache_repo.get_deep(job_id, profile_hash)
+            payload = self._cache_repo.get_deep(job_id, profile_hash, _deep_prompt_fingerprint())
         except Exception:
             logger.exception("Deep analysis cache read failed for job %s", job_id)
             return None
@@ -202,6 +170,8 @@ class DeepAnalysisService:
 
     def _safe_upsert(self, result: DeepAnalysisResult, profile_hash: str) -> None:
         try:
-            self._cache_repo.upsert_deep(result.job_id, profile_hash, result.model_dump())
+            self._cache_repo.upsert_deep(
+                result.job_id, profile_hash, result.model_dump(), _deep_prompt_fingerprint()
+            )
         except Exception:
             logger.exception("Deep analysis cache upsert failed for job %s", result.job_id)

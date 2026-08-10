@@ -121,9 +121,11 @@
     </div>
 
     @if (loading()) {
-      <p class="section-loading">Loading opportunities…</p>
+      <app-status-note class="list-note">Loading opportunities…</app-status-note>
     } @else if (!items().length) {
-      <p class="section-empty">No opportunities match your current filters yet.</p>
+      <app-status-note class="list-note">
+        No opportunities match your current filters yet.
+      </app-status-note>
     } @else {
       <div class="table-container">
         <table>

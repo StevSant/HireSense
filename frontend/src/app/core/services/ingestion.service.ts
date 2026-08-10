@@ -1,19 +1,16 @@
-import { Injectable, signal } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
+import { HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { FetchResponse } from '../../pages/ingestion/models/fetch-response.model';
-import { JobAnalysis } from '../../pages/ingestion/models/job-analysis.model';
-import { JobFilters } from '../../pages/ingestion/models/job-filters.model';
-import { NormalizedJob } from '../../pages/ingestion/models/normalized-job.model';
-import { PaginatedJobsResponse } from '../../pages/ingestion/models/paginated-jobs-response.model';
-import { PortalEntry } from '../../pages/ingestion/models/portal-entry.model';
-import { ScanPortalsRequest } from '../../pages/ingestion/models/scan-portals-request.model';
-import { ScanResult } from '../../pages/ingestion/models/scan-result.model';
-import {
-  SourcesHealthResponse,
-  SourcesResponse,
-} from '../../pages/ingestion/models/source-capability.model';
+import { ApiClient, API_ROUTES } from '@core/api';
+import { FetchResponse } from '@core/contracts/fetch-response.model';
+import { JobAnalysis } from '@core/contracts/job-analysis.model';
+import { JobFilters } from '@core/contracts/job-filters.model';
+import { NormalizedJob } from '@core/contracts/normalized-job.model';
+import { PaginatedJobsResponse } from '@core/contracts/paginated-jobs-response.model';
+import { PortalEntry } from '@core/contracts/portal-entry.model';
+import { ScanPortalsRequest } from '@core/contracts/scan-portals-request.model';
+import { ScanResult } from '@core/contracts/scan-result.model';
+import { SourcesHealthResponse, SourcesResponse } from '@core/contracts/source-capability.model';
 
 @Injectable({ providedIn: 'root' })
 export class IngestionService {
@@ -23,10 +20,10 @@ export class IngestionService {
   // shows its analysis instantly without refetching.
   readonly jobAnalysisCache = signal<Record<string, JobAnalysis>>({});
 
-  constructor(private http: HttpClient) {}
+  private readonly api = inject(ApiClient);
 
   fetchJobs(): Observable<FetchResponse> {
-    return this.http.post<FetchResponse>(`${environment.apiUrl}/ingestion/fetch`, {});
+    return this.api.post<FetchResponse>(API_ROUTES.ingestion.fetch(), {});
   }
 
   // "Check closed": probe the given (visible) jobs synchronously for an
@@ -35,8 +32,8 @@ export class IngestionService {
   revalidate(
     jobIds: string[],
   ): Observable<{ started: boolean; closed: number; closed_ids: string[] }> {
-    return this.http.post<{ started: boolean; closed: number; closed_ids: string[] }>(
-      `${environment.apiUrl}/ingestion/revalidate`,
+    return this.api.post<{ started: boolean; closed: number; closed_ids: string[] }>(
+      API_ROUTES.ingestion.revalidate(),
       { job_ids: jobIds },
     );
   }
@@ -82,11 +79,11 @@ export class IngestionService {
       params = params.set('max_years_experience', filters.max_years_experience.toString());
     }
 
-    return this.http.get<PaginatedJobsResponse>(`${environment.apiUrl}/ingestion/jobs`, { params });
+    return this.api.get<PaginatedJobsResponse>(API_ROUTES.ingestion.jobs(), { params });
   }
 
   getJob(jobId: string): Observable<NormalizedJob> {
-    return this.http.get<NormalizedJob>(`${environment.apiUrl}/ingestion/jobs/${jobId}`);
+    return this.api.get<NormalizedJob>(API_ROUTES.ingestion.job({ jobId }));
   }
 
   getCachedAnalysis(jobId: string): JobAnalysis | undefined {
@@ -96,8 +93,8 @@ export class IngestionService {
   getJobAnalysis(jobId: string, force = false): Observable<JobAnalysis> {
     let params = new HttpParams();
     if (force) params = params.set('force', 'true');
-    return this.http
-      .get<JobAnalysis>(`${environment.apiUrl}/ingestion/jobs/${jobId}/analysis`, { params })
+    return this.api
+      .get<JobAnalysis>(API_ROUTES.ingestion.jobAnalysis({ jobId }), { params })
       .pipe(
         tap((analysis) =>
           this.jobAnalysisCache.update((cache) => ({ ...cache, [jobId]: analysis })),
@@ -106,19 +103,19 @@ export class IngestionService {
   }
 
   loadPortals(): Observable<PortalEntry[]> {
-    return this.http.get<PortalEntry[]>(`${environment.apiUrl}/ingestion/portals`);
+    return this.api.get<PortalEntry[]>(API_ROUTES.ingestion.portals());
   }
 
   listSources(): Observable<SourcesResponse> {
-    return this.http.get<SourcesResponse>(`${environment.apiUrl}/ingestion/sources`);
+    return this.api.get<SourcesResponse>(API_ROUTES.ingestion.sources());
   }
 
   sourcesHealth(): Observable<SourcesHealthResponse> {
-    return this.http.get<SourcesHealthResponse>(`${environment.apiUrl}/ingestion/sources/health`);
+    return this.api.get<SourcesHealthResponse>(API_ROUTES.ingestion.sourcesHealth());
   }
 
   scanPortals(body: ScanPortalsRequest): Observable<ScanResult> {
-    return this.http.post<ScanResult>(`${environment.apiUrl}/ingestion/scan-portals`, body);
+    return this.api.post<ScanResult>(API_ROUTES.ingestion.scanPortals(), body);
   }
 
   markTracked(jobId: string): void {

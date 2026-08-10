@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 from hiresense.tracking.infrastructure.repository import TrackingRepository
 

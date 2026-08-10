@@ -1,4 +1,4 @@
-from hiresense.config import Settings
+from hiresense.shared.config import Settings
 
 
 def test_inbox_settings_defaults():

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { NEVER, of, throwError } from 'rxjs';
 import { ApplyProfileCardComponent } from './apply-profile-card.component';
-import { CandidateProfile } from '../../models/candidate-profile.model';
+import { CandidateProfile } from '@core/contracts/candidate-profile.model';
 import { ProfileService } from '../../../../core/services/profile.service';
 
 function makeProfile(overrides: Partial<CandidateProfile> = {}): CandidateProfile {

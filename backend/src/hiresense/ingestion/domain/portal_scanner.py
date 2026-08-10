@@ -18,7 +18,7 @@ from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.ports import JobsRepositoryPort
 from hiresense.ingestion.ports.jobs_repository import ScoreUpdate
-from hiresense.kernel.events import JobsIngestedEvent
+from hiresense.shared.kernel.events import JobsIngestedEvent
 
 logger = logging.getLogger(__name__)
 

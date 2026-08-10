@@ -142,8 +142,14 @@ class FunnelService:
 
     @staticmethod
     def _to_utc(value: datetime | None) -> datetime | None:
-        if value is None:
-            return None
+        """Optional-preserving variant, for the caller-supplied period bounds."""
+        return None if value is None else FunnelService._as_utc(value)
+
+    @staticmethod
+    def _as_utc(value: datetime) -> datetime:
+        """Total variant. Callers that have already established non-nullness use
+        this, so the narrowing survives into the return type instead of being
+        re-widened to `datetime | None` and re-asserted at every comparison."""
         if value.tzinfo is None:
             return value.replace(tzinfo=timezone.utc)
         return value.astimezone(timezone.utc)
@@ -160,15 +166,13 @@ class FunnelService:
 
         selected: list = []
         for app_rows in by_app.values():
-            first_changed_at = min(
-                (FunnelService._to_utc(row.changed_at) for row in app_rows),
-                key=lambda changed_at: changed_at,
-            )
+            # `by_app` only ever collected rows with a non-null `changed_at`, so
+            # the total `_as_utc` applies and `min` needs no key function.
+            first_changed_at = min(FunnelService._as_utc(row.changed_at) for row in app_rows)
             if start is not None and first_changed_at < start:
                 continue
             for row in app_rows:
-                changed_at = FunnelService._to_utc(row.changed_at)
-                if end is None or changed_at <= end:
+                if end is None or FunnelService._as_utc(row.changed_at) <= end:
                     selected.append(row)
         return selected
 

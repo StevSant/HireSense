@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-from hiresense.adapters.event_bus.in_memory_bus import InMemoryEventBus
-from hiresense.kernel.events import DomainEvent
+from hiresense.shared.adapters.event_bus.in_memory_bus import InMemoryEventBus
+from hiresense.shared.kernel.events import DomainEvent
 
 
 @pytest.mark.asyncio

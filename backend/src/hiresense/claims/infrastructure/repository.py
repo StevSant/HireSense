@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from hiresense.claims.domain.models import CandidateClaim, ClaimVerificationStatus
 from hiresense.claims.infrastructure.orm import CandidateClaimOrm
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 
 _CONTENT_FIELDS = ("text", "source", "provenance", "verification_status")
 

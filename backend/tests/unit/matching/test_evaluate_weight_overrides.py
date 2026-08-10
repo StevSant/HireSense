@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from hiresense.matching.domain.scorers.base import DimensionResult
-from hiresense.matching.domain.services import MatchingOrchestrator
+from hiresense.matching.domain import DimensionEvaluator
 
 
 class FakeScorer:
@@ -48,7 +48,7 @@ _JOB = {"title": "SWE", "company": "Acme", "description": ""}
 @pytest.mark.asyncio
 async def test_no_preference_port_is_unchanged():
     scorers = [FakeScorer("a", 0.8, 60), FakeScorer("b", 0.4, 40)]
-    o = MatchingOrchestrator(llm=None, event_bus=FakeEventBus())
+    o = DimensionEvaluator()
     result = await o.evaluate(job=_JOB, dimension_scorers=scorers)
     # 0.8*60 + 0.4*40 = 64 / 100 = 0.64
     assert abs(result.composite_score - 0.64) < 1e-9
@@ -57,12 +57,10 @@ async def test_no_preference_port_is_unchanged():
 @pytest.mark.asyncio
 async def test_empty_overrides_is_byte_identical():
     scorers = [FakeScorer("a", 0.8, 60), FakeScorer("b", 0.4, 40)]
-    baseline = await MatchingOrchestrator(llm=None, event_bus=FakeEventBus()).evaluate(
+    baseline = await DimensionEvaluator().evaluate(job=_JOB, dimension_scorers=scorers)
+    with_pref = await DimensionEvaluator(preference=FakePreference({})).evaluate(
         job=_JOB, dimension_scorers=scorers
     )
-    with_pref = await MatchingOrchestrator(
-        llm=None, event_bus=FakeEventBus(), preference=FakePreference({})
-    ).evaluate(job=_JOB, dimension_scorers=scorers)
     assert with_pref.composite_score == baseline.composite_score
 
 
@@ -70,9 +68,7 @@ async def test_empty_overrides_is_byte_identical():
 async def test_override_shifts_composite():
     # Boost the high-scoring dimension's weight; composite should rise.
     scorers = [FakeScorer("a", 0.8, 60), FakeScorer("b", 0.4, 40)]
-    o = MatchingOrchestrator(
-        llm=None, event_bus=FakeEventBus(), preference=FakePreference({"a": 20})
-    )
+    o = DimensionEvaluator(preference=FakePreference({"a": 20}))
     result = await o.evaluate(job=_JOB, dimension_scorers=scorers)
     # 0.8*80 + 0.4*40 = 80 / 120 = 0.6667 (composite is rounded to 4 dp)
     assert abs(result.composite_score - (80.0 / 120.0)) < 1e-4
@@ -82,9 +78,7 @@ async def test_override_shifts_composite():
 @pytest.mark.asyncio
 async def test_negative_override_lowers_composite():
     scorers = [FakeScorer("a", 0.8, 60), FakeScorer("b", 0.4, 40)]
-    o = MatchingOrchestrator(
-        llm=None, event_bus=FakeEventBus(), preference=FakePreference({"a": -30})
-    )
+    o = DimensionEvaluator(preference=FakePreference({"a": -30}))
     result = await o.evaluate(job=_JOB, dimension_scorers=scorers)
     # 0.8*30 + 0.4*40 = 40 / 70 = 0.5714 (composite is rounded to 4 dp)
     assert abs(result.composite_score - (40.0 / 70.0)) < 1e-4
@@ -95,9 +89,7 @@ async def test_negative_override_lowers_composite():
 async def test_override_floors_effective_weight_at_zero():
     scorers = [FakeScorer("a", 0.8, 10), FakeScorer("b", 0.4, 40)]
     # delta -30 would make 'a' negative; floored to 0 so it drops out entirely.
-    o = MatchingOrchestrator(
-        llm=None, event_bus=FakeEventBus(), preference=FakePreference({"a": -30})
-    )
+    o = DimensionEvaluator(preference=FakePreference({"a": -30}))
     result = await o.evaluate(job=_JOB, dimension_scorers=scorers)
     # only 'b' contributes: 0.4*40 / 40 = 0.4
     assert abs(result.composite_score - 0.4) < 1e-9
@@ -110,6 +102,6 @@ async def test_preference_lookup_failure_falls_back_to_base():
             raise RuntimeError("boom")
 
     scorers = [FakeScorer("a", 0.8, 60), FakeScorer("b", 0.4, 40)]
-    o = MatchingOrchestrator(llm=None, event_bus=FakeEventBus(), preference=Boom())
+    o = DimensionEvaluator(preference=Boom())
     result = await o.evaluate(job=_JOB, dimension_scorers=scorers)
     assert abs(result.composite_score - 0.64) < 1e-9

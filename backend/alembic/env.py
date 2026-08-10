@@ -6,8 +6,8 @@ from alembic import context
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine
 
-import hiresense.infrastructure.registry  # noqa: F401 — registers all ORM models
-from hiresense.infrastructure.database import Base
+import hiresense.shared.infrastructure.registry  # noqa: F401 — registers all ORM models
+from hiresense.shared.infrastructure.database import Base
 
 # Load backend/.env before anything reads os.environ, so migrations honor the
 # same config as the running app: the migration target (DATABASE_URL below) and
@@ -21,9 +21,9 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # DATABASE_URL (env or .env) is the single source of truth for the migration
-# target, matching hiresense.config. alembic.ini ships without credentials; its
+# target, matching hiresense.shared.config. alembic.ini ships without credentials; its
 # `sqlalchemy.url` is only a fallback for tooling that sets it explicitly. The
-# app strips `+asyncpg` for its sync engine (see bootstrap.shared_infra), but
+# app strips `+asyncpg` for its sync engine (see composition.shared_infra), but
 # Alembic runs its own async engine here, so the async URL is used as-is.
 _database_url = os.environ.get("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
 if not _database_url:

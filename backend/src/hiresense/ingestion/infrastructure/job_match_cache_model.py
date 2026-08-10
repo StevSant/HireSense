@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, Float, Index, JSON, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 
 
 class JobMatchCache(Base):
@@ -40,10 +40,17 @@ class JobMatchCache(Base):
     quick_updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Fingerprint of the prompt that produced quick_*. A read whose current
+    # prompt fingerprint differs is treated as a miss, so editing a prompt
+    # invalidates its own cached results instead of silently mixing scores from
+    # two different rubrics in one list. NULL means "written before
+    # fingerprinting existed" and is also treated as a miss.
+    quick_prompt_fingerprint: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
     # Tier-2 deep analysis (advanced model, on demand): full DeepAnalysisResult.
     deep_payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     deep_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    deep_prompt_fingerprint: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

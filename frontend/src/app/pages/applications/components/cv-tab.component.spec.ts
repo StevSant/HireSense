@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 import { CvTabComponent } from './cv-tab.component';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { CvOptimizationRunnerService } from '../../../core/services/cv-optimization-runner.service';
-import { ApplicationAggregate } from '../models/application-aggregate.model';
+import { ApplicationAggregate } from '@core/contracts/application-aggregate.model';
 
 function makeAggregate(over: Partial<ApplicationAggregate> = {}): ApplicationAggregate {
   return {

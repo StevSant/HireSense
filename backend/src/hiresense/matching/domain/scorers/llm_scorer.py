@@ -4,9 +4,9 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
-from hiresense.kernel import extract_json
+from hiresense.shared.kernel import extract_json
 from hiresense.matching.domain.scorers.base import DimensionResult
-from hiresense.ports import LLMPort
+from hiresense.shared.ports import LLMPort
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ def truncate_job_text(text: str | None, char_limit: int) -> str:
     Job descriptions are unbounded free text; without a cap a single long
     posting can blow the per-call token budget. Shared by every dimension
     scorer (individual and combined) so there is one truncation mechanism,
-    configured from `match_dimension_job_char_limit` via bootstrap.
+    configured from `match_dimension_job_char_limit` via composition.
     """
     if not text:
         return text or ""

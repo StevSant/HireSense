@@ -1,4 +1,4 @@
-from hiresense.config.groups import SchedulingSettings
+from hiresense.shared.config.groups import SchedulingSettings
 
 
 def test_autopilot_pipeline_settings_defaults():

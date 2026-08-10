@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { OpportunitiesService } from './opportunities.service';
-import { environment } from '../../../environments/environment';
 
 describe('OpportunitiesService', () => {
   let service: OpportunitiesService;
@@ -22,7 +21,7 @@ describe('OpportunitiesService', () => {
     service.list({ page: 2, pageSize: 25, kind: 'conference', fundedOnly: true }).subscribe();
     const req = httpMock.expectOne(
       (r) =>
-        r.url === `${environment.apiUrl}/opportunities` &&
+        r.url === '/api/opportunities' &&
         r.params.get('page') === '2' &&
         r.params.get('page_size') === '25' &&
         r.params.get('kind') === 'conference' &&
@@ -34,7 +33,7 @@ describe('OpportunitiesService', () => {
 
   it('fetch POSTs /opportunities/fetch', () => {
     service.fetch().subscribe();
-    const req = httpMock.expectOne(`${environment.apiUrl}/opportunities/fetch`);
+    const req = httpMock.expectOne('/api/opportunities/fetch');
     expect(req.request.method).toBe('POST');
     req.flush({ sources: {}, inserted: 0, updated: 0, reopened: 0, unchanged: 0, errors: [] });
   });

@@ -15,8 +15,8 @@ import logging
 
 import httpx
 
-from hiresense.bootstrap.shared_infra import build_shared_infra
-from hiresense.config import Settings
+from hiresense.composition.shared_infra import build_shared_infra
+from hiresense.shared.config import Settings
 from hiresense.ingestion.domain import JobEmbeddingIndexer
 from hiresense.ingestion.infrastructure import JobsRepository
 

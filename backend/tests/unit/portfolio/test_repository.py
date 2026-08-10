@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.portfolio.domain import PortfolioProject, ProjectText
 from hiresense.portfolio.infrastructure import PortfolioProjectOrm  # noqa: F401 (registers table)
 from hiresense.portfolio.infrastructure import PortfolioProjectsRepository

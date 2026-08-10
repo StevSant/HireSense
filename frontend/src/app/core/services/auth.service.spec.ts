@@ -4,7 +4,6 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { Router } from '@angular/router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from './auth.service';
-import { environment } from '../../../environments/environment';
 
 function makeService(router: unknown = { navigate: () => {} }): {
   service: AuthService;
@@ -46,8 +45,8 @@ describe('AuthService', () => {
 
     const { service, httpMock } = makeService();
     service.login('admin', 'secret').subscribe();
-    httpMock.expectOne(`${environment.apiUrl}/auth/login`).flush({ access_token: 't' });
-    httpMock.expectOne(`${environment.apiUrl}/auth/me`).flush({ username: 'admin', role: 'admin' });
+    httpMock.expectOne('/api/auth/login').flush({ access_token: 't' });
+    httpMock.expectOne('/api/auth/me').flush({ username: 'admin', role: 'admin' });
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
     httpMock.verify();
@@ -57,7 +56,7 @@ describe('AuthService', () => {
     const { service, httpMock } = makeService();
     let ok: boolean | undefined;
     service.ensureLoaded().subscribe((r) => (ok = r));
-    const req = httpMock.expectOne(`${environment.apiUrl}/auth/me`);
+    const req = httpMock.expectOne('/api/auth/me');
     expect(req.request.method).toBe('GET');
     req.flush({ username: 'admin', role: 'admin' });
     expect(ok).toBe(true);
@@ -71,9 +70,7 @@ describe('AuthService', () => {
     const { service, httpMock } = makeService();
     let ok: boolean | undefined;
     service.ensureLoaded().subscribe((r) => (ok = r));
-    httpMock
-      .expectOne(`${environment.apiUrl}/auth/me`)
-      .flush('nope', { status: 401, statusText: 'Unauthorized' });
+    httpMock.expectOne('/api/auth/me').flush('nope', { status: 401, statusText: 'Unauthorized' });
     expect(ok).toBe(false);
     expect(service.isAuthenticated()).toBe(false);
     httpMock.verify();
@@ -82,11 +79,11 @@ describe('AuthService', () => {
   it('caches the session probe so repeat ensureLoaded calls do not refetch', () => {
     const { service, httpMock } = makeService();
     service.ensureLoaded().subscribe();
-    httpMock.expectOne(`${environment.apiUrl}/auth/me`).flush({ username: 'admin', role: 'admin' });
+    httpMock.expectOne('/api/auth/me').flush({ username: 'admin', role: 'admin' });
     // Second call: state resolved, so no new request.
     let ok: boolean | undefined;
     service.ensureLoaded().subscribe((r) => (ok = r));
-    httpMock.expectNone(`${environment.apiUrl}/auth/me`);
+    httpMock.expectNone('/api/auth/me');
     expect(ok).toBe(true);
     httpMock.verify();
   });
@@ -96,12 +93,12 @@ describe('AuthService', () => {
     let user: { username: string; role: string } | null | undefined;
     service.login('admin', 'secret').subscribe((u) => (user = u));
 
-    const login = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
+    const login = httpMock.expectOne('/api/auth/login');
     expect(login.request.method).toBe('POST');
     expect(login.request.body).toEqual({ username: 'admin', password: 'secret' });
     login.flush({ access_token: 't', token_type: 'bearer' });
 
-    httpMock.expectOne(`${environment.apiUrl}/auth/me`).flush({ username: 'admin', role: 'admin' });
+    httpMock.expectOne('/api/auth/me').flush({ username: 'admin', role: 'admin' });
     expect(user).toEqual({ username: 'admin', role: 'admin' });
     expect(service.isAuthenticated()).toBe(true);
     httpMock.verify();
@@ -112,11 +109,11 @@ describe('AuthService', () => {
     const { service, httpMock } = makeService({ navigate });
     // Seed an authenticated session first.
     service.ensureLoaded().subscribe();
-    httpMock.expectOne(`${environment.apiUrl}/auth/me`).flush({ username: 'admin', role: 'admin' });
+    httpMock.expectOne('/api/auth/me').flush({ username: 'admin', role: 'admin' });
     expect(service.isAuthenticated()).toBe(true);
 
     service.logout();
-    const req = httpMock.expectOne(`${environment.apiUrl}/auth/logout`);
+    const req = httpMock.expectOne('/api/auth/logout');
     expect(req.request.method).toBe('POST');
     req.flush({ detail: 'logged out' });
 

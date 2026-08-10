@@ -115,23 +115,11 @@ input {
   border-top: 1px solid $border-default;
 }
 
+// Layers on the design system's `.btn-ghost` (src/styles.scss) rather than
+// redeclaring it: this form's Cancel sits a touch wider, and it is the only
+// ghost button that can be disabled, so it dims.
 .btn-ghost {
   padding: 0.5rem 1rem;
-  background: transparent;
-  color: $text-secondary;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    color 0.15s ease,
-    background 0.15s ease;
-
-  &:hover:not(:disabled) {
-    color: $text-primary;
-    background: rgba(0, 0, 0, 0.04);
-  }
 
   &:disabled {
     opacity: 0.5;

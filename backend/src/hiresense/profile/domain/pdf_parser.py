@@ -9,7 +9,7 @@ import pymupdf
 from hiresense.profile.domain.latex_parser import ParsedCV, ParsedSection
 
 if TYPE_CHECKING:
-    from hiresense.ports.llm import LLMPort
+    from hiresense.shared.ports.llm import LLMPort
 
 logger = logging.getLogger(__name__)
 

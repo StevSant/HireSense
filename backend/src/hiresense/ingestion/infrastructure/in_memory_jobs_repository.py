@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
@@ -9,6 +10,9 @@ from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.ports.jobs_repository import QualityUpdate, ScoreUpdate, UpsertOutcome
+
+if TYPE_CHECKING:
+    from hiresense.ingestion.ports.jobs_repository import JobsRepositoryPort
 
 
 class InMemoryJobsRepository:
@@ -156,6 +160,18 @@ class InMemoryJobsRepository:
     def list_filtered(self, criteria: JobListCriteria) -> list[NormalizedJob]:
         return [j for j in self._jobs.values() if criteria.matches(j)]
 
+    def list_since(self, cutoff: datetime, *, status: str = "open") -> list[NormalizedJob]:
+        # The SQL side filters on the fetched_at column; here the equivalent
+        # clock is the internal _fetched_at map that prune_older_than also uses.
+        # Jobs with no recorded fetch time cannot satisfy "since", so they drop.
+        recent = [
+            (fetched_at, self._jobs[jid])
+            for jid, fetched_at in self._fetched_at.items()
+            if jid in self._jobs and fetched_at >= cutoff
+        ]
+        recent.sort(key=lambda pair: pair[0], reverse=True)
+        return [job for _, job in recent if job.status == status]
+
     def get_by_id(self, job_id: str) -> NormalizedJob | None:
         return self._jobs.get(job_id)
 
@@ -212,3 +228,14 @@ class InMemoryJobsRepository:
             if job is not None:
                 self._identity_to_id.pop((job.source, identity_key(job)), None)
         return stale
+
+
+if TYPE_CHECKING:
+    # Static-only substitutability guard. This class and JobsRepository are
+    # documented as behaviourally interchangeable, but nothing declared that as
+    # a type, so `list_since` could live on the SQL side alone and AutoHuntService
+    # — holding an `Any` — would AttributeError the moment it got this double.
+    # Pyright rejects the return below the instant either class drifts from the
+    # port. No runtime cost; the body never executes.
+    def _assert_port_conformance(repo: InMemoryJobsRepository) -> JobsRepositoryPort:
+        return repo

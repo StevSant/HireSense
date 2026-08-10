@@ -3,7 +3,7 @@ from fastapi import Depends, FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from hiresense.identity.api.dependencies import enforce_expensive_rate_limit
-from hiresense.kernel import SlidingWindowRateLimiter
+from hiresense.shared.kernel import SlidingWindowRateLimiter
 
 
 def test_allows_up_to_max_requests() -> None:
@@ -21,7 +21,7 @@ def test_keys_are_independent() -> None:
 
 def test_window_expiry_frees_slots(monkeypatch: pytest.MonkeyPatch) -> None:
     clock = {"now": 1000.0}
-    monkeypatch.setattr("hiresense.kernel.rate_limit.time.monotonic", lambda: clock["now"])
+    monkeypatch.setattr("hiresense.shared.kernel.rate_limit.time.monotonic", lambda: clock["now"])
     limiter = SlidingWindowRateLimiter(max_requests=1, window_seconds=10.0)
     assert limiter.allow("client") is True
     assert limiter.allow("client") is False
@@ -31,7 +31,7 @@ def test_window_expiry_frees_slots(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_idle_keys_are_evicted_after_a_window(monkeypatch: pytest.MonkeyPatch) -> None:
     clock = {"now": 1000.0}
-    monkeypatch.setattr("hiresense.kernel.rate_limit.time.monotonic", lambda: clock["now"])
+    monkeypatch.setattr("hiresense.shared.kernel.rate_limit.time.monotonic", lambda: clock["now"])
     limiter = SlidingWindowRateLimiter(max_requests=5, window_seconds=10.0)
     for ip in ("a", "b", "c"):
         assert limiter.allow(ip) is True
@@ -45,7 +45,7 @@ def test_idle_keys_are_evicted_after_a_window(monkeypatch: pytest.MonkeyPatch) -
 
 def test_sweep_keeps_still_active_keys(monkeypatch: pytest.MonkeyPatch) -> None:
     clock = {"now": 1000.0}
-    monkeypatch.setattr("hiresense.kernel.rate_limit.time.monotonic", lambda: clock["now"])
+    monkeypatch.setattr("hiresense.shared.kernel.rate_limit.time.monotonic", lambda: clock["now"])
     limiter = SlidingWindowRateLimiter(max_requests=5, window_seconds=10.0)
     assert limiter.allow("idle") is True
     clock["now"] += 6.0

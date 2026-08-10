@@ -1,4 +1,4 @@
-from hiresense.adapters.vector_store.pgvector_adapter import _parse_vector
+from hiresense.shared.adapters.vector_store.pgvector_adapter import _parse_vector
 
 
 def test_parse_bracketed_vector() -> None:

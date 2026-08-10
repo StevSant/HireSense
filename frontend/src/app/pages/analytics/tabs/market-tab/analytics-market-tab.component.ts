@@ -1,16 +1,17 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { BarChartComponent } from '../../components/bar-chart/bar-chart.component';
 import { TrendLineComponent } from '../../components/trend-line/trend-line.component';
-import { MarketIntel } from '../../models/market-intel.model';
-import { BarRow } from '../../models/bar-row.model';
+import { MarketIntel } from '@core/contracts/market-intel.model';
+import { BarRow } from '@core/contracts/bar-row.model';
 import { MARKET_ROW_CAP, PERCENT } from '../../analytics-row-caps';
 import { AnalyticsStore } from '../../analytics.store';
+import { StatusNoteComponent } from '@shared/ui';
 
 /** Analytics -> Market: what the corpus as a whole looks like. */
 @Component({
   selector: 'app-analytics-market-tab',
   standalone: true,
-  imports: [BarChartComponent, TrendLineComponent],
+  imports: [BarChartComponent, TrendLineComponent, StatusNoteComponent],
   templateUrl: './analytics-market-tab.component.html',
   styleUrl: '../../analytics-tab-shared.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

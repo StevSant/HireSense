@@ -20,8 +20,8 @@ _FORBIDDEN_PREFIXES = (
     "httpx",
     "fastapi",
     "hiresense.admin.infrastructure",
-    "hiresense.adapters",
-    "hiresense.infrastructure",
+    "hiresense.shared.adapters",
+    "hiresense.shared.infrastructure",
 )
 
 

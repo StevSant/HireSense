@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { SchedulerService } from '../../../core/services/scheduler.service';
-import { ScheduledJob } from '../../../core/models/scheduler.model';
+import { ScheduledJob } from '@core/contracts/scheduler.model';
 
 @Component({
   selector: 'app-scheduler',

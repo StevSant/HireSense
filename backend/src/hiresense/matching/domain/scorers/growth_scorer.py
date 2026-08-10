@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from hiresense.matching.domain.scorers.llm_scorer import BaseLLMScorer
+from hiresense.matching.prompts import GROWTH_POTENTIAL
 
 
 class GrowthScorer(BaseLLMScorer):
@@ -25,11 +26,5 @@ class GrowthScorer(BaseLLMScorer):
             f"Company: {company}\n"
             f"Required Skills: {skills_display}\n"
             f"Description:\n{self._truncate(description)}\n\n"
-            "Evaluate the growth potential of this role. Consider:\n"
-            "- Learning and skill development opportunities\n"
-            "- Modernity of the tech stack\n"
-            "- Mentorship and leadership exposure\n"
-            "- Career trajectory and advancement potential\n"
-            "A score of 1.0 means excellent growth prospects; 0.0 means stagnant/dead-end role. "
-            'Return JSON: {"score": <float>, "rationale": "<brief>"}.'
+            f"{GROWTH_POTENTIAL.bulleted()}"
         )

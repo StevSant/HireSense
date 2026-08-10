@@ -1,15 +1,16 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { AutopilotDraft } from '../models/autopilot.model';
+import { ApiClient, API_ROUTES } from '@core/api';
+import { AutopilotDraft } from '@core/contracts/autopilot.model';
 
 @Injectable({ providedIn: 'root' })
 export class AutopilotService {
-  private readonly http = inject(HttpClient);
-  private readonly base = `${environment.apiUrl}/autopilot`;
+  private readonly api = inject(ApiClient);
 
   listDrafts(limit = 20): Observable<AutopilotDraft[]> {
-    return this.http.get<AutopilotDraft[]>(`${this.base}/drafts?limit=${limit}`);
+    return this.api.get<AutopilotDraft[]>(API_ROUTES.autopilot.drafts(), {
+      params: new HttpParams().set('limit', limit),
+    });
   }
 }

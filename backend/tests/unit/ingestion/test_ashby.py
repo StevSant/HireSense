@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from hiresense.ingestion.adapters.ashby_adapter import AshbyAdapter
 from hiresense.ingestion.domain.models import RawJobListing
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 # ---------------------------------------------------------------------------

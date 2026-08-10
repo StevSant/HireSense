@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import delete, func, select
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.portfolio.domain import PortfolioProject, ProjectText
 from hiresense.portfolio.infrastructure.orm import PortfolioProjectOrm
 

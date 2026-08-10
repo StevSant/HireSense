@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AutohuntComponent } from './autohunt.component';
 import { AutohuntService } from '../../core/services/autohunt.service';
-import { Digest } from './models/digest.model';
+import { Digest } from '@core/contracts/digest.model';
 
 function makeDigest(over: Partial<Digest> = {}): Digest {
   return {

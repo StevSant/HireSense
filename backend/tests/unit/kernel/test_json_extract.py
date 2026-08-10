@@ -1,4 +1,4 @@
-from hiresense.kernel import extract_json
+from hiresense.shared.kernel import extract_json
 
 
 def test_plain_object():

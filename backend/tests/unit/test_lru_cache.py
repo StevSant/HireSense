@@ -1,6 +1,6 @@
 import pytest
 
-from hiresense.kernel import LRUCache
+from hiresense.shared.kernel import LRUCache
 
 
 def test_get_and_set() -> None:

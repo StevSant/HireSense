@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, input, output } from '@angular/core';
-import { JobFilters } from '../../models/job-filters.model';
-import { SeniorityLevel } from '../../models/seniority-level.model';
+import { JobFilters } from '@core/contracts/job-filters.model';
+import { SeniorityLevel } from '@core/contracts/seniority-level.model';
 import { detectUserLocation } from '../../../../core/utils/detect-user-location';
 import { ComboboxComponent, ComboboxOption } from '../../../../core/components/combobox';
 
@@ -24,7 +24,7 @@ export class JobFiltersComponent implements OnInit {
 
   // Always emits exactly once, synchronously, even when there's no stored
   // location — this is the single source of truth for the parent's FIRST
-  // job load (see the comment on IngestionComponent.loadJobs$). Emitting
+  // job load (see the comment on IngestionStore.loadJobs$). Emitting
   // unconditionally means the parent never needs its own separate initial
   // loadJobs() call, so there's only ever one request on mount regardless of
   // whether a location preference is stored.

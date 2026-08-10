@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { TrendPoint } from '../../models/market-intel.model';
+import { TrendPoint } from '@core/contracts/market-intel.model';
+import { StatusNoteComponent } from '@shared/ui';
 
 /** SVG viewBox width in user units. */
 const VIEWBOX_WIDTH = 320;
@@ -17,6 +18,7 @@ const COORD_PRECISION = 1;
 @Component({
   selector: 'app-trend-line',
   standalone: true,
+  imports: [StatusNoteComponent],
   templateUrl: './trend-line.component.html',
   styleUrl: './trend-line.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

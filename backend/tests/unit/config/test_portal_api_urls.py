@@ -8,7 +8,7 @@ global base URL to configure.
 
 import pytest
 
-from hiresense.config.groups import PortalsSettings
+from hiresense.shared.config.groups import PortalsSettings
 
 
 def _set_required(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -50,7 +50,7 @@ def test_no_placeholder_urls_in_portal_settings() -> None:
 def test_workday_has_no_global_base_url_setting(monkeypatch: pytest.MonkeyPatch) -> None:
     """Workday endpoints are derived per tenant from portals.yml careers_url."""
     _set_required(monkeypatch)
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     assert "workday_api_url" not in PortalsSettings.model_fields
     assert "workday_api_url" not in Settings.model_fields

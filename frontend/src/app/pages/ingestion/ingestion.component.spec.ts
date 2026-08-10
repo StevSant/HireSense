@@ -101,7 +101,7 @@ describe('IngestionComponent — connections badge', () => {
 
     // <app-job-filters>'s guaranteed single initial emission is the only
     // source of the first load (see the loadJobs$ comment in
-    // ingestion.component.ts) — exactly one request, nothing to cancel.
+    // ingestion.store.ts) — exactly one request, nothing to cancel.
     const jobReqs = httpMock.match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`);
     expect(jobReqs.length).toBe(1);
     jobReqs[0].flush(jobsPayload({ 'job-1': 3 }));

@@ -6,7 +6,7 @@ from typing import Any
 
 from hiresense.ingestion.domain.embedding_text import embed_profile_cached, job_text
 from hiresense.ingestion.domain.models import NormalizedJob
-from hiresense.kernel import LRUCache
+from hiresense.shared.kernel import LRUCache
 from hiresense.matching.domain.semantic_scorer import SemanticScorer
 
 logger = logging.getLogger(__name__)

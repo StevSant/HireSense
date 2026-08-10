@@ -1,7 +1,7 @@
 import pytest
 
-from hiresense.adapters.llm import NullLLM
-from hiresense.ports import LLMNotConfiguredError
+from hiresense.shared.adapters.llm import NullLLM
+from hiresense.shared.ports import LLMNotConfiguredError
 from hiresense.profile.domain.cv_translator import CVTranslator
 
 

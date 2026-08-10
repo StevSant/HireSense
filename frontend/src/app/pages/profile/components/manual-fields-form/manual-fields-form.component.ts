@@ -10,9 +10,9 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { CandidateProfile } from '../../models/candidate-profile.model';
-import { ManualFieldsFormState } from '../../models/manual-fields-form-state.model';
-import { ProfileManualFieldsUpdate } from '../../models/profile-manual-fields-update.model';
+import { CandidateProfile } from '@core/contracts/candidate-profile.model';
+import { ManualFieldsFormState } from '@core/contracts/manual-fields-form-state.model';
+import { ProfileManualFieldsUpdate } from '@core/contracts/profile-manual-fields-update.model';
 import { ProfileService } from '../../../../core/services/profile.service';
 import { environment } from '../../../../../environments/environment';
 

@@ -8,8 +8,9 @@ from pydantic import BaseModel
 from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.matching.api.dependencies import (
     get_batch_evaluation_service,
+    get_dimension_evaluator,
     get_job_query_for_matching,
-    get_matching_orchestrator,
+    get_match_analyzer,
     get_optional_profile_service,
     get_tracking_service_for_matching,
 )
@@ -22,6 +23,10 @@ from hiresense.matching.api.schemas import (
     EvaluateRequest,
     EvaluationResponse,
 )
+from hiresense.ingestion.domain.job_query_service import JobQueryService
+from hiresense.matching.domain import BatchEvaluationService, DimensionEvaluator, MatchAnalyzer
+from hiresense.profile.domain import ProfileService
+from hiresense.tracking.domain import TrackingService
 from hiresense.matching.domain.models import MatchResult
 
 router = APIRouter(prefix="/matching", tags=["matching"], dependencies=[Depends(require_auth)])
@@ -45,8 +50,8 @@ class AnalyzeRequest(BaseModel):
 )
 async def evaluate_job(
     body: EvaluateRequest,
-    orchestrator: Annotated[object, Depends(get_matching_orchestrator)],
-    profile_service: Annotated[object | None, Depends(get_optional_profile_service)],
+    evaluator: Annotated[DimensionEvaluator, Depends(get_dimension_evaluator)],
+    profile_service: Annotated[ProfileService | None, Depends(get_optional_profile_service)],
 ) -> EvaluationResponse:
     job = {
         "title": body.job_title or "",
@@ -62,7 +67,7 @@ async def evaluate_job(
         if profile_service and body.profile_id
         else None
     )
-    result = await orchestrator.evaluate(job=job, profile=profile)
+    result = await evaluator.evaluate(job=job, profile=profile)
     return EvaluationResponse(
         composite_score=result.composite_score,
         job_title=result.job_title,
@@ -85,9 +90,9 @@ async def evaluate_job(
 )
 async def analyze_match(
     body: AnalyzeRequest,
-    orchestrator: Annotated[object, Depends(get_matching_orchestrator)],
+    analyzer: Annotated[MatchAnalyzer, Depends(get_match_analyzer)],
 ) -> MatchResult:
-    return await orchestrator.analyze(
+    return await analyzer.analyze(
         job_id=body.job_id,
         cv_id=body.cv_id,
         job_description=body.job_description,
@@ -106,10 +111,10 @@ async def analyze_match(
 )
 async def batch_evaluate(
     body: BatchEvaluateRequest,
-    batch_service: Annotated[object, Depends(get_batch_evaluation_service)],
-    tracking_service: Annotated[object, Depends(get_tracking_service_for_matching)],
-    job_query: Annotated[object, Depends(get_job_query_for_matching)],
-    profile_service: Annotated[object | None, Depends(get_optional_profile_service)],
+    batch_service: Annotated[BatchEvaluationService, Depends(get_batch_evaluation_service)],
+    tracking_service: Annotated[TrackingService, Depends(get_tracking_service_for_matching)],
+    job_query: Annotated[JobQueryService, Depends(get_job_query_for_matching)],
+    profile_service: Annotated[ProfileService | None, Depends(get_optional_profile_service)],
 ) -> BatchEvaluationResponse:
     jobs: list[dict] = []
 

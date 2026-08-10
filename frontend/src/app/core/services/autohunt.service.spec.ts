@@ -2,8 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { AutohuntService } from './autohunt.service';
-import { environment } from '../../../environments/environment';
-import { Digest } from '../../pages/autohunt/models/digest.model';
+import { Digest } from '@core/contracts/digest.model';
 
 function makeDigest(over: Partial<Digest> = {}): Digest {
   return {
@@ -37,7 +36,7 @@ describe('AutohuntService', () => {
     let result: Digest | null | undefined;
     service.latest().subscribe((d) => (result = d));
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/autohunt/digests/latest`);
+    const req = httpMock.expectOne('/api/autohunt/digests/latest');
     expect(req.request.method).toBe('GET');
     req.flush(digest);
 
@@ -48,7 +47,7 @@ describe('AutohuntService', () => {
     let result: Digest | null | undefined;
     service.latest().subscribe((d) => (result = d));
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/autohunt/digests/latest`);
+    const req = httpMock.expectOne('/api/autohunt/digests/latest');
     expect(req.request.method).toBe('GET');
     req.flush(null, { status: 204, statusText: 'No Content' });
 
@@ -57,7 +56,7 @@ describe('AutohuntService', () => {
 
   it('listRecent GETs /autohunt/digests with the limit param', () => {
     service.listRecent().subscribe();
-    const req = httpMock.expectOne((r) => r.url === `${environment.apiUrl}/autohunt/digests`);
+    const req = httpMock.expectOne((r) => r.url === '/api/autohunt/digests');
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('limit')).toBe('20');
     req.flush([]);
@@ -65,7 +64,7 @@ describe('AutohuntService', () => {
 
   it('listRecent honors a custom limit', () => {
     service.listRecent(5).subscribe();
-    const req = httpMock.expectOne((r) => r.url === `${environment.apiUrl}/autohunt/digests`);
+    const req = httpMock.expectOne((r) => r.url === '/api/autohunt/digests');
     expect(req.request.params.get('limit')).toBe('5');
     req.flush([]);
   });
@@ -75,7 +74,7 @@ describe('AutohuntService', () => {
     let result: Digest | undefined;
     service.run().subscribe((d) => (result = d));
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/autohunt/run`);
+    const req = httpMock.expectOne('/api/autohunt/run');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({});
     req.flush(digest);

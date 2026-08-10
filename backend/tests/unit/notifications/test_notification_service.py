@@ -4,7 +4,7 @@ import pytest
 
 from hiresense.autohunt.domain import Digest, DigestEntry
 from hiresense.notifications.domain import NotificationService
-from hiresense.ports import EmailUnavailableError
+from hiresense.shared.ports import EmailUnavailableError
 
 
 class _Sender:

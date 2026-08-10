@@ -16,8 +16,8 @@
 }
 
 .dialog {
-  background: var(--surface, #fff);
-  color: var(--text-primary, #111827);
+  background: var(--bg-card);
+  color: var(--text-primary);
   border-radius: 8px;
   padding: 1.5rem;
   width: min(640px, 100%);
@@ -103,7 +103,7 @@
 }
 
 .alert-error {
-  background: #fef2f2;
+  background: var(--danger-bg);
   color: #991b1b;
   padding: 0.75rem;
   border-radius: 6px;

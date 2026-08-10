@@ -5,7 +5,7 @@ import logging
 
 import pytest
 
-from hiresense.ports.llm import LLMTimeoutError
+from hiresense.shared.ports.llm import LLMTimeoutError
 from hiresense.research.domain import CompanyResearchError
 from hiresense.research.domain.models import CompanyResearch
 from hiresense.research.domain.services import CompanyResearchService

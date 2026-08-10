@@ -1,4 +1,4 @@
-from hiresense.kernel.prompt_boundary import PromptBoundary, UntrustedContentLabel
+from hiresense.shared.kernel.prompt_boundary import PromptBoundary, UntrustedContentLabel
 
 
 def test_untrusted_job_content_is_bounded_and_fenced() -> None:

@@ -5,7 +5,7 @@ import pytest
 from hiresense.ingestion.adapters import WorkableAdapter
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.normalizers import WorkableNormalizer
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 BASE_URL = "https://apply.workable.com/api/v1/widget/accounts"
 

@@ -5,7 +5,7 @@ from typing import Any
 import feedparser
 
 from hiresense.ingestion.domain.models import RawJobListing
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 class WeWorkRemotelyAdapter:

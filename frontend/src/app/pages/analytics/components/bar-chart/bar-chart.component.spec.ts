@@ -29,6 +29,6 @@ describe('BarChartComponent', () => {
 
   it('shows empty state when no rows', () => {
     const fixture = mount([]);
-    expect(fixture.nativeElement.querySelector('.bar-empty')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('app-status-note')).not.toBeNull();
   });
 });

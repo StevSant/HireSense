@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { OptimizationResult } from '../../pages/optimization/models/optimization-result.model';
+import { ApiClient, API_ROUTES } from '@core/api';
+import { OptimizationResult } from '@core/contracts/optimization-result.model';
 
 export interface OptimizeRequest {
   match_id: string;
@@ -17,12 +16,9 @@ export interface OptimizeRequest {
 
 @Injectable({ providedIn: 'root' })
 export class OptimizationService {
-  constructor(private http: HttpClient) {}
+  constructor(private api: ApiClient) {}
 
   optimize(payload: OptimizeRequest): Observable<OptimizationResult> {
-    return this.http.post<OptimizationResult>(
-      `${environment.apiUrl}/optimization/optimize`,
-      payload,
-    );
+    return this.api.post<OptimizationResult>(API_ROUTES.optimization.optimize(), payload);
   }
 }

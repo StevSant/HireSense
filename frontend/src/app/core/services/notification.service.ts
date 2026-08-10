@@ -1,19 +1,17 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { NotificationStatus } from '../models/notification.model';
+import { ApiClient, API_ROUTES } from '@core/api';
+import { NotificationStatus } from '@core/contracts/notification.model';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
-  private readonly http = inject(HttpClient);
-  private readonly base = `${environment.apiUrl}/notifications`;
+  private readonly api = inject(ApiClient);
 
   status(): Observable<NotificationStatus> {
-    return this.http.get<NotificationStatus>(`${this.base}/status`);
+    return this.api.get<NotificationStatus>(API_ROUTES.notifications.status());
   }
 
   sendTest(): Observable<{ sent: boolean }> {
-    return this.http.post<{ sent: boolean }>(`${this.base}/test`, {});
+    return this.api.post<{ sent: boolean }>(API_ROUTES.notifications.test(), {});
   }
 }

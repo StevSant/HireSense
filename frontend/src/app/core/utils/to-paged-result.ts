@@ -1,5 +1,5 @@
 import { HttpResponse } from '@angular/common/http';
-import { PagedResult } from '../models/paged-result.model';
+import { PagedResult } from '@core/contracts/paged-result.model';
 
 // Header the backend list endpoints set alongside a bare-array body.
 const TOTAL_COUNT_HEADER = 'X-Total-Count';

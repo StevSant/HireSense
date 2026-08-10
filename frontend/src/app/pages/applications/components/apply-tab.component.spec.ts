@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 import { ApplyTabComponent } from './apply-tab.component';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { CoverLetterRunnerService } from '../../../core/services/cover-letter-runner.service';
-import { ApplicationAggregate } from '../models/application-aggregate.model';
+import { ApplicationAggregate } from '@core/contracts/application-aggregate.model';
 
 function makeAggregate(over: Partial<ApplicationAggregate> = {}): ApplicationAggregate {
   return {

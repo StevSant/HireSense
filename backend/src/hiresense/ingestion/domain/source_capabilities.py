@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 ClosureStrategy = Literal["snapshot", "url_probe", "expiry", "none"]
 IntegrationMethod = Literal[

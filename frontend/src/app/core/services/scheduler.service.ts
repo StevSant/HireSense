@@ -1,27 +1,28 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { JobRun, ScheduledJob } from '../models/scheduler.model';
+import { ApiClient, API_ROUTES } from '@core/api';
+import { JobRun, ScheduledJob } from '@core/contracts/scheduler.model';
 
 @Injectable({ providedIn: 'root' })
 export class SchedulerService {
-  private readonly http = inject(HttpClient);
-  private readonly base = `${environment.apiUrl}/scheduler`;
+  private readonly api = inject(ApiClient);
 
   listJobs(): Observable<ScheduledJob[]> {
-    return this.http.get<ScheduledJob[]>(`${this.base}/jobs`);
+    return this.api.get<ScheduledJob[]>(API_ROUTES.scheduler.jobs());
   }
 
   runs(name: string, limit = 20): Observable<JobRun[]> {
-    return this.http.get<JobRun[]>(`${this.base}/jobs/${name}/runs?limit=${limit}`);
+    return this.api.get<JobRun[]>(API_ROUTES.scheduler.jobRuns({ name }), {
+      params: new HttpParams().set('limit', limit),
+    });
   }
 
   toggle(name: string, enabled: boolean): Observable<ScheduledJob> {
-    return this.http.post<ScheduledJob>(`${this.base}/jobs/${name}/toggle`, { enabled });
+    return this.api.post<ScheduledJob>(API_ROUTES.scheduler.toggleJob({ name }), { enabled });
   }
 
   runNow(name: string): Observable<JobRun> {
-    return this.http.post<JobRun>(`${this.base}/jobs/${name}/run-now`, {});
+    return this.api.post<JobRun>(API_ROUTES.scheduler.runJobNow({ name }), {});
   }
 }

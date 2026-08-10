@@ -7,7 +7,7 @@ from typing import Any
 from sqlalchemy import JSON, Date, DateTime, Index, String, Text, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 
 
 class OpportunityOrm(Base):

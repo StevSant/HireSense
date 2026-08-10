@@ -6,7 +6,7 @@ from sqlalchemy.pool import StaticPool
 
 from hiresense.autopilot.domain import AutopilotDraft, DraftStatus
 from hiresense.autopilot.infrastructure import AutopilotDraftOrm, DraftRepositoryImpl  # noqa: F401
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 
 
 def _factory():

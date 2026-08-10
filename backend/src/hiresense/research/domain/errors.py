@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from hiresense.kernel.exceptions import UpstreamUnavailableError
+from hiresense.shared.kernel.exceptions import UpstreamUnavailableError
 
 
 class CompanyResearchError(UpstreamUnavailableError):

@@ -10,6 +10,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ProfileService } from '../../../../core/services/profile.service';
 import { CvSectionContentComponent } from '../../components/cv-section-content/cv-section-content.component';
+import { ButtonSpinnerComponent } from '@shared/ui';
 
 /**
  * Profile → CV.
@@ -20,7 +21,7 @@ import { CvSectionContentComponent } from '../../components/cv-section-content/c
 @Component({
   selector: 'app-profile-cv-tab',
   standalone: true,
-  imports: [FormsModule, CvSectionContentComponent],
+  imports: [FormsModule, CvSectionContentComponent, ButtonSpinnerComponent],
   templateUrl: './profile-cv-tab.component.html',
   styleUrl: './profile-cv-tab.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

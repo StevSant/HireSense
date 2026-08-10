@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { CompBenchmarkComponent } from './comp-benchmark.component';
-import { CompBenchmark } from '../../models/comp-benchmark.model';
+import { CompBenchmark } from '@core/contracts/comp-benchmark.model';
 import { PayPeriod } from '../../../../core/utils/pay-period';
 
 function comp(over: Partial<CompBenchmark> = {}): CompBenchmark {

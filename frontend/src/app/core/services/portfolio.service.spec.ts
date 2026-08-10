@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { PortfolioService } from './portfolio.service';
-import { environment } from '../../../environments/environment';
 
 describe('PortfolioService', () => {
   let service: PortfolioService;
@@ -23,7 +22,7 @@ describe('PortfolioService', () => {
       expect(res.projects.length).toBe(1);
       expect(res.last_synced_at).toBe('2026-06-09T00:00:00Z');
     });
-    const req = httpMock.expectOne(`${environment.apiUrl}/portfolio/projects`);
+    const req = httpMock.expectOne('/api/portfolio/projects');
     expect(req.request.method).toBe('GET');
     req.flush({
       projects: [
@@ -45,7 +44,7 @@ describe('PortfolioService', () => {
 
   it('triggers a sync', () => {
     service.sync().subscribe((res) => expect(res.counts_by_source['supabase']).toBe(3));
-    const req = httpMock.expectOne(`${environment.apiUrl}/portfolio/sync`);
+    const req = httpMock.expectOne('/api/portfolio/sync');
     expect(req.request.method).toBe('POST');
     req.flush({ counts_by_source: { supabase: 3 }, errors: {}, synced_at: '2026-06-09T00:00:00Z' });
   });
@@ -66,7 +65,7 @@ describe('PortfolioService', () => {
       expect(res.visits.length).toBe(1);
       expect(res.visits[0].application_id).toBe('app-1');
     });
-    const req = httpMock.expectOne(`${environment.apiUrl}/portfolio/engagement`);
+    const req = httpMock.expectOne('/api/portfolio/engagement');
     expect(req.request.method).toBe('GET');
     req.flush({ configured: true, visits: [visit] });
   });

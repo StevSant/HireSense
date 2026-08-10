@@ -3,11 +3,11 @@ from httpx import ASGITransport, AsyncClient
 from fastapi import FastAPI
 
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.matching.api.routes import get_matching_orchestrator, router
+from hiresense.matching.api.routes import get_match_analyzer, router
 from hiresense.matching.domain.models import MatchResult, ScoreBreakdown
 
 
-class FakeMatchingOrchestrator:
+class FakeMatchAnalyzer:
     async def analyze(self, **kwargs) -> MatchResult:
         return MatchResult(
             id="match-1",
@@ -31,8 +31,8 @@ class FakeMatchingOrchestrator:
 @pytest.mark.asyncio
 async def test_analyze_endpoint() -> None:
     app = FastAPI()
-    fake = FakeMatchingOrchestrator()
-    app.dependency_overrides[get_matching_orchestrator] = lambda: fake
+    fake = FakeMatchAnalyzer()
+    app.dependency_overrides[get_match_analyzer] = lambda: fake
     app.dependency_overrides[require_auth] = lambda: "test-user"
     app.include_router(router)
 

@@ -5,7 +5,7 @@ import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from hiresense.ports.llm import LLMPort
+    from hiresense.shared.ports.llm import LLMPort
 
 logger = logging.getLogger(__name__)
 

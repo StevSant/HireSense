@@ -22,7 +22,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.preference.api import router
 from hiresense.preference.api.dependencies import get_preference_service

@@ -1,3 +1,3 @@
-from hiresense.ports import EmailSenderPort
+from hiresense.shared.ports import EmailSenderPort
 
 __all__ = ["EmailSenderPort"]

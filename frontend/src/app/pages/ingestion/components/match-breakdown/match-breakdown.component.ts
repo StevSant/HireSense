@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { AnalysisDimension } from '../../models/analysis-dimension.model';
+import { AnalysisDimension } from '@core/contracts/analysis-dimension.model';
 import { formatScorePercent } from '../../../../core/utils/format-score-percent';
 import { scoreColor } from '../../../../core/utils/score-color';
 

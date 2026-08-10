@@ -105,6 +105,15 @@ class JobsRepositoryPort(Protocol):
         """
         ...
 
+    def list_since(self, cutoff: datetime, *, status: str = "open") -> list[NormalizedJob]:
+        """Jobs first fetched at or after `cutoff` with the given status, newest
+        first — the auto-hunt digest's "what is new since my last run" query.
+
+        Ordering is part of the contract here (unlike `list_filtered`): callers
+        take a top-N slice from the head.
+        """
+        ...
+
     def get_by_id(self, job_id: str) -> NormalizedJob | None: ...
 
     def get_by_ids(self, job_ids: list[str]) -> dict[str, NormalizedJob]:

@@ -9,8 +9,10 @@ from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.profile_hash import score_profile_hash
 from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
 from hiresense.ingestion.domain.quick_match_verdict import QuickMatchVerdict
-from hiresense.kernel import extract_json
-from hiresense.ports import LLMPort
+from hiresense.ingestion.prompts import render_quick_scoring_system_prompt
+from hiresense.shared.kernel import extract_json
+from hiresense.shared.kernel.prompts import MODERATE_THRESHOLD, STRONG_THRESHOLD, prompt_fingerprint
+from hiresense.shared.ports import LLMPort
 
 logger = logging.getLogger(__name__)
 
@@ -18,44 +20,21 @@ logger = logging.getLogger(__name__)
 # mirrors the prompt-truncation style used by the semantic scorer).
 _SUMMARY_CHAR_LIMIT = 2500
 
-# Verdict bucket thresholds — intrinsic to the scoring semantics, kept in sync
-# with the frontend score-tier thresholds (strong >= 0.7, moderate >= 0.4).
-_STRONG_THRESHOLD = 0.7
-_MODERATE_THRESHOLD = 0.4
 
-_SYSTEM_PROMPT = (
-    "You are a precise technical recruiter scoring how well a CANDIDATE fits "
-    "each JOB. Return ONLY a JSON array — one object per job, in input order:\n"
-    '[{"ref": <job number>, "score": <0.0-1.0>, '
-    '"verdict": "strong|moderate|weak", '
-    '"reasons": ["short evidence", ...], '
-    '"dealbreakers": ["hard mismatch", ...]}]\n\n'
-    "Apply these gating rules STRICTLY — they OVERRIDE topical/keyword overlap:\n"
-    "1. SENIORITY GATING. Infer the candidate's level from their experience "
-    "(years, scope, titles). If a job's seniority (Senior, Staff, Lead, "
-    "Principal, Director, Head) is clearly ABOVE the candidate's level, cap the "
-    'score at 0.35 and add a dealbreaker like "Senior role — beyond your level". '
-    "NEVER assume the candidate is mid-level; infer it from the CV text.\n"
-    "2. CORE-SKILL GATING. Identify the job's PRIMARY language / core discipline "
-    "(e.g. Java for a Java Engineer; Go + Linux internals + on-call for an SRE). "
-    "If the candidate lacks that primary language or core discipline, cap the "
-    'score at 0.30 and add a dealbreaker naming it (e.g. "Requires Java — not in '
-    'your stack"). Shared peripheral tools (Docker, AWS, Git, Postgres) must NOT '
-    "lift a score on their own.\n"
-    "3. DISCIPLINE MATCH. Classify the job: backend, frontend, fullstack, "
-    "SRE/infra/devops, data/ML, mobile, QA, or other. If it differs from the "
-    "candidate's primary discipline, treat it as a weak fit (<= 0.4) unless the "
-    "CV shows direct hands-on experience in that discipline.\n"
-    '4. Award "strong" (>= 0.7) ONLY when seniority fits AND the primary skill '
-    'and discipline match. Use "weak" (< 0.4) whenever any gate trips.\n'
-    "Keep each reason and dealbreaker to a short concrete phrase (~12 words max)."
-)
+def _quick_prompt_fingerprint() -> str:
+    """Identity of the static rubric half of the prompt.
+
+    The CANDIDATE block is deliberately excluded: it already varies per
+    profile and is covered by profile_hash. Only the rubric needs to
+    invalidate cached scores when it changes.
+    """
+    return prompt_fingerprint(render_quick_scoring_system_prompt())
 
 
 def _verdict_from_score(score: float) -> QuickMatchVerdict:
-    if score >= _STRONG_THRESHOLD:
+    if score >= STRONG_THRESHOLD:
         return QuickMatchVerdict.STRONG
-    if score >= _MODERATE_THRESHOLD:
+    if score >= MODERATE_THRESHOLD:
         return QuickMatchVerdict.MODERATE
     return QuickMatchVerdict.WEAK
 
@@ -130,7 +109,10 @@ class QuickScoringService:
             return {}
         profile_hash = score_profile_hash(candidate_skills, candidate_summary)
         hits = await asyncio.to_thread(
-            self._cache_repo.get_quick_bulk, [j.id for j in jobs], profile_hash
+            self._cache_repo.get_quick_bulk,
+            [j.id for j in jobs],
+            profile_hash,
+            _quick_prompt_fingerprint(),
         )
 
         if not llm_on_miss or self._llm is None or (not candidate_skills and not candidate_summary):
@@ -205,7 +187,7 @@ class QuickScoringService:
                 summary,
             ]
         )
-        return f"{_SYSTEM_PROMPT}\n\n{candidate_block}"
+        return f"{render_quick_scoring_system_prompt()}\n\n{candidate_block}"
 
     def _build_prompt(self, chunk: list[NormalizedJob]) -> str:
         lines = ["JOBS (score every one; echo its ref number):"]
@@ -275,7 +257,12 @@ class QuickScoringService:
 
     async def _safe_upsert_bulk(self, results: list[QuickMatchResult], profile_hash: str) -> None:
         try:
-            await asyncio.to_thread(self._cache_repo.upsert_quick_bulk, results, profile_hash)
+            await asyncio.to_thread(
+                self._cache_repo.upsert_quick_bulk,
+                results,
+                profile_hash,
+                _quick_prompt_fingerprint(),
+            )
         except Exception:
             # Cache write failure must never fail scoring — the caller already
             # has the results in hand; only the next request's cache hit is lost.

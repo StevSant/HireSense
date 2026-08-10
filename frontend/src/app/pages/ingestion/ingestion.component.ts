@@ -1,45 +1,27 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { IngestionService } from '../../core/services/ingestion.service';
-import { TrackingService } from '../../core/services/tracking.service';
-import { ApplicationsService } from '../../core/services/applications.service';
-import { Router } from '@angular/router';
-import { JobFilters } from './models/job-filters.model';
-import { NormalizedJob } from './models/normalized-job.model';
-import { PortalEntry } from './models/portal-entry.model';
-import { ScanPortalsRequest } from './models/scan-portals-request.model';
-import { ScanError } from './models/scan-result.model';
-import { PaginatorComponent } from '../../core/components/paginator';
-import { scoreClass } from '../../core/utils/score-class';
-import { JobFiltersComponent } from './components/job-filters/job-filters.component';
-import { JobDetailPanelComponent } from './components/job-detail-panel/job-detail-panel.component';
+import { Component, OnInit, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { of, Subject, timer } from 'rxjs';
-import { catchError, debounceTime, filter, map, switchMap, take } from 'rxjs/operators';
-import { environment } from '../../../environments/environment';
+import { CompanyLinkComponent } from '@core/components/company-link';
+import { PaginatorComponent } from '@core/components/paginator';
+import { SortableHeaderDirective } from '@core/components/sortable-header';
+import { FeedbackKind } from '@core/contracts/feedback-kind.model';
+import { JobFilters } from '@core/contracts/job-filters.model';
+import { NormalizedJob } from '@core/contracts/normalized-job.model';
+import { scoreClass } from '@core/utils/score-class';
 import { FeedbackControlsComponent } from './components/feedback-controls/feedback-controls.component';
+import { JobDetailPanelComponent } from './components/job-detail-panel/job-detail-panel.component';
+import { JobFiltersComponent } from './components/job-filters/job-filters.component';
 import { PreferenceTuningComponent } from './components/preference-tuning/preference-tuning.component';
-import { FeedbackKind } from './models/feedback-kind.model';
-import { SortableHeaderDirective } from '../../core/components/sortable-header';
-import { CompanyLinkComponent } from '../../core/components/company-link';
-import { createSortState } from '../../core/utils/sort-state';
-import { SourceHealth, SourceInfo } from './models/source-capability.model';
+import { IngestionStore, IngestionTab } from './ingestion.store';
 
-// ATS platforms are scanned from the Portals tab (per-company boards), not the
-// Boards tab, so they are filtered out of the board source dropdown. Mirrors
-// backend/src/hiresense/ingestion/domain/portal_config.py. The board registry
-// (source_capabilities.py) currently declares none of these, so this is a
-// forward-guard: it keeps the dropdown correct if an ATS is ever added there.
-const ATS_PORTAL_SOURCES = [
-  'greenhouse',
-  'lever',
-  'ashby',
-  'workable',
-  'smartrecruiters',
-  'recruitee',
-];
-
+/**
+ * Ingestion page — the job board / company portal browser.
+ *
+ * A view over IngestionStore: every signal below is the store's own signal
+ * re-exposed under the name the template already used, and every handler is
+ * either a DOM-event adapter (unwrapping the `Event` a native control emits)
+ * or a straight delegation. Keeping the store's API in plain values rather
+ * than DOM events is what lets it be exercised without a fixture.
+ */
 @Component({
   selector: 'app-ingestion',
   standalone: true,
@@ -53,459 +35,139 @@ const ATS_PORTAL_SOURCES = [
     SortableHeaderDirective,
     CompanyLinkComponent,
   ],
+  providers: [IngestionStore],
   templateUrl: './ingestion.component.html',
   styleUrl: './ingestion.component.scss',
 })
 export class IngestionComponent implements OnInit {
-  private ingestionService = inject(IngestionService);
-  private trackingService = inject(TrackingService);
-  private applicationsService = inject(ApplicationsService);
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
-  private destroyRef = inject(DestroyRef);
+  private store = inject(IngestionStore);
 
-  trackedJobIds = computed(() => this.ingestionService.trackedJobIds());
+  activeTab = this.store.activeTab;
 
-  // Tab state
-  activeTab = signal<'boards' | 'portals'>('boards');
+  jobs = this.store.jobs;
+  total = this.store.total;
+  page = this.store.page;
+  pageSize = this.store.pageSize;
+  totalPages = this.store.totalPages;
 
-  // Jobs + pagination
-  jobs = signal<NormalizedJob[]>([]);
-  total = signal(0);
-  page = signal(1);
-  pageSize = signal(20);
-  totalPages = signal(0);
+  filters = this.store.filters;
+  sort = this.store.sort;
+  includeClosed = this.store.includeClosed;
+  includeLowQuality = this.store.includeLowQuality;
+  boardSources = this.store.boardSources;
+  portalSources = this.store.portalSources;
+  sourceWarnings = this.store.sourceWarnings;
 
-  // Filters
-  filters = signal<JobFilters>({});
-  // Populated from GET /ingestion/sources — the backend registry is the only
-  // source of truth. A hand-maintained fallback list used to live here and had
-  // already drifted seven sources behind that registry.
-  boardSources = signal<string[]>([]);
-  portalSources = signal<string[]>([]);
-  sourceCatalog = signal<SourceInfo[]>([]);
-  sourceHealth = signal<SourceHealth[]>([]);
-  sourceWarnings = computed(() => {
-    const failing = this.sourceHealth().filter(
-      (h) => h.status === 'failing' || h.status === 'degraded',
-    );
-    const unavailable = this.sourceCatalog().filter(
-      (s) =>
-        s.enabled &&
-        !s.wired &&
-        (s.capabilities.requires_credentials || s.capabilities.integration === 'import_fallback'),
-    );
-    return { failing, unavailable };
-  });
+  loading = this.store.loading;
+  fetching = this.store.fetching;
+  revalidating = this.store.revalidating;
+  revalidateNotice = this.store.revalidateNotice;
+  fetchNotice = this.store.fetchNotice;
+  error = this.store.error;
 
-  // Loading
-  loading = signal(false);
-  // Distinct from `loading`: true only while pulling *new* jobs from external
-  // sources via "Fetch Jobs". A plain page load reads already-stored jobs and
-  // must not imply we're hitting the job boards.
-  fetching = signal(false);
-  // True only while the "Check closed" trigger request is in flight (the sweep
-  // itself then runs in the background on the server).
-  revalidating = signal(false);
-  // Info banner shown while a background closure sweep is running.
-  revalidateNotice = signal('');
-  // Explains why the visible ranked page may look unchanged after a fetch.
-  fetchNotice = signal('');
-  error = signal('');
+  portals = this.store.portals;
+  availableCategories = this.store.availableCategories;
+  scanKeyword = this.store.scanKeyword;
+  scanning = this.store.scanning;
+  scanSummary = this.store.scanSummary;
+  scanErrors = this.store.scanErrors;
+  showScanFilters = this.store.showScanFilters;
 
-  // Per-job tracking feedback: the id of the job currently being tracked, so
-  // its "Track" button can show progress while the request is in flight.
-  trackingJobId = signal<string | null>(null);
-
-  // Portal scan state
-  portals = signal<PortalEntry[]>([]);
-  availableCategories = signal<string[]>([]);
-  selectedCategories = signal<string[]>([]);
-  selectedCompanies = signal<string[]>([]);
-  scanKeyword = signal('');
-  scanning = signal(false);
-  scanSummary = signal('');
-  scanErrors = signal<ScanError[]>([]);
-  showScanFilters = signal(false);
-
-  // Detail panel
-  selectedJob = signal<NormalizedJob | null>(null);
-
-  // Jobs the user marked "not interested" this session — dimmed locally until
-  // the next refetch (no backend "hidden" persistence; see plan/spec).
-  dimmedJobIds = signal<Set<string>>(new Set<string>());
-
-  // Coalesces rapid feedback into one re-rank refetch.
-  private feedbackRefetch$ = new Subject<void>();
-
-  // Every job-list request is funneled through this subject and run via
-  // switchMap so a newer request CANCELS the in-flight one (e.g. a filter
-  // change while a load is still in flight). The payload is the `rescore`
-  // flag for that call.
-  //
-  // The FIRST load is intentionally not fired here in ngOnInit. Instead
-  // <app-job-filters> always emits its (possibly empty) initial filter state
-  // exactly once, synchronously, from its own ngOnInit — see the comment on
-  // JobFiltersComponent.ngOnInit — and that emission's onFiltersChange()
-  // handler below is what issues the first loadJobs() call. This guarantees
-  // exactly one initial request whether or not a location preference is
-  // stored, instead of two racing requests where switchMap silently cancels
-  // one of them.
-  private loadJobs$ = new Subject<boolean>();
-
-  // Sort — clickable column headers, default Match descending.
-  sort = createSortState<'match' | 'title' | 'company' | 'location' | 'source' | 'posted'>(
-    'match',
-    'desc',
-    ['title', 'company', 'location', 'source'],
-  );
-
-  // LinkedIn connections map (job.id → count), populated from paginated response.
-  connectionsByJob = signal<Record<string, number>>({});
-
-  // Show closed jobs toggle
-  includeClosed = signal(false);
-  // Show low-quality / spam jobs toggle (hidden by default).
-  includeLowQuality = signal(false);
+  selectedJob = this.store.selectedJob;
+  trackingJobId = this.store.trackingJobId;
 
   ngOnInit(): void {
-    // switchMap: a newer request unsubscribes (aborts) the previous in-flight
-    // one, so only the latest filter/sort/page state is ever applied to the
-    // signals below. catchError keeps the outer stream alive across failures.
-    this.loadJobs$
-      .pipe(
-        switchMap((rescore) => {
-          const filtersWithSort = {
-            ...this.filters(),
-            sort: this.sort.token() as JobFilters['sort'],
-          };
-          return this.ingestionService
-            .queryJobs(
-              this.activeTab(),
-              this.page(),
-              this.pageSize(),
-              filtersWithSort,
-              this.includeClosed(),
-              rescore,
-              this.includeLowQuality(),
-            )
-            .pipe(
-              map((res) => ({ ok: true as const, res })),
-              catchError((err) => of({ ok: false as const, err })),
-            );
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((outcome) => {
-        this.loading.set(false);
-        if (outcome.ok) {
-          this.dimmedJobIds.set(new Set<string>());
-          this.jobs.set(outcome.res.jobs);
-          this.total.set(outcome.res.total);
-          this.totalPages.set(outcome.res.total_pages);
-          this.connectionsByJob.set(outcome.res.connections_by_job ?? {});
-        } else {
-          this.error.set(outcome.err.error?.detail || 'Failed to load jobs');
-        }
-      });
-
-    this.feedbackRefetch$
-      .pipe(
-        debounceTime(environment.feedbackRefetchDebounceMs),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe(() => this.loadJobs());
-    this.loadPortals();
-    this.loadSourceCatalog();
-    this.applyKeywordFromQueryParam();
-    // No loadJobs() here — <app-job-filters>'s guaranteed initial emission
-    // (see the loadJobs$ comment above) drives onFiltersChange(), which
-    // issues the first load.
-    this.openDetailFromQueryParam();
+    this.store.init();
   }
 
-  loadSourceCatalog(): void {
-    this.ingestionService
-      .listSources()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.sourceCatalog.set(res.sources);
-          this.boardSources.set(
-            res.sources
-              .filter((s) => s.enabled || s.wired)
-              .map((s) => s.capabilities.source)
-              .filter((name) => !ATS_PORTAL_SOURCES.includes(name)),
-          );
-        },
-        error: () => {
-          // Leave the source dropdown empty rather than guessing at the
-          // registry: every other filter still works, and the job list itself
-          // is loaded by a separate request.
-          this.boardSources.set([]);
-        },
-      });
-    this.ingestionService
-      .sourcesHealth()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => this.sourceHealth.set(res.sources),
-        error: () => this.sourceHealth.set([]),
-      });
+  switchTab(tab: IngestionTab): void {
+    this.store.switchTab(tab);
   }
 
-  private applyKeywordFromQueryParam(): void {
-    const keyword = this.route.snapshot.queryParamMap.get('keyword');
-    if (keyword) this.filters.set({ ...this.filters(), keyword });
-  }
-
-  private openDetailFromQueryParam(): void {
-    const jobId = this.route.snapshot.queryParamMap.get('job_id');
-    if (!jobId) return;
-    this.ingestionService
-      .getJob(jobId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (job) => this.selectedJob.set(job),
-        error: () => {},
-      });
-  }
-
-  switchTab(tab: 'boards' | 'portals'): void {
-    this.activeTab.set(tab);
-    this.page.set(1);
-    this.filters.set({});
-    this.loadJobs();
-  }
-
-  // `rescore` defaults to true (full scoring pipeline). Pure reorder/pagination
-  // callers pass false so the server defers the blocking LLM call and reuses
-  // cached scores, while the set/order-determining steps still run (#76).
   loadJobs(rescore = true): void {
-    this.loading.set(true);
-    this.error.set('');
-    this.loadJobs$.next(rescore);
+    this.store.loadJobs(rescore);
   }
 
   fetchJobs(): void {
-    this.loading.set(true);
-    this.fetching.set(true);
-    this.error.set('');
-    this.fetchNotice.set('');
-    this.ingestionService
-      .fetchJobs()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.fetching.set(false);
-          this.fetchNotice.set(
-            `Fetch complete: ${res.count} new job(s) ingested. The saved list was refreshed; closed-listing checks continue in the background.`,
-          );
-          // The fetch already completed its expensive work. Reuse cached scores
-          // for the immediate refresh so the new rows are visible promptly.
-          this.loadJobs(false);
-        },
-        error: (err) => {
-          this.error.set(err.error?.detail || 'Failed to fetch jobs');
-          this.fetching.set(false);
-          this.loading.set(false);
-        },
-      });
+    this.store.fetchJobs();
   }
 
-  // Manual closure check: probe the jobs currently on screen synchronously (so
-  // a listing you're looking at is closed right away), while the server also
-  // sweeps the rest of the corpus in the background. We reload on the immediate
-  // result, then poll for a couple of minutes to surface background closures.
   revalidate(): void {
-    if (this.revalidating()) return;
-    this.revalidating.set(true);
-    this.error.set('');
-    this.revalidateNotice.set('');
-    const visibleIds = this.jobs().map((j) => j.id);
-    this.ingestionService
-      .revalidate(visibleIds)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.revalidating.set(false);
-          this.loadJobs(false); // reflect the immediate (visible-page) closures
-          this.revalidateNotice.set(
-            `Closed ${res.closed} job(s) on this page. Still scanning the rest of your jobs for closed listings in the background — more may drop off shortly.`,
-          );
-          timer(environment.closureRevalidatePollMs, environment.closureRevalidatePollMs)
-            .pipe(
-              // Skip ticks while the tab is backgrounded — no point burning a
-              // request (and the user's attention budget) on a poll they
-              // can't see; it resumes polling on the next visible tick.
-              filter(() => document.visibilityState === 'visible'),
-              take(environment.closureRevalidatePollTicks),
-              takeUntilDestroyed(this.destroyRef),
-            )
-            .subscribe({
-              next: () => this.loadJobs(false),
-              complete: () => this.revalidateNotice.set(''),
-            });
-        },
-        error: (err) => {
-          this.revalidating.set(false);
-          this.error.set(err.error?.detail || 'Failed to check for closed jobs');
-        },
-      });
-  }
-
-  loadPortals(): void {
-    this.ingestionService
-      .loadPortals()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (portals) => {
-          this.portals.set(portals);
-          const allCategories = portals.flatMap((p) => p.categories);
-          this.availableCategories.set([...new Set(allCategories)].sort());
-          this.portalSources.set(portals.map((p) => p.name));
-        },
-        error: () => {},
-      });
+    this.store.revalidate();
   }
 
   scanPortals(): void {
-    this.scanning.set(true);
-    this.scanSummary.set('');
-    this.scanErrors.set([]);
-
-    const body: ScanPortalsRequest = {};
-    if (this.selectedCategories().length > 0) body.categories = this.selectedCategories();
-    if (this.selectedCompanies().length > 0) body.companies = this.selectedCompanies();
-    const kw = this.scanKeyword().trim();
-    if (kw) body.keyword = kw;
-
-    this.ingestionService
-      .scanPortals(body)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          this.scanSummary.set(
-            `Scan complete: ${res.total_fetched} fetched, ${res.new} new, ${res.duplicates} duplicates.`,
-          );
-          this.scanErrors.set(res.errors);
-          this.scanning.set(false);
-          this.loadJobs();
-        },
-        error: (err) => {
-          this.scanSummary.set(err.error?.detail || 'Scan failed.');
-          this.scanning.set(false);
-        },
-      });
+    this.store.scanPortals();
   }
 
   onFiltersChange(newFilters: JobFilters): void {
-    this.filters.set(newFilters);
-    this.page.set(1);
-    this.loadJobs();
+    this.store.applyFilters(newFilters);
   }
 
   onPageChange(newPage: number): void {
-    this.page.set(newPage);
-    this.loadJobs(false); // pagination — scores unchanged, defer LLM rescore
+    this.store.goToPage(newPage);
   }
 
   onPageSizeChange(newSize: number): void {
-    this.pageSize.set(newSize);
-    this.page.set(1);
-    this.loadJobs(false); // pagination — scores unchanged, defer LLM rescore
+    this.store.setPageSize(newSize);
+  }
+
+  onSorted(): void {
+    this.store.applySort();
+  }
+
+  onIncludeClosedChange(event: Event): void {
+    this.store.setIncludeClosed((event.target as HTMLInputElement).checked);
+  }
+
+  onIncludeLowQualityChange(event: Event): void {
+    this.store.setIncludeLowQuality((event.target as HTMLInputElement).checked);
   }
 
   openDetail(job: NormalizedJob): void {
-    this.selectedJob.set(job);
+    this.store.openDetail(job);
   }
 
   closeDetail(): void {
-    this.selectedJob.set(null);
+    this.store.closeDetail();
   }
 
   toggleScanFilters(): void {
-    this.showScanFilters.update((v) => !v);
+    this.store.toggleScanFilters();
   }
 
   onCategoryChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
-    this.selectedCategories.set(Array.from(select.selectedOptions).map((o) => o.value));
+    this.store.setSelectedCategories(Array.from(select.selectedOptions).map((o) => o.value));
   }
 
   onCompanyChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
-    this.selectedCompanies.set(Array.from(select.selectedOptions).map((o) => o.value));
+    this.store.setSelectedCompanies(Array.from(select.selectedOptions).map((o) => o.value));
   }
 
   onScanKeywordInput(event: Event): void {
-    this.scanKeyword.set((event.target as HTMLInputElement).value);
+    this.store.setScanKeyword((event.target as HTMLInputElement).value);
   }
 
   trackJob(jobId: string): void {
-    // Avoid double-submits while a track request is already in flight.
-    if (this.trackingJobId() !== null) return;
-    this.trackingJobId.set(jobId);
-    this.error.set('');
-    this.applicationsService
-      .createFromJob(jobId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (agg) => {
-          this.ingestionService.markTracked(jobId);
-          this.trackingJobId.set(null);
-          this.router.navigate(['/dashboard/applications', agg.id]);
-        },
-        error: (err) => {
-          this.trackingJobId.set(null);
-          if (err.status === 409) {
-            // Already tracked — mark it and fall back to the applications list
-            // so the user can find the existing application.
-            this.ingestionService.markTracked(jobId);
-            this.router.navigate(['/dashboard/applications']);
-            return;
-          }
-          this.error.set(err.error?.detail || 'Failed to track this job. Please try again.');
-        },
-      });
+    this.store.trackJob(jobId);
   }
 
   isTracking(jobId: string): boolean {
-    return this.trackingJobId() === jobId;
+    return this.store.isTracking(jobId);
   }
 
   isTracked(jobId: string): boolean {
-    return this.trackedJobIds().has(jobId);
-  }
-
-  onIncludeClosedChange(event: Event): void {
-    this.includeClosed.set((event.target as HTMLInputElement).checked);
-    this.page.set(1);
-    this.loadJobs();
-  }
-
-  onIncludeLowQualityChange(event: Event): void {
-    this.includeLowQuality.set((event.target as HTMLInputElement).checked);
-    this.page.set(1);
-    this.loadJobs();
-  }
-
-  onSorted(): void {
-    this.page.set(1);
-    this.loadJobs(false); // reorder only — scores unchanged, defer LLM rescore
+    return this.store.isTracked(jobId);
   }
 
   onFeedback(jobId: string, kind: FeedbackKind): void {
-    if (kind === 'not_interested') {
-      const next = new Set(this.dimmedJobIds());
-      next.add(jobId);
-      this.dimmedJobIds.set(next);
-    }
-    this.feedbackRefetch$.next();
+    this.store.recordFeedback(jobId, kind);
   }
 
   isDimmed(jobId: string): boolean {
-    return this.dimmedJobIds().has(jobId);
+    return this.store.isDimmed(jobId);
   }
 
   scoreBadgeClass(score: number): string {
@@ -513,6 +175,6 @@ export class IngestionComponent implements OnInit {
   }
 
   connectionsCount(jobId: string): number | undefined {
-    return this.connectionsByJob()[jobId];
+    return this.store.connectionsCount(jobId);
   }
 }

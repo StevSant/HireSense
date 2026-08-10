@@ -1,44 +1,43 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { FunnelMetrics } from '../../pages/analytics/models/funnel-metrics.model';
-import { MarketIntel } from '../../pages/analytics/models/market-intel.model';
-import { SkillGap } from '../../pages/analytics/models/skill-gap.model';
-import { UpskillingPlan } from '../../pages/interview/models/upskilling-plan.model';
-import { TargetSalary } from '../../pages/analytics/models/target-salary.model';
-import { CompBenchmark } from '../../pages/analytics/models/comp-benchmark.model';
-import { SearchFocus } from '../../pages/analytics/models/search-focus.model';
+import { ApiClient, API_ROUTES } from '@core/api';
+import { FunnelMetrics } from '@core/contracts/funnel-metrics.model';
+import { MarketIntel } from '@core/contracts/market-intel.model';
+import { SkillGap } from '@core/contracts/skill-gap.model';
+import { UpskillingPlan } from '@core/contracts/upskilling-plan.model';
+import { TargetSalary } from '@core/contracts/target-salary.model';
+import { CompBenchmark } from '@core/contracts/comp-benchmark.model';
+import { SearchFocus } from '@core/contracts/search-focus.model';
 
 @Injectable({ providedIn: 'root' })
 export class AnalyticsService {
-  constructor(private http: HttpClient) {}
+  constructor(private api: ApiClient) {}
 
   funnel(): Observable<FunnelMetrics> {
-    return this.http.get<FunnelMetrics>(`${environment.apiUrl}/analytics/funnel`);
+    return this.api.get<FunnelMetrics>(API_ROUTES.analytics.funnel());
   }
 
   market(): Observable<MarketIntel> {
-    return this.http.get<MarketIntel>(`${environment.apiUrl}/analytics/market`);
+    return this.api.get<MarketIntel>(API_ROUTES.analytics.market());
   }
 
   skillGap(): Observable<SkillGap> {
-    return this.http.get<SkillGap>(`${environment.apiUrl}/analytics/skill-gap`);
+    return this.api.get<SkillGap>(API_ROUTES.analytics.skillGap());
   }
 
   upskillingPlan(): Observable<UpskillingPlan> {
-    return this.http.get<UpskillingPlan>(`${environment.apiUrl}/analytics/upskilling-plan`);
+    return this.api.get<UpskillingPlan>(API_ROUTES.analytics.upskillingPlan());
   }
 
   targetSalary(): Observable<TargetSalary> {
-    return this.http.get<TargetSalary>(`${environment.apiUrl}/analytics/target-salary`);
+    return this.api.get<TargetSalary>(API_ROUTES.analytics.targetSalary());
   }
 
   comp(): Observable<CompBenchmark> {
-    return this.http.get<CompBenchmark>(`${environment.apiUrl}/analytics/comp`);
+    return this.api.get<CompBenchmark>(API_ROUTES.analytics.comp());
   }
 
   focus(): Observable<SearchFocus> {
-    return this.http.get<SearchFocus>(`${environment.apiUrl}/analytics/focus`);
+    return this.api.get<SearchFocus>(API_ROUTES.analytics.focus());
   }
 }

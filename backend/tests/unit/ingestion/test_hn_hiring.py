@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 from hiresense.ingestion.adapters.hn_hiring import HNHiringAdapter
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 # ---------------------------------------------------------------------------

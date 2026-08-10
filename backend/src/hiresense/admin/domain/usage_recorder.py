@@ -4,7 +4,7 @@ import asyncio
 import logging
 
 from hiresense.admin.ports import LLMUsageLogRepositoryPort
-from hiresense.observability import get_domain_metrics
+from hiresense.shared.observability import get_domain_metrics
 
 logger = logging.getLogger(__name__)
 

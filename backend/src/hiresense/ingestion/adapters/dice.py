@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 from hiresense.ingestion.domain.models import RawJobListing
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 logger = logging.getLogger(__name__)
 

@@ -4,12 +4,12 @@ import asyncio
 import logging
 from typing import Any
 
-from hiresense.kernel import EmailMessage
+from hiresense.shared.kernel import EmailMessage
 from hiresense.notifications.domain.digest_email import render_digest_email
 from hiresense.notifications.domain.inbox_signals_email import render_inbox_signals_email
 from hiresense.notifications.domain.pipeline_drafts_email import render_pipeline_drafts_email
 from hiresense.notifications.domain.job_failure_email import render_job_failure_email
-from hiresense.ports import EmailUnavailableError
+from hiresense.shared.ports import EmailUnavailableError
 
 logger = logging.getLogger(__name__)
 

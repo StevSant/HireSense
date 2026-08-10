@@ -1,7 +1,7 @@
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 
 # Importing the registry must register the scheduler tables on Base.metadata.
-import hiresense.infrastructure.registry  # noqa: F401
+import hiresense.shared.infrastructure.registry  # noqa: F401
 
 
 def test_scheduler_tables_registered():

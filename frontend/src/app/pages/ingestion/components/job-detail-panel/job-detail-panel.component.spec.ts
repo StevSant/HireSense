@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { JobDetailPanelComponent } from './job-detail-panel.component';
-import { NormalizedJob } from '../../models/normalized-job.model';
+import { NormalizedJob } from '@core/contracts/normalized-job.model';
 
 function makeJob(overrides: Partial<NormalizedJob> = {}): NormalizedJob {
   return {

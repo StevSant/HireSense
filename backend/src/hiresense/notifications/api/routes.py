@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from hiresense.identity.api.dependencies import require_admin, require_auth
 from hiresense.notifications.api.dependencies import get_notification_service
 from hiresense.notifications.domain import NotificationService
-from hiresense.ports import EmailUnavailableError
+from hiresense.shared.ports import EmailUnavailableError
 
 router = APIRouter(
     prefix="/notifications", tags=["notifications"], dependencies=[Depends(require_auth)]

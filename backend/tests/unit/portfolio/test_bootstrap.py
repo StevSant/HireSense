@@ -1,6 +1,6 @@
 import pytest
 
-from hiresense.bootstrap.portfolio import build_portfolio
+from hiresense.composition.portfolio import build_portfolio
 
 
 class _Settings:

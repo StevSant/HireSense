@@ -6,7 +6,7 @@ import pytest
 
 from hiresense.matching.domain.batch_service import BatchEvaluationService
 from hiresense.matching.domain.scorers.base import DimensionResult
-from hiresense.matching.domain.services import EvaluationResult
+from hiresense.matching.domain import EvaluationResult
 
 
 class FakeOrchestrator:

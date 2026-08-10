@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api.dependencies import get_job_query
 from hiresense.ingestion.domain.job_query_service import JobQueryService
-from hiresense.kernel import resolve_page_limit
+from hiresense.shared.kernel import resolve_page_limit
 from hiresense.tracking.api.dependencies import get_tracking_service
 from hiresense.tracking.api.schemas import (
     CreateApplicationRequest,

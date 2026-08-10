@@ -7,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 from hiresense.autohunt.domain import Digest, DigestEntry
 from hiresense.autohunt.infrastructure import DigestRepository
 from hiresense.autohunt.infrastructure.orm import DigestOrm  # noqa: F401
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 
 
 def _factory():

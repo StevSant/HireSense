@@ -10,11 +10,11 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
     InMemorySpanExporter,
 )
 
-from hiresense.observability import (
+from hiresense.shared.observability import (
     TraceContextFilter,
     request_id_var,
 )
-from hiresense.observability.middleware import RequestContextMiddleware
+from hiresense.shared.observability.middleware import RequestContextMiddleware
 
 
 def _build_app_with_inmemory_tracing():

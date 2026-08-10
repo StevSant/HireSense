@@ -5,7 +5,7 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.orm import aliased
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.outreach.domain import OutreachEvent, OutreachEventKind
 from hiresense.outreach.infrastructure.orm import OutreachEventOrm
 

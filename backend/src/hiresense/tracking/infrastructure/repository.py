@@ -4,7 +4,7 @@ import uuid
 
 from sqlalchemy import func, select
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 from hiresense.tracking.domain.status_transition import StatusTransition
 from hiresense.tracking.infrastructure.orm import TrackedApplicationOrm

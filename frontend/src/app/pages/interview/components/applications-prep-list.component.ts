@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { TitleCasePipe } from '@angular/common';
 import { ApplicationsService } from '../../../core/services/applications.service';
-import { ApplicationListItem } from '../../applications/models/application-list-item.model';
+import { ApplicationListItem } from '@core/contracts/application-list-item.model';
 import { CompanyLinkComponent } from '../../../core/components/company-link';
 
 @Component({

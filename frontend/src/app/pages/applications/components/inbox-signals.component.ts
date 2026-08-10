@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { DatePipe, DecimalPipe, TitleCasePipe } from '@angular/common';
 import { Observable } from 'rxjs';
 import { InboxSignalsService } from '../../../core/services/inbox-signals.service';
-import { InboxSignal } from '../models/inbox-signal.model';
+import { InboxSignal } from '@core/contracts/inbox-signal.model';
 
 @Component({
   selector: 'app-inbox-signals',

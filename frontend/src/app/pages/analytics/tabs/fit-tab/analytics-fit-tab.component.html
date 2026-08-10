@@ -5,7 +5,7 @@
   } @else if (focus(); as f) {
     <app-search-focus [focus]="f" />
   } @else {
-    <p class="section-loading">Loading…</p>
+    <app-status-note>Loading…</app-status-note>
   }
 </section>
 
@@ -17,9 +17,9 @@
     @if (g.has_profile) {
       <app-bar-chart [rows]="gapRows(g)" emptyText="No gaps — you cover the market." />
     } @else {
-      <p class="section-empty">Upload a CV to see your skill gap.</p>
+      <app-status-note>Upload a CV to see your skill gap.</app-status-note>
     }
   } @else {
-    <p class="section-loading">Loading…</p>
+    <app-status-note>Loading…</app-status-note>
   }
 </section>

@@ -8,7 +8,7 @@ from hiresense.autopilot.domain.autopilot_draft import AutopilotDraft
 from hiresense.autopilot.domain.draft_status import DraftStatus
 from hiresense.autopilot.domain.pipeline_result import PipelineResult
 from hiresense.autopilot.domain.ports import ApplicationDrafter, DraftRepository
-from hiresense.observability import get_domain_metrics
+from hiresense.shared.observability import get_domain_metrics
 
 logger = logging.getLogger(__name__)
 

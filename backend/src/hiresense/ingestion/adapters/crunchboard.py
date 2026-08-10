@@ -8,7 +8,7 @@ import feedparser
 
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.normalizers.crunchboard_title import parse_crunchboard_title
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 __all__ = ["CrunchBoardAdapter", "parse_crunchboard_title"]
 

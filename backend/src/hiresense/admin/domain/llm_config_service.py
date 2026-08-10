@@ -59,7 +59,7 @@ class LLMConfigService:
         self._env_provider = env_provider
         self._env_model = env_model
         self._env_api_key = env_api_key
-        # Injected as ints from bootstrap (which reads config) so this domain
+        # Injected as ints from composition (which reads config) so this domain
         # class never imports the settings module directly.
         self._default_max_tokens = default_max_tokens
         self._classifier_max_tokens = classifier_max_tokens

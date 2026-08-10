@@ -6,7 +6,7 @@ from hiresense.ingestion.domain.work_authorization_facts import extract_work_aut
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.ingestion.infrastructure import InMemoryJobsRepository
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 class _EventBus:

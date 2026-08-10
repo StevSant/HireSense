@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { PreferenceService } from './preference.service';
-import { environment } from '../../../environments/environment';
 
 describe('PreferenceService', () => {
   let service: PreferenceService;
@@ -20,7 +19,7 @@ describe('PreferenceService', () => {
 
   it('submitFeedback POSTs job_id and kind', () => {
     service.submitFeedback('job-1', 'thumbs_up').subscribe();
-    const req = httpMock.expectOne(`${environment.apiUrl}/preference/feedback`);
+    const req = httpMock.expectOne('/api/preference/feedback');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ job_id: 'job-1', kind: 'thumbs_up' });
     req.flush({ id: 's1', job_id: 'job-1', kind: 'thumbs_up', created_at: null });
@@ -28,7 +27,7 @@ describe('PreferenceService', () => {
 
   it('explain GETs /preference/explain', () => {
     service.explain().subscribe();
-    const req = httpMock.expectOne(`${environment.apiUrl}/preference/explain`);
+    const req = httpMock.expectOne('/api/preference/explain');
     expect(req.request.method).toBe('GET');
     req.flush({
       active: false,
@@ -42,14 +41,14 @@ describe('PreferenceService', () => {
 
   it('signals GETs /preference/signals', () => {
     service.signals().subscribe();
-    const req = httpMock.expectOne(`${environment.apiUrl}/preference/signals`);
+    const req = httpMock.expectOne('/api/preference/signals');
     expect(req.request.method).toBe('GET');
     req.flush([]);
   });
 
   it('reset POSTs to /preference/reset', () => {
     service.reset().subscribe();
-    const req = httpMock.expectOne(`${environment.apiUrl}/preference/reset`);
+    const req = httpMock.expectOne('/api/preference/reset');
     expect(req.request.method).toBe('POST');
     req.flush(null);
   });

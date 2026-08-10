@@ -7,8 +7,8 @@ from hiresense.ingestion.domain.embedding_text import job_text
 from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.ports.jobs_repository import JobsRepositoryPort
-from hiresense.ports.embedding import EmbeddingPort
-from hiresense.ports.vector_store import VectorStorePort
+from hiresense.shared.ports.embedding import EmbeddingPort
+from hiresense.shared.ports.vector_store import VectorStorePort
 
 logger = logging.getLogger(__name__)
 

@@ -1,201 +1,97 @@
-import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { AdminUsageService } from '../../core/services/admin-usage.service';
-import { BreakdownResponse } from './models/breakdown-response.model';
-import { DashboardSummary } from './models/dashboard-summary.model';
-import { RecentCallsResponse } from './models/recent-calls-response.model';
-import { TimeseriesResponse } from './models/timeseries-response.model';
-import { UsageBucket } from './models/usage-bucket.model';
-import { SortableHeaderDirective } from '../../core/components/sortable-header';
-import { createSortState } from '../../core/utils/sort-state';
-import { sortItems } from '../../core/utils/sort-items';
-import { PaginatorComponent } from '../../core/components/paginator';
+import { PaginatorComponent } from '@core/components/paginator';
+import { SortableHeaderDirective } from '@core/components/sortable-header';
+import { AdminUsageStore, Dimension } from './admin-usage.store';
 
 /** Mirrors the backend's `limit` bounds for /admin/usage/calls (max 500). */
 const CALLS_PAGE_SIZE_OPTIONS = [50, 100, 250, 500];
 
-type Dimension = 'provider' | 'model' | 'feature';
-type BreakdownSortField = 'key' | 'calls' | 'total_tokens' | 'cost_usd';
-type CallsSortField = 'created' | 'cost' | 'latency' | 'input_tokens' | 'output_tokens';
-
+/**
+ * Admin → LLM usage dashboard.
+ *
+ * A view over AdminUsageStore: every signal below is the store's own signal
+ * re-exposed under the name the template already used. The bar-chart geometry
+ * helpers stay here — they are pure view maths over values the template
+ * already holds, and nothing but the SVG needs them.
+ */
 @Component({
   selector: 'app-admin-usage',
   standalone: true,
   imports: [CommonModule, FormsModule, SortableHeaderDirective, PaginatorComponent],
+  providers: [AdminUsageStore],
   templateUrl: './admin-usage.component.html',
   styleUrl: './admin-usage.component.scss',
 })
 export class AdminUsageComponent implements OnInit {
-  loading = signal(false);
-  error = signal('');
+  private store = inject(AdminUsageStore);
 
-  summary = signal<DashboardSummary | null>(null);
-  timeseries = signal<TimeseriesResponse | null>(null);
-  breakdown = signal<BreakdownResponse | null>(null);
-  recent = signal<RecentCallsResponse | null>(null);
+  loading = this.store.loading;
+  error = this.store.error;
 
-  rangeDays = signal<number>(30);
-  dimension = signal<Dimension>('feature');
+  summary = this.store.summary;
+  timeseries = this.store.timeseries;
+  breakdown = this.store.breakdown;
+  recent = this.store.recent;
 
-  // Recent-calls filters
-  filterProvider = signal('');
-  filterModel = signal('');
-  filterFeature = signal('');
-  recentLimit = signal(50);
+  rangeDays = this.store.rangeDays;
+  dimension = this.store.dimension;
 
-  // Derived: max cost in timeseries for SVG scaling
-  maxBucketCost = computed(() => {
-    const buckets = this.timeseries()?.buckets ?? [];
-    return Math.max(0.0001, ...buckets.map((b) => b.cost_usd));
-  });
+  filterProvider = this.store.filterProvider;
+  filterModel = this.store.filterModel;
+  filterFeature = this.store.filterFeature;
+  recentLimit = this.store.recentLimit;
 
-  maxBreakdownCost = computed(() => {
-    const buckets = this.breakdown()?.buckets ?? [];
-    return Math.max(0.0001, ...buckets.map((b) => b.cost_usd));
-  });
+  maxBucketCost = this.store.maxBucketCost;
+  maxBreakdownCost = this.store.maxBreakdownCost;
 
-  // Breakdown is sorted client-side over the already-aggregated buckets.
-  breakdownSort = createSortState<BreakdownSortField>('cost_usd', 'desc', ['key']);
-  visibleBuckets = computed(() => {
-    const buckets = this.breakdown()?.buckets ?? [];
-    const field = this.breakdownSort.field();
-    return sortItems(buckets, (b) => this.bucketValue(b, field), this.breakdownSort.dir());
-  });
+  breakdownSort = this.store.breakdownSort;
+  visibleBuckets = this.store.visibleBuckets;
 
-  private bucketValue(b: UsageBucket, field: BreakdownSortField): string | number {
-    switch (field) {
-      case 'key':
-        return b.key;
-      case 'calls':
-        return b.calls;
-      case 'total_tokens':
-        return b.total_tokens;
-      case 'cost_usd':
-        return b.cost_usd;
-    }
-  }
-
-  // Recent calls are server-paginated (limit/offset), so sorting and paging
-  // both re-query rather than reordering a local slice.
-  callsSort = createSortState<CallsSortField>('created', 'desc', []);
-
-  callsPage = signal(1);
-  callsTotal = computed(() => this.recent()?.total ?? 0);
-  callsTotalPages = computed(() => Math.max(1, Math.ceil(this.callsTotal() / this.recentLimit())));
+  callsSort = this.store.callsSort;
+  callsPage = this.store.callsPage;
+  callsTotal = this.store.callsTotal;
+  callsTotalPages = this.store.callsTotalPages;
 
   // The backend caps a usage page at 500.
   readonly callsPageSizeOptions = CALLS_PAGE_SIZE_OPTIONS;
 
-  onCallsPageChange(page: number): void {
-    this.callsPage.set(page);
-    this.loadRecent();
-  }
-
-  onCallsPageSizeChange(size: number): void {
-    this.recentLimit.set(size);
-    this.callsPage.set(1);
-    this.loadRecent();
-  }
-
-  /**
-   * Re-query from page 1.
-   *
-   * Anything that changes which rows match — the filter form, a sort header —
-   * must reset the offset, otherwise the user stays on page 5 of a result set
-   * that may now be one page long and sees an empty table.
-   */
-  reloadRecent(): void {
-    this.callsPage.set(1);
-    this.loadRecent();
-  }
-
-  private readonly destroyRef = inject(DestroyRef);
-
-  constructor(private api: AdminUsageService) {}
-
   ngOnInit(): void {
-    this.refresh();
+    this.store.init();
   }
 
   refresh(): void {
-    this.loading.set(true);
-    this.error.set('');
-    this.api
-      .summary()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (s) => this.summary.set(s),
-        error: (err) => this.error.set(err?.error?.detail ?? 'Failed to load summary'),
-      });
-    this.loadTimeseries();
-    this.loadBreakdown();
-    this.loadRecent();
+    this.store.refresh();
   }
 
   setRange(days: number): void {
-    this.rangeDays.set(days);
-    this.loadTimeseries();
-    this.loadBreakdown();
+    this.store.setRange(days);
   }
 
   setDimension(d: Dimension): void {
-    this.dimension.set(d);
-    this.loadBreakdown();
-  }
-
-  private loadTimeseries(): void {
-    this.api
-      .timeseries(this.rangeDays())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (ts) => {
-          this.timeseries.set(ts);
-          this.loading.set(false);
-        },
-        error: (err) => {
-          this.error.set(err?.error?.detail ?? 'Failed to load timeseries');
-          this.loading.set(false);
-        },
-      });
-  }
-
-  private loadBreakdown(): void {
-    this.api
-      .breakdown(this.dimension(), this.rangeDays())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (b) => this.breakdown.set(b),
-        error: (err) => this.error.set(err?.error?.detail ?? 'Failed to load breakdown'),
-      });
+    this.store.setDimension(d);
   }
 
   loadRecent(): void {
-    this.api
-      .recentCalls({
-        limit: this.recentLimit(),
-        offset: (this.callsPage() - 1) * this.recentLimit(),
-        provider: this.filterProvider() || undefined,
-        model: this.filterModel() || undefined,
-        feature_key: this.filterFeature() || undefined,
-        sort: this.callsSort.token(),
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (r) => this.recent.set(r),
-        error: (err) => this.error.set(err?.error?.detail ?? 'Failed to load calls'),
-      });
+    this.store.loadRecent();
+  }
+
+  reloadRecent(): void {
+    this.store.reloadRecent();
+  }
+
+  onCallsPageChange(page: number): void {
+    this.store.goToCallsPage(page);
+  }
+
+  onCallsPageSizeChange(size: number): void {
+    this.store.setCallsPageSize(size);
   }
 
   exportCsv(): void {
-    const url = this.api.exportCsvUrl({
-      provider: this.filterProvider() || undefined,
-      model: this.filterModel() || undefined,
-      feature_key: this.filterFeature() || undefined,
-      days: 90,
-    });
+    const url = this.store.exportCsvUrl();
     // The CSV endpoint is auth-gated. Session auth is a same-origin httpOnly
     // cookie, so the browser attaches it automatically to this navigation — no
     // interceptor needed (unlike the old bearer header, which couldn't ride a

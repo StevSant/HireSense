@@ -14,7 +14,7 @@ from hiresense.applications.domain.models import (
     ApplicationJobSnapshot,
     JobSnapshotSource,
 )
-from hiresense.kernel.prompt_boundary import PromptBoundary
+from hiresense.shared.kernel.prompt_boundary import PromptBoundary
 
 
 # ---------------------------------------------------------------------------

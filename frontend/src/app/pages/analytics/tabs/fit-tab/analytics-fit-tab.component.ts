@@ -1,16 +1,17 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { BarChartComponent } from '../../components/bar-chart/bar-chart.component';
 import { SearchFocusComponent } from '../../components/search-focus/search-focus.component';
-import { SkillGap } from '../../models/skill-gap.model';
-import { BarRow } from '../../models/bar-row.model';
+import { SkillGap } from '@core/contracts/skill-gap.model';
+import { BarRow } from '@core/contracts/bar-row.model';
 import { MARKET_ROW_CAP } from '../../analytics-row-caps';
 import { AnalyticsStore } from '../../analytics.store';
+import { StatusNoteComponent } from '@shared/ui';
 
 /** Analytics -> Fit: where the profile lands, and what it is missing. */
 @Component({
   selector: 'app-analytics-fit-tab',
   standalone: true,
-  imports: [BarChartComponent, SearchFocusComponent],
+  imports: [BarChartComponent, SearchFocusComponent, StatusNoteComponent],
   templateUrl: './analytics-fit-tab.component.html',
   styleUrl: '../../analytics-tab-shared.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -70,6 +70,82 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F"]
 
+# Type checking. The ports-and-adapters contract this codebase documents was,
+# until now, unenforced: constructor dependencies annotated `Any` meant a domain
+# service could call a method that exists only on the concrete infrastructure
+# class and nothing would object. That is not hypothetical — AutoHuntService
+# called `jobs_repo.list_since()`, which lived on JobsRepository but on neither
+# JobsRepositoryPort nor InMemoryJobsRepository, so substituting the in-memory
+# double raised AttributeError. `Any` did not merely hide that violation, it
+# enabled it.
+#
+# `basic` is deliberate: `strict` additionally demands full annotation coverage,
+# which would bury the real findings under thousands of missing-annotation
+# reports. Raise it only once `ignore` below is empty.
+#
+# pythonVersion tracks requires-python (the floor), not the version CI installs,
+# so syntax newer than the declared floor is caught here rather than by a user.
+[tool.pyright]
+include = ["src/hiresense"]
+typeCheckingMode = "basic"
+pythonVersion = "3.12"
+pythonPlatform = "All"
+
+# Debt ledger, not configuration. Every path here fails `basic` today; the list
+# only ever shrinks. Checking is ON everywhere else, so a NEW file is type-checked
+# from its first commit and cannot join this list — that is the point of listing
+# failures explicitly instead of narrowing `include` to the clean modules.
+#
+# Removing an entry is the unit of work: fix the file, delete its line, commit.
+ignore = [
+    # Optional LLM extras (groq / ollama) are not installed in the default sync,
+    # so their imports are unresolved by construction.
+    "src/hiresense/admin/infrastructure/llm_factory.py",
+    # Third-party typing friction: OTel exporter variance, bs4's AttributeValueList,
+    # starlette's exception-handler signature, langchain's astream element type.
+    "src/hiresense/shared/adapters/llm/langchain_adapter.py",
+    "src/hiresense/shared/observability/exporters.py",
+    "src/hiresense/shared/kernel/exception_handlers.py",
+    "src/hiresense/composition/preference.py",
+    "src/hiresense/ingestion/adapters/generic_scraper_adapter.py",
+    # `object`-typed provider lookups in api/dependencies.py — every attribute
+    # access on a provider is an error until the accessors are generic.
+    "src/hiresense/optimization/api/routes.py",
+    "src/hiresense/profile/api/routes.py",
+    "src/hiresense/applications/api/routes.py",
+    # Domain models declaring `id: UUID | None` consumed where `UUID` is required.
+    "src/hiresense/applications/domain/application_service.py",
+    "src/hiresense/applications/domain/apply_service.py",
+    "src/hiresense/applications/domain/artifact_service.py",
+    "src/hiresense/applications/domain/ats_field_map.py",
+    "src/hiresense/profile/domain/services.py",
+    # Optional collaborators (`X | None`) dereferenced without narrowing. These
+    # encode intended APP_MODE=local degradation; fixing them is a behavioural
+    # decision, not a typing one.
+    "src/hiresense/ingestion/domain/embedding_backfill_service.py",
+    "src/hiresense/ingestion/domain/job_quality_classifier.py",
+    "src/hiresense/ingestion/domain/portal_scanner.py",
+    "src/hiresense/ingestion/domain/quick_scoring_service.py",
+    "src/hiresense/preference/domain/services.py",
+    "src/hiresense/matching/domain/deep_analysis_service.py",
+    "src/hiresense/composition/profile.py",
+    "src/hiresense/composition/tracked_factory.py",
+    # Assorted single-site narrowing gaps.
+    "src/hiresense/shared/adapters/embedding/sentence_transformer_adapter.py",
+    "src/hiresense/admin/domain/usage_aggregator.py",
+    "src/hiresense/admin/infrastructure/usage_tracking_llm_adapter.py",
+    "src/hiresense/shared/config/sources.py",
+    "src/hiresense/identity/api/cookies.py",
+    "src/hiresense/inbox/api/routes.py",
+    "src/hiresense/inbox/infrastructure/imap_inbox_reader.py",
+    "src/hiresense/ingestion/domain/normalizers/hn_hiring_normalizer.py",
+    "src/hiresense/ingestion/infrastructure/jobs_repository.py",
+    "src/hiresense/portfolio/api/routes.py",
+    "src/hiresense/profile/domain/pdf_parser.py",
+    "src/hiresense/scheduler/infrastructure/apscheduler_runner.py",
+    "src/hiresense/tracking/domain/services.py",
+]
+
 # Single source of truth for dev tooling (uv dependency-groups). The old
 # [project.optional-dependencies].dev block was removed — it pinned conflicting
 # older versions of pytest/pytest-asyncio (#19).
@@ -80,4 +156,5 @@ dev = [
     "pytest-cov>=5.0.0",
     "httpx>=0.27.0",
     "ruff>=0.16.0",
+    "pyright>=1.1.390",
 ]

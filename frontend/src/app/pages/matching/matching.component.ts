@@ -5,21 +5,22 @@ import { FormsModule } from '@angular/forms';
 import { MatchingService } from '../../core/services/matching.service';
 import { ProfileService } from '../../core/services/profile.service';
 import { IngestionService } from '../../core/services/ingestion.service';
-import { NormalizedJob } from '../ingestion/models/normalized-job.model';
-import { EvaluateRequest } from './models/evaluate-request.model';
-import { EvaluationResult } from './models/evaluation-result.model';
-import { MatchResult } from './models/match-result.model';
+import { NormalizedJob } from '@core/contracts/normalized-job.model';
+import { EvaluateRequest } from '@core/contracts/evaluate-request.model';
+import { EvaluationResult } from '@core/contracts/evaluation-result.model';
+import { MatchResult } from '@core/contracts/match-result.model';
 import { scoreColor as toScoreColor } from '../../core/utils/score-color';
 import { formatScorePercent } from '../../core/utils/format-score-percent';
 import { dimensionLabel as toDimensionLabel } from '../../core/utils/dimension-label';
 import { mapLlmError } from '../../core/services/llm-error.util';
 import { LlmRunnerService } from '../../core/services/llm-runner.service';
 import { ComboboxComponent, ComboboxOption } from '../../core/components/combobox';
+import { ButtonSpinnerComponent } from '@shared/ui';
 
 @Component({
   selector: 'app-matching',
   standalone: true,
-  imports: [FormsModule, ComboboxComponent],
+  imports: [FormsModule, ComboboxComponent, ButtonSpinnerComponent],
   templateUrl: './matching.component.html',
   styleUrl: './matching.component.scss',
 })

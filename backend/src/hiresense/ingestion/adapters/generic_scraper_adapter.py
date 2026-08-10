@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.portal_config import PortalEntry
 from hiresense.ingestion.ports import PageRendererPort
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 class GenericScraperAdapter:

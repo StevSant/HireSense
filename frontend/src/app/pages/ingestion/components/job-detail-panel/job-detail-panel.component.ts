@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { NormalizedJob } from '../../models/normalized-job.model';
+import { NormalizedJob } from '@core/contracts/normalized-job.model';
 import { parseJobDescription } from '../../lib/parse-job-description';
 import { formatScorePercent } from '../../../../core/utils/format-score-percent';
 import { scoreColor } from '../../../../core/utils/score-color';
 import { JobDescriptionComponent } from '../job-description/job-description.component';
 import { FeedbackControlsComponent } from '../feedback-controls/feedback-controls.component';
-import { FeedbackKind } from '../../models/feedback-kind.model';
+import { FeedbackKind } from '@core/contracts/feedback-kind.model';
 import { CompanyLinkComponent } from '../../../../core/components/company-link';
 
 @Component({

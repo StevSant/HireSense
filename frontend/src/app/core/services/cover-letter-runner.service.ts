@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Subject } from 'rxjs';
-import { CoverLetterTone } from '../../pages/applications/models/cover-letter-tone.model';
+import { CoverLetterTone } from '@core/contracts/cover-letter-tone.model';
 import { ApplicationsService } from './applications.service';
 import { mapLlmError } from './llm-error.util';
 

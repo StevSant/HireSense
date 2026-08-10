@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import delete, select
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.preference.domain import FeedbackSignal, PreferenceModel
 from hiresense.preference.infrastructure.orm import FeedbackSignalOrm, PreferenceModelOrm
 

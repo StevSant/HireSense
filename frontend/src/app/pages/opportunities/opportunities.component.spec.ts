@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { OpportunitiesComponent } from './opportunities.component';
 import { OpportunitiesService } from '../../core/services/opportunities.service';
-import { PaginatedOpportunitiesResponse } from './models/paginated-opportunities-response.model';
-import { FetchOpportunitiesResponse } from './models/fetch-opportunities-response.model';
+import { PaginatedOpportunitiesResponse } from '@core/contracts/paginated-opportunities-response.model';
+import { FetchOpportunitiesResponse } from '@core/contracts/fetch-opportunities-response.model';
 
 function makeOpportunitiesService(overrides: Partial<OpportunitiesService> = {}) {
   const listResponse: PaginatedOpportunitiesResponse = {

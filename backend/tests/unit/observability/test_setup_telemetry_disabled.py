@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from hiresense.observability import setup_telemetry
+from hiresense.shared.observability import setup_telemetry
 
 
 class _Settings:

@@ -20,7 +20,7 @@ from hiresense.applications.infrastructure.orm import (
     ApplicationJobSnapshotOrm,
     ApplicationMatchOrm,
 )
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.tracking.infrastructure.orm import TrackedApplicationOrm
 
 _SNAPSHOT_FIELDS = ("application_id", "description", "required_skills", "source")

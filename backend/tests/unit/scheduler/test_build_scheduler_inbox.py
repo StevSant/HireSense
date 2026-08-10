@@ -3,8 +3,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from hiresense.bootstrap.scheduler import build_scheduler
-from hiresense.infrastructure.database import Base
+from hiresense.composition.scheduler import build_scheduler
+from hiresense.shared.infrastructure.database import Base
 from hiresense.scheduler.infrastructure import JobRunOrm, JobToggleOrm  # noqa: F401
 
 

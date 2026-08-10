@@ -10,9 +10,11 @@
   // Match .btn-primary's height: same 0.5rem vertical padding, minus the 1px
   // border this button adds (btn-primary is borderless) so the two line up.
   padding: calc(0.5rem - 1px) 0.9rem;
+  // `--border` is not a published token, so this renders the #d0d0d0 fallback
+  // rather than --border-default. Left as-is: swapping it shifts the hairline.
   border: 1px solid var(--border, #d0d0d0);
-  border-radius: var(--radius-md, 6px);
-  background: var(--surface, #fff);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
   cursor: pointer;
   font-family: var(--font-body);
   font-size: 0.875rem;
@@ -35,7 +37,7 @@
   padding: 0.85rem;
   border: 1px solid var(--border, #d0d0d0);
   border-radius: 8px;
-  background: var(--surface, #fff);
+  background: var(--bg-card);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   font-size: 0.85rem;
 }
@@ -53,10 +55,10 @@
 
 .btn-reset {
   padding: 0.35rem 0.7rem;
-  border: 1px solid var(--danger, #dc2626);
+  border: 1px solid var(--danger);
   border-radius: 6px;
   background: transparent;
-  color: var(--danger, #dc2626);
+  color: var(--danger);
   cursor: pointer;
 
   &:disabled {

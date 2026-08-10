@@ -5,7 +5,7 @@ from datetime import date, datetime, timezone
 
 from sqlalchemy import String, and_, cast, func, not_, or_, select
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.opportunities.domain.content_hash import content_hash
 from hiresense.opportunities.domain.identity import identity_key
 from hiresense.opportunities.domain.models import Opportunity, OpportunityKind

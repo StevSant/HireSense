@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
 
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.scheduler.infrastructure import JobRunOrm, JobToggleOrm  # noqa: F401
 
 

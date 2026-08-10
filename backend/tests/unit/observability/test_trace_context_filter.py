@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from hiresense.observability import TraceContextFilter, request_id_var
+from hiresense.shared.observability import TraceContextFilter, request_id_var
 
 
 def _record() -> logging.LogRecord:

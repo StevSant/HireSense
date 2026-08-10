@@ -13,7 +13,7 @@ from hiresense.autohunt.domain import AutoHuntService
 from hiresense.autohunt.infrastructure import DigestRepository
 from hiresense.autohunt.infrastructure.orm import DigestOrm  # noqa: F401
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.ingestion.infrastructure.models import IngestedJob  # noqa: F401
 from hiresense.ingestion.infrastructure.jobs_repository import JobsRepository
 

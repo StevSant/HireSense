@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { NetworkService } from './network.service';
-import { environment } from '../../../environments/environment';
 
 describe('NetworkService', () => {
   let service: NetworkService;
@@ -24,7 +23,7 @@ describe('NetworkService', () => {
       expect(res.contacts).toBe(42);
       expect(res.imported_at).toBe('2026-06-09T00:00:00Z');
     });
-    const req = httpMock.expectOne(`${environment.apiUrl}/network/import`);
+    const req = httpMock.expectOne('/api/network/import');
     expect(req.request.method).toBe('POST');
     expect(req.request.body instanceof FormData).toBe(true);
     expect(req.request.body.get('file')).toBeTruthy();
@@ -36,7 +35,7 @@ describe('NetworkService', () => {
       expect(res.company_normalized).toBe('acme corp');
       expect(res.contacts.length).toBe(1);
     });
-    const req = httpMock.expectOne(`${environment.apiUrl}/network/match?company=Acme%20Corp`);
+    const req = httpMock.expectOne('/api/network/match?company=Acme%20Corp');
     expect(req.request.method).toBe('GET');
     expect(req.request.params.get('company')).toBe('Acme Corp');
     req.flush({

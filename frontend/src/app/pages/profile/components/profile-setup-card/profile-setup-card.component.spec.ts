@@ -1,7 +1,7 @@
 import { ComponentRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ProfileSetupCardComponent } from './profile-setup-card.component';
-import { CandidateProfile } from '../../models/candidate-profile.model';
+import { CandidateProfile } from '@core/contracts/candidate-profile.model';
 
 function makeProfile(overrides: Partial<CandidateProfile> = {}): CandidateProfile {
   return {

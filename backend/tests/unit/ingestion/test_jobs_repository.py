@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.ingestion.domain.upsert_result import UpsertResult
@@ -83,7 +83,7 @@ def test_prune_older_than_keeps_recent_rows() -> None:
 @pytest.mark.asyncio
 async def test_orchestrator_skips_duplicate_across_runs() -> None:
     from hiresense.ingestion.domain.models import RawJobListing
-    from hiresense.kernel.value_objects import SourceType
+    from hiresense.shared.kernel.value_objects import SourceType
 
     class FakeSource:
         def source_name(self) -> str:
@@ -438,3 +438,32 @@ def test_application_method_defaults_to_unknown(repo):
     assert stored.application_method == ApplicationMethod.UNKNOWN
     assert stored.apply_url is None
     assert stored.ats_type is None
+
+
+# --- list_since: parity between the two implementations -----------------------
+# AutoHuntService drives its whole digest off list_since, but the method existed
+# only on JobsRepository — not on the port, not on the in-memory double — so
+# substituting the double raised AttributeError. These tests pin the behaviour
+# the port now declares, on both sides.
+
+
+def test_list_since_returns_only_jobs_fetched_at_or_after_cutoff(repo):
+    before = datetime.now(timezone.utc) - timedelta(hours=1)
+    repo.upsert(_job(str(uuid.uuid4()), url="https://x/recent"))
+
+    assert [j.url for j in repo.list_since(before)] == ["https://x/recent"]
+    assert repo.list_since(datetime.now(timezone.utc) + timedelta(hours=1)) == []
+
+
+def test_list_since_filters_by_status_on_both_implementations(repo):
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
+
+    for impl in (repo, InMemoryJobsRepository()):
+        open_job = _make_job(url="https://x/open")
+        closed_job = _make_job(url="https://x/closed")
+        impl.upsert(open_job)
+        impl.upsert(closed_job)
+        impl.mark_closed([closed_job.id])
+
+        assert [j.url for j in impl.list_since(cutoff)] == ["https://x/open"]
+        assert [j.url for j in impl.list_since(cutoff, status="closed")] == ["https://x/closed"]

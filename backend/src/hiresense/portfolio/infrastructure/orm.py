@@ -5,8 +5,8 @@ from datetime import datetime
 from sqlalchemy import Boolean, DateTime, Index, Integer, String, UniqueConstraint, true
 from sqlalchemy.orm import Mapped, mapped_column
 
-from hiresense.infrastructure import JSONB_OR_JSON
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure import JSONB_OR_JSON
+from hiresense.shared.infrastructure.database import Base
 
 
 class PortfolioProjectOrm(Base):

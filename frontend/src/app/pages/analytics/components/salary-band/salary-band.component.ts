@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { TargetSalary } from '../../models/target-salary.model';
+import { TargetSalary } from '@core/contracts/target-salary.model';
 import { PayPeriod, periodUnit, toPeriod } from '../../../../core/utils/pay-period';
 
 /** Left edge of the visual scale, as a fraction of p25 (20% headroom below). */

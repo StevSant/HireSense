@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { KeyValuePipe } from '@angular/common';
 import { PreferenceService } from '../../../../core/services/preference.service';
-import { PreferenceExplanation } from '../../models/preference-explanation.model';
+import { PreferenceExplanation } from '@core/contracts/preference-explanation.model';
 
 @Component({
   selector: 'app-preference-tuning',

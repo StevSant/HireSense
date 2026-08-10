@@ -1,38 +1,37 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { PortfolioProjectsResponse } from '../../pages/profile/models/portfolio-projects-response.model';
-import { PortfolioSyncResult } from '../../pages/profile/models/portfolio-sync-result.model';
-import { PortfolioEngagementResponse } from '../../pages/profile/models/portfolio-engagement.model';
+import { ApiClient, API_ROUTES } from '@core/api';
+import { PortfolioProjectsResponse } from '@core/contracts/portfolio-projects-response.model';
+import { PortfolioSyncResult } from '@core/contracts/portfolio-sync-result.model';
+import { PortfolioEngagementResponse } from '@core/contracts/portfolio-engagement.model';
 
 @Injectable({ providedIn: 'root' })
 export class PortfolioService {
-  private http = inject(HttpClient);
-  private base = `${environment.apiUrl}/portfolio`;
+  private api = inject(ApiClient);
 
   listProjects(limit?: number, offset?: number): Observable<PortfolioProjectsResponse> {
     let params = new HttpParams();
     if (limit != null) params = params.set('limit', limit);
     if (offset != null) params = params.set('offset', offset);
-    return this.http.get<PortfolioProjectsResponse>(`${this.base}/projects`, { params });
+    return this.api.get<PortfolioProjectsResponse>(API_ROUTES.portfolio.projects(), { params });
   }
 
   sync(): Observable<PortfolioSyncResult> {
-    return this.http.post<PortfolioSyncResult>(`${this.base}/sync`, {});
+    return this.api.post<PortfolioSyncResult>(API_ROUTES.portfolio.sync(), {});
   }
 
   setMatching(
     id: string,
     include_in_matching: boolean,
   ): Observable<{ include_in_matching: boolean }> {
-    return this.http.patch<{ include_in_matching: boolean }>(
-      `${this.base}/projects/${id}/matching`,
+    return this.api.patch<{ include_in_matching: boolean }>(
+      API_ROUTES.portfolio.projectMatching({ id }),
       { include_in_matching },
     );
   }
 
   engagement(): Observable<PortfolioEngagementResponse> {
-    return this.http.get<PortfolioEngagementResponse>(`${this.base}/engagement`);
+    return this.api.get<PortfolioEngagementResponse>(API_ROUTES.portfolio.engagement());
   }
 }

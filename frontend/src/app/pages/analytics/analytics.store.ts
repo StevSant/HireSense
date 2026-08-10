@@ -3,12 +3,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AnalyticsService } from '../../core/services/analytics.service';
 import { PortfolioService } from '../../core/services/portfolio.service';
 import { PayPeriod } from '../../core/utils/pay-period';
-import { CompBenchmark } from './models/comp-benchmark.model';
-import { FunnelMetrics } from './models/funnel-metrics.model';
-import { MarketIntel } from './models/market-intel.model';
-import { SearchFocus } from './models/search-focus.model';
-import { SkillGap } from './models/skill-gap.model';
-import { PortfolioEngagementResponse } from '../profile/models/portfolio-engagement.model';
+import { CompBenchmark } from '@core/contracts/comp-benchmark.model';
+import { FunnelMetrics } from '@core/contracts/funnel-metrics.model';
+import { MarketIntel } from '@core/contracts/market-intel.model';
+import { SearchFocus } from '@core/contracts/search-focus.model';
+import { SkillGap } from '@core/contracts/skill-gap.model';
+import { PortfolioEngagementResponse } from '@core/contracts/portfolio-engagement.model';
 
 /**
  * Shared state for the Analytics hub.

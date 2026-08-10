@@ -40,13 +40,17 @@ class StubCache:
         self.upserts: list[tuple[QuickMatchResult, str]] = []
         self.bulk_upserts: list[tuple[list[QuickMatchResult], str]] = []
 
-    def get_quick_bulk(self, job_ids, profile_hash):
+    def get_quick_bulk(self, job_ids, profile_hash, prompt_fingerprint):
         return {k: v for k, v in self._quick.items() if k in job_ids}
 
-    def upsert_quick(self, result: QuickMatchResult, profile_hash: str) -> None:
+    def upsert_quick(
+        self, result: QuickMatchResult, profile_hash: str, prompt_fingerprint: str
+    ) -> None:
         self.upserts.append((result, profile_hash))
 
-    def upsert_quick_bulk(self, results: list[QuickMatchResult], profile_hash: str) -> None:
+    def upsert_quick_bulk(
+        self, results: list[QuickMatchResult], profile_hash: str, prompt_fingerprint: str
+    ) -> None:
         self.bulk_upserts.append((list(results), profile_hash))
         for result in results:
             self.upserts.append((result, profile_hash))

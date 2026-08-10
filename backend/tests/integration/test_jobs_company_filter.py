@@ -10,7 +10,7 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import sessionmaker
 
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.ingestion.api import (
     get_job_query,
     get_portal_scanner,
@@ -22,7 +22,7 @@ from hiresense.ingestion.domain.job_query_service import JobQueryService
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.ingestion.infrastructure import JobsRepository
 from hiresense.ingestion.infrastructure.models import IngestedJob  # noqa: F401 (registers table)
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 from hiresense.profile.api.dependencies import get_profile_service
 
 

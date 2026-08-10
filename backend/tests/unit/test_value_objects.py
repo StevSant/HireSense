@@ -1,6 +1,6 @@
 import uuid
 
-from hiresense.kernel.value_objects import (
+from hiresense.shared.kernel.value_objects import (
     JobId,
     Language,
     MatchScore,

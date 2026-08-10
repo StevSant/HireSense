@@ -14,7 +14,7 @@ from hiresense.applications.domain.models import (
     JobSnapshotSource,
 )
 from hiresense.applications.infrastructure.repository import ApplicationRepository
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.tracking.domain.models import ApplicationStatus
 from hiresense.tracking.infrastructure import TrackedApplicationOrm
 

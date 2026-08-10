@@ -1,5 +1,5 @@
 import { EMPTY, Observable, expand, map, reduce } from 'rxjs';
-import { PagedResult } from '../models/paged-result.model';
+import { PagedResult } from '@core/contracts/paged-result.model';
 import { environment } from '../../../environments/environment';
 
 /** A single page request: `(limit, offset) => that page plus the server total`. */

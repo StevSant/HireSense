@@ -1,6 +1,6 @@
 import pytest
 
-from hiresense.ports import EmbeddingPort
+from hiresense.shared.ports import EmbeddingPort
 
 
 class FakeEmbedder:

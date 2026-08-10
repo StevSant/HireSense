@@ -9,8 +9,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PreferenceService } from '../../../../core/services/preference.service';
-import { FeedbackControl } from '../../models/feedback-control.model';
-import { FeedbackKind } from '../../models/feedback-kind.model';
+import { FeedbackControl } from '@core/contracts/feedback-control.model';
+import { FeedbackKind } from '@core/contracts/feedback-kind.model';
 
 @Component({
   selector: 'app-feedback-controls',

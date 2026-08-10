@@ -64,7 +64,7 @@ class FakeMatchResult:
         self.recommendations = ["learn k8s"]
 
 
-class FakeMatchingOrchestrator:
+class FakeMatchAnalyzer:
     def __init__(self) -> None:
         self.last_args: dict | None = None
 
@@ -172,12 +172,12 @@ async def test_generate_match_uses_snapshot_and_profile() -> None:
         source=JobSnapshotSource.MANUAL.value,
     )
     repo = FakeRepo(snapshot=snap)
-    matching = FakeMatchingOrchestrator()
+    matching = FakeMatchAnalyzer()
     profiles = FakeProfileService(FakeProfile("en", "I am a senior engineer.", ["python"]))
 
     service = ArtifactService(
         repository=repo,
-        matching_orchestrator=matching,
+        match_analyzer=matching,
         cv_optimizer=None,
         interview_prep_service=None,
         profile_service=profiles,
@@ -217,7 +217,7 @@ async def test_generate_match_skips_fallback_when_result_has_skill_verdict(monke
     )
     service = ArtifactService(
         repository=FakeRepo(snapshot=snap),
-        matching_orchestrator=FakeMatchingOrchestrator(),  # returns matched+missing
+        match_analyzer=FakeMatchAnalyzer(),  # returns matched+missing
         cv_optimizer=None,
         interview_prep_service=None,
         profile_service=FakeProfileService(FakeProfile("en", "s", ["python"])),
@@ -248,7 +248,7 @@ async def test_generate_match_runs_fallback_when_verdict_missing(monkeypatch) ->
         def match(self, cv_skills, job_skills, evidence_text=""):
             return SpyResult()
 
-    class EmptyVerdictOrchestrator:
+    class EmptyVerdictAnalyzer:
         async def analyze(self, **kwargs):
             r = FakeMatchResult()
             r.matched_skills = []
@@ -266,7 +266,7 @@ async def test_generate_match_runs_fallback_when_verdict_missing(monkeypatch) ->
     )
     service = ArtifactService(
         repository=FakeRepo(snapshot=snap),
-        matching_orchestrator=EmptyVerdictOrchestrator(),
+        match_analyzer=EmptyVerdictAnalyzer(),
         cv_optimizer=None,
         interview_prep_service=None,
         profile_service=FakeProfileService(FakeProfile("en", "s", ["python"])),
@@ -289,7 +289,7 @@ async def test_generate_match_passes_cv_text_as_evidence() -> None:
         source=JobSnapshotSource.MANUAL.value,
     )
     repo = FakeRepo(snapshot=snap)
-    matching = FakeMatchingOrchestrator()
+    matching = FakeMatchAnalyzer()
     profiles = FakeProfileService(
         FakeProfile(
             "en",
@@ -301,7 +301,7 @@ async def test_generate_match_passes_cv_text_as_evidence() -> None:
 
     service = ArtifactService(
         repository=repo,
-        matching_orchestrator=matching,
+        match_analyzer=matching,
         cv_optimizer=None,
         interview_prep_service=None,
         profile_service=profiles,
@@ -316,7 +316,7 @@ async def test_generate_match_raises_when_no_snapshot() -> None:
     repo = FakeRepo(snapshot=None)
     service = ArtifactService(
         repository=repo,
-        matching_orchestrator=FakeMatchingOrchestrator(),
+        match_analyzer=FakeMatchAnalyzer(),
         cv_optimizer=None,
         interview_prep_service=None,
         profile_service=FakeProfileService(FakeProfile("en", "s", [])),
@@ -336,7 +336,7 @@ async def test_generate_match_raises_when_no_profile() -> None:
     repo = FakeRepo(snapshot=snap)
     service = ArtifactService(
         repository=repo,
-        matching_orchestrator=FakeMatchingOrchestrator(),
+        match_analyzer=FakeMatchAnalyzer(),
         cv_optimizer=None,
         interview_prep_service=None,
         profile_service=FakeProfileService(None),
@@ -380,7 +380,7 @@ async def test_generate_optimization_pulls_missing_skills_from_match() -> None:
 
     service = ArtifactService(
         repository=repo,
-        matching_orchestrator=FakeMatchingOrchestrator(),
+        match_analyzer=FakeMatchAnalyzer(),
         cv_optimizer=optimizer,
         interview_prep_service=None,
         profile_service=profiles,
@@ -405,7 +405,7 @@ async def test_generate_optimization_raises_without_match() -> None:
     profiles = FakeProfileService(FakeProfile("en", "s", ["x"], raw_tex=r"\documentclass{}"))
     service = ArtifactService(
         repository=repo,
-        matching_orchestrator=FakeMatchingOrchestrator(),
+        match_analyzer=FakeMatchAnalyzer(),
         cv_optimizer=FakeOptimizer(),
         interview_prep_service=None,
         profile_service=profiles,
@@ -436,7 +436,7 @@ async def test_generate_interview_prep_uses_snapshot() -> None:
 
     service = ArtifactService(
         repository=repo,
-        matching_orchestrator=FakeMatchingOrchestrator(),
+        match_analyzer=FakeMatchAnalyzer(),
         cv_optimizer=None,
         interview_prep_service=prep_service,
         profile_service=FakeProfileService(FakeProfile("en", "s", [])),

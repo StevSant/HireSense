@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from hiresense.adapters.embedding import SentenceTransformerAdapter
-from hiresense.ports import EmbeddingPort
+from hiresense.shared.adapters.embedding import SentenceTransformerAdapter
+from hiresense.shared.ports import EmbeddingPort
 
 
 def test_adapter_satisfies_embedding_port() -> None:
@@ -29,7 +29,7 @@ async def test_embed_delegates_to_sentence_transformer() -> None:
 @pytest.mark.asyncio
 async def test_embed_lazy_loads_model() -> None:
     with patch(
-        "hiresense.adapters.embedding.sentence_transformer_adapter.SentenceTransformer"
+        "hiresense.shared.adapters.embedding.sentence_transformer_adapter.SentenceTransformer"
     ) as mock_cls:
         mock_instance = MagicMock()
         mock_instance.encode.return_value = [[0.1]]

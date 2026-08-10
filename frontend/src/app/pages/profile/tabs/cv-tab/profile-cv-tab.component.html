@@ -168,7 +168,7 @@
           class="btn-primary"
         >
           @if (loading()) {
-            <span class="btn-spinner"></span>
+            <app-button-spinner />
             Parsing...
           } @else {
             Upload & Parse
@@ -198,7 +198,7 @@
           class="btn-primary"
         >
           @if (loading()) {
-            <span class="btn-spinner"></span>
+            <app-button-spinner />
             Parsing...
           } @else {
             Upload & Parse
@@ -220,8 +220,8 @@
         </div>
       </div>
       <div class="profile-header-actions">
-        <button (click)="replaceCv()" class="btn-secondary">Replace CV</button>
-        <button (click)="addAnotherLanguage()" class="btn-secondary">+ Add Language</button>
+        <button (click)="replaceCv()" class="btn-outline">Replace CV</button>
+        <button (click)="addAnotherLanguage()" class="btn-outline">+ Add Language</button>
       </div>
     </div>
 
@@ -243,12 +243,12 @@
 
     @if (profile(); as p) {
       <div class="cv-actions">
-        <button type="button" class="btn-secondary" (click)="downloadPdf(p.language)">
+        <button type="button" class="btn-outline" (click)="downloadPdf(p.language)">
           Download PDF ({{ p.language }})
         </button>
         <button
           type="button"
-          class="btn-secondary"
+          class="btn-outline"
           [disabled]="translating()"
           (click)="translateToOther()"
         >
@@ -278,7 +278,9 @@
             {{ uploadIntent() === 'replace' ? 'Replace' : 'Upload' }}
             {{ language() === 'es' ? 'Spanish' : 'English' }} CV
           </h3>
-          <button (click)="cancelUpload()" class="btn-secondary btn-sm">Cancel</button>
+          <!-- `btn-sm` used to ride along here but never applied: the page's own
+               `.btn-secondary` outranked it. Dropped rather than carried over. -->
+          <button (click)="cancelUpload()" class="btn-outline">Cancel</button>
         </div>
         <div class="language-selector">
           <label for="upload-language">CV Language</label>

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { SearchFocus } from '../../models/search-focus.model';
+import { SearchFocus } from '@core/contracts/search-focus.model';
 
 const PERCENT = 100;
 

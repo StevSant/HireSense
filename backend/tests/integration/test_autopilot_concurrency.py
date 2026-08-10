@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 
 from hiresense.autopilot.domain import AutopilotPipelineService, DraftStatus
 from hiresense.autopilot.infrastructure import AutopilotDraftOrm, DraftRepositoryImpl  # noqa: F401
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 
 
 class _Entry:

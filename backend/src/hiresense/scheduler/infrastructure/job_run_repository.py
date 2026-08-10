@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import delete, select
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.scheduler.domain import JobRun, JobStatus
 from hiresense.scheduler.infrastructure.job_run_orm import JobRunOrm
 

@@ -12,8 +12,8 @@ import threading
 
 import pytest
 
-from hiresense.adapters.vector_store import PgVectorStore
-from hiresense.ports.vector_store import ScoredResult
+from hiresense.shared.adapters.vector_store import PgVectorStore
+from hiresense.shared.ports.vector_store import ScoredResult
 
 
 class _Row:

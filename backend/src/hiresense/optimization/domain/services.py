@@ -5,12 +5,12 @@ import uuid
 from typing import Any
 
 from hiresense.claims.domain import CandidateClaim, CandidateClaimService
-from hiresense.kernel import extract_json
+from hiresense.shared.kernel import extract_json
 from hiresense.optimization.domain.claim_evidence_validator import ClaimEvidenceValidator
-from hiresense.kernel.prompt_boundary import PromptBoundary
+from hiresense.shared.kernel.prompt_boundary import PromptBoundary
 from hiresense.optimization.domain.errors import OptimizationError
 from hiresense.optimization.domain.models import OptimizationResult, SectionChange
-from hiresense.ports.llm import LLMTimeoutError
+from hiresense.shared.ports.llm import LLMTimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class CVOptimizer:
     ) -> None:
         self._llm = llm
         # Caps job_description in the prompt (unbounded free text). Reuses
-        # the existing match_deep_job_char_limit value, wired from bootstrap.
+        # the existing match_deep_job_char_limit value, wired from composition.
         # original_tex is NEVER truncated — _apply_changes() replaces exact
         # substrings against it, so truncating would break that anchor match.
         self._job_char_limit = job_char_limit

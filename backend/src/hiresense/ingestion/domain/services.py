@@ -18,8 +18,8 @@ from hiresense.ingestion.domain.source_health import SourceHealthTracker, Source
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.ports import JobsRepositoryPort
 from hiresense.ingestion.ports.jobs_repository import QualityUpdate
-from hiresense.kernel.events import JobsIngestedEvent
-from hiresense.observability import get_domain_metrics, get_tracer
+from hiresense.shared.kernel.events import JobsIngestedEvent
+from hiresense.shared.observability import get_domain_metrics, get_tracer
 
 logger = logging.getLogger(__name__)
 _tracer = get_tracer("hiresense.ingestion")

@@ -60,6 +60,12 @@ jobs:
       - name: Lint (ruff)
         run: uv run ruff check .
 
+      # Enforces the ports-and-adapters contract that was previously documented
+      # but unchecked. Scope, mode, and the shrinking per-file debt ledger live
+      # in [tool.pyright] in backend/pyproject.toml.
+      - name: Type check (pyright, basic)
+        run: uv run pyright
+
       # Coverage floor is set just under the measured value (87% on 2026-08-09) so
       # it catches regressions without failing on ordinary churn. Raise it when the
       # real number moves up; never lower it to make a red build green.

@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 
 from hiresense.claims.domain.models import CandidateClaim, ClaimVerificationStatus
 from hiresense.claims.infrastructure import CandidateClaimRepository
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 
 
 @pytest.fixture

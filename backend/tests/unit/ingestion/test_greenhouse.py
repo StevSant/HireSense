@@ -4,7 +4,7 @@ import pytest
 from hiresense.ingestion.adapters.greenhouse_adapter import GreenhouseAdapter
 from hiresense.ingestion.domain.normalizers.greenhouse_normalizer import GreenhouseNormalizer
 from hiresense.ingestion.domain.models import RawJobListing
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 # ---------------------------------------------------------------------------

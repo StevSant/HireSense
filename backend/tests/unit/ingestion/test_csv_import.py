@@ -1,7 +1,7 @@
 import pytest
 
 from hiresense.ingestion.adapters import CSVImportAdapter
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 @pytest.mark.asyncio

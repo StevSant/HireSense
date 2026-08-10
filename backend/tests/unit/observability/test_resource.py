@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from hiresense.observability import build_resource
+from hiresense.shared.observability import build_resource
 
 
 class _FakeSettings:

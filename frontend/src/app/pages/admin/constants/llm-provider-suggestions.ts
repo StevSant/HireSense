@@ -1,4 +1,4 @@
-import { LLMProvider } from '../models/llm-provider.model';
+import { LLMProvider } from '@core/contracts/llm-provider.model';
 
 /** LLM providers selectable in the admin settings form. */
 export const LLM_PROVIDERS = ['anthropic', 'openai', 'groq', 'ollama'] as const;

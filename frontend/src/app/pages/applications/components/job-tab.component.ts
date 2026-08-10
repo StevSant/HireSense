@@ -12,7 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { TrackingService } from '../../../core/services/tracking.service';
-import { ApplicationAggregate } from '../models/application-aggregate.model';
+import { ApplicationAggregate } from '@core/contracts/application-aggregate.model';
 import { SkillChipsComponent } from './skill-chips.component';
 
 @Component({

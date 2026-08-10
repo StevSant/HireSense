@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { SearchFocusComponent } from './search-focus.component';
-import { SearchFocus } from '../../models/search-focus.model';
+import { SearchFocus } from '@core/contracts/search-focus.model';
 
 function focus(over: Partial<SearchFocus> = {}): SearchFocus {
   return {

@@ -115,26 +115,7 @@ textarea {
   gap: 0.6rem;
 }
 
-// `.btn-primary` comes from src/styles.scss — see the note there.
-
-.btn-ghost {
-  padding: 0.5rem 0.9rem;
-  background: transparent;
-  color: $text-secondary;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    color 0.15s ease,
-    background 0.15s ease;
-
-  &:hover:not(:disabled) {
-    color: $text-primary;
-    background: rgba(0, 0, 0, 0.04);
-  }
-}
+// `.btn-primary` and `.btn-ghost` come from src/styles.scss — see the note there.
 
 .btn-danger {
   padding: 0.5rem 0.9rem;

@@ -160,7 +160,7 @@ class TestBulkUpdateScoresLockOrder:
         from sqlalchemy import create_engine
         from sqlalchemy.orm import sessionmaker
 
-        from hiresense.infrastructure.database import Base
+        from hiresense.shared.infrastructure.database import Base
         from hiresense.ingestion.infrastructure.jobs_repository import JobsRepository
         from hiresense.ingestion.infrastructure.models import IngestedJob  # noqa: F401
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from hiresense.kernel import extract_json
-from hiresense.kernel.prompt_boundary import PromptBoundary
+from hiresense.shared.kernel import extract_json
+from hiresense.shared.kernel.prompt_boundary import PromptBoundary
 
 logger = logging.getLogger(__name__)
 

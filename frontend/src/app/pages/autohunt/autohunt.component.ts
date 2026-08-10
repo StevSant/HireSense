@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { AutohuntService } from '../../core/services/autohunt.service';
-import { Digest } from './models/digest.model';
+import { Digest } from '@core/contracts/digest.model';
 import { createSortState } from '../../core/utils/sort-state';
 import { parseSortToken } from '../../core/utils/parse-sort-token';
 import { CompanyLinkComponent } from '../../core/components/company-link';

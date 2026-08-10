@@ -5,7 +5,7 @@ import uuid as uuid_mod
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.inbox.domain import DetectedSignal, EmailSignalKind, SignalState
 from hiresense.inbox.infrastructure.detected_signal_orm import DetectedSignalOrm
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from hiresense.matching.domain.scorers.llm_scorer import BaseLLMScorer
+from hiresense.matching.prompts import CULTURE_FIT
 
 
 class CultureScorer(BaseLLMScorer):
@@ -25,11 +26,5 @@ class CultureScorer(BaseLLMScorer):
             f"Company: {company}\n"
             f"Location / Work Mode: {location}\n"
             f"Description:\n{self._truncate(description)}\n\n"
-            "Evaluate the culture fit of this role. Consider:\n"
-            "- Remote, hybrid, or on-site flexibility\n"
-            "- Work-life balance signals in the description\n"
-            "- Collaboration style (team-oriented vs. solo)\n"
-            "- Company values and mission alignment\n"
-            "A score of 1.0 means excellent culture alignment; 0.0 means poor fit. "
-            'Return JSON: {"score": <float>, "rationale": "<brief>"}.'
+            f"{CULTURE_FIT.bulleted()}"
         )

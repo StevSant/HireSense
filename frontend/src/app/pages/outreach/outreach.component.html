@@ -36,17 +36,15 @@
   <section class="card">
     <h2>Compose</h2>
     <div class="field">
-      <label for="application">Application</label>
-      <select
-        id="application"
-        [ngModel]="selectedApplicationId()"
-        (ngModelChange)="onSelectChange($event)"
-      >
-        <option value="">Select an application…</option>
-        @for (app of applications(); track app.id) {
-          <option [value]="app.id">{{ app.title }} @ {{ app.company }}</option>
-        }
-      </select>
+      <span id="application-label">Application</span>
+      <app-combobox
+        labelledBy="application-label"
+        placeholder="Select an application…"
+        emptyText="No matching application"
+        [options]="applicationOptions()"
+        [value]="selectedApplicationId()"
+        (valueChange)="onSelectChange($event)"
+      />
     </div>
 
     @if (applicationsError()) {

@@ -1,12 +1,14 @@
 <div class="filters-bar">
   <div class="filter-item">
-    <label class="filter-label" for="filter-source">Source</label>
-    <select id="filter-source" (change)="onSourceChange($event)" class="filter-control">
-      <option value="">All sources</option>
-      @for (source of sources(); track source) {
-        <option [value]="source" [selected]="filters().source === source">{{ source }}</option>
-      }
-    </select>
+    <span class="filter-label" id="filter-source-label">Source</span>
+    <app-combobox
+      labelledBy="filter-source-label"
+      placeholder="All sources"
+      emptyText="No matching source"
+      [options]="sourceOptions()"
+      [value]="filters().source ?? ''"
+      (valueChange)="onSourceChange($event)"
+    />
   </div>
 
   <div class="filter-item">

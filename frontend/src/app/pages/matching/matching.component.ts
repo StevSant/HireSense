@@ -14,11 +14,12 @@ import { formatScorePercent } from '../../core/utils/format-score-percent';
 import { dimensionLabel as toDimensionLabel } from '../../core/utils/dimension-label';
 import { mapLlmError } from '../../core/services/llm-error.util';
 import { LlmRunnerService } from '../../core/services/llm-runner.service';
+import { ComboboxComponent, ComboboxOption } from '../../core/components/combobox';
 
 @Component({
   selector: 'app-matching',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, ComboboxComponent],
   templateUrl: './matching.component.html',
   styleUrl: './matching.component.scss',
 })
@@ -50,6 +51,16 @@ export class MatchingComponent implements OnInit {
   );
 
   jobs = signal<NormalizedJob[]>([]);
+
+  // Typing filters the list, so the picker no longer depends on the fetched
+  // page being small enough to scan by eye.
+  jobOptions = computed<ComboboxOption[]>(() => [
+    { value: 'manual', label: 'Manual entry' },
+    ...this.jobs().map((job) => ({
+      value: job.id,
+      label: `${job.title} — ${job.company}`,
+    })),
+  ]);
   selectedJobId = signal<string>('manual');
   profileLoaded = signal(false);
   // Gates the dropdown's job list fetch so it only fires once, the first

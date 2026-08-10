@@ -1,7 +1,8 @@
-import { Component, OnInit, input, output } from '@angular/core';
+import { Component, OnInit, computed, input, output } from '@angular/core';
 import { JobFilters } from '../../models/job-filters.model';
 import { SeniorityLevel } from '../../models/seniority-level.model';
 import { detectUserLocation } from '../../../../core/utils/detect-user-location';
+import { ComboboxComponent, ComboboxOption } from '../../../../core/components/combobox';
 
 const LS_USER_LOCATION = 'hiresense.user_location';
 const LS_STRICT_LOCATION = 'hiresense.strict_location_match';
@@ -9,7 +10,7 @@ const LS_STRICT_LOCATION = 'hiresense.strict_location_match';
 @Component({
   selector: 'app-job-filters',
   standalone: true,
-  imports: [],
+  imports: [ComboboxComponent],
   templateUrl: './job-filters.component.html',
   styleUrl: './job-filters.component.scss',
 })
@@ -50,9 +51,14 @@ export class JobFiltersComponent implements OnInit {
     this.emitFilters({ user_location: detected });
   }
 
-  onSourceChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const value = select.value;
+  // The source list grows with every adapter and ATS portal ingested, so this
+  // one is a filtering combobox rather than a native select.
+  sourceOptions = computed<ComboboxOption[]>(() => [
+    { value: '', label: 'All sources' },
+    ...this.sources().map((source) => ({ value: source, label: source })),
+  ]);
+
+  onSourceChange(value: string): void {
     this.emitFilters({ source: value || undefined });
   }
 

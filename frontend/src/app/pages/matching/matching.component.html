@@ -43,19 +43,16 @@
       }
 
       <div class="job-selector">
-        <label for="job-select">Select a Job</label>
-        <select
-          id="job-select"
-          [ngModel]="selectedJobId()"
-          (ngModelChange)="onJobSelected($event)"
-          (focus)="ensureJobsLoaded()"
-          name="jobSelect"
-        >
-          <option value="manual">Manual entry</option>
-          @for (job of jobs(); track job.id) {
-            <option [value]="job.id">{{ job.title }} — {{ job.company }}</option>
-          }
-        </select>
+        <span id="job-select-label">Select a Job</span>
+        <app-combobox
+          labelledBy="job-select-label"
+          placeholder="Search jobs…"
+          emptyText="No matching job"
+          [options]="jobOptions()"
+          [value]="selectedJobId()"
+          (opened)="ensureJobsLoaded()"
+          (valueChange)="onJobSelected($event)"
+        />
       </div>
 
       <div class="form-row">

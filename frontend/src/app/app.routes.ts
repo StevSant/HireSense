@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
+import { AnalyticsStore } from './pages/analytics/analytics.store';
 
 export const routes: Routes = [
   {
@@ -96,8 +97,49 @@ export const routes: Routes = [
       },
       {
         path: 'analytics',
+        // Route-scoped so the shell and every tab share one store that is
+        // discarded on leave (no stale figures on a later visit).
+        providers: [AnalyticsStore],
         loadComponent: () =>
           import('./pages/analytics/analytics.component').then((m) => m.AnalyticsComponent),
+        children: [
+          { path: '', redirectTo: 'pay', pathMatch: 'full' },
+          {
+            path: 'pay',
+            loadComponent: () =>
+              import('./pages/analytics/tabs/pay-tab/analytics-pay-tab.component').then(
+                (m) => m.AnalyticsPayTabComponent,
+              ),
+          },
+          {
+            path: 'fit',
+            loadComponent: () =>
+              import('./pages/analytics/tabs/fit-tab/analytics-fit-tab.component').then(
+                (m) => m.AnalyticsFitTabComponent,
+              ),
+          },
+          {
+            path: 'pipeline',
+            loadComponent: () =>
+              import('./pages/analytics/tabs/pipeline-tab/analytics-pipeline-tab.component').then(
+                (m) => m.AnalyticsPipelineTabComponent,
+              ),
+          },
+          {
+            path: 'market',
+            loadComponent: () =>
+              import('./pages/analytics/tabs/market-tab/analytics-market-tab.component').then(
+                (m) => m.AnalyticsMarketTabComponent,
+              ),
+          },
+          {
+            path: 'portfolio',
+            loadComponent: () =>
+              import('./pages/analytics/tabs/portfolio-tab/analytics-portfolio-tab.component').then(
+                (m) => m.AnalyticsPortfolioTabComponent,
+              ),
+          },
+        ],
       },
       {
         path: 'opportunities',

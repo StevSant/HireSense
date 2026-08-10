@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import delete, func, select, update
 
@@ -14,6 +14,9 @@ from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.infrastructure.models import IngestedJob
 from hiresense.ingestion.ports.jobs_repository import QualityUpdate, ScoreUpdate, UpsertOutcome
+
+if TYPE_CHECKING:
+    from hiresense.ingestion.ports.jobs_repository import JobsRepositoryPort
 
 
 def _to_orm(job: NormalizedJob, bucket: str) -> IngestedJob:
@@ -450,3 +453,11 @@ class JobsRepository(SqlRepository):
                 session.execute(delete(IngestedJob).where(IngestedJob.id.in_(ids)))
                 session.commit()
             return ids
+
+
+if TYPE_CHECKING:
+    # See the matching guard in in_memory_jobs_repository.py. Checking both
+    # implementations is what makes them provably substitutable rather than
+    # merely documented as such.
+    def _assert_port_conformance(repo: JobsRepository) -> JobsRepositoryPort:
+        return repo

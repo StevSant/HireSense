@@ -2,12 +2,19 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from hiresense.autohunt.domain.digest import Digest
 from hiresense.autohunt.domain.digest_entry import DigestEntry
 from hiresense.ingestion.domain.job_scorer import score_job_against_skills
 from hiresense.observability import get_domain_metrics
+
+if TYPE_CHECKING:
+    # Annotation-only. Importing DigestRepositoryPort at runtime would cycle:
+    # autohunt.ports.repository imports the autohunt.domain package, whose
+    # __init__ imports this module.
+    from hiresense.autohunt.ports.repository import DigestRepositoryPort
+    from hiresense.ingestion.ports.jobs_repository import JobsRepositoryPort
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +26,10 @@ class AutoHuntService:
     def __init__(
         self,
         *,
-        jobs_repo: Any,
+        jobs_repo: JobsRepositoryPort,
         pre_ranker: Any,
         profile_service: Any,
-        digest_repo: Any,
+        digest_repo: DigestRepositoryPort,
         top_n: int,
         min_score: float,
         initial_lookback_days: int,

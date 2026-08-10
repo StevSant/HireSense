@@ -1,7 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { environment } from '../../../environments/environment';
+import { ApiClient, API_ROUTES } from '@core/api';
 import { Observable, of } from 'rxjs';
 import { catchError, finalize, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 import { LoginResponse } from '@core/contracts/login-response.model';
@@ -33,18 +32,18 @@ export class AuthService {
   readonly isAdmin = computed(() => this.role() === 'admin');
 
   constructor(
-    private http: HttpClient,
+    private api: ApiClient,
     private router: Router,
   ) {}
 
   login(username: string, password: string): Observable<SessionUser | null> {
-    return this.http
-      .post<LoginResponse>(`${environment.apiUrl}/auth/login`, { username, password })
+    return this.api
+      .post<LoginResponse>(API_ROUTES.auth.login(), { username, password })
       .pipe(switchMap(() => this.refreshSession()));
   }
 
   me(): Observable<SessionUser> {
-    return this.http.get<SessionUser>(`${environment.apiUrl}/auth/me`);
+    return this.api.get<SessionUser>(API_ROUTES.auth.me());
   }
 
   /** Re-probe /auth/me and update the cached session state. */
@@ -76,8 +75,8 @@ export class AuthService {
   }
 
   logout(): void {
-    this.http
-      .post(`${environment.apiUrl}/auth/logout`, {})
+    this.api
+      .post<void>(API_ROUTES.auth.logout(), {})
       .pipe(
         finalize(() => {
           this.clearSession();

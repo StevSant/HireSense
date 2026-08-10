@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { IngestionService } from './ingestion.service';
-import { environment } from '../../../environments/environment';
 
 describe('IngestionService', () => {
   let service: IngestionService;
@@ -22,7 +21,7 @@ describe('IngestionService', () => {
 
   it('queryJobs omits the rescore param by default (full scoring pipeline)', () => {
     service.queryJobs('boards', 1, 20).subscribe();
-    const req = httpMock.expectOne((r) => r.url === `${environment.apiUrl}/ingestion/jobs`);
+    const req = httpMock.expectOne((r) => r.url === '/api/ingestion/jobs');
     expect(req.request.method).toBe('GET');
     expect(req.request.params.has('rescore')).toBe(false);
     req.flush(empty);
@@ -30,21 +29,21 @@ describe('IngestionService', () => {
 
   it('queryJobs sends rescore=false for the sort-only fast path (#76)', () => {
     service.queryJobs('boards', 2, 20, {}, false, false).subscribe();
-    const req = httpMock.expectOne((r) => r.url === `${environment.apiUrl}/ingestion/jobs`);
+    const req = httpMock.expectOne((r) => r.url === '/api/ingestion/jobs');
     expect(req.request.params.get('rescore')).toBe('false');
     req.flush(empty);
   });
 
   it('queryJobs omits rescore when rescore=true is passed explicitly', () => {
     service.queryJobs('boards', 1, 20, {}, false, true).subscribe();
-    const req = httpMock.expectOne((r) => r.url === `${environment.apiUrl}/ingestion/jobs`);
+    const req = httpMock.expectOne((r) => r.url === '/api/ingestion/jobs');
     expect(req.request.params.has('rescore')).toBe(false);
     req.flush(empty);
   });
 
   it('queryJobs sends the company filter param', () => {
     service.queryJobs('boards', 1, 100, { company: 'Acme' }).subscribe();
-    const req = httpMock.expectOne((r) => r.url === `${environment.apiUrl}/ingestion/jobs`);
+    const req = httpMock.expectOne((r) => r.url === '/api/ingestion/jobs');
     expect(req.request.params.get('company')).toBe('Acme');
     req.flush(empty);
   });

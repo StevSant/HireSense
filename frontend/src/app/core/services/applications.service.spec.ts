@@ -2,11 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ApplicationsService } from './applications.service';
-import { environment } from '../../../environments/environment';
 import { ApplicationListItem } from '@core/contracts/application-list-item.model';
 import { PagedResult } from '@core/contracts/paged-result.model';
 
-const BASE = `${environment.apiUrl}/applications`;
+// Spelled out rather than derived from the route table, so a wrong path in
+// api-routes.ts fails here instead of agreeing with itself.
+const BASE = '/api/applications';
 
 function row(id: number, status = 'saved'): ApplicationListItem {
   return {

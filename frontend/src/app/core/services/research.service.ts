@@ -1,25 +1,23 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { ApiClient, API_ROUTES } from '@core/api';
 import { CompanyResearch } from '@core/contracts/company-research.model';
 import { ResearchRequest } from '@core/contracts/research-request.model';
 
 @Injectable({ providedIn: 'root' })
 export class ResearchService {
-  constructor(private http: HttpClient) {}
+  constructor(private api: ApiClient) {}
 
   research(request: ResearchRequest): Observable<CompanyResearch> {
-    return this.http.post<CompanyResearch>(`${environment.apiUrl}/research`, request);
+    return this.api.post<CompanyResearch>(API_ROUTES.research.root(), request);
   }
 
   refresh(request: ResearchRequest): Observable<CompanyResearch> {
-    return this.http.post<CompanyResearch>(`${environment.apiUrl}/research/refresh`, request);
+    return this.api.post<CompanyResearch>(API_ROUTES.research.refresh(), request);
   }
 
   get(companyName: string): Observable<CompanyResearch> {
-    return this.http.get<CompanyResearch>(
-      `${environment.apiUrl}/research/${encodeURIComponent(companyName)}`,
-    );
+    // The route encodes `:companyName`, so no escaping is done here.
+    return this.api.get<CompanyResearch>(API_ROUTES.research.byCompany({ companyName }));
   }
 }

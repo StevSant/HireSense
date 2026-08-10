@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { ApiClient, API_ROUTES } from '@core/api';
 import { PagedResult } from '@core/contracts/paged-result.model';
 import { fetchAllPages } from '../utils/fetch-all-pages';
 import { toPagedResult } from '../utils/to-paged-result';
@@ -15,15 +15,13 @@ import { CoverLetterLibraryItem } from '@core/contracts/cover-letter-library-ite
 
 @Injectable({ providedIn: 'root' })
 export class ApplicationsService {
-  private http = inject(HttpClient);
-  private base = `${environment.apiUrl}/applications`;
+  private api = inject(ApiClient);
 
   /** One page of applications, with the server's unfiltered total. */
   listPage(limit: number, offset: number): Observable<PagedResult<ApplicationListItem>> {
-    return this.http
-      .get<ApplicationListItem[]>(this.base, {
+    return this.api
+      .getResponse<ApplicationListItem[]>(API_ROUTES.applications.root(), {
         params: new HttpParams().set('limit', limit).set('offset', offset),
-        observe: 'response',
       })
       .pipe(map(toPagedResult));
   }
@@ -45,10 +43,9 @@ export class ApplicationsService {
     limit: number,
     offset: number,
   ): Observable<PagedResult<CoverLetterLibraryItem>> {
-    return this.http
-      .get<CoverLetterLibraryItem[]>(`${this.base}/cover-letters`, {
+    return this.api
+      .getResponse<CoverLetterLibraryItem[]>(API_ROUTES.applications.coverLetters(), {
         params: new HttpParams().set('limit', limit).set('offset', offset),
-        observe: 'response',
       })
       .pipe(map(toPagedResult));
   }
@@ -59,11 +56,11 @@ export class ApplicationsService {
   }
 
   get(id: string): Observable<ApplicationAggregate> {
-    return this.http.get<ApplicationAggregate>(`${this.base}/${id}`);
+    return this.api.get<ApplicationAggregate>(API_ROUTES.applications.byId({ id }));
   }
 
   createFromJob(jobId: string): Observable<ApplicationAggregate> {
-    return this.http.post<ApplicationAggregate>(this.base, { job_id: jobId });
+    return this.api.post<ApplicationAggregate>(API_ROUTES.applications.root(), { job_id: jobId });
   }
 
   createManual(payload: {
@@ -78,29 +75,29 @@ export class ApplicationsService {
     source?: string;
     posted_date?: string;
   }): Observable<ApplicationAggregate> {
-    return this.http.post<ApplicationAggregate>(this.base, payload);
+    return this.api.post<ApplicationAggregate>(API_ROUTES.applications.root(), payload);
   }
 
   remove(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.base}/${id}`);
+    return this.api.delete<void>(API_ROUTES.applications.byId({ id }));
   }
 
   updateSnapshot(
     id: string,
     payload: { description?: string; required_skills?: string[] },
   ): Observable<ApplicationAggregate> {
-    return this.http.put<ApplicationAggregate>(`${this.base}/${id}/job-snapshot`, payload);
+    return this.api.put<ApplicationAggregate>(API_ROUTES.applications.jobSnapshot({ id }), payload);
   }
 
   regenerateSkills(id: string): Observable<ApplicationAggregate> {
-    return this.http.post<ApplicationAggregate>(
-      `${this.base}/${id}/job-snapshot/regenerate-skills`,
+    return this.api.post<ApplicationAggregate>(
+      API_ROUTES.applications.regenerateSkills({ id }),
       {},
     );
   }
 
   generateMatch(id: string, cvLanguage: string): Observable<ApplicationMatch> {
-    return this.http.post<ApplicationMatch>(`${this.base}/${id}/match`, {
+    return this.api.post<ApplicationMatch>(API_ROUTES.applications.match({ id }), {
       cv_language: cvLanguage,
     });
   }
@@ -109,22 +106,25 @@ export class ApplicationsService {
     id: string,
     payload: { cv_language: string; match_id?: string },
   ): Observable<CvOptimization> {
-    return this.http.post<CvOptimization>(`${this.base}/${id}/optimize`, payload);
+    return this.api.post<CvOptimization>(API_ROUTES.applications.optimize({ id }), payload);
   }
 
   generateInterviewPrep(id: string): Observable<ApplicationInterviewPrep> {
-    return this.http.post<ApplicationInterviewPrep>(`${this.base}/${id}/interview-prep`, {});
+    return this.api.post<ApplicationInterviewPrep>(
+      API_ROUTES.applications.interviewPrep({ id }),
+      {},
+    );
   }
 
   generateCoverLetter(
     id: string,
     payload: { cv_language: string; tone?: string },
   ): Observable<CoverLetter> {
-    return this.http.post<CoverLetter>(`${this.base}/${id}/cover-letter`, payload);
+    return this.api.post<CoverLetter>(API_ROUTES.applications.coverLetter({ id }), payload);
   }
 
   downloadCvPdf(id: string): Observable<Blob> {
-    return this.http.get(`${this.base}/${id}/cv.pdf`, { responseType: 'blob' });
+    return this.api.getBlob(API_ROUTES.applications.cvPdf({ id }));
   }
 
   /**
@@ -138,24 +138,24 @@ export class ApplicationsService {
     let params = new HttpParams();
     if (opts.original) params = params.set('original', 'true');
     if (opts.language) params = params.set('language', opts.language);
-    return this.http.get(`${this.base}/${id}/cv.pdf`, { params, responseType: 'blob' });
+    return this.api.getBlob(API_ROUTES.applications.cvPdf({ id }), { params });
   }
 
   /** Compile the user's untouched profile CV (no optimization required). */
   downloadOriginalCvPdf(id: string, language: 'en' | 'es' = 'en'): Observable<Blob> {
     const params = new HttpParams().set('original', 'true').set('language', language);
-    return this.http.get(`${this.base}/${id}/cv.pdf`, { params, responseType: 'blob' });
+    return this.api.getBlob(API_ROUTES.applications.cvPdf({ id }), { params });
   }
 
   downloadCoverLetterPdf(id: string): Observable<Blob> {
-    return this.http.get(`${this.base}/${id}/cover-letter.pdf`, { responseType: 'blob' });
+    return this.api.getBlob(API_ROUTES.applications.coverLetterPdf({ id }));
   }
 
   downloadBundle(id: string): Observable<Blob> {
-    return this.http.get(`${this.base}/${id}/bundle.zip`, { responseType: 'blob' });
+    return this.api.getBlob(API_ROUTES.applications.bundleZip({ id }));
   }
 
   markApplied(id: string): Observable<ApplicationAggregate> {
-    return this.http.post<ApplicationAggregate>(`${this.base}/${id}/mark-applied`, {});
+    return this.api.post<ApplicationAggregate>(API_ROUTES.applications.markApplied({ id }), {});
   }
 }

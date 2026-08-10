@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-import { environment } from '../../../environments/environment';
+import { ApiClient, API_ROUTES } from '@core/api';
 import { BreakdownResponse } from '@core/contracts/breakdown-response.model';
 import { DashboardSummary } from '@core/contracts/dashboard-summary.model';
 import { RecentCallsFilters } from '@core/contracts/recent-calls-filters.model';
@@ -11,16 +11,14 @@ import { TimeseriesResponse } from '@core/contracts/timeseries-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class AdminUsageService {
-  private readonly base = `${environment.apiUrl}/admin/usage`;
-
-  constructor(private http: HttpClient) {}
+  constructor(private api: ApiClient) {}
 
   summary(): Observable<DashboardSummary> {
-    return this.http.get<DashboardSummary>(`${this.base}/summary`);
+    return this.api.get<DashboardSummary>(API_ROUTES.admin.usage.summary());
   }
 
   timeseries(days = 30): Observable<TimeseriesResponse> {
-    return this.http.get<TimeseriesResponse>(`${this.base}/timeseries`, {
+    return this.api.get<TimeseriesResponse>(API_ROUTES.admin.usage.timeseries(), {
       params: new HttpParams().set('days', String(days)),
     });
   }
@@ -33,7 +31,7 @@ export class AdminUsageService {
     if (days !== null) {
       params = params.set('days', String(days));
     }
-    return this.http.get<BreakdownResponse>(`${this.base}/breakdown`, { params });
+    return this.api.get<BreakdownResponse>(API_ROUTES.admin.usage.breakdown(), { params });
   }
 
   recentCalls(filters: RecentCallsFilters = {}): Observable<RecentCallsResponse> {
@@ -43,7 +41,7 @@ export class AdminUsageService {
         params = params.set(k, String(v));
       }
     }
-    return this.http.get<RecentCallsResponse>(`${this.base}/calls`, { params });
+    return this.api.get<RecentCallsResponse>(API_ROUTES.admin.usage.calls(), { params });
   }
 
   exportCsvUrl(filters: RecentCallsFilters = {}): string {
@@ -51,6 +49,6 @@ export class AdminUsageService {
       .filter(([, v]) => v !== undefined && v !== null && v !== '')
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
       .join('&');
-    return `${this.base}/export${qs ? `?${qs}` : ''}`;
+    return `${this.api.url(API_ROUTES.admin.usage.exportCsv())}${qs ? `?${qs}` : ''}`;
   }
 }

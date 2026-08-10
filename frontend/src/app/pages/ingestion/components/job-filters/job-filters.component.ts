@@ -24,7 +24,7 @@ export class JobFiltersComponent implements OnInit {
 
   // Always emits exactly once, synchronously, even when there's no stored
   // location — this is the single source of truth for the parent's FIRST
-  // job load (see the comment on IngestionComponent.loadJobs$). Emitting
+  // job load (see the comment on IngestionStore.loadJobs$). Emitting
   // unconditionally means the parent never needs its own separate initial
   // loadJobs() call, so there's only ever one request on mount regardless of
   // whether a location preference is stored.

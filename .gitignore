@@ -29,6 +29,9 @@ Thumbs.db
 site/
 # Playwright MCP scratch output
 .playwright-mcp/
+# Angular build cache. frontend/.gitignore covers frontend/.angular/, but running
+# `ng`/`vitest` from the repo root drops a second cache here.
+.angular/
 # Frontend visual-test screenshots (scratch; may capture real profile data)
 frontend/.screenshots/
 frontend/playwright-report/

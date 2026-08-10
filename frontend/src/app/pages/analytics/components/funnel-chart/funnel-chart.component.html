@@ -1,5 +1,5 @@
 @if (metrics().total_applications === 0) {
-  <p class="funnel-empty">Track applications to see your funnel.</p>
+  <app-status-note>Track applications to see your funnel.</app-status-note>
 } @else {
   <ul class="funnel-list">
     @for (s of metrics().stages; track s.stage) {

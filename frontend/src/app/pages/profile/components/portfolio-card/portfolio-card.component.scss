@@ -27,7 +27,10 @@
   }
 }
 
-// Inline sync button — secondary style matching .btn-secondary in profile.component.scss
+// Inline sync button. Same design as the design system's `.btn-outline`
+// (src/styles.scss) at a smaller size, and with `font-family: inherit` that
+// `.btn-outline` does not set. Left local until that size difference is either
+// a modifier or a decision to render this button at the standard size.
 .btn {
   padding: 0.4rem 1rem;
   background: $bg-card;

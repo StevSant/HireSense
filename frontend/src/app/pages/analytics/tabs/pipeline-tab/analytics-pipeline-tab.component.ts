@@ -2,12 +2,13 @@ import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/cor
 import { FunnelChartComponent } from '../../components/funnel-chart/funnel-chart.component';
 import { PERCENT } from '../../analytics-row-caps';
 import { AnalyticsStore } from '../../analytics.store';
+import { StatusNoteComponent } from '@shared/ui';
 
 /** Analytics -> Pipeline: the application funnel and outcomes by source. */
 @Component({
   selector: 'app-analytics-pipeline-tab',
   standalone: true,
-  imports: [FunnelChartComponent],
+  imports: [FunnelChartComponent, StatusNoteComponent],
   templateUrl: './analytics-pipeline-tab.component.html',
   styleUrl: '../../analytics-tab-shared.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

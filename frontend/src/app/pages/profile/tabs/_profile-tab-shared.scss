@@ -32,44 +32,18 @@
   }
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+// `spin` is the app-wide keyframe from src/styles.scss; keyframes are not
+// scoped by Angular's emulated encapsulation, so the copy that used to sit
+// here was pure duplication.
 
 // --- Buttons ---
-// `.btn-primary` and `.btn-sm` come from src/styles.scss. Redeclaring them
-// here would win on specificity (Angular scopes component rules with an
-// [_ngcontent-*] attribute) and quietly fork the design system.
-
-.btn-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-.btn-secondary {
-  padding: 0.5rem 1.15rem;
-  background: $bg-card;
-  color: $accent;
-  border: 1px solid rgba($accent, 0.3);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition:
-    background var(--duration) var(--ease),
-    border-color var(--duration) var(--ease);
-
-  &:hover {
-    background: $accent-bg;
-    border-color: rgba($accent, 0.5);
-  }
-}
+// `.btn-primary`, `.btn-outline` and `.btn-sm` come from src/styles.scss.
+// Redeclaring them here would win on specificity (Angular scopes component
+// rules with an [_ngcontent-*] attribute) and quietly fork the design system —
+// which is exactly what the local `.btn-secondary` here used to do: same class
+// name as the global neutral button, entirely different accent-outline look.
+// It is `.btn-outline` in the design system now.
+// The in-button spinner is <app-button-spinner> (shared/ui).
 
 // --- Alert ---
 .alert-error {

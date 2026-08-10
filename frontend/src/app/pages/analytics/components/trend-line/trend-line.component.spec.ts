@@ -23,6 +23,6 @@ describe('TrendLineComponent', () => {
 
   it('shows empty state with no points', () => {
     const fixture = mount([]);
-    expect(fixture.nativeElement.querySelector('.trend-empty')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('app-status-note')).not.toBeNull();
   });
 });

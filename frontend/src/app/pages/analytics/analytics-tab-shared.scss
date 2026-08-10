@@ -108,11 +108,8 @@
   font-size: 0.9rem;
 }
 
-.section-loading,
-.section-empty {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
+/* Loading and empty notes render as <app-status-note> (shared/ui) — the muted
+   treatment they used to declare here belongs to that primitive now. */
 
 .section-error {
   color: var(--danger);

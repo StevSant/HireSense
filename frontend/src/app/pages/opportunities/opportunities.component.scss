@@ -200,15 +200,14 @@
   }
 }
 
-.result-count,
-.section-loading,
-.section-empty {
+.result-count {
   color: var(--text-muted);
   font-size: 0.85rem;
 }
 
-.section-loading,
-.section-empty {
+/* The muted type comes from <app-status-note>; only the spacing inside the
+   results card is this page's business. */
+.list-note {
   padding: 1.25rem;
 }
 

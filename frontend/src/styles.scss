@@ -98,6 +98,54 @@ h4 {
   }
 }
 
+/* Accent-outline secondary. A genuinely different control from .btn-secondary
+   (which is neutral grey): it reads as the accent-coloured alternative to a
+   filled .btn-primary. It existed already, hand-copied into matching and the
+   profile tabs under the NAME `.btn-secondary` — so the same class rendered
+   two different buttons depending on which page you were on. Lifted here
+   verbatim, under its own name, so the two can no longer be confused.
+
+   Deliberately does not @include button-base: the copies never did, and
+   adding it now would change the padding/font of every adopting call site. */
+.btn-outline {
+  padding: 0.5rem 1.15rem;
+  background: var(--bg-card);
+  color: var(--accent);
+  border: 1px solid rgba($accent, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition:
+    background var(--duration) var(--ease),
+    border-color var(--duration) var(--ease);
+
+  &:hover {
+    background: var(--accent-bg);
+    border-color: rgba($accent, 0.5);
+  }
+}
+
+/* Borderless tertiary action — "Cancel" next to a primary submit. */
+.btn-ghost {
+  padding: 0.5rem 0.9rem;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.04);
+  }
+}
+
 .btn-sm {
   padding: 0.3rem 0.75rem;
   font-size: 0.8rem;

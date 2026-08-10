@@ -67,7 +67,7 @@ describe('FunnelChartComponent', () => {
 
   it('empty state when no applications', () => {
     const fixture = mount({ stages: [], rejected: 0, current_rejected: 0, total_applications: 0 });
-    expect(fixture.nativeElement.querySelector('.funnel-empty')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('app-status-note')).not.toBeNull();
   });
 
   it('names the steepest drop-off as an insight', () => {

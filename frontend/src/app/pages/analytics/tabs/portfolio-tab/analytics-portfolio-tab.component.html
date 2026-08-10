@@ -20,24 +20,24 @@
         }
       </ul>
       @if (e.visits.length > engagementRows(e).length) {
-        <p class="section-loading">
+        <app-status-note>
           Showing the {{ engagementRows(e).length }} most recent of {{ e.visits.length }} visits.
-        </p>
+        </app-status-note>
       }
     </section>
   } @else if (e.configured) {
     <section class="analytics-card">
       <h2 class="card-title">Portfolio engagement</h2>
-      <p class="section-empty">No portfolio visits recorded yet.</p>
+      <app-status-note>No portfolio visits recorded yet.</app-status-note>
     </section>
   } @else {
     <section class="analytics-card">
       <h2 class="card-title">Portfolio engagement</h2>
-      <p class="section-empty">
+      <app-status-note>
         Portfolio tracking isn't configured, so there's nothing to report here yet.
-      </p>
+      </app-status-note>
     </section>
   }
 } @else {
-  <p class="section-loading">Loading…</p>
+  <app-status-note>Loading…</app-status-note>
 }

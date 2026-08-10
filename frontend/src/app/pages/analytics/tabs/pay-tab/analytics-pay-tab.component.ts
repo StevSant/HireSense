@@ -2,12 +2,13 @@ import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/cor
 import { CompBenchmarkComponent } from '../../components/comp-benchmark/comp-benchmark.component';
 import { PayPeriod } from '../../../../core/utils/pay-period';
 import { AnalyticsStore } from '../../analytics.store';
+import { StatusNoteComponent } from '@shared/ui';
 
 /** Analytics -> Pay: the comp benchmark plus the market's disclosed salary band. */
 @Component({
   selector: 'app-analytics-pay-tab',
   standalone: true,
-  imports: [CompBenchmarkComponent],
+  imports: [CompBenchmarkComponent, StatusNoteComponent],
   templateUrl: './analytics-pay-tab.component.html',
   styleUrl: '../../analytics-tab-shared.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

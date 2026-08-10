@@ -15,11 +15,12 @@ import { dimensionLabel as toDimensionLabel } from '../../core/utils/dimension-l
 import { mapLlmError } from '../../core/services/llm-error.util';
 import { LlmRunnerService } from '../../core/services/llm-runner.service';
 import { ComboboxComponent, ComboboxOption } from '../../core/components/combobox';
+import { ButtonSpinnerComponent } from '@shared/ui';
 
 @Component({
   selector: 'app-matching',
   standalone: true,
-  imports: [FormsModule, ComboboxComponent],
+  imports: [FormsModule, ComboboxComponent, ButtonSpinnerComponent],
   templateUrl: './matching.component.html',
   styleUrl: './matching.component.scss',
 })

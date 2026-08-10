@@ -124,7 +124,7 @@
       }
       <button (click)="analyze()" [disabled]="loading()" class="btn-primary">
         @if (loading()) {
-          <span class="btn-spinner"></span>
+          <app-button-spinner />
           Analyzing...
         } @else {
           Analyze Match
@@ -144,7 +144,7 @@
     <div class="results">
       <div class="results-header">
         <h2>Match Results</h2>
-        <button (click)="startNewAnalysis()" class="btn-secondary">New Analysis</button>
+        <button (click)="startNewAnalysis()" class="btn-outline">New Analysis</button>
       </div>
 
       <div class="score-overview">
@@ -269,7 +269,7 @@
       <section class="evaluation-section">
         <button (click)="evaluate()" [disabled]="evaluating()" class="btn-primary">
           @if (evaluating()) {
-            <span class="btn-spinner"></span>
+            <app-button-spinner />
             Evaluating...
           } @else {
             Run 10-Dimension Evaluation

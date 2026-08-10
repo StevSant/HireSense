@@ -16,6 +16,7 @@ import { createSortState } from '../../core/utils/sort-state';
 import { PaginatorComponent } from '../../core/components/paginator';
 import { FetchOpportunitiesResponse } from '@core/contracts/fetch-opportunities-response.model';
 import { Opportunity } from '@core/contracts/opportunity.model';
+import { StatusNoteComponent } from '@shared/ui';
 
 type OppSortField = 'match' | 'title' | 'country' | 'language' | 'cost' | 'when' | 'source';
 
@@ -29,6 +30,7 @@ type OppSortField = 'match' | 'title' | 'country' | 'language' | 'cost' | 'when'
     PercentPipe,
     PaginatorComponent,
     SortableHeaderDirective,
+    StatusNoteComponent,
   ],
   templateUrl: './opportunities.component.html',
   styleUrl: './opportunities.component.scss',

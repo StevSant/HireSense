@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { FunnelMetrics } from '@core/contracts/funnel-metrics.model';
+import { StatusNoteComponent } from '@shared/ui';
 
 /** Floor for the widest stage so an all-empty funnel doesn't divide by zero. */
 const MIN_REACHED = 1;
@@ -9,6 +10,7 @@ const PERCENT_SCALE = 100;
 @Component({
   selector: 'app-funnel-chart',
   standalone: true,
+  imports: [StatusNoteComponent],
   templateUrl: './funnel-chart.component.html',
   styleUrl: './funnel-chart.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

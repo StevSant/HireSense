@@ -1,6 +1,6 @@
 import pytest
 
-from hiresense.ingestion.api.routes import _gather_profile
+from hiresense.ingestion.api.job_feed_service import _gather_profile
 
 
 class _FakeProfileService:

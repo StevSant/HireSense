@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from hiresense.ingestion.prompts import render_quick_scoring_system_prompt
-from hiresense.kernel.prompts import (
+from hiresense.shared.kernel.prompts import (
     BATCH_SCORING_CONSEQUENCES,
     DEEP_ANALYSIS_CONSEQUENCES,
     MODERATE_THRESHOLD,

@@ -4,8 +4,8 @@ import logging
 import re
 from typing import Any
 
-from hiresense.kernel import extract_json
-from hiresense.ports.llm import LLMTimeoutError
+from hiresense.shared.kernel import extract_json
+from hiresense.shared.ports.llm import LLMTimeoutError
 from hiresense.research.domain.errors import CompanyResearchError
 from hiresense.research.domain.firmographics import Firmographics
 from hiresense.research.domain.models import CompanyResearch

@@ -116,11 +116,11 @@ class JobFeedService:
         This was the body of `GET /ingestion/jobs`, a 327-line handler that imported
         five other bounded contexts — mostly into their `domain/` internals rather
         than through ports — and assembled them itself. That made the route a second
-        composition root: cross-context wiring living outside `bootstrap/`, where
+        composition root: cross-context wiring living outside `composition/`, where
         the rest of it is declared.
 
-    It lives beside the route it came from rather than in `bootstrap/`: importing
-        a bootstrap submodule from `api/` cycles, because `bootstrap/__init__`
+    It lives beside the route it came from rather than in `composition/`: importing
+        a composition submodule from `api/` cycles, because `composition/__init__`
         eagerly imports every builder and the builders import each context's api
         package. Extracting the use case and deciding which layer owns it are
         separate changes; this is the first. The composition-layer restructure is

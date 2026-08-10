@@ -31,8 +31,8 @@ from typing import Any
 from hiresense.ingestion.domain.embedding_text import embed_profile_cached
 from hiresense.ingestion.domain.job_scorer import combine_fit_score
 from hiresense.ingestion.domain.models import NormalizedJob
-from hiresense.kernel import LRUCache
-from hiresense.observability import get_domain_metrics
+from hiresense.shared.kernel import LRUCache
+from hiresense.shared.observability import get_domain_metrics
 
 logger = logging.getLogger(__name__)
 

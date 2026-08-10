@@ -11,7 +11,7 @@ from hiresense.ingestion.domain.portal_scanner import (
     ScanFilters,
 )
 from hiresense.ingestion.infrastructure import InMemoryJobsRepository
-from hiresense.kernel.events import DomainEvent
+from hiresense.shared.kernel.events import DomainEvent
 
 
 # ---------------------------------------------------------------------------

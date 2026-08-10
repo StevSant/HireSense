@@ -6,7 +6,7 @@ from typing import Protocol
 class DimensionScorerPort(Protocol):
     """Snapshots a job's per-dimension matching scores at outcome time.
 
-    Implemented by a bootstrap adapter that runs the configured matching
+    Implemented by a composition adapter that runs the configured matching
     dimension scorers for the job (by id) against the current profile and
     returns ``{dimension_name: score}``. Returns ``None`` when the job,
     profile, scorers, or LLM are unavailable, or on any failure — in which

@@ -12,7 +12,7 @@ from hiresense.admin.api import router as admin_router
 from hiresense.analytics.api import router as analytics_router
 from hiresense.applications.api.routes import router as applications_router
 from hiresense.autohunt.api import router as autohunt_router
-from hiresense.bootstrap import (
+from hiresense.composition import (
     MatchingDimensionScorerAdapter,
     build_admin,
     build_analytics,
@@ -39,13 +39,13 @@ from hiresense.bootstrap import (
     build_shared_infra,
     build_tracking,
 )
-from hiresense.config import Settings
-from hiresense.observability import setup_telemetry
-from hiresense.ports import LLMTimeoutError
+from hiresense.shared.config import Settings
+from hiresense.shared.observability import setup_telemetry
+from hiresense.shared.ports import LLMTimeoutError
 from hiresense.cover_letter_templates.api import router as cover_letter_templates_router
 from hiresense.claims.api import router as claims_router
 from hiresense.identity.api import router as auth_router
-from hiresense.kernel import (
+from hiresense.shared.kernel import (
     SecurityHeadersMiddleware,
     SlidingWindowRateLimiter,
     register_domain_exception_handlers,

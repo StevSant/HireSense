@@ -1,8 +1,8 @@
-"""Guard that infrastructure/registry.py imports every ORM table.
+"""Guard that shared/infrastructure/registry.py imports every ORM table.
 
 Alembic's ``--autogenerate`` only sees tables whose ORM classes have been
 imported by the time ``Base.metadata`` is inspected, and the only module it
-imports for that purpose is ``hiresense.infrastructure.registry``. If a new
+imports for that purpose is ``hiresense.shared.infrastructure.registry``. If a new
 ``*Orm`` class is added but not wired into the registry, autogenerate silently
 misses its table.
 
@@ -25,10 +25,10 @@ _PROBE = textwrap.dedent(
     import pkgutil
 
     import hiresense
-    from hiresense.infrastructure.database import Base
+    from hiresense.shared.infrastructure.database import Base
 
     # Importing the registry alone is what Alembic relies on.
-    importlib.import_module("hiresense.infrastructure.registry")
+    importlib.import_module("hiresense.shared.infrastructure.registry")
     registry_tables = set(Base.metadata.tables)
 
     # Walk the whole package to discover every mapped table.
@@ -59,6 +59,6 @@ def test_registry_imports_every_orm_table() -> None:
     missing = json.loads(result.stdout.strip().splitlines()[-1])
     assert missing == [], (
         "These ORM tables are not reachable through "
-        "hiresense.infrastructure.registry and will be missed by Alembic "
+        "hiresense.shared.infrastructure.registry and will be missed by Alembic "
         f"autogenerate: {missing}"
     )

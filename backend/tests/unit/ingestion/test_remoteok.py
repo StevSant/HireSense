@@ -1,6 +1,6 @@
 import pytest
 from hiresense.ingestion.adapters.remoteok import RemoteOKAdapter
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 class FakeResponse:

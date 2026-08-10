@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 
-from hiresense.observability import JsonLogFormatter
+from hiresense.shared.observability import JsonLogFormatter
 
 
 def _record(**extra) -> logging.LogRecord:

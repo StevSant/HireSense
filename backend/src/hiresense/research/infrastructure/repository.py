@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import func, select
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.research.domain.models import CompanyResearch
 from hiresense.research.infrastructure.orm import CompanyResearchOrm
 

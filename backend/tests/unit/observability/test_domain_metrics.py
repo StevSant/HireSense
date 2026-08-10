@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from hiresense.observability import get_domain_metrics
+from hiresense.shared.observability import get_domain_metrics
 
 
 def test_domain_metrics_singleton_exposes_instruments():

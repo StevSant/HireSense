@@ -3,7 +3,7 @@ from __future__ import annotations
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 
 
 class JobToggleOrm(Base):

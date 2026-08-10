@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from hiresense.adapters.latex import LatexCompiler
-from hiresense.ports import LatexCompileError
+from hiresense.shared.adapters.latex import LatexCompiler
+from hiresense.shared.ports import LatexCompileError
 
 
 def _render(**overrides: object) -> str:

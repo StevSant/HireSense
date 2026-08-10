@@ -3,7 +3,7 @@ from __future__ import annotations
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
 from hiresense.ingestion.domain.quick_match_verdict import QuickMatchVerdict
 from hiresense.ingestion.infrastructure.job_match_cache_model import JobMatchCache

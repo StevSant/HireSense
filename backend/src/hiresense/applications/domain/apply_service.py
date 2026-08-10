@@ -8,8 +8,8 @@ from typing import Any
 
 import logging
 
-from hiresense.ports import LatexCompileError, LatexCompilerPort
-from hiresense.kernel.exceptions import NotFoundError
+from hiresense.shared.ports import LatexCompileError, LatexCompilerPort
+from hiresense.shared.kernel.exceptions import NotFoundError
 from hiresense.applications.domain.aggregate import CoverLetterView
 from hiresense.applications.domain.ats_field_map import build_autofill_plan
 from hiresense.applications.domain.autofill_plan_view import AutofillPlanView

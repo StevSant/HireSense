@@ -3,7 +3,7 @@
 The sibling test ``test_preference_implicit_flow.py`` inlines its own copy of
 the bus subscriber, so a regression that drops or breaks the
 ``infra.event_bus.subscribe("tracking.status_changed", ...)`` call inside
-``bootstrap.preference.build_preference`` would pass silently there. This test
+``composition.preference.build_preference`` would pass silently there. This test
 closes that gap: it constructs a real :class:`SharedInfra`, calls the real
 ``build_preference(infra)`` (the code under test — its own ``subscribe()`` is
 what registers the handler), then publishes events through the real
@@ -23,12 +23,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from hiresense.adapters.event_bus import InMemoryEventBus
-from hiresense.bootstrap.preference import build_preference
-from hiresense.bootstrap.shared_infra import SharedInfra
-from hiresense.config import Settings
-from hiresense.infrastructure.database import Base
-from hiresense.kernel.events import TrackingStatusChangedEvent
+from hiresense.shared.adapters.event_bus import InMemoryEventBus
+from hiresense.composition.preference import build_preference
+from hiresense.composition.shared_infra import SharedInfra
+from hiresense.shared.config import Settings
+from hiresense.shared.infrastructure.database import Base
+from hiresense.shared.kernel.events import TrackingStatusChangedEvent
 from hiresense.preference.domain import FeedbackKind, FeedbackSource
 from hiresense.preference.infrastructure.orm import (  # noqa: F401  registers tables
     FeedbackSignalOrm,

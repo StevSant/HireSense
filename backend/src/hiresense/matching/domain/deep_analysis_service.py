@@ -8,9 +8,9 @@ from hiresense.ingestion.domain.profile_hash import score_profile_hash
 from hiresense.matching.domain.deep_analysis_result import DeepAnalysisResult
 from hiresense.matching.domain.deep_dimension import DeepDimension
 from hiresense.matching.prompts import render_deep_analysis_system_prompt
-from hiresense.kernel.prompts import prompt_fingerprint, verdict_label
-from hiresense.kernel import extract_json
-from hiresense.ports import LLMPort
+from hiresense.shared.kernel.prompts import prompt_fingerprint, verdict_label
+from hiresense.shared.kernel import extract_json
+from hiresense.shared.ports import LLMPort
 
 logger = logging.getLogger(__name__)
 

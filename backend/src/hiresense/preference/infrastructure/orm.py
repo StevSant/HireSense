@@ -6,8 +6,8 @@ from datetime import datetime
 from sqlalchemy import DateTime, Integer, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from hiresense.infrastructure import JSONB_OR_JSON
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure import JSONB_OR_JSON
+from hiresense.shared.infrastructure.database import Base
 
 # Embeddings are stored as JSON float arrays (not a pgvector column): the taste
 # math runs in Python and the ANN query targets the separate vector_embeddings

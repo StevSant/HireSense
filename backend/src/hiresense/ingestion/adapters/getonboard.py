@@ -7,7 +7,7 @@ from typing import Any
 from hiresense.ingestion.domain.html_stripper import strip_html
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.ports import CompanyProfileSinkPort
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-from hiresense.config import Settings
+from hiresense.shared.config import Settings
 
 
 def test_scheduler_settings_have_safe_defaults():

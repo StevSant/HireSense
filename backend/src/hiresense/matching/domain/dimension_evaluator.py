@@ -6,14 +6,14 @@ from typing import Any
 
 from opentelemetry import trace
 
-from hiresense.kernel.exceptions import UpstreamUnavailableError
+from hiresense.shared.kernel.exceptions import UpstreamUnavailableError
 from hiresense.matching.domain.eligibility import (
     EligibilityStatus,
     determine_work_authorization_eligibility,
 )
 from hiresense.matching.domain.evaluation_result import EvaluationResult
 from hiresense.matching.domain.scorers.base import DimensionResult
-from hiresense.observability import get_domain_metrics, get_tracer
+from hiresense.shared.observability import get_domain_metrics, get_tracer
 
 logger = logging.getLogger(__name__)
 _tracer = get_tracer("hiresense.matching")

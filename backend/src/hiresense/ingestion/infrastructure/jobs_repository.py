@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import delete, func, select, update
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
 from hiresense.ingestion.domain.identity import identity_key

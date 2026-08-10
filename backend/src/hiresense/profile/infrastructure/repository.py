@@ -5,7 +5,7 @@ from typing import Any
 
 from sqlalchemy import select
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.profile.domain.apply_profile import ApplyProfile
 from hiresense.profile.domain.models import CandidateProfile, CVSection
 from hiresense.profile.infrastructure.orm import ProfileOrm

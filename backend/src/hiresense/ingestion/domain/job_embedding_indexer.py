@@ -5,7 +5,7 @@ from typing import Any
 
 from hiresense.ingestion.domain.embedding_text import job_text
 from hiresense.ingestion.domain.models import NormalizedJob
-from hiresense.observability import get_domain_metrics
+from hiresense.shared.observability import get_domain_metrics
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from hiresense.autohunt.domain.digest import Digest
 from hiresense.autohunt.domain.digest_entry import DigestEntry
 from hiresense.ingestion.domain.job_scorer import score_job_against_skills
-from hiresense.observability import get_domain_metrics
+from hiresense.shared.observability import get_domain_metrics
 
 if TYPE_CHECKING:
     # Annotation-only. Importing DigestRepositoryPort at runtime would cycle:

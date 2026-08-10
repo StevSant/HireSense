@@ -6,7 +6,7 @@ from sqlalchemy import delete, select
 
 from hiresense.autohunt.domain import Digest, DigestEntry
 from hiresense.autohunt.infrastructure.orm import DigestOrm
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 
 # Sortable columns for the digests listing, keyed by `<field>_<dir>` token.
 # Anything else falls back to newest-first.

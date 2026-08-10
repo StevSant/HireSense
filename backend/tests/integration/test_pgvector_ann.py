@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import pytest
 
-from hiresense.adapters.vector_store import PgVectorStore
+from hiresense.shared.adapters.vector_store import PgVectorStore
 
 pytestmark = pytest.mark.pgvector
 

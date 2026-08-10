@@ -5,14 +5,14 @@ import logging
 import uuid
 from typing import Any
 
-from hiresense.kernel.events import MatchCompletedEvent
-from hiresense.kernel.exceptions import UpstreamUnavailableError
-from hiresense.kernel.json_extract import extract_json
-from hiresense.kernel.prompt_boundary import PromptBoundary
+from hiresense.shared.kernel.events import MatchCompletedEvent
+from hiresense.shared.kernel.exceptions import UpstreamUnavailableError
+from hiresense.shared.kernel.json_extract import extract_json
+from hiresense.shared.kernel.prompt_boundary import PromptBoundary
 from hiresense.matching.domain.models import MatchResult, ScoreBreakdown
 from hiresense.matching.domain.semantic_scorer import SemanticScorer
 from hiresense.matching.domain.skill_matcher import SkillMatcher
-from hiresense.ports.llm import LLMTimeoutError
+from hiresense.shared.ports.llm import LLMTimeoutError
 
 logger = logging.getLogger(__name__)
 

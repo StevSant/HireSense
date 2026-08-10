@@ -4,13 +4,13 @@ from datetime import datetime, timezone
 
 import pytest
 
-from hiresense.adapters.event_bus.in_memory_bus import InMemoryEventBus
+from hiresense.shared.adapters.event_bus.in_memory_bus import InMemoryEventBus
 from hiresense.ingestion.domain.job_embedding_indexer import JobEmbeddingIndexer
 from hiresense.ingestion.domain.models import NormalizedJob, RawJobListing
 from hiresense.ingestion.domain.services import IngestionCooldownError, IngestionOrchestrator
 from hiresense.ingestion.infrastructure import InMemoryJobsRepository
-from hiresense.kernel.events import DomainEvent
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.events import DomainEvent
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 class FakeJobSource:

@@ -4,7 +4,7 @@ from sqlalchemy import delete, select
 
 from hiresense.admin.domain import LLMFeatureOverrideRecord
 from hiresense.admin.infrastructure.llm_feature_override_model import LLMFeatureOverride
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 
 
 def _to_domain(row: LLMFeatureOverride) -> LLMFeatureOverrideRecord:

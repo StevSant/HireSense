@@ -4,7 +4,7 @@ import pytest
 from hiresense.ingestion.adapters.lever_adapter import LeverAdapter
 from hiresense.ingestion.domain.normalizers.lever_normalizer import LeverNormalizer
 from hiresense.ingestion.domain.models import RawJobListing
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 # ---------------------------------------------------------------------------

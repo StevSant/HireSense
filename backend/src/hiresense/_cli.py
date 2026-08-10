@@ -11,7 +11,7 @@ def main() -> None:
     # Dev-only entrypoint (`uv run app`); production runs the Dockerfile CMD
     # (uvicorn --host 0.0.0.0 --port 8000), so reload stays on here. The bind
     # port is read from config (APP_PORT) rather than a hardcoded literal.
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     settings = Settings()
     uvicorn.run(

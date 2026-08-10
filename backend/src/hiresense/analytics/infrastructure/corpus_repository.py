@@ -6,7 +6,7 @@ from typing import Any
 
 from sqlalchemy import func, select
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.ingestion.infrastructure.models import IngestedJob
 
 

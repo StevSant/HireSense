@@ -3,7 +3,7 @@ import uuid
 import pytest
 from hiresense.claims.domain import CandidateClaim, ClaimVerificationStatus
 from hiresense.optimization.domain import CVOptimizer, OptimizationError
-from hiresense.ports import LLMTimeoutError
+from hiresense.shared.ports import LLMTimeoutError
 
 
 class FakeLLM:

@@ -6,7 +6,7 @@ from sqlalchemy.pool import StaticPool
 
 from hiresense.admin.infrastructure import LLMUsageLogRepository
 from hiresense.admin.infrastructure.llm_usage_log_model import LLMUsageLog
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 
 
 def _factory():

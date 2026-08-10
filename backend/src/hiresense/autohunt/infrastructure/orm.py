@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 from sqlalchemy import DateTime, Index, Integer, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from hiresense.infrastructure import JSONB_OR_JSON
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure import JSONB_OR_JSON
+from hiresense.shared.infrastructure.database import Base
 
 
 class DigestOrm(Base):

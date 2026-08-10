@@ -18,10 +18,10 @@ def _make_settings(monkeypatch: pytest.MonkeyPatch) -> object:
     monkeypatch.setenv("LLM_API_KEY", "sk-test")
     # Reimport so pydantic_settings picks up the patched env.
     import importlib
-    import hiresense.config
+    import hiresense.shared.config
 
-    importlib.reload(hiresense.config)
-    return hiresense.config.Settings()
+    importlib.reload(hiresense.shared.config)
+    return hiresense.shared.config.Settings()
 
 
 def test_settings_has_prerank_weight_skill_default_0_4(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -73,9 +73,9 @@ def test_prerank_weight_skill_overridable_via_env(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setenv("PRERANK_WEIGHT_SKILL", "0.3")
     monkeypatch.setenv("PRERANK_WEIGHT_SEMANTIC", "0.7")
     import importlib
-    import hiresense.config
+    import hiresense.shared.config
 
-    importlib.reload(hiresense.config)
-    settings = hiresense.config.Settings()
+    importlib.reload(hiresense.shared.config)
+    settings = hiresense.shared.config.Settings()
     assert abs(settings.prerank_weight_skill - 0.3) < 1e-9
     assert abs(settings.prerank_weight_semantic - 0.7) < 1e-9

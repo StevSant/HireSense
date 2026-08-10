@@ -18,7 +18,7 @@ from hiresense.ingestion.domain.normalizers import (
     MonsterNormalizer,
     WellfoundNormalizer,
 )
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 @pytest.fixture()

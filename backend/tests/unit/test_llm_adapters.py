@@ -1,5 +1,5 @@
-from hiresense.adapters.embedding import SentenceTransformerAdapter
-from hiresense.adapters.llm import LangChainLLMAdapter
+from hiresense.shared.adapters.embedding import SentenceTransformerAdapter
+from hiresense.shared.adapters.llm import LangChainLLMAdapter
 
 
 def test_langchain_adapter_exported_from_package() -> None:

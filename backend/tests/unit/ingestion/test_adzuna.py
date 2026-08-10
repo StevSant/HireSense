@@ -6,7 +6,7 @@ from httpx import ASGITransport, AsyncClient
 from hiresense.ingestion.adapters import AdzunaAdapter
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.normalizers import AdzunaNormalizer
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 BASE_URL = "https://api.adzuna.com/v1/api/jobs"
 

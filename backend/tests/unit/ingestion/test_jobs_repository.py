@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.services import IngestionOrchestrator
 from hiresense.ingestion.domain.upsert_result import UpsertResult
@@ -83,7 +83,7 @@ def test_prune_older_than_keeps_recent_rows() -> None:
 @pytest.mark.asyncio
 async def test_orchestrator_skips_duplicate_across_runs() -> None:
     from hiresense.ingestion.domain.models import RawJobListing
-    from hiresense.kernel.value_objects import SourceType
+    from hiresense.shared.kernel.value_objects import SourceType
 
     class FakeSource:
         def source_name(self) -> str:

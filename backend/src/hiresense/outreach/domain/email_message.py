@@ -1,3 +1,3 @@
-from hiresense.kernel import EmailMessage
+from hiresense.shared.kernel import EmailMessage
 
 __all__ = ["EmailMessage"]

@@ -4,8 +4,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from hiresense.kernel import register_domain_exception_handlers
-from hiresense.kernel.exceptions import (
+from hiresense.shared.kernel import register_domain_exception_handlers
+from hiresense.shared.kernel.exceptions import (
     ConflictError,
     DomainError,
     NotFoundError,

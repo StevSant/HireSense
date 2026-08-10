@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from hiresense.admin.domain import LLMAuditEntry
 from hiresense.admin.infrastructure.llm_audit_log_model import LLMAuditLog
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 
 
 def _to_domain(row: LLMAuditLog) -> LLMAuditEntry:

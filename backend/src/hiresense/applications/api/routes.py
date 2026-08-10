@@ -5,8 +5,8 @@ import uuid as uuid_mod
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import StreamingResponse
 
-from hiresense.kernel import resolve_page_limit
-from hiresense.ports import LatexCompileError
+from hiresense.shared.kernel import resolve_page_limit
+from hiresense.shared.ports import LatexCompileError
 from hiresense.applications.api.dependencies import (
     get_application_service,
     get_apply_service,

@@ -5,7 +5,7 @@ from typing import Any
 
 from hiresense.ingestion.domain.embedding_text.profile_key import profile_key
 from hiresense.ingestion.domain.embedding_text.profile_text import profile_text
-from hiresense.kernel import LRUCache
+from hiresense.shared.kernel import LRUCache
 
 logger = logging.getLogger(__name__)
 

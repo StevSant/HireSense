@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from hiresense.cover_letter_templates.domain.models import CoverLetterTemplate
 from hiresense.cover_letter_templates.infrastructure.orm import CoverLetterTemplateOrm
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 
 
 def _to_domain(row: CoverLetterTemplateOrm) -> CoverLetterTemplate:

@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from hiresense.config.groups import IngestionSettings, SchedulingSettings
+from hiresense.shared.config.groups import IngestionSettings, SchedulingSettings
 
 
 def _validated_retention_settings(

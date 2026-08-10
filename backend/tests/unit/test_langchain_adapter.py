@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from langchain_core.messages import AIMessage
 
-from hiresense.adapters.llm import LangChainLLMAdapter
-from hiresense.ports import LLMPort, LLMTimeoutError
+from hiresense.shared.adapters.llm import LangChainLLMAdapter
+from hiresense.shared.ports import LLMPort, LLMTimeoutError
 
 
 def test_adapter_satisfies_llm_port() -> None:

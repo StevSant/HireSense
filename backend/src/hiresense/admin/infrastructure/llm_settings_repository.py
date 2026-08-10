@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from hiresense.admin.domain import LLMSettingsRecord
 from hiresense.admin.infrastructure.llm_settings_model import LLMSettings
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 
 
 def _to_domain(row: LLMSettings) -> LLMSettingsRecord:

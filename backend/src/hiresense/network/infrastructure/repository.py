@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import delete, func, select
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.network.domain import Contact, normalize_company
 from hiresense.network.infrastructure.orm import NetworkContactOrm
 

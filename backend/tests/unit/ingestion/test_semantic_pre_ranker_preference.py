@@ -4,7 +4,7 @@ import pytest
 
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
-from hiresense.ports.vector_store import ScoredResult
+from hiresense.shared.ports.vector_store import ScoredResult
 
 
 def _job(id: str) -> NormalizedJob:

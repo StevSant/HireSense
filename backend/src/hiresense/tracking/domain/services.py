@@ -4,8 +4,8 @@ import uuid as uuid_mod
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
-from hiresense.kernel.events import TrackingStatusChangedEvent
-from hiresense.kernel.exceptions import ConflictError, NotFoundError
+from hiresense.shared.kernel.events import TrackingStatusChangedEvent
+from hiresense.shared.kernel.exceptions import ConflictError, NotFoundError
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 from hiresense.tracking.domain.status_transition_policy import ensure_valid_transition
 

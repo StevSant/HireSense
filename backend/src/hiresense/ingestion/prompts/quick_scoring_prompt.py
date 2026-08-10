@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from hiresense.kernel.prompts import BATCH_SCORING_CONSEQUENCES, render_gating_rules
+from hiresense.shared.kernel.prompts import BATCH_SCORING_CONSEQUENCES, render_gating_rules
 
 
 def render_quick_scoring_system_prompt() -> str:

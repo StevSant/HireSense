@@ -5,6 +5,23 @@ HireSense follows **hexagonal (ports & adapters) / clean architecture**. The cod
 **global ports/adapters** for cross-cutting infrastructure and a **composition layer** that wires
 everything together.
 
+The top level separates those three things by *kind*, so a business context is never mixed in
+alphabetically with a technical layer:
+
+```
+src/hiresense/
+├── main.py            # create_app()
+├── shared/            # technical layers every context may use
+│   ├── kernel/        #   shared primitives
+│   ├── ports/         #   global Protocols
+│   ├── adapters/      #   their implementations
+│   ├── infrastructure/#   engine, session factory, ORM registry
+│   ├── observability/ #   OpenTelemetry wiring
+│   └── config/        #   Settings
+├── composition/       # build_<module>() wiring — the only place a concrete impl is chosen
+└── <bounded contexts> # ingestion, matching, applications, tracking, profile, …
+```
+
 ## The dependency rule
 
 Dependencies always point **inward**: `api → domain ← infrastructure`, and the domain depends only
@@ -20,19 +37,19 @@ flowchart TB
     infra["<b>infrastructure/</b><br/>SQLAlchemy *Orm · repositories · adapters<br/><i>knows frameworks &amp; the outside world</i>"]
 
     outside[("PostgreSQL 16 + pgvector<br/>HTTP job sources · LLM provider")]
-    bootstrap["<b>bootstrap/</b><br/>composition layer — the only place<br/>a concrete implementation is chosen"]
+    composition["<b>composition/</b><br/>composition layer — the only place<br/>a concrete implementation is chosen"]
 
     client --> api
     api -->|calls| domain
     domain -->|typed against| ports
     infra -->|implements| ports
     infra --> outside
-    bootstrap -.->|injects adapters into services| domain
+    composition -.->|injects adapters into services| domain
 
     classDef pure fill:#0f766e22,stroke:#0f766e,stroke-width:2px
     classDef edge fill:#64748b22,stroke:#64748b
     class domain,ports pure
-    class api,infra,bootstrap edge
+    class api,infra,composition edge
 ```
 
 Read the arrows as *"depends on"*: everything points **inward**, toward `domain/`. `domain/`
@@ -42,16 +59,16 @@ database, a network, or an LLM.
 **Hard rules**
 - `domain/` imports **nothing** from `infrastructure/` and pulls in **no** framework packages
   (`sqlalchemy`, `langchain*`, `httpx`, …). It may import ports and other domain code.
-- Concrete classes (adapters, repositories) live in `infrastructure/` (or the global `adapters/`)
-  and each **implements a port**.
+- Concrete classes (adapters, repositories) live in `infrastructure/` (or the global
+  `shared/adapters/`) and each **implements a port**.
 - Wiring (which concrete implementation is used) happens only in the **composition layer**
-  (`bootstrap/`), never via fallback imports inside the domain.
+  (`composition/`), never via fallback imports inside the domain.
 
 ## The bounded contexts
 
 Every module under `src/hiresense/` in the list below is a bounded context and follows the
 layout in the next section. **Owns tables?** means the module declares its own `*Orm` classes
-(registered in `infrastructure/registry.py`) and maps them back to domain models in a
+(registered in `shared/infrastructure/registry.py`) and maps them back to domain models in a
 repository; *no* means it is stateless in the sense defined further down — it may still have a
 read-only query adapter. Persistent modules declare the repository `Protocol` in a top-level
 `ports/` package; `autopilot`, `inbox`, and `scheduler` instead keep theirs in
@@ -88,7 +105,7 @@ form for consistency.
 ### How they connect
 
 The core hunt path is a chain of direct service calls, not an event choreography. Contexts are
-composed in `bootstrap/`, so a downstream context receives an upstream service (or a port) by
+composed in `composition/`, so a downstream context receives an upstream service (or a port) by
 injection rather than importing it:
 
 ```mermaid
@@ -122,18 +139,23 @@ flowchart LR
 ```
 
 Only one domain event currently has a subscriber: `tracking.status_changed`, which
-`bootstrap/preference.py` wires into the preference-learning loop. `jobs.ingested` and
+`composition/preference.py` wires into the preference-learning loop. `jobs.ingested` and
 `match.completed` are published on the same bus but nothing listens for them yet — treat them
 as available extension points, not as load-bearing wiring.
 
-Three packages under `src/hiresense/` are deliberately **not** bounded contexts and do not
+The packages under `src/hiresense/shared/` are deliberately **not** bounded contexts and do not
 follow the `api/domain/infrastructure` layout:
 
 | Package | What it is |
 |---|---|
-| `observability` | Cross-cutting OpenTelemetry wiring — tracer/meter setup, exporters, JSON log formatting, request-id context, and ASGI middleware. |
-| `kernel` | Shared primitives every context may use: typed exceptions + their handlers, domain-event plumbing, value objects, pagination, rate limiter, LRU cache, security headers, skill normalization, prompt boundaries. |
-| `ports` / `adapters` | The global ports and their implementations — see [Global ports & adapters](#global-ports--adapters). |
+| `shared/observability` | Cross-cutting OpenTelemetry wiring — tracer/meter setup, exporters, JSON log formatting, request-id context, and ASGI middleware. |
+| `shared/kernel` | Shared primitives every context may use: typed exceptions + their handlers, domain-event plumbing, value objects, pagination, rate limiter, LRU cache, security headers, skill normalization, prompt boundaries. |
+| `shared/ports` / `shared/adapters` | The global ports and their implementations — see [Global ports & adapters](#global-ports--adapters). |
+| `shared/infrastructure` | The async engine, session factory, declarative `Base`, and the ORM `registry.py` Alembic autogenerate reads. |
+| `shared/config` | The `Settings` object: per-concern `BaseSettings` groups composed into one flat surface. |
+
+`shared/__init__.py` stays empty on purpose — importing `hiresense.shared.kernel` must not drag in
+telemetry, config, and every adapter. Import from the sub-package, never from `shared` itself.
 
 ## Per-module layout
 
@@ -163,7 +185,7 @@ defines **no `*Orm` classes and never writes**. Such a module *may* still have a
 package when it needs to **read** another module's corpus — a read-only aggregator that runs queries
 against ORM models *owned by another module* and returns plain Python/Pydantic results. This is an
 adapter (a real I/O boundary), not the module's own persistence, so it lives in `infrastructure/`
-and is wired through `bootstrap/` like any other adapter. Reference implementation:
+and is wired through `composition/` like any other adapter. Reference implementation:
 `analytics/infrastructure/corpus_repository.py` (`CorpusAnalyticsRepository`) — a read-only
 aggregator over `ingestion`'s `IngestedJob` (`status='open'`) that owns no tables of its own. The
 rule of thumb: **owning an `*Orm` ⇒ persistent module (gets `ports/` + ORM + a mapping repository);
@@ -181,15 +203,15 @@ same shape.
 
 Cross-cutting infrastructure that any module may depend on:
 
-| Port (`src/hiresense/ports/`) | Adapter(s) | Location |
+| Port (`src/hiresense/shared/ports/`) | Adapter(s) | Location |
 |---|---|---|
-| `EmailSenderPort` | `SmtpEmailSender` (config-gated; raises `EmailUnavailableError` when SMTP is unset) | `adapters/smtp_email_sender.py` |
-| `EmbeddingPort` | `SentenceTransformerAdapter` | `adapters/embedding/` |
-| `EventBus` | `InMemoryEventBus` | `adapters/event_bus/` |
-| `LatexCompilerPort` | `LatexCompiler` | `adapters/latex/` |
-| `LLMPort` | `LangChainLLMAdapter` (base), `UsageTrackingLLMAdapter` (decorator) | `adapters/llm/`, `admin/infrastructure/` |
-| `MeteredLLMPort` | `LangChainLLMAdapter`, `FeatureConfiguredLLMAdapter` | `adapters/llm/`, `admin/infrastructure/` |
-| `VectorStorePort` | `PgVectorStore` | `adapters/vector_store/` |
+| `EmailSenderPort` | `SmtpEmailSender` (config-gated; raises `EmailUnavailableError` when SMTP is unset) | `shared/adapters/smtp_email_sender.py` |
+| `EmbeddingPort` | `SentenceTransformerAdapter` | `shared/adapters/embedding/` |
+| `EventBus` | `InMemoryEventBus` | `shared/adapters/event_bus/` |
+| `LatexCompilerPort` | `LatexCompiler` | `shared/adapters/latex/` |
+| `LLMPort` | `LangChainLLMAdapter` (base), `UsageTrackingLLMAdapter` (decorator) | `shared/adapters/llm/`, `admin/infrastructure/` |
+| `MeteredLLMPort` | `LangChainLLMAdapter`, `FeatureConfiguredLLMAdapter` | `shared/adapters/llm/`, `admin/infrastructure/` |
+| `VectorStorePort` | `PgVectorStore` | `shared/adapters/vector_store/` |
 
 Module-level ports:
 
@@ -213,30 +235,30 @@ domain service ─uses→ LLMPort
      └─ wraps MeteredLLMPort
         FeatureConfiguredLLMAdapter   (resolves per-feature config, hot-reload)  [admin/infrastructure]
           └─ delegates to
-             LangChainLLMAdapter   (the actual LangChain ainvoke/astream)         [adapters/llm]
+             LangChainLLMAdapter   (the actual LangChain ainvoke/astream)         [shared/adapters/llm]
 ```
 
 `MeteredLLMPort.generate()` returns an `LLMResult` (content + provider/model + token counts) so the
 tracking decorator can record usage without changing the public `LLMPort.complete() -> str`.
 
-## Composition layer (`bootstrap/`)
+## Composition layer (`composition/`)
 
 Each module exposes a `build_<module>(infra, ...)` function that instantiates its repositories,
 adapters, and services and returns a `Provider`. `main.py:create_app()` calls these builders in
 dependency order and stores each `Provider` on `app.state`. FastAPI `Depends(...)` providers in
 `<module>/api/dependencies.py` read the provider back off `app.state` per request.
 
-`bootstrap/shared_infra.py` builds the cross-cutting `SharedInfra` (settings, http client, event bus,
+`composition/shared_infra.py` builds the cross-cutting `SharedInfra` (settings, http client, event bus,
 DB session factory, embedding, vector store) that every builder receives.
 
 ## Persistence & migrations
 
 - SQLAlchemy 2.0, PostgreSQL. Repositories use the **sync** session factory
   (`infra.sync_session_factory`).
-- Every ORM class must be imported in `infrastructure/registry.py` so Alembic `--autogenerate` sees
+- Every ORM class must be imported in `shared/infrastructure/registry.py` so Alembic `--autogenerate` sees
   all tables.
 - Semantic search uses **pgvector**: job embeddings are stored in an `embedding vector(N)` column and
-  queried via `VectorStorePort`. Vector dimension is configured by `embedding_dim` in `config.py`.
+  queried via `VectorStorePort`. Vector dimension is configured by `embedding_dim` in `shared/config/`.
 - **ANN validation (opt-in):** the default suite runs against in-memory SQLite, which has no pgvector,
   so the `<=>` cosine ranking and eviction behaviour of `PgVectorStore` can only be validated against a
   real DB. `tests/integration/test_pgvector_ann.py` covers this and is marked `@pytest.mark.pgvector`.
@@ -255,9 +277,9 @@ DB session factory, embedding, vector store) that every builder receives.
    `domain/services.py`, typed against ports.
 3. If persistent: define `infrastructure/orm.py` (`*Orm`), `ports/repository.py` (`Protocol`), and
    `infrastructure/repository.py` (maps ORM↔domain). Register the ORM in
-   `infrastructure/registry.py` and add an Alembic migration.
+   `shared/infrastructure/registry.py` and add an Alembic migration.
 4. Add `api/provider.py`, `api/dependencies.py`, `api/routes.py`.
-5. Add `bootstrap/<module>.py` with `build_<module>(...)` and wire it in `main.py:create_app()`.
+5. Add `composition/<module>.py` with `build_<module>(...)` and wire it in `main.py:create_app()`.
 6. Keep every `__init__.py` re-exporting the package's public symbols (import from the contextual
    package, not the implementation file).
 
@@ -266,13 +288,13 @@ DB session factory, embedding, vector store) that every builder receives.
 The app runs as **exactly one uvicorn worker**. Several pieces of shared state live in process memory
 and are not safe to duplicate across workers or replicas without externalizing them first:
 
-- **Event bus:** `InMemoryEventBus` (`adapters/event_bus/`) dispatches domain events in-process; a
+- **Event bus:** `InMemoryEventBus` (`shared/adapters/event_bus/`) dispatches domain events in-process; a
   second worker would never see events published by the first.
-- **Rate limiter:** `kernel/rate_limit.py` tracks request counts in-process; a second worker resets
+- **Rate limiter:** `shared/kernel/rate_limit.py` tracks request counts in-process; a second worker resets
   the limiter's view of traffic, defeating the limit.
 - **Scheduler:** the `scheduler` module's recurring jobs (autopilot pipeline, revalidation, etc.) run
   in-process; running them on multiple workers would duplicate every scheduled run.
-- **Embedding model / LRU caches:** the `SentenceTransformerAdapter` and `kernel/lru_cache.py`-backed
+- **Embedding model / LRU caches:** the `SentenceTransformerAdapter` and `shared/kernel/lru_cache.py`-backed
   caches are per-process — each additional worker reloads the model and starts with a cold cache.
 
 Before adding workers (`--workers N`) or horizontally scaling the `app` service, externalize these:

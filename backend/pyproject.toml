@@ -103,10 +103,10 @@ ignore = [
     "src/hiresense/admin/infrastructure/llm_factory.py",
     # Third-party typing friction: OTel exporter variance, bs4's AttributeValueList,
     # starlette's exception-handler signature, langchain's astream element type.
-    "src/hiresense/adapters/llm/langchain_adapter.py",
-    "src/hiresense/observability/exporters.py",
-    "src/hiresense/kernel/exception_handlers.py",
-    "src/hiresense/bootstrap/preference.py",
+    "src/hiresense/shared/adapters/llm/langchain_adapter.py",
+    "src/hiresense/shared/observability/exporters.py",
+    "src/hiresense/shared/kernel/exception_handlers.py",
+    "src/hiresense/composition/preference.py",
     "src/hiresense/ingestion/adapters/generic_scraper_adapter.py",
     # `object`-typed provider lookups in api/dependencies.py — every attribute
     # access on a provider is an error until the accessors are generic.
@@ -128,13 +128,13 @@ ignore = [
     "src/hiresense/ingestion/domain/quick_scoring_service.py",
     "src/hiresense/preference/domain/services.py",
     "src/hiresense/matching/domain/deep_analysis_service.py",
-    "src/hiresense/bootstrap/profile.py",
-    "src/hiresense/bootstrap/tracked_factory.py",
+    "src/hiresense/composition/profile.py",
+    "src/hiresense/composition/tracked_factory.py",
     # Assorted single-site narrowing gaps.
-    "src/hiresense/adapters/embedding/sentence_transformer_adapter.py",
+    "src/hiresense/shared/adapters/embedding/sentence_transformer_adapter.py",
     "src/hiresense/admin/domain/usage_aggregator.py",
     "src/hiresense/admin/infrastructure/usage_tracking_llm_adapter.py",
-    "src/hiresense/config/sources.py",
+    "src/hiresense/shared/config/sources.py",
     "src/hiresense/identity/api/cookies.py",
     "src/hiresense/inbox/api/routes.py",
     "src/hiresense/inbox/infrastructure/imap_inbox_reader.py",

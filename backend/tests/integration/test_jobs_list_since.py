@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.ingestion.infrastructure.models import IngestedJob
 from hiresense.ingestion.infrastructure.jobs_repository import JobsRepository
 

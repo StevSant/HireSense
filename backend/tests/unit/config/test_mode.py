@@ -18,7 +18,7 @@ def test_local_generates_ephemeral_jwt_when_blank(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setenv("JWT_SECRET_KEY", "")
     monkeypatch.setenv("LLM_API_KEY", "")
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     settings = Settings()
     assert settings.jwt_secret_key  # non-empty, generated
@@ -35,7 +35,7 @@ def test_local_ephemeral_jwt_differs_across_builds(monkeypatch: pytest.MonkeyPat
     monkeypatch.setenv("JWT_SECRET_KEY", "")
     monkeypatch.setenv("LLM_API_KEY", "")
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     assert Settings().jwt_secret_key != Settings().jwt_secret_key
 
@@ -48,7 +48,7 @@ def test_local_missing_database_url_raises(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setenv("JWT_SECRET_KEY", "")
     monkeypatch.setenv("LLM_API_KEY", "")
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     with pytest.raises(ValueError, match="DATABASE_URL"):
         Settings()
@@ -62,7 +62,7 @@ def test_production_missing_required_lists_all(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setenv("JWT_SECRET_KEY", "")
     monkeypatch.setenv("LLM_API_KEY", "")
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     with pytest.raises(ValueError) as exc:
         Settings()
@@ -76,7 +76,7 @@ def test_env_override_wins_in_local(monkeypatch: pytest.MonkeyPatch) -> None:
     _set_required(monkeypatch)
     monkeypatch.setenv("JWT_SECRET_KEY", "my-explicit-secret")
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     assert Settings().jwt_secret_key == "my-explicit-secret"
 
@@ -85,7 +85,7 @@ def test_production_with_all_required_boots(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setenv("APP_MODE", "production")
     _set_required(monkeypatch)
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     settings = Settings()
     assert settings.app_mode.value == "production"
@@ -95,6 +95,6 @@ def test_app_mode_defaults_to_local(monkeypatch: pytest.MonkeyPatch) -> None:
     _set_required(monkeypatch)
     monkeypatch.delenv("APP_MODE", raising=False)
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     assert Settings().app_mode.value == "local"

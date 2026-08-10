@@ -5,7 +5,7 @@ from typing import Any
 
 from sqlalchemy import select
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
 from hiresense.ingestion.domain.quick_match_verdict import QuickMatchVerdict
 from hiresense.ingestion.infrastructure.job_match_cache_model import JobMatchCache

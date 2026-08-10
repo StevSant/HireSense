@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from hiresense.ingestion.domain.models import RawJobListing
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 RESULTS_PER_PAGE = 50
 MAX_PAGES = 3

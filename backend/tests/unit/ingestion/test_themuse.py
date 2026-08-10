@@ -5,7 +5,7 @@ import pytest
 from hiresense.ingestion.adapters import TheMuseAdapter
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.normalizers import TheMuseNormalizer
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 BASE_URL = "https://www.themuse.com/api/public/jobs"
 

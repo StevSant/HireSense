@@ -1,3 +1,3 @@
-from hiresense.ports import EmailUnavailableError
+from hiresense.shared.ports import EmailUnavailableError
 
 __all__ = ["EmailUnavailableError"]

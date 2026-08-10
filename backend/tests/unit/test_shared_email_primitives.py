@@ -1,6 +1,6 @@
-from hiresense.adapters import SmtpEmailSender
-from hiresense.kernel import EmailMessage
-from hiresense.ports import EmailSenderPort, EmailUnavailableError
+from hiresense.shared.adapters import SmtpEmailSender
+from hiresense.shared.kernel import EmailMessage
+from hiresense.shared.ports import EmailSenderPort, EmailUnavailableError
 
 # Back-compat: outreach paths must resolve to the SAME objects.
 from hiresense.outreach.domain import EmailMessage as OutreachEmailMessage

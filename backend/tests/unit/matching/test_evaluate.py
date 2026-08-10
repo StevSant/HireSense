@@ -1,7 +1,7 @@
 import logging
 
 import pytest
-from hiresense.kernel.exceptions import UpstreamUnavailableError
+from hiresense.shared.kernel.exceptions import UpstreamUnavailableError
 from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain import DimensionEvaluator
 

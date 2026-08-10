@@ -7,7 +7,7 @@ from sqlalchemy import String, and_, cast, func, select
 
 from hiresense.admin.domain import UsageBucket, UsageRecord, UsageTotals
 from hiresense.admin.infrastructure.llm_usage_log_model import LLMUsageLog
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 
 # Sortable columns for the recent-calls listing, keyed by the `<field>_<dir>`
 # token the API accepts. Anything else falls back to newest-first.

@@ -3,7 +3,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from hiresense.adapters.http import RetryingAsyncClient
+from hiresense.shared.adapters.http import RetryingAsyncClient
 
 
 class _FakeClient:

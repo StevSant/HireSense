@@ -8,7 +8,7 @@ def test_settings_loads_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("JWT_SECRET_KEY", "secret")
     monkeypatch.setenv("LLM_API_KEY", "sk-test")
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     settings = Settings()
     assert settings.app_name == "HireSense"
@@ -29,7 +29,7 @@ def test_settings_enabled_sources_parsed(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setenv("LLM_API_KEY", "sk-test")
     monkeypatch.setenv("ENABLED_JOB_SOURCES", "remotive,remoteok")
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     settings = Settings()
     assert settings.enabled_job_sources == ["remotive", "remoteok"]
@@ -52,7 +52,7 @@ def test_settings_rejects_placeholder_secrets(
     monkeypatch.setenv("LLM_API_KEY", "sk-test")
     monkeypatch.setenv(env_var, placeholder)
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     with pytest.raises(ValueError, match="placeholder"):
         Settings()
@@ -66,7 +66,7 @@ def test_settings_rejects_wildcard_cors_origin(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setenv("LLM_API_KEY", "sk-test")
     monkeypatch.setenv("CORS_ORIGINS", "*")
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     with pytest.raises(ValueError, match="wildcard"):
         Settings()
@@ -76,7 +76,7 @@ def test_otel_exporter_insecure_defaults_secure() -> None:
     # Reading the field default directly (not an instance) avoids backend/.env,
     # which opts into insecure=true for the local LGTM stack. The insecure OTLP
     # connection must be opt-in, so the code default is secure.
-    from hiresense.config.groups import ObservabilitySettings
+    from hiresense.shared.config.groups import ObservabilitySettings
 
     assert ObservabilitySettings.model_fields["otel_exporter_insecure"].default is False
 
@@ -109,7 +109,7 @@ def test_embedding_device_configurable(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LLM_API_KEY", "sk-test")
     monkeypatch.setenv("EMBEDDING_DEVICE", "cuda")
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     settings = Settings()
     assert settings.embedding_device == "cuda"
@@ -127,7 +127,7 @@ def test_portfolio_settings_defaults_and_parsing(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setenv("PORTFOLIO_SUPABASE_URL", "")
     monkeypatch.setenv("PORTFOLIO_SUPABASE_ANON_KEY", "")
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     settings = Settings()
     assert settings.portfolio_sources == ["supabase", "github"]
@@ -145,7 +145,7 @@ def test_portfolio_github_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setenv("PORTFOLIO_GITHUB_USERNAME", "")
     monkeypatch.setenv("PORTFOLIO_GITHUB_TOKEN", "")
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     settings = Settings()
     assert settings.portfolio_github_username == ""
@@ -162,7 +162,7 @@ def test_portfolio_citation_settings_defaults(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setenv("LLM_API_KEY", "sk-test")
     monkeypatch.setenv("PORTFOLIO_PUBLIC_URL", "")
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     settings = Settings()
     assert settings.portfolio_public_url == ""
@@ -179,7 +179,7 @@ def test_portfolio_analytics_read_key_default(monkeypatch: pytest.MonkeyPatch) -
     # Pin against local .env value so the test is not environment-sensitive.
     monkeypatch.setenv("PORTFOLIO_ANALYTICS_READ_KEY", "")
 
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     settings = Settings()
     assert settings.portfolio_analytics_read_key == ""

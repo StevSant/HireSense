@@ -6,7 +6,7 @@ import uuid
 import pytest
 
 from hiresense.interview.domain import InterviewPrepError, InterviewPrepService
-from hiresense.ports import LLMTimeoutError
+from hiresense.shared.ports import LLMTimeoutError
 
 
 class FakeLLM:

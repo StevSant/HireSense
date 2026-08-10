@@ -6,7 +6,7 @@ from opentelemetry.sdk.metrics.export import (
 )
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 
-from hiresense.observability import (
+from hiresense.shared.observability import (
     build_log_exporter,
     build_metric_reader,
     build_span_exporter,

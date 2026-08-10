@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from hiresense.kernel import normalize_skill
+from hiresense.shared.kernel import normalize_skill
 
 
 class SkillNormalizer:

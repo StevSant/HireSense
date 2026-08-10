@@ -1,6 +1,6 @@
 import pytest
 
-from hiresense.adapters.latex import LatexCompiler
+from hiresense.shared.adapters.latex import LatexCompiler
 from hiresense.profile.domain.latex_parser import LaTeXParser, ParsedCV, ParsedSection
 from hiresense.profile.domain.services import ProfileService
 from hiresense.profile.domain.skill_extractor import SkillExtractor

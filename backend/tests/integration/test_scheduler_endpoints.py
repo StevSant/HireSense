@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from hiresense.identity.api.dependencies import require_admin, require_auth
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.scheduler.api import router as scheduler_router
 from hiresense.scheduler.api.dependencies import get_scheduler_provider
 from hiresense.scheduler.api.provider import SchedulerProvider

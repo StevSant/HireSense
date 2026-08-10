@@ -7,7 +7,7 @@ import pytest
 from hiresense.ingestion.adapters.dice import DiceAdapter, _parse_sse_jsonrpc
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.normalizers import DiceNormalizer
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 class FakeResponse:

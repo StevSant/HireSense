@@ -2,11 +2,11 @@ import asyncio
 
 import pytest
 
-from hiresense.adapters.event_bus.in_memory_bus import InMemoryEventBus
-from hiresense.kernel.events import DomainEvent
-from hiresense.kernel.exceptions import UpstreamUnavailableError
+from hiresense.shared.adapters.event_bus.in_memory_bus import InMemoryEventBus
+from hiresense.shared.kernel.events import DomainEvent
+from hiresense.shared.kernel.exceptions import UpstreamUnavailableError
 from hiresense.matching.domain import MatchAnalyzer
-from hiresense.ports.llm import LLMTimeoutError
+from hiresense.shared.ports.llm import LLMTimeoutError
 
 
 class FakeLLM:

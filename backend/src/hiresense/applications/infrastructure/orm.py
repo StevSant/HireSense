@@ -16,7 +16,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 
 
 class ApplicationJobSnapshotOrm(Base):

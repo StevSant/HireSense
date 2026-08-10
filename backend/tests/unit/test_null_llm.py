@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from hiresense.adapters.llm import NullLLM
-from hiresense.kernel.exceptions import UpstreamUnavailableError
-from hiresense.ports import LLMNotConfiguredError
+from hiresense.shared.adapters.llm import NullLLM
+from hiresense.shared.kernel.exceptions import UpstreamUnavailableError
+from hiresense.shared.ports import LLMNotConfiguredError
 
 
 @pytest.mark.asyncio

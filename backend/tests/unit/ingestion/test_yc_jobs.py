@@ -8,7 +8,7 @@ import pytest
 from hiresense.ingestion.adapters.yc_jobs import YCJobsAdapter, extract_inertia_props
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.normalizers import YCJobsNormalizer
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 
 def _page(jobs: list[dict], *, company: dict | None = None) -> str:

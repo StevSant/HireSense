@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from hiresense.claims.domain import CandidateClaimService
-from hiresense.kernel.prompt_boundary import PromptBoundary
+from hiresense.shared.kernel.prompt_boundary import PromptBoundary
 from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain.scorers.llm_scorer import BaseLLMScorer
 from hiresense.matching.prompts import INTERVIEW_READINESS

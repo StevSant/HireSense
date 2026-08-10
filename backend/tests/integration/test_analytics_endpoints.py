@@ -24,7 +24,7 @@ from hiresense.analytics.domain import (
 )
 from hiresense.analytics.infrastructure import CorpusAnalyticsRepository
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.ingestion.infrastructure.models import IngestedJob  # noqa: F401
 from hiresense.tracking.domain.models import TrackedApplication
 from hiresense.tracking.domain.status_transition import StatusTransition

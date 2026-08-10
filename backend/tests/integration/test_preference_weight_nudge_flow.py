@@ -1,7 +1,7 @@
 """Integration: Phase 2 dimension-weight nudging end to end.
 
 Builds a real FastAPI app over an in-memory SQLite DB (no Postgres), wires the
-preference service exactly as bootstrap does (nudge calculator + a fake
+preference service exactly as composition does (nudge calculator + a fake
 dimension scorer standing in for the matching dimension scorers, snapshotted
 onto each outcome signal at record time), and verifies:
 
@@ -25,7 +25,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain import DimensionEvaluator
 from hiresense.preference.api import router as preference_router

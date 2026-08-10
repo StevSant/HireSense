@@ -4,7 +4,7 @@ from typing import Any
 
 from hiresense.ingestion.domain.html_stripper import strip_html
 from hiresense.ingestion.domain.models import RawJobListing
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 # The monthly HN ritual runs several parallel threads — "Who is hiring?"
 # (companies), "Who wants to be hired?" (job seekers), and "Freelancer?

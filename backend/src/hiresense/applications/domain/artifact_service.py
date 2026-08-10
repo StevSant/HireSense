@@ -14,7 +14,7 @@ from hiresense.applications.domain.models import (
     ApplicationMatch,
 )
 from hiresense.applications.ports import ApplicationRepositoryPort
-from hiresense.kernel.exceptions import NotFoundError, ValidationError
+from hiresense.shared.kernel.exceptions import NotFoundError, ValidationError
 from hiresense.matching.domain import SkillMatcher
 
 

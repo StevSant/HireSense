@@ -4,7 +4,7 @@ import uuid
 
 from sqlalchemy import select
 
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 from hiresense.interview.domain.models import Competency, Story
 from hiresense.interview.infrastructure.orm import StoryOrm
 

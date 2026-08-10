@@ -5,7 +5,7 @@ import pytest
 from hiresense.ingestion.adapters import RecruiteeAdapter
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.normalizers import RecruiteeNormalizer
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 BASE_URL = "https://{company}.recruitee.com/api"
 

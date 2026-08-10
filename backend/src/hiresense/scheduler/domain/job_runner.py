@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Iterable
 
 from hiresense.ingestion.domain import IngestionCooldownError
-from hiresense.observability import get_domain_metrics
+from hiresense.shared.observability import get_domain_metrics
 from hiresense.scheduler.domain.job_definition import JobDefinition
 from hiresense.scheduler.domain.job_run import JobRun
 from hiresense.scheduler.domain.job_status import JobStatus

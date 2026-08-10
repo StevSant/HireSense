@@ -9,8 +9,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.infrastructure.database import Base
-from hiresense.kernel import SlidingWindowRateLimiter
+from hiresense.shared.infrastructure.database import Base
+from hiresense.shared.kernel import SlidingWindowRateLimiter
 from hiresense.outreach.api import router as outreach_router
 from hiresense.outreach.api.dependencies import get_outreach_service
 from hiresense.outreach.domain import OutreachMessageGenerator, OutreachService

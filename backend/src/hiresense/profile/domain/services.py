@@ -5,7 +5,7 @@ import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from hiresense.ports import LatexCompileError
+from hiresense.shared.ports import LatexCompileError
 from hiresense.profile.domain.apply_prefill import build_prefill
 from hiresense.profile.domain.apply_profile import ApplyProfile
 from hiresense.profile.domain.contact_info import ContactInfo

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, AsyncIterator
 # Direct-submodule import (not `from hiresense.admin.domain import ...`) to avoid
 # closing the admin.domain -> admin.ports -> admin.infrastructure import cycle.
 from hiresense.admin.domain.pricing import estimate_cost_usd
-from hiresense.ports.llm import LLMInvocationError, MeteredLLMPort
+from hiresense.shared.ports.llm import LLMInvocationError, MeteredLLMPort
 
 if TYPE_CHECKING:
     from hiresense.admin.domain import UsageRecorder

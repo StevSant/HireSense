@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 
 from hiresense.autopilot.domain import AutopilotDraft, DraftStatus
 from hiresense.autopilot.infrastructure.autopilot_draft_orm import AutopilotDraftOrm
-from hiresense.infrastructure import SqlRepository
+from hiresense.shared.infrastructure import SqlRepository
 
 
 def _to_domain(row: AutopilotDraftOrm) -> AutopilotDraft:

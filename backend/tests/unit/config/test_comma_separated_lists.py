@@ -22,7 +22,7 @@ def _set_required(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_opportunity_sources_accepts_comma_separated(monkeypatch: pytest.MonkeyPatch) -> None:
     _set_required(monkeypatch)
     monkeypatch.setenv("ENABLED_OPPORTUNITY_SOURCES", "confs_tech,curated")
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     assert Settings().enabled_opportunity_sources == ["confs_tech", "curated"]
 
@@ -30,7 +30,7 @@ def test_opportunity_sources_accepts_comma_separated(monkeypatch: pytest.MonkeyP
 def test_int_list_accepts_comma_separated(monkeypatch: pytest.MonkeyPatch) -> None:
     _set_required(monkeypatch)
     monkeypatch.setenv("CONFS_TECH_YEARS", "2026,2027")
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     assert Settings().confs_tech_years == [2026, 2027]
 
@@ -39,7 +39,7 @@ def test_json_array_notation_still_works(monkeypatch: pytest.MonkeyPatch) -> Non
     """JSON is pydantic's native form; splitting must not take it away."""
     _set_required(monkeypatch)
     monkeypatch.setenv("ENABLED_OPPORTUNITY_SOURCES", '["confs_tech", "curated"]')
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     assert Settings().enabled_opportunity_sources == ["confs_tech", "curated"]
 
@@ -47,7 +47,7 @@ def test_json_array_notation_still_works(monkeypatch: pytest.MonkeyPatch) -> Non
 def test_whitespace_around_separators_is_trimmed(monkeypatch: pytest.MonkeyPatch) -> None:
     _set_required(monkeypatch)
     monkeypatch.setenv("OUTREACH_ALLOWED_RECIPIENT_DOMAINS", " example.com , test.dev ")
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     assert Settings().outreach_allowed_recipient_domains == ["example.com", "test.dev"]
 
@@ -59,7 +59,7 @@ def test_every_scalar_list_setting_accepts_commas(monkeypatch: pytest.MonkeyPatc
     field added later is covered without touching this test.
     """
     _set_required(monkeypatch)
-    from hiresense.config import Settings
+    from hiresense.shared.config import Settings
 
     scalar_lists = {
         name: get_args(field.annotation)[0]

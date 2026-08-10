@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
 from hiresense.inbox.domain import InboundEmail, synthesize_message_id
-from hiresense.observability import get_domain_metrics
+from hiresense.shared.observability import get_domain_metrics
 
 logger = logging.getLogger(__name__)
 

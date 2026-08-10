@@ -5,7 +5,7 @@ import pytest
 from hiresense.ingestion.adapters import SmartRecruitersAdapter
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.normalizers import SmartRecruitersNormalizer
-from hiresense.kernel.value_objects import SourceType
+from hiresense.shared.kernel.value_objects import SourceType
 
 BASE_URL = "https://api.smartrecruiters.com/v1/companies"
 

@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.kernel import resolve_page_limit
+from hiresense.shared.kernel import resolve_page_limit
 from hiresense.opportunities.api.dependencies import get_opportunities_service
 from hiresense.opportunities.api.schemas import (
     FetchOpportunitiesResponse,

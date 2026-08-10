@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 from hiresense.research.domain.models import CompanyResearch
 from hiresense.research.infrastructure.repository import CompanyResearchRepository
 

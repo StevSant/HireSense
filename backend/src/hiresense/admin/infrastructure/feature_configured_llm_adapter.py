@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, AsyncIterator
 
-from hiresense.adapters.llm import LangChainLLMAdapter
-from hiresense.ports.llm import LLMInvocationError, LLMResult
+from hiresense.shared.adapters.llm import LangChainLLMAdapter
+from hiresense.shared.ports.llm import LLMInvocationError, LLMResult
 
 if TYPE_CHECKING:
     from hiresense.admin.domain import LLMConfigService
@@ -34,7 +34,7 @@ class FeatureConfiguredLLMAdapter:
         self._factory = factory
         self._feature_key = feature_key
         # Master gate for Anthropic prompt caching (settings.llm_prompt_cache_enabled,
-        # threaded in from bootstrap rather than read from settings here). Actually
+        # threaded in from composition rather than read from settings here). Actually
         # enabling cache_control on a given call also requires the resolved
         # config's provider to be "anthropic" — decided per call in _build_inner
         # since config is re-resolved every time (hot-reload).

@@ -11,7 +11,7 @@ def _set_required(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_public_symbols_importable(monkeypatch: pytest.MonkeyPatch) -> None:
     _set_required(monkeypatch)
-    from hiresense.config import AppMode, Settings
+    from hiresense.shared.config import AppMode, Settings
 
     settings = Settings()
     # Flat access across several groups still works.
@@ -23,7 +23,7 @@ def test_public_symbols_importable(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_groups_are_importable_from_package() -> None:
-    from hiresense.config.groups import (
+    from hiresense.shared.config.groups import (
         CoreSettings,
         DatabaseSettings,
         LLMSettings,
@@ -41,7 +41,7 @@ def test_groups_are_importable_from_package() -> None:
 def test_no_duplicate_field_across_groups() -> None:
     # Guards the mixin composition: two groups declaring the same field would
     # silently shadow. Assert the union has no collisions.
-    from hiresense.config import groups as g
+    from hiresense.shared.config import groups as g
 
     seen: dict[str, str] = {}
     group_classes = [

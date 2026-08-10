@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from hiresense.kernel.prompts import DEEP_ANALYSIS_CONSEQUENCES, render_gating_rules
+from hiresense.shared.kernel.prompts import DEEP_ANALYSIS_CONSEQUENCES, render_gating_rules
 
 # Deep analysis reports on its own five fields rather than the six scored
 # dimensions — it is a narrative breakdown, not a second composite. Kept

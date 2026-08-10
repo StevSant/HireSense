@@ -4,10 +4,10 @@ import logging
 from typing import Any
 
 from hiresense.matching.domain.scorers.base import DimensionResult
-from hiresense.kernel import extract_json
+from hiresense.shared.kernel import extract_json
 from hiresense.matching.domain.scorers.llm_scorer import truncate_job_text
 from hiresense.matching.prompts import DIMENSION_NAMES, render_combined_system_prompt
-from hiresense.ports import LLMPort
+from hiresense.shared.ports import LLMPort
 
 logger = logging.getLogger(__name__)
 

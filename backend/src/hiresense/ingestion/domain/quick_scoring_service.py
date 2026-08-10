@@ -10,9 +10,9 @@ from hiresense.ingestion.domain.profile_hash import score_profile_hash
 from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
 from hiresense.ingestion.domain.quick_match_verdict import QuickMatchVerdict
 from hiresense.ingestion.prompts import render_quick_scoring_system_prompt
-from hiresense.kernel import extract_json
-from hiresense.kernel.prompts import MODERATE_THRESHOLD, STRONG_THRESHOLD, prompt_fingerprint
-from hiresense.ports import LLMPort
+from hiresense.shared.kernel import extract_json
+from hiresense.shared.kernel.prompts import MODERATE_THRESHOLD, STRONG_THRESHOLD, prompt_fingerprint
+from hiresense.shared.ports import LLMPort
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 from hiresense.claims.domain import CandidateClaim, ClaimVerificationStatus
-from hiresense.kernel import normalize_skill
+from hiresense.shared.kernel import normalize_skill
 from hiresense.optimization.domain.models import (
     BlockedClaim,
     ClaimBlockerReason,

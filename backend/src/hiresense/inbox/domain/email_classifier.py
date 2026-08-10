@@ -8,8 +8,8 @@ from hiresense.inbox.domain.classification import EmailClassification
 from hiresense.inbox.domain.email_signal_kind import EmailSignalKind
 from hiresense.inbox.domain.errors import EmailClassificationError
 from hiresense.inbox.domain.inbound_email import InboundEmail
-from hiresense.kernel.prompt_boundary import PromptBoundary
-from hiresense.kernel.prompt_boundary_label import UntrustedContentLabel
+from hiresense.shared.kernel.prompt_boundary import PromptBoundary
+from hiresense.shared.kernel.prompt_boundary_label import UntrustedContentLabel
 
 logger = logging.getLogger(__name__)
 

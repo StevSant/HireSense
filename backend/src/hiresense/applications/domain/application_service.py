@@ -15,7 +15,7 @@ from hiresense.applications.domain.aggregate import (
 from hiresense.applications.domain.models import ApplicationJobSnapshot, JobSnapshotSource
 from hiresense.applications.domain.skill_extractor import SkillExtractor
 from hiresense.applications.ports import ApplicationRepositoryPort
-from hiresense.kernel.exceptions import NotFoundError
+from hiresense.shared.kernel.exceptions import NotFoundError
 from hiresense.tracking.domain.models import ApplicationStatus, TrackedApplication
 
 

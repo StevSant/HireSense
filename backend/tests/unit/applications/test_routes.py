@@ -22,8 +22,8 @@ from hiresense.applications.domain.aggregate import (
 )
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api.dependencies import get_job_query
-from hiresense.kernel import SlidingWindowRateLimiter, register_domain_exception_handlers
-from hiresense.kernel.exceptions import ConflictError, NotFoundError, ValidationError
+from hiresense.shared.kernel import SlidingWindowRateLimiter, register_domain_exception_handlers
+from hiresense.shared.kernel.exceptions import ConflictError, NotFoundError, ValidationError
 from hiresense.tracking.domain import InvalidStatusTransitionError
 
 

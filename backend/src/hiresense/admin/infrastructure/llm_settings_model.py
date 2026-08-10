@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import CheckConstraint, DateTime, Integer, JSON, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from hiresense.infrastructure.database import Base
+from hiresense.shared.infrastructure.database import Base
 
 
 class LLMSettings(Base):

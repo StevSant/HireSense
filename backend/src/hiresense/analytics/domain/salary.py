@@ -7,7 +7,7 @@ _CURRENCY = {"$": "USD", "€": "EUR", "£": "GBP", "usd": "USD", "eur": "EUR", 
 _HOURS_PER_YEAR = 2080
 _MONTHS_PER_YEAR = 12
 # Fallback floor when no config-driven value is injected. The app path injects
-# settings.salary_annual_floor via bootstrap; this default only backs bare
+# settings.salary_annual_floor via composition; this default only backs bare
 # SalaryParser() construction (e.g. in tests).
 _DEFAULT_ANNUAL_FLOOR = 12000
 # A number with optional thousands separators and an optional k/m suffix.

@@ -8,7 +8,7 @@ from httpx import ASGITransport, AsyncClient
 
 from hiresense.identity.api import router as identity_router
 from hiresense.identity.api.provider import IdentityProvider
-from hiresense.kernel import SlidingWindowRateLimiter
+from hiresense.shared.kernel import SlidingWindowRateLimiter
 
 _USERNAME = "admin"
 _PASSWORD = "secret"

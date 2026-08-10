@@ -98,3 +98,21 @@ def test_app_mode_defaults_to_local(monkeypatch: pytest.MonkeyPatch) -> None:
     from hiresense.shared.config import Settings
 
     assert Settings().app_mode.value == "local"
+
+
+def test_is_local_true_in_local_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("APP_MODE", "local")
+    _set_required(monkeypatch)
+
+    from hiresense.shared.config import Settings
+
+    assert Settings().is_local() is True
+
+
+def test_is_local_false_in_production_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("APP_MODE", "production")
+    _set_required(monkeypatch)
+
+    from hiresense.shared.config import Settings
+
+    assert Settings().is_local() is False

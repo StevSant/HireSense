@@ -76,6 +76,10 @@ class CoreSettings(BaseSettings):
             )
         return value
 
+    def is_local(self) -> bool:
+        """True when running in local development mode (APP_MODE=local)."""
+        return self.app_mode is AppMode.LOCAL
+
     # Role embedded in issued tokens. A single-user instance is admin by default;
     # set to a non-admin value to genuinely exercise the admin gate.
     auth_role: str = "admin"

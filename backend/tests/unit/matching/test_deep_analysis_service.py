@@ -35,10 +35,10 @@ class StubCache:
         self._deep = deep
         self.upserts: list[dict] = []
 
-    def get_deep(self, job_id, profile_hash):
+    def get_deep(self, job_id, profile_hash, prompt_fingerprint):
         return self._deep
 
-    def upsert_deep(self, job_id, profile_hash, payload):
+    def upsert_deep(self, job_id, profile_hash, payload, prompt_fingerprint):
         self.upserts.append(payload)
 
 

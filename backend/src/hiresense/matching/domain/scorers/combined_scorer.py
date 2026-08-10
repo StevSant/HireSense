@@ -6,47 +6,10 @@ from typing import Any
 from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.kernel import extract_json
 from hiresense.matching.domain.scorers.llm_scorer import truncate_job_text
+from hiresense.matching.prompts import DIMENSION_NAMES, render_combined_system_prompt
 from hiresense.ports import LLMPort
 
 logger = logging.getLogger(__name__)
-
-# Order also defines the JSON schema shown to the LLM. Names must match the
-# individual BaseLLMScorer subclasses' `dimension_name` exactly, since this
-# scorer is a drop-in replacement for their fan-out.
-_DIMENSIONS = (
-    "seniority_fit",
-    "compensation",
-    "growth_potential",
-    "culture_fit",
-    "application_strength",
-    "interview_readiness",
-)
-
-_SYSTEM_PROMPT = (
-    "You are a job-matching dimension scorer. Score a JOB against an optional "
-    "CANDIDATE profile across ALL of the following dimensions in a single pass. "
-    "For each, score 0.0 (terrible fit) to 1.0 (perfect fit) with a 1-2 sentence "
-    "rationale.\n\n"
-    "- seniority_fit: how well the role's seniority matches the candidate's "
-    "experience level (assume a general mid-level engineer if no profile is given).\n"
-    "- compensation: how competitive the pay is against market rates for the "
-    "location/role level; infer from company size, role, and location if no "
-    "salary is stated.\n"
-    "- growth_potential: learning/skill-development opportunities, tech-stack "
-    "modernity, mentorship/leadership exposure, and career trajectory.\n"
-    "- culture_fit: remote/hybrid/on-site flexibility, work-life balance signals, "
-    "collaboration style, and company values/mission alignment.\n"
-    "- application_strength: how well the candidate's CV positions them for the "
-    "role — skill overlap, relevance/quality of experience, how compellingly the "
-    "CV tells their story. If no candidate profile is given, score 0.5 and say so.\n"
-    "- interview_readiness: availability of strong STAR story material, technical "
-    "depth/hands-on evidence, and potential weak spots. If no candidate profile is "
-    "given, score 0.5 and say so.\n\n"
-    "Return ONLY a JSON object:\n"
-    '{"dimensions": [{"dimension": "<name>", "score": <0.0-1.0>, "rationale": "<brief>"}]}\n'
-    f"Include exactly one entry per dimension, using exactly these names: "
-    f"{', '.join(_DIMENSIONS)}."
-)
 
 
 def _field(obj: Any, name: str, default: Any = "") -> Any:
@@ -78,7 +41,7 @@ class CombinedDimensionScorer:
             return None
         try:
             prompt = self._build_prompt(job, profile)
-            response = await self._llm.complete(prompt, system=_SYSTEM_PROMPT)
+            response = await self._llm.complete(prompt, system=render_combined_system_prompt())
         except Exception as exc:
             logger.warning("Combined dimension scorer LLM call failed: %s", exc)
             return None
@@ -128,7 +91,7 @@ class CombinedDimensionScorer:
             if not isinstance(entry, dict):
                 continue
             name = entry.get("dimension")
-            if name not in _DIMENSIONS or name in by_name:
+            if name not in DIMENSION_NAMES or name in by_name:
                 continue
             try:
                 score = float(entry["score"])
@@ -141,6 +104,6 @@ class CombinedDimensionScorer:
                 weight=0,
             )
 
-        if len(by_name) != len(_DIMENSIONS):
+        if len(by_name) != len(DIMENSION_NAMES):
             return None
-        return [by_name[d] for d in _DIMENSIONS]
+        return [by_name[d] for d in DIMENSION_NAMES]

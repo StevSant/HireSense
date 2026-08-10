@@ -4,6 +4,7 @@ from typing import Any
 
 from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.matching.domain.scorers.llm_scorer import BaseLLMScorer
+from hiresense.matching.prompts import APPLICATION_STRENGTH
 
 
 class ApplicationStrengthScorer(BaseLLMScorer):
@@ -42,12 +43,7 @@ class ApplicationStrengthScorer(BaseLLMScorer):
             f"Job Description:\n{self._truncate(description)}\n\n"
             f"Candidate Skills: {candidate_skills_display}\n"
             f"Candidate Experience:\n{experience_content}\n\n"
-            "Evaluate how well this candidate's CV positions them for the role. Consider:\n"
-            "- Skill overlap between candidate and job requirements\n"
-            "- Relevance and quality of experience\n"
-            "- How compellingly the CV tells their story for this role\n"
-            "A score of 1.0 means the CV is an excellent match; 0.0 means very poor fit. "
-            'Return JSON: {"score": <float>, "rationale": "<brief>"}.'
+            f"{APPLICATION_STRENGTH.bulleted()}"
         )
 
     async def score(self, job: Any, profile: Any | None = None) -> DimensionResult:

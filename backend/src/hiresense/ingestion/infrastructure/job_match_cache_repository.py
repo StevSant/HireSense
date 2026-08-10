@@ -38,7 +38,9 @@ class JobMatchCacheRepository(SqlRepository):
 
     # ---- Quick (Tier-1) ----------------------------------------------
 
-    def get_quick_bulk(self, job_ids: list[str], profile_hash: str) -> dict[str, QuickMatchResult]:
+    def get_quick_bulk(
+        self, job_ids: list[str], profile_hash: str, prompt_fingerprint: str
+    ) -> dict[str, QuickMatchResult]:
         if not job_ids:
             return {}
         with self._session_factory() as session:
@@ -48,12 +50,18 @@ class JobMatchCacheRepository(SqlRepository):
             )
             results: dict[str, QuickMatchResult] = {}
             for row in session.scalars(stmt).all():
+                # A result scored under a different prompt is not comparable to
+                # one scored under the current prompt; serve neither.
+                if row.quick_prompt_fingerprint != prompt_fingerprint:
+                    continue
                 quick = _row_to_quick(row)
                 if quick is not None:
                     results[row.job_id] = quick
             return results
 
-    def upsert_quick(self, result: QuickMatchResult, profile_hash: str) -> None:
+    def upsert_quick(
+        self, result: QuickMatchResult, profile_hash: str, prompt_fingerprint: str
+    ) -> None:
         """Persist a single quick-scoring result (one SELECT + one COMMIT).
 
         Not called by any current production path — `QuickScoringService`
@@ -73,9 +81,12 @@ class JobMatchCacheRepository(SqlRepository):
                 "dealbreakers": list(result.dealbreakers),
             }
             row.quick_updated_at = datetime.now(timezone.utc)
+            row.quick_prompt_fingerprint = prompt_fingerprint
             session.commit()
 
-    def upsert_quick_bulk(self, results: list[QuickMatchResult], profile_hash: str) -> None:
+    def upsert_quick_bulk(
+        self, results: list[QuickMatchResult], profile_hash: str, prompt_fingerprint: str
+    ) -> None:
         """Persist a whole batch of quick-scoring results in one round-trip.
 
         Same per-row shape as `upsert_quick`, but avoids one SELECT+COMMIT per
@@ -107,18 +118,23 @@ class JobMatchCacheRepository(SqlRepository):
                     "dealbreakers": list(result.dealbreakers),
                 }
                 row.quick_updated_at = now
+                row.quick_prompt_fingerprint = prompt_fingerprint
             session.commit()
 
     # ---- Deep (Tier-2) -----------------------------------------------
 
-    def get_deep(self, job_id: str, profile_hash: str) -> dict | None:
+    def get_deep(self, job_id: str, profile_hash: str, prompt_fingerprint: str) -> dict | None:
         with self._session_factory() as session:
             row = self._get_row(session, job_id, profile_hash)
             if row is None or row.deep_payload is None:
                 return None
+            if row.deep_prompt_fingerprint != prompt_fingerprint:
+                return None
             return dict(row.deep_payload)
 
-    def upsert_deep(self, job_id: str, profile_hash: str, payload: dict) -> None:
+    def upsert_deep(
+        self, job_id: str, profile_hash: str, payload: dict, prompt_fingerprint: str
+    ) -> None:
         with self._session_factory() as session:
             row = self._get_row(session, job_id, profile_hash)
             if row is None:
@@ -126,6 +142,7 @@ class JobMatchCacheRepository(SqlRepository):
                 session.add(row)
             row.deep_payload = payload
             row.deep_updated_at = datetime.now(timezone.utc)
+            row.deep_prompt_fingerprint = prompt_fingerprint
             session.commit()
 
     # ---- Internal -----------------------------------------------------

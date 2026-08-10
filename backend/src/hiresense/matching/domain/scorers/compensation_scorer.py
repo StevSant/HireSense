@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from hiresense.matching.domain.scorers.llm_scorer import BaseLLMScorer
+from hiresense.matching.prompts import COMPENSATION
 
 
 class CompensationScorer(BaseLLMScorer):
@@ -33,9 +34,5 @@ class CompensationScorer(BaseLLMScorer):
             f"Location: {location}\n"
             f"Salary Range: {salary_display}\n"
             f"Description:\n{self._truncate(description)}\n\n"
-            "Evaluate the compensation competitiveness of this role. "
-            "Consider the salary range against market rates for the location and role level. "
-            "If no salary is specified, infer from company size, role, and location. "
-            "A score of 1.0 means highly competitive; 0.0 means well below market. "
-            'Return JSON: {"score": <float>, "rationale": "<brief>"}.'
+            f"{COMPENSATION.bulleted()}"
         )

@@ -13,7 +13,17 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
-    "module": "preserve"
+    "module": "preserve",
+    /* Path aliases. Without them a shared type is reached by counting "../"
+       from wherever you happen to be, which is why moving a file has meant
+       touching every importer. Layer-shaped on purpose: an alias makes a
+       core -> pages import read as one, instead of hiding inside a relative
+       path that looks the same as any other. */
+    "paths": {
+      "@core/*": ["./src/app/core/*"],
+      "@pages/*": ["./src/app/pages/*"],
+      "@env/*": ["./src/environments/*"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

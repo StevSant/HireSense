@@ -23,7 +23,7 @@ class FakeJob:
         self.url = url
 
 
-class FakeIngestionOrchestrator:
+class FakeJobQuery:
     def __init__(self, jobs: dict[str, FakeJob] | None = None) -> None:
         self._jobs: dict[str, FakeJob] = jobs or {}
 
@@ -113,12 +113,12 @@ class FakeRepository:
 
 def make_service(
     repo: FakeRepository | None = None,
-    orchestrator: FakeIngestionOrchestrator | None = None,
+    orchestrator: FakeJobQuery | None = None,
     event_bus: FakeEventBus | None = None,
 ) -> TrackingService:
     return TrackingService(
         repository=repo or FakeRepository(),
-        ingestion_orchestrator=orchestrator or FakeIngestionOrchestrator(),
+        job_query=orchestrator or FakeJobQuery(),
         event_bus=event_bus or FakeEventBus(),
     )
 
@@ -181,7 +181,7 @@ def test_track_from_ingestion() -> None:
         id=job_id, title="ML Engineer", company="DeepMind", url="https://deepmind.com/jobs/1"
     )
     repo = FakeRepository()
-    orchestrator = FakeIngestionOrchestrator(jobs={job_id: job})
+    orchestrator = FakeJobQuery(jobs={job_id: job})
     svc = make_service(repo=repo, orchestrator=orchestrator)
 
     app = svc.track_from_ingestion(job_id)
@@ -203,7 +203,7 @@ def test_track_from_ingestion_already_tracked() -> None:
     job_id = str(uuid_mod.uuid4())
     job = FakeJob(id=job_id, title="SRE", company="Google")
     repo = FakeRepository()
-    orchestrator = FakeIngestionOrchestrator(jobs={job_id: job})
+    orchestrator = FakeJobQuery(jobs={job_id: job})
     svc = make_service(repo=repo, orchestrator=orchestrator)
 
     svc.track_from_ingestion(job_id)
@@ -311,7 +311,7 @@ async def test_update_status_emits_event_on_actual_change() -> None:
     job_id = str(uuid_mod.uuid4())
     job = FakeJob(id=job_id, title="Backend Engineer", company="Acme")
     repo = FakeRepository()
-    orchestrator = FakeIngestionOrchestrator(jobs={job_id: job})
+    orchestrator = FakeJobQuery(jobs={job_id: job})
     bus = FakeEventBus()
     svc = make_service(repo=repo, orchestrator=orchestrator, event_bus=bus)
     app = svc.track_from_ingestion(job_id)
@@ -329,7 +329,7 @@ async def test_update_status_no_event_when_status_unchanged() -> None:
     job_id = str(uuid_mod.uuid4())
     job = FakeJob(id=job_id, title="SRE", company="Google")
     repo = FakeRepository()
-    orchestrator = FakeIngestionOrchestrator(jobs={job_id: job})
+    orchestrator = FakeJobQuery(jobs={job_id: job})
     bus = FakeEventBus()
     svc = make_service(repo=repo, orchestrator=orchestrator, event_bus=bus)
     app = svc.track_from_ingestion(job_id)
@@ -359,9 +359,7 @@ async def test_update_status_records_transition_on_change():
     bus = FakeEventBus()
     repo = FakeRepository()
     created = repo.create(_make_app(job_id=uuid_mod.uuid4(), status=ApplicationStatus.SAVED.value))
-    service = TrackingService(
-        repository=repo, ingestion_orchestrator=FakeIngestionOrchestrator(), event_bus=bus
-    )
+    service = TrackingService(repository=repo, job_query=FakeJobQuery(), event_bus=bus)
     await service.update_status(created.id, ApplicationStatus.APPLIED)
     assert repo.history[-1] == ("saved", "applied")
 
@@ -372,9 +370,7 @@ async def test_update_status_no_transition_when_unchanged():
     repo = FakeRepository()
     created = repo.create(_make_app(status=ApplicationStatus.APPLIED.value))
     before = len(repo.history)
-    service = TrackingService(
-        repository=repo, ingestion_orchestrator=FakeIngestionOrchestrator(), event_bus=bus
-    )
+    service = TrackingService(repository=repo, job_query=FakeJobQuery(), event_bus=bus)
     await service.update_status(created.id, ApplicationStatus.APPLIED)
     assert len(repo.history) == before
 

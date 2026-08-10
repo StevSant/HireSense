@@ -3,6 +3,7 @@ from hiresense.inbox.domain.classification import EmailClassification
 from hiresense.inbox.domain.detected_signal import DetectedSignal
 from hiresense.inbox.domain.email_classifier import EmailClassifier
 from hiresense.inbox.domain.email_signal_kind import EmailSignalKind
+from hiresense.inbox.domain.errors import EmailClassificationError
 from hiresense.inbox.domain.inbox_processing_service import InboxProcessingService
 from hiresense.inbox.domain.inbound_email import InboundEmail
 from hiresense.inbox.domain.message_id import synthesize_message_id
@@ -12,6 +13,7 @@ __all__ = [
     "ApplicationMatcher",
     "DetectedSignal",
     "EmailClassification",
+    "EmailClassificationError",
     "EmailClassifier",
     "EmailSignalKind",
     "InboxProcessingService",

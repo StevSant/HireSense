@@ -33,9 +33,9 @@ from hiresense.applications.domain.apply_service import ApplyService
 from hiresense.applications.domain.autofill_plan_view import AutofillPlanView
 from hiresense.applications.domain.artifact_service import ArtifactService
 from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
-from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
+from hiresense.ingestion.api.dependencies import get_job_query
 from hiresense.ingestion.domain.models import NormalizedJob
-from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.ingestion.domain.job_query_service import JobQueryService
 from hiresense.tracking.domain import InvalidStatusTransitionError
 
 router = APIRouter(
@@ -105,13 +105,13 @@ def list_applications(
     limit: int | None = Query(None, ge=1),
     offset: int = Query(0, ge=0),
     service: ApplicationService = Depends(get_application_service),
-    orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
+    job_query: JobQueryService = Depends(get_job_query),
 ) -> list[ApplicationListItemResponse]:
     page = _page_size(request, limit)
     aggregates = service.list(limit=page, offset=offset)
     response.headers["X-Total-Count"] = str(service.count())
     job_ids = [str(a.job_id) for a in aggregates if a.job_id is not None]
-    jobs_by_id = orchestrator.get_jobs_by_ids(job_ids) if job_ids else {}
+    jobs_by_id = job_query.get_jobs_by_ids(job_ids) if job_ids else {}
     return [_to_list_item(a, jobs_by_id) for a in aggregates]
 
 
@@ -168,16 +168,14 @@ def _effective_listing_metadata(
 def get_application(
     application_id: uuid_mod.UUID,
     service: ApplicationService = Depends(get_application_service),
-    orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
+    job_query: JobQueryService = Depends(get_job_query),
 ) -> ApplicationAggregate:
     try:
         application = service.get(application_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     job = (
-        orchestrator.get_job_by_id(str(application.job_id))
-        if application.job_id is not None
-        else None
+        job_query.get_job_by_id(str(application.job_id)) if application.job_id is not None else None
     )
     return application.model_copy(update=_effective_listing_metadata(application, job))
 

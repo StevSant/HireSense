@@ -13,7 +13,7 @@
 .btn-back {
   background: none;
   border: none;
-  color: #2563eb;
+  color: var(--accent);
   cursor: pointer;
   padding: 0;
   font-size: 0.9em;
@@ -99,8 +99,8 @@
       color: #374151;
     }
     &.active {
-      border-bottom-color: #2563eb;
-      color: #2563eb;
+      border-bottom-color: var(--accent);
+      color: var(--accent);
     }
   }
 }

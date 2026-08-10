@@ -1,4 +1,4 @@
-from hiresense.matching.domain.scorers.json_extract import extract_json
+from hiresense.kernel import extract_json
 
 
 def test_plain_object():
@@ -25,3 +25,18 @@ def test_garbage_returns_none():
 
 def test_empty_returns_none():
     assert extract_json("") is None
+
+
+def test_fenced_object_without_json_tag():
+    raw = 'Result:\n```\n{"name": "acme", "size": 20}\n```'
+    assert extract_json(raw) == {"name": "acme", "size": 20}
+
+
+def test_object_embedded_in_prose():
+    raw = 'Here is the answer: {"score": 0.9, "rationale": "strong"} — hope it helps.'
+    assert extract_json(raw) == {"score": 0.9, "rationale": "strong"}
+
+
+def test_malformed_json_inside_fence_returns_none():
+    raw = '```json\n{"score": 0.5,,}\n```'
+    assert extract_json(raw) is None

@@ -1,14 +1,4 @@
-$primary: #4f46e5;
-$primary-dark: #4338ca;
-$primary-light: #e0e7ff;
-$text-dark: #1a1a2e;
-$text-mid: #444;
-$text-light: #6b7280;
-$border: #e2e5ea;
-$surface: #ffffff;
-$bg-soft: #f8f9fb;
-$danger: #dc2626;
-$danger-bg: #fef2f2;
+@use '../../../../../styles/index' as *;
 
 :host {
   display: block;
@@ -25,14 +15,14 @@ $danger-bg: #fef2f2;
     margin: 0 0 0.25rem;
     font-size: 1rem;
     font-weight: 600;
-    color: $text-dark;
+    color: $text-primary;
   }
 }
 
 .templates-hint {
   margin: 0;
   font-size: 0.85rem;
-  color: $text-light;
+  color: $text-secondary;
   max-width: 70ch;
 }
 
@@ -41,9 +31,9 @@ $danger-bg: #fef2f2;
   padding: 2rem 1.5rem;
   text-align: center;
   font-size: 0.9rem;
-  border: 1px dashed $border;
+  border: 1px dashed $border-default;
   border-radius: 8px;
-  color: $text-light;
+  color: $text-secondary;
 }
 
 .templates-error {
@@ -59,9 +49,9 @@ $danger-bg: #fef2f2;
   flex-direction: column;
   gap: 1rem;
   padding: 1.25rem;
-  border: 1px solid rgba($primary, 0.25);
+  border: 1px solid rgba($accent, 0.25);
   border-radius: 10px;
-  background: rgba($primary, 0.025);
+  background: rgba($accent, 0.025);
   margin-bottom: 1.5rem;
 }
 
@@ -86,19 +76,19 @@ $danger-bg: #fef2f2;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 600;
-  color: $text-light;
+  color: $text-secondary;
 }
 
 input,
 select,
 textarea {
   padding: 0.55rem 0.75rem;
-  border: 1px solid $border;
+  border: 1px solid $border-default;
   border-radius: 8px;
   font-size: 0.9rem;
   font-family: inherit;
-  background: $surface;
-  color: $text-dark;
+  background: $bg-card;
+  color: $text-primary;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
@@ -109,8 +99,8 @@ textarea {
 
   &:focus {
     outline: none;
-    border-color: $primary;
-    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    border-color: $accent;
+    box-shadow: 0 0 0 3px rgba($accent, 0.12);
   }
 }
 
@@ -125,31 +115,12 @@ textarea {
   gap: 0.6rem;
 }
 
-.btn-primary {
-  padding: 0.55rem 1.1rem;
-  background: $primary;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease;
-
-  &:hover:not(:disabled) {
-    background: $primary-dark;
-  }
-
-  &:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-}
+// `.btn-primary` comes from src/styles.scss — see the note there.
 
 .btn-ghost {
   padding: 0.5rem 0.9rem;
   background: transparent;
-  color: $text-light;
+  color: $text-secondary;
   border: 1px solid transparent;
   border-radius: 8px;
   font-size: 0.85rem;
@@ -160,7 +131,7 @@ textarea {
     background 0.15s ease;
 
   &:hover:not(:disabled) {
-    color: $text-dark;
+    color: $text-primary;
     background: rgba(0, 0, 0, 0.04);
   }
 }
@@ -196,14 +167,14 @@ textarea {
 }
 
 .template-row {
-  border: 1px solid $border;
+  border: 1px solid $border-default;
   border-radius: 10px;
-  background: $surface;
+  background: $bg-card;
   padding: 1rem 1.15rem;
   transition: border-color 0.15s ease;
 
   &:hover {
-    border-color: rgba($primary, 0.35);
+    border-color: rgba($accent, 0.35);
   }
 }
 
@@ -218,7 +189,7 @@ textarea {
   margin: 0 0 0.4rem;
   font-size: 0.95rem;
   font-weight: 600;
-  color: $text-dark;
+  color: $text-primary;
 }
 
 .template-meta {
@@ -230,8 +201,8 @@ textarea {
 
 .badge {
   padding: 0.15rem 0.6rem;
-  background: $primary-light;
-  color: $primary-dark;
+  background: $accent-subtle;
+  color: $accent-hover;
   border-radius: 999px;
   font-size: 0.7rem;
   font-weight: 600;
@@ -240,12 +211,12 @@ textarea {
 
 .badge-soft {
   background: rgba(0, 0, 0, 0.05);
-  color: $text-mid;
+  color: $text-secondary;
 }
 
 .template-date {
   font-size: 0.75rem;
-  color: $text-light;
+  color: $text-secondary;
 }
 
 .template-actions {
@@ -256,7 +227,7 @@ textarea {
 .template-preview {
   margin: 0.85rem 0 0;
   padding-top: 0.85rem;
-  border-top: 1px solid rgba($border, 0.7);
+  border-top: 1px solid rgba($border-default, 0.7);
   display: grid;
   grid-template-columns: 110px 1fr;
   gap: 0.4rem 1rem;
@@ -270,7 +241,7 @@ textarea {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-weight: 600;
-    color: $text-light;
+    color: $text-secondary;
     padding-top: 0.1rem;
   }
 
@@ -278,7 +249,7 @@ textarea {
     margin: 0;
     font-size: 0.85rem;
     line-height: 1.55;
-    color: $text-mid;
+    color: $text-secondary;
     white-space: pre-wrap;
     max-height: 8em;
     overflow: hidden;

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import json
 import logging
-import re
 from abc import ABC, abstractmethod
 from typing import Any
 
+from hiresense.kernel import extract_json
 from hiresense.matching.domain.scorers.base import DimensionResult
 from hiresense.ports import LLMPort
 
@@ -72,18 +71,8 @@ class BaseLLMScorer(ABC):
             )
 
     def _parse_response(self, response: str) -> DimensionResult:
-        data = None
-        try:
-            data = json.loads(response)
-        except (json.JSONDecodeError, TypeError):
-            md_match = re.search(r"```(?:json)?\s*\n?({.*?})\s*\n?```", response, re.DOTALL)
-            if md_match:
-                try:
-                    data = json.loads(md_match.group(1))
-                except (json.JSONDecodeError, TypeError):
-                    pass
-
-        if data is not None and "score" in data:
+        data = extract_json(response)
+        if isinstance(data, dict) and "score" in data:
             return DimensionResult(
                 dimension=self.dimension_name,
                 score=float(data["score"]),

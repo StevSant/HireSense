@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from hiresense.matching.domain.scorers.base import DimensionResult
-from hiresense.matching.domain.scorers.json_extract import extract_json
+from hiresense.kernel import extract_json
 from hiresense.matching.domain.scorers.llm_scorer import truncate_job_text
 from hiresense.ports import LLMPort
 

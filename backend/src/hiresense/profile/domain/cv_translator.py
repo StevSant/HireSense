@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hiresense.ports.llm import LLMPort
 
 logger = logging.getLogger(__name__)
 
@@ -18,12 +21,13 @@ class CVTranslator:
     option, and structural token is preserved so the result still compiles.
     """
 
-    def __init__(self, llm: Any | None) -> None:
+    def __init__(self, llm: LLMPort) -> None:
+        # Never None: when no provider is configured the composition layer
+        # injects a NullLLM, which raises LLMNotConfiguredError on use. The
+        # not-configured policy lives there, not in a guard here.
         self._llm = llm
 
     async def translate(self, raw_tex: str, source_lang: str, target_lang: str) -> str:
-        if self._llm is None:
-            raise RuntimeError("LLM not configured — cannot translate CV")
         prompt = self._build_prompt(raw_tex, source_lang, target_lang)
         response = await self._llm.complete(
             prompt,

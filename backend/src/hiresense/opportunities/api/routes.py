@@ -4,7 +4,7 @@ import uuid
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.kernel import resolve_page_limit
@@ -25,8 +25,21 @@ router = APIRouter(
     dependencies=[Depends(require_auth)],
 )
 
+# Fallbacks when the router is mounted without app.state.settings (bare-app unit
+# tests). Match the config defaults in config/groups/opportunities.py.
 _DEFAULT_PAGE_SIZE = 50
 _MAX_PAGE_SIZE = 100
+
+
+def _page_size(request: Request, page_size: int | None) -> int:
+    settings = getattr(request.app.state, "settings", None)
+    return resolve_page_limit(
+        page_size,
+        default=(
+            settings.opportunities_default_page_size if settings is not None else _DEFAULT_PAGE_SIZE
+        ),
+        maximum=(settings.opportunities_max_page_size if settings is not None else _MAX_PAGE_SIZE),
+    )
 
 
 async def _candidate_skills(profile_service: ProfileService) -> list[str]:
@@ -38,6 +51,7 @@ async def _candidate_skills(profile_service: ProfileService) -> list[str]:
 
 @router.get("", response_model=PaginatedOpportunitiesResponse)
 async def list_opportunities(
+    request: Request,
     kind: OpportunityKind | None = None,
     topic: str | None = None,
     topics: Annotated[list[str] | None, Query()] = None,
@@ -52,11 +66,11 @@ async def list_opportunities(
     status: str = "open",
     sort: str = "match_desc",
     page: int = Query(1, ge=1),
-    page_size: int = Query(_DEFAULT_PAGE_SIZE, ge=1),
+    page_size: int | None = Query(None, ge=1),
     service: OpportunityIngestionService = Depends(get_opportunities_service),
     profile_service: ProfileService = Depends(get_profile_service),
 ) -> PaginatedOpportunitiesResponse:
-    limit = resolve_page_limit(page_size, default=_DEFAULT_PAGE_SIZE, maximum=_MAX_PAGE_SIZE)
+    limit = _page_size(request, page_size)
     offset = (page - 1) * limit
     skills = await _candidate_skills(profile_service)
     # Without a profile, matched_only would hide almost nothing useful — keep feed browsable.

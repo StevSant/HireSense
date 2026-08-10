@@ -15,6 +15,7 @@ import { ApplyProfile } from '../../models/apply-profile.model';
 import { CandidateProfile } from '../../models/candidate-profile.model';
 import { ScreeningAnswer } from '../../models/screening-answer.model';
 import { ProfileService } from '../../../../core/services/profile.service';
+import { environment } from '../../../../../environments/environment';
 
 type TriState = '' | 'yes' | 'no';
 type WorkAuthorizationStatus = 'authorized' | 'requires_sponsorship' | 'unknown';
@@ -185,7 +186,7 @@ export class ApplyProfileCardComponent {
           this.form.set(snap);
           this.baseline.set(snap);
           this.savedFlash.set(true);
-          setTimeout(() => this.savedFlash.set(false), 2200);
+          setTimeout(() => this.savedFlash.set(false), environment.transientFeedbackMs);
         },
         error: (err) => {
           this.error.set(err?.error?.detail ?? 'Failed to save your apply profile');

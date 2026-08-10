@@ -60,8 +60,22 @@ jobs:
       - name: Lint (ruff)
         run: uv run ruff check .
 
-      - name: Unit + integration tests (SQLite; pgvector tests skipped)
-        run: uv run python -m pytest -q
+      # Coverage floor is set just under the measured value (87% on 2026-08-09) so
+      # it catches regressions without failing on ordinary churn. Raise it when the
+      # real number moves up; never lower it to make a red build green.
+      - name: Unit + integration tests with coverage (SQLite; pgvector tests skipped)
+        run: >-
+          uv run python -m pytest -q
+          --cov=hiresense --cov-report=term-missing:skip-covered
+          --cov-report=xml --cov-fail-under=85
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+          if-no-files-found: warn
 
       - name: Apply migrations to Postgres
         run: uv run python -m alembic upgrade head

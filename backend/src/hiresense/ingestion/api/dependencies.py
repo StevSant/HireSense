@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import Request
 
 from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
+from hiresense.ingestion.domain.job_query_service import JobQueryService
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.portal_config import PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
@@ -15,6 +16,10 @@ from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
 
 def get_ingestion_orchestrator(request: Request) -> IngestionOrchestrator:
     return request.app.state.ingestion.get_orchestrator()
+
+
+def get_job_query(request: Request) -> JobQueryService:
+    return request.app.state.ingestion.get_job_query()
 
 
 def get_portal_scanner(request: Request) -> PortalScanner:

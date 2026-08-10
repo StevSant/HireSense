@@ -7,6 +7,7 @@ import pytest
 from hiresense.inbox.domain import (
     ApplicationMatcher,
     EmailClassification,
+    EmailClassificationError,
     EmailSignalKind,
     InboundEmail,
     InboxProcessingService,
@@ -235,3 +236,45 @@ async def test_run_bounds_concurrency():
     count = await svc.run()
     assert count == len(emails)
     assert max_concurrent == _PROCESSING_CONCURRENCY
+
+
+class _AlwaysFailingClassifier:
+    async def classify(self, email):
+        raise EmailClassificationError("email classification failed")
+
+
+def _service_with_failing_classifier(reader, repo):
+    app = TrackedApplication(
+        id=uuid.uuid4(), title="Dev", company="Acme", status=ApplicationStatus.APPLIED.value
+    )
+    return InboxProcessingService(
+        reader=reader,
+        repo=repo,
+        classifier=_AlwaysFailingClassifier(),
+        matcher=ApplicationMatcher(min_confidence=0.5),
+        list_active=lambda: [app],
+        notifier=None,
+    )
+
+
+@pytest.mark.asyncio
+async def test_webhook_propagates_a_classification_failure():
+    """A failed classification must reach the route so it answers 500 and the
+    provider redelivers — the alternative is dropping a rejection or interview
+    invite for good."""
+    repo = _Repo()
+    service = _service_with_failing_classifier(_Reader([]), repo)
+
+    with pytest.raises(EmailClassificationError):
+        await service.ingest_one(_email())
+
+    assert repo.signals == []
+
+
+@pytest.mark.asyncio
+async def test_scan_isolates_a_classification_failure_without_storing_a_signal():
+    repo = _Repo()
+    count = await _service_with_failing_classifier(_Reader([_email()]), repo).run()
+
+    assert count == 0
+    assert repo.signals == []

@@ -43,6 +43,7 @@ from hiresense.ingestion.domain import (
     IngestionOrchestrator,
     JobEmbeddingIndexer,
     JobQualityClassifier,
+    JobQueryService,
     JobRevalidationService,
     PortalScanner,
     load_portals_config,
@@ -92,6 +93,7 @@ from hiresense.bootstrap.shared_infra import SharedInfra
 class IngestionBuild:
     provider: IngestionProvider
     orchestrator: IngestionOrchestrator
+    job_query: JobQueryService
     boards_jobs_repo: Any
     pre_ranker: Any
     revalidation_service: Any
@@ -284,6 +286,11 @@ def build_ingestion(
         health_tracker=health_tracker,
     )
 
+    # Job lookups / score persistence for the boards bucket. Shares the very
+    # same repository instance as the orchestrator, so every other context can
+    # read the corpus without holding the orchestrator itself.
+    job_query = JobQueryService(repository=boards_jobs_repo)
+
     # URL-probe revalidation sweep for the boards bucket. Snapshot sources
     # (portals) get disappearance-based closure during ingestion, so the sweep
     # only targets feed/search sources whose listings stay live after closing.
@@ -382,10 +389,12 @@ def build_ingestion(
         ),
         "thoughtworks": ThoughtworksAdapter(
             http_client=http_client,
+            base_url=s.thoughtworks_api_url,
             timeout=s.portal_scan_timeout,
         ),
         "globant": GlobantAdapter(
             http_client=http_client,
+            base_url=s.globant_api_url,
             timeout=s.portal_scan_timeout,
         ),
         "scraper": scraper_adapter,
@@ -465,6 +474,7 @@ def build_ingestion(
 
     provider = IngestionProvider(
         orchestrator=ingestion_orchestrator,
+        job_query=job_query,
         portal_scanner=portal_scanner,
         portals_config=portals_config,
         semantic_scoring=semantic_scoring,
@@ -477,6 +487,7 @@ def build_ingestion(
     return IngestionBuild(
         provider=provider,
         orchestrator=ingestion_orchestrator,
+        job_query=job_query,
         boards_jobs_repo=boards_jobs_repo,
         pre_ranker=pre_ranker,
         revalidation_service=revalidation_service,

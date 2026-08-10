@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.matching.api.dependencies import (
     get_batch_evaluation_service,
-    get_ingestion_orchestrator_for_matching,
+    get_job_query_for_matching,
     get_tracking_service_for_matching,
 )
 from hiresense.matching.api.routes import router
@@ -70,7 +70,7 @@ class FakeNormalizedJob:
         self.location = location
 
 
-class FakeIngestionOrchestrator:
+class FakeJobQuery:
     def list_jobs(self):
         return [FakeNormalizedJob(id="ing-1", title="Data Eng", company="Gamma")]
 
@@ -81,9 +81,7 @@ def _make_app() -> FastAPI:
     app.dependency_overrides[require_auth] = lambda: "test-user"
     app.dependency_overrides[get_batch_evaluation_service] = lambda: FakeBatchService()
     app.dependency_overrides[get_tracking_service_for_matching] = lambda: FakeTrackingService()
-    app.dependency_overrides[get_ingestion_orchestrator_for_matching] = lambda: (
-        FakeIngestionOrchestrator()
-    )
+    app.dependency_overrides[get_job_query_for_matching] = lambda: FakeJobQuery()
     return app
 
 

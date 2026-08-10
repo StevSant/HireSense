@@ -10,22 +10,34 @@ everything together.
 Dependencies always point **inward**: `api → domain ← infrastructure`, and the domain depends only
 on **ports** (abstract `Protocol`s), never on concrete adapters.
 
+```mermaid
+flowchart TB
+    client(["HTTP client"])
+
+    api["<b>api/</b><br/>FastAPI routes · request/response schemas<br/>Depends(...) providers"]
+    domain["<b>domain/</b><br/>pure business logic + Pydantic models<br/><i>no sqlalchemy · no langchain · no httpx</i>"]
+    ports["<b>ports/</b><br/>Protocols the domain is typed against"]
+    infra["<b>infrastructure/</b><br/>SQLAlchemy *Orm · repositories · adapters<br/><i>knows frameworks &amp; the outside world</i>"]
+
+    outside[("PostgreSQL 16 + pgvector<br/>HTTP job sources · LLM provider")]
+    bootstrap["<b>bootstrap/</b><br/>composition layer — the only place<br/>a concrete implementation is chosen"]
+
+    client --> api
+    api -->|calls| domain
+    domain -->|typed against| ports
+    infra -->|implements| ports
+    infra --> outside
+    bootstrap -.->|injects adapters into services| domain
+
+    classDef pure fill:#0f766e22,stroke:#0f766e,stroke-width:2px
+    classDef edge fill:#64748b22,stroke:#64748b
+    class domain,ports pure
+    class api,infra,bootstrap edge
 ```
-        ┌──────────────────────────────────────────────┐
-        │                    api/                       │  HTTP routes, request/response schemas,
-        │   (FastAPI routes, schemas, dependencies)     │  FastAPI dependency providers
-        └───────────────────┬──────────────────────────┘
-                            │ calls
-        ┌───────────────────▼──────────────────────────┐
-        │                  domain/                      │  pure business logic + Pydantic models.
-        │   services, domain models, ports (Protocols)  │  NO sqlalchemy, NO langchain, NO httpx.
-        └───────────────────▲──────────────────────────┘
-                            │ implements (depends inward)
-        ┌───────────────────┴──────────────────────────┐
-        │              infrastructure/                  │  repositories, ORM classes, adapters.
-        │   (SQLAlchemy ORM, adapters, persistence)     │  Knows about frameworks & the outside world.
-        └──────────────────────────────────────────────┘
-```
+
+Read the arrows as *"depends on"*: everything points **inward**, toward `domain/`. `domain/`
+itself points at nothing but its own ports — which is exactly what makes it testable without a
+database, a network, or an LLM.
 
 **Hard rules**
 - `domain/` imports **nothing** from `infrastructure/` and pulls in **no** framework packages
@@ -34,6 +46,94 @@ on **ports** (abstract `Protocol`s), never on concrete adapters.
   and each **implements a port**.
 - Wiring (which concrete implementation is used) happens only in the **composition layer**
   (`bootstrap/`), never via fallback imports inside the domain.
+
+## The bounded contexts
+
+Every module under `src/hiresense/` in the list below is a bounded context and follows the
+layout in the next section. **Owns tables?** means the module declares its own `*Orm` classes
+(registered in `infrastructure/registry.py`) and maps them back to domain models in a
+repository; *no* means it is stateless in the sense defined further down — it may still have a
+read-only query adapter. Persistent modules declare the repository `Protocol` in a top-level
+`ports/` package; `autopilot`, `inbox`, and `scheduler` instead keep theirs in
+`domain/ports.py`. Both satisfy the dependency rule — the service is still typed against a
+`Protocol`, never a concrete repository — but new modules should prefer the `ports/` package
+form for consistency.
+
+| Module | Responsibility | Owns tables? |
+|---|---|:--:|
+| `admin` | Runtime LLM configuration, per-feature overrides, usage/audit logging | yes |
+| `analytics` | Market pay bands, best-fit companies/roles, pipeline conversion | no — read-only adapter over `ingestion` |
+| `applications` | Per-application artifacts: match snapshot, tailored CV, cover letter, interview prep | yes |
+| `autohunt` | One scheduled hunt run: new-since jobs → taste-rank → floor → top-N → a persisted `Digest` | yes |
+| `autopilot` | End-to-end pipeline that turns hunt results into gated drafts awaiting approval | yes |
+| `claims` | Candidate claims and the evidence backing them | yes |
+| `cover_letter_templates` | Reusable opening/body/signature presets | yes |
+| `identity` | Authentication: login, password hashing, JWT issue/verify | no |
+| `inbox` | Inbound email → classified signals matched back onto tracked applications | yes |
+| `ingestion` | Fetching, normalizing, deduplicating, and closing job postings | yes |
+| `interview` | STAR stories and interview preparation material | yes |
+| `matching` | Scoring a job against the profile: ANN pre-rank, skill overlap, tiered LLM dimensions | no |
+| `network` | Professional contacts imported from LinkedIn connection exports | yes |
+| `notifications` | Renders and delivers digest / signal / failure emails | no |
+| `opportunities` | Non-job opportunities — conferences, CFPs, grants, funded events | yes |
+| `optimization` | CV rewriting and optimization against a specific posting | no |
+| `outreach` | Recruiter / hiring-manager message generation, outreach events, follow-up cadence | yes |
+| `portfolio` | External proof-of-work sources; profile enrichment, citation, engagement readback | yes |
+| `preference` | Preference-learning loop: explicit + implicit feedback signals → taste model | yes |
+| `profile` | The candidate profile that everything else is ranked against | yes |
+| `research` | Cached company research used by applications and outreach | yes |
+| `scheduler` | Opt-in in-process recurring jobs (`SCHEDULER_ENABLED`) with run history and toggles | yes |
+| `tracking` | Application pipeline: Saved → Applied → Interviewing → Offer, plus status history | yes |
+
+### How they connect
+
+The core hunt path is a chain of direct service calls, not an event choreography. Contexts are
+composed in `bootstrap/`, so a downstream context receives an upstream service (or a port) by
+injection rather than importing it:
+
+```mermaid
+flowchart LR
+    subgraph ext["External"]
+        boards["Job boards<br/>RSS · JSON · MCP"]
+        portals["Company ATS portals<br/>portals.yml"]
+    end
+
+    ingestion["<b>ingestion</b><br/>upsert by identity · content hash<br/>closure detection"]
+    vec[("vector_embeddings<br/>pgvector")]
+    matching["<b>matching</b><br/>ANN pre-rank → skill overlap<br/>→ tiered LLM dimensions"]
+    profile["<b>profile</b>"]
+    preference["<b>preference</b><br/>taste model"]
+    applications["<b>applications</b><br/>CV · cover letter · prep"]
+    tracking["<b>tracking</b><br/>Saved → Applied → Offer"]
+    analytics["<b>analytics</b>"]
+
+    boards --> ingestion
+    portals --> ingestion
+    ingestion -->|JobEmbeddingIndexer| vec
+    vec -->|VectorStorePort.search| matching
+    ingestion --> matching
+    profile --> matching
+    matching --> applications
+    applications --> tracking
+    tracking -.->|tracking.status_changed event| preference
+    preference -.->|re-ranks| matching
+    ingestion -.->|read-only corpus adapter| analytics
+    tracking --> analytics
+```
+
+Only one domain event currently has a subscriber: `tracking.status_changed`, which
+`bootstrap/preference.py` wires into the preference-learning loop. `jobs.ingested` and
+`match.completed` are published on the same bus but nothing listens for them yet — treat them
+as available extension points, not as load-bearing wiring.
+
+Three packages under `src/hiresense/` are deliberately **not** bounded contexts and do not
+follow the `api/domain/infrastructure` layout:
+
+| Package | What it is |
+|---|---|
+| `observability` | Cross-cutting OpenTelemetry wiring — tracer/meter setup, exporters, JSON log formatting, request-id context, and ASGI middleware. |
+| `kernel` | Shared primitives every context may use: typed exceptions + their handlers, domain-event plumbing, value objects, pagination, rate limiter, LRU cache, security headers, skill normalization, prompt boundaries. |
+| `ports` / `adapters` | The global ports and their implementations — see [Global ports & adapters](#global-ports--adapters). |
 
 ## Per-module layout
 
@@ -83,6 +183,7 @@ Cross-cutting infrastructure that any module may depend on:
 
 | Port (`src/hiresense/ports/`) | Adapter(s) | Location |
 |---|---|---|
+| `EmailSenderPort` | `SmtpEmailSender` (config-gated; raises `EmailUnavailableError` when SMTP is unset) | `adapters/smtp_email_sender.py` |
 | `EmbeddingPort` | `SentenceTransformerAdapter` | `adapters/embedding/` |
 | `EventBus` | `InMemoryEventBus` | `adapters/event_bus/` |
 | `LatexCompilerPort` | `LatexCompiler` | `adapters/latex/` |
@@ -94,9 +195,13 @@ Module-level ports:
 
 | Port | Adapter(s) | Module |
 |---|---|---|
-| `JobSourcePort` | `RemotiveAdapter`, `JobicyAdapter`, `GreenhouseAdapter`, … (12 sources) | `ingestion/adapters/` |
+| `JobSourcePort` | `RemotiveAdapter`, `JobicyAdapter`, `GreenhouseAdapter`, … — **30 concrete adapters** re-exported from `ingestion.adapters` (boards, ATS portals, structured/CSV imports, and the `auto`/`scraper` fallbacks) | `ingestion/adapters/` |
 | `JobsRepositoryPort` | `JobsRepository` (SQLAlchemy), `InMemoryJobsRepository` (tests) | `ingestion/infrastructure/` |
-| `*RepositoryPort` | SQLAlchemy repository per module | `applications`, `profile`, `tracking`, `interview`, `research`, `cover_letter_templates`, `admin` |
+| `*RepositoryPort` | SQLAlchemy repository per module | `admin`, `applications`, `autohunt`, `claims`, `cover_letter_templates`, `interview`, `network`, `opportunities`, `outreach`, `portfolio`, `preference`, `profile`, `research`, `tracking` |
+
+Two contexts ship their own outbound adapters beside their repositories:
+`opportunities/adapters/` (`confs.tech` feed, curated import) and `portfolio/adapters/`
+(GitHub, Supabase portfolio + engagement readback).
 
 ### LLM adapter chain (decorator pattern)
 

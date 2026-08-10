@@ -28,7 +28,7 @@ from sqlalchemy.pool import StaticPool
 from hiresense.adapters.event_bus import InMemoryEventBus
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.infrastructure.database import Base
-from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
+from hiresense.ingestion.api.dependencies import get_job_query
 from hiresense.preference.api import router as preference_router
 from hiresense.preference.api.dependencies import get_preference_service
 from hiresense.preference.domain import (
@@ -78,7 +78,7 @@ class _FakeVectorStore:
         pass
 
 
-class _FakeOrchestrator:
+class _FakeJobQuery:
     """The tracking routes enrich responses via get_job_by_id; None disables enrichment."""
 
     def get_job_by_id(self, job_id: str):  # noqa: ARG002
@@ -93,7 +93,7 @@ def _build_app(
     app.dependency_overrides[require_auth] = lambda: "test-user"
     app.dependency_overrides[get_tracking_service] = lambda: tracking_service
     app.dependency_overrides[get_preference_service] = lambda: preference_service
-    app.dependency_overrides[get_ingestion_orchestrator] = _FakeOrchestrator
+    app.dependency_overrides[get_job_query] = _FakeJobQuery
     app.include_router(tracking_router)
     app.include_router(preference_router)
     return app
@@ -139,7 +139,7 @@ async def test_status_change_records_implicit_signal() -> None:
     tracking_repo = TrackingRepository(session_factory=session_factory)
     tracking_service = TrackingService(
         repository=tracking_repo,
-        ingestion_orchestrator=_FakeOrchestrator(),
+        job_query=_FakeJobQuery(),
         event_bus=event_bus,
     )
 

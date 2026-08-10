@@ -75,7 +75,6 @@
                 [attr.y]="200 - barHeight(b.cost_usd, maxBucketCost(), 180)"
                 [attr.width]="slotWidth(ts.buckets.length, 780, 4)"
                 [attr.height]="barHeight(b.cost_usd, maxBucketCost(), 180)"
-                fill="#2563eb"
               >
                 <title>
                   {{ formatDay(b.key) }} — {{ b.cost_usd | currency: 'USD' : 'symbol' : '1.4-4' }} ·

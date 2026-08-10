@@ -42,20 +42,7 @@
   }
 }
 
-.btn-primary {
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 9px 16px;
-  font-size: 0.95em;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-}
+// `.btn-primary` comes from src/styles.scss — see the note there.
 
 .muted {
   color: #6b7280;
@@ -130,7 +117,7 @@
 }
 
 .link {
-  color: #2563eb;
+  color: var(--accent);
   text-decoration: none;
   font-size: 0.9em;
 

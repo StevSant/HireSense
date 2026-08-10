@@ -93,10 +93,14 @@ class FakeGlobantClient:
         )
 
 
+THOUGHTWORKS_URL = "https://tw.test/rest/careers/jobs"
+GLOBANT_URL = "https://globant.test/api/sap/job-requisition"
+
+
 @pytest.mark.asyncio
 async def test_thoughtworks_fetches_jobs() -> None:
     client = FakeThoughtworksClient()
-    adapter = ThoughtworksAdapter(http_client=client, timeout=10.0)
+    adapter = ThoughtworksAdapter(http_client=client, base_url=THOUGHTWORKS_URL, timeout=10.0)
     portal = PortalEntry(
         name="Thoughtworks",
         platform="thoughtworks",
@@ -108,6 +112,7 @@ async def test_thoughtworks_fetches_jobs() -> None:
     assert jobs[0].source_id == "8042982"
     assert jobs[0].raw_data["company"] == "Thoughtworks"
     assert adapter.source_type() == SourceType.API
+    assert client.calls == [THOUGHTWORKS_URL]
 
 
 def test_thoughtworks_normalizer() -> None:
@@ -133,7 +138,7 @@ def test_thoughtworks_normalizer() -> None:
 @pytest.mark.asyncio
 async def test_globant_paginates_job_requisitions() -> None:
     client = FakeGlobantClient()
-    adapter = GlobantAdapter(http_client=client, timeout=10.0)
+    adapter = GlobantAdapter(http_client=client, base_url=GLOBANT_URL, timeout=10.0)
     portal = PortalEntry(
         name="Globant",
         platform="globant",
@@ -144,6 +149,19 @@ async def test_globant_paginates_job_requisitions() -> None:
     assert len(jobs) == 2
     assert {j.source_id for j in jobs} == {"78869", "78840"}
     assert len(client.calls) == 2
+    assert [url for url, _ in client.calls] == [GLOBANT_URL, GLOBANT_URL]
+
+
+@pytest.mark.asyncio
+async def test_globant_strips_trailing_query_marker_from_configured_url() -> None:
+    """Operators may paste the URL with a trailing '?'; params are appended."""
+    client = FakeGlobantClient()
+    adapter = GlobantAdapter(http_client=client, base_url=f"{GLOBANT_URL}?", timeout=10.0)
+
+    await adapter.fetch_jobs(board_id="globant", company_name="Globant")
+
+    assert [url for url, _ in client.calls] == [GLOBANT_URL, GLOBANT_URL]
+    assert [params["page"] for _, params in client.calls] == [1, 2]
 
 
 def test_globant_normalizer() -> None:

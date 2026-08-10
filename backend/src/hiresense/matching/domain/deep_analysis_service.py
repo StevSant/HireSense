@@ -7,7 +7,7 @@ from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.profile_hash import score_profile_hash
 from hiresense.matching.domain.deep_analysis_result import DeepAnalysisResult
 from hiresense.matching.domain.deep_dimension import DeepDimension
-from hiresense.matching.domain.scorers.json_extract import extract_json
+from hiresense.kernel import extract_json
 from hiresense.ports import LLMPort
 
 logger = logging.getLogger(__name__)

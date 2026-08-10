@@ -26,20 +26,18 @@ import { CompanyLinkComponent } from '../../core/components/company-link';
 import { createSortState } from '../../core/utils/sort-state';
 import { SourceHealth, SourceInfo } from './models/source-capability.model';
 
-const FALLBACK_BOARD_SOURCES = [
-  'remotive',
-  'remoteok',
-  'jobicy',
-  'himalayas',
-  'hn_hiring',
-  'weworkremotely',
-  'getonboard',
-  'linkedin',
-  'arbeitnow',
-  'themuse',
-  'dice',
-  'crunchboard',
-  'yc_jobs',
+// ATS platforms are scanned from the Portals tab (per-company boards), not the
+// Boards tab, so they are filtered out of the board source dropdown. Mirrors
+// backend/src/hiresense/ingestion/domain/portal_config.py. The board registry
+// (source_capabilities.py) currently declares none of these, so this is a
+// forward-guard: it keeps the dropdown correct if an ATS is ever added there.
+const ATS_PORTAL_SOURCES = [
+  'greenhouse',
+  'lever',
+  'ashby',
+  'workable',
+  'smartrecruiters',
+  'recruitee',
 ];
 
 @Component({
@@ -80,7 +78,10 @@ export class IngestionComponent implements OnInit {
 
   // Filters
   filters = signal<JobFilters>({});
-  boardSources = signal<string[]>([...FALLBACK_BOARD_SOURCES]);
+  // Populated from GET /ingestion/sources — the backend registry is the only
+  // source of truth. A hand-maintained fallback list used to live here and had
+  // already drifted seven sources behind that registry.
+  boardSources = signal<string[]>([]);
   portalSources = signal<string[]>([]);
   sourceCatalog = signal<SourceInfo[]>([]);
   sourceHealth = signal<SourceHealth[]>([]);
@@ -230,26 +231,18 @@ export class IngestionComponent implements OnInit {
       .subscribe({
         next: (res) => {
           this.sourceCatalog.set(res.sources);
-          const enabledBoards = res.sources
-            .filter((s) => s.enabled || s.wired)
-            .map((s) => s.capabilities.source)
-            .filter(
-              (name) =>
-                ![
-                  'greenhouse',
-                  'lever',
-                  'ashby',
-                  'workable',
-                  'smartrecruiters',
-                  'recruitee',
-                ].includes(name),
-            );
-          if (enabledBoards.length) {
-            this.boardSources.set(enabledBoards);
-          }
+          this.boardSources.set(
+            res.sources
+              .filter((s) => s.enabled || s.wired)
+              .map((s) => s.capabilities.source)
+              .filter((name) => !ATS_PORTAL_SOURCES.includes(name)),
+          );
         },
         error: () => {
-          // Keep FALLBACK_BOARD_SOURCES — Discover still works offline from cache.
+          // Leave the source dropdown empty rather than guessing at the
+          // registry: every other filter still works, and the job list itself
+          // is loaded by a separate request.
+          this.boardSources.set([]);
         },
       });
     this.ingestionService
@@ -340,13 +333,13 @@ export class IngestionComponent implements OnInit {
           this.revalidateNotice.set(
             `Closed ${res.closed} job(s) on this page. Still scanning the rest of your jobs for closed listings in the background — more may drop off shortly.`,
           );
-          timer(15000, 15000)
+          timer(environment.closureRevalidatePollMs, environment.closureRevalidatePollMs)
             .pipe(
               // Skip ticks while the tab is backgrounded — no point burning a
               // request (and the user's attention budget) on a poll they
               // can't see; it resumes polling on the next visible tick.
               filter(() => document.visibilityState === 'visible'),
-              take(8),
+              take(environment.closureRevalidatePollTicks),
               takeUntilDestroyed(this.destroyRef),
             )
             .subscribe({

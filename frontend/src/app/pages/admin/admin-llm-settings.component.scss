@@ -135,20 +135,24 @@
     }
   }
 
+  // KEPT, unlike the other component-level .btn-primary rules: the markup here
+  // is `class="btn btn-primary"`, so this is a modifier that recolours this
+  // file's local `.btn` base rather than a copy of the global button. Only the
+  // colours are its own, and they now come from the accent token.
   .btn-primary {
-    background: #2563eb;
+    background: var(--accent);
     color: #fff;
-    border-color: #2563eb;
+    border-color: var(--accent);
 
     &:hover:not(:disabled) {
-      background: #1d4ed8;
+      background: var(--accent-hover);
     }
   }
 
   .btn-link {
     background: none;
     border: none;
-    color: #2563eb;
+    color: var(--accent);
     cursor: pointer;
     padding: 0.25rem 0.5rem;
     font-size: 0.85rem;

@@ -24,11 +24,19 @@ class MatchingSettings(BaseSettings):
     # application strength, interview readiness).
     match_dimension_job_char_limit: int = 4000
 
-    # Matching weights (must sum to 100)
-    weight_semantic: int = 15
-    weight_skill_match: int = 20
-    weight_experience: int = 10
-    weight_language: int = 5
+    # Heuristic breakdown weights, as percentages that must sum to 100 among
+    # THEMSELVES. They blend the four non-LLM sub-scores (semantic similarity,
+    # skill overlap, experience, language) into MatchResult.overall_score.
+    # Separate from the LLM dimension weights below — the two feed different
+    # composites and are not one shared 100-point budget.
+    weight_semantic: int = 35
+    weight_skill_match: int = 30
+    weight_experience: int = 20
+    weight_language: int = 15
+
+    # LLM dimension weights: RELATIVE weights handed to each of the six
+    # dimension scorers. Only their ratios matter, so they need not sum to any
+    # particular total.
     weight_seniority: int = 10
     weight_compensation: int = 10
     weight_growth: int = 5

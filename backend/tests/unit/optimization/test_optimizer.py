@@ -211,6 +211,28 @@ async def test_optimizer_raises_on_non_json_response() -> None:
 
 
 @pytest.mark.asyncio
+async def test_optimizer_raises_when_json_is_not_an_object() -> None:
+    # Valid JSON, wrong shape: a bare array has no "changes" key, so it must
+    # fail loudly rather than silently optimizing nothing.
+    class ArrayLLM:
+        async def complete(self, prompt: str, *, system: str = "", model: str = "") -> str:
+            return '["not", "an", "object"]'
+
+    optimizer = CVOptimizer(llm=ArrayLLM())
+    with pytest.raises(OptimizationError):
+        await optimizer.optimize(
+            match_id="match-5",
+            job_id="job-5",
+            cv_id="cv-5",
+            original_tex="\\section*{SUMMARY}\nSome text",
+            job_description="Any",
+            job_skills=[],
+            missing_skills=[],
+            recommendations=[],
+        )
+
+
+@pytest.mark.asyncio
 async def test_optimizer_no_changes_is_a_success_not_a_failure() -> None:
     # A successful call that suggests no edits returns identical text but with an
     # empty change list — distinguishable from a failure, which raises.

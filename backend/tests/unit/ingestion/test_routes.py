@@ -2,7 +2,12 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from fastapi import FastAPI
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.ingestion.api import get_ingestion_orchestrator, get_portal_scanner, router
+from hiresense.ingestion.api import (
+    get_ingestion_orchestrator,
+    get_job_query,
+    get_portal_scanner,
+    router,
+)
 from hiresense.ingestion.api.dependencies import get_semantic_scoring
 from hiresense.ingestion.domain.application_method import ApplicationMethod
 from hiresense.ingestion.domain.models import NormalizedJob
@@ -80,6 +85,7 @@ def _make_app() -> tuple[FastAPI, FakeOrchestrator, FakeScanner]:
     orch = FakeOrchestrator()
     scanner = FakeScanner()
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: orch
+    app.dependency_overrides[get_job_query] = lambda: orch
     app.dependency_overrides[get_portal_scanner] = lambda: scanner
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileService()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
@@ -168,6 +174,7 @@ async def test_list_jobs_all_tab_consolidates_cross_source_duplicates_and_persis
     orchestrator = RecordingOrchestrator()
     scanner = RecordingScanner()
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: orchestrator
+    app.dependency_overrides[get_job_query] = lambda: orchestrator
     app.dependency_overrides[get_portal_scanner] = lambda: scanner
     app.dependency_overrides[get_profile_service] = lambda: ProfileWithSkills()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
@@ -337,6 +344,7 @@ async def test_list_jobs_strict_location_filters_non_matching() -> None:
 
     app = FastAPI()
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: MultiJobOrchestrator()
+    app.dependency_overrides[get_job_query] = lambda: MultiJobOrchestrator()
     app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileService()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
@@ -554,6 +562,7 @@ async def test_pre_ranker_promotes_job_to_page_one_before_pagination() -> None:
 
     app = FastAPI()
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: _Orch()
+    app.dependency_overrides[get_job_query] = lambda: _Orch()
     app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileService()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
@@ -645,6 +654,7 @@ def _make_rescore_app(pre_ranker, quick_scoring):
 
     app = FastAPI()
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: _Orch()
+    app.dependency_overrides[get_job_query] = lambda: _Orch()
     app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileWithSkills()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
@@ -817,6 +827,7 @@ async def test_non_match_sort_with_active_min_score_still_runs_whole_corpus_over
     quick = _MinScoreQuickScoring()
     app = FastAPI()
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: _Orch()
+    app.dependency_overrides[get_job_query] = lambda: _Orch()
     app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileSummaryOnly()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
@@ -939,6 +950,7 @@ async def test_cached_llm_score_ranks_globally_before_pagination() -> None:
 
     app = FastAPI()
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: _Orch()
+    app.dependency_overrides[get_job_query] = lambda: _Orch()
     app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileSummaryOnly()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
@@ -1045,6 +1057,7 @@ async def test_cold_cache_source_champions_rank_globally() -> None:
         ingestion_source_champions_per_source=2,
     )
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: _Orch()
+    app.dependency_overrides[get_job_query] = lambda: _Orch()
     app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileSummaryOnly()
     app.dependency_overrides[get_semantic_scoring] = lambda: None
@@ -1096,6 +1109,7 @@ def _make_get_job_app(job: NormalizedJob, quick_scoring):
 
     app = FastAPI()
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: _GetJobOrch(job)
+    app.dependency_overrides[get_job_query] = lambda: _GetJobOrch(job)
     app.dependency_overrides[get_portal_scanner] = lambda: _DetailScanner()
     app.dependency_overrides[get_profile_service] = lambda: FakeProfileWithSkills()
     app.dependency_overrides[get_portfolio_enrichment] = lambda: None

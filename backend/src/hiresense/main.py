@@ -214,7 +214,7 @@ def create_app() -> FastAPI:
 
     # Two-phase wiring: ingestion is built after preference, so attach the
     # job-title lookup used by the LLM explanation summary now.
-    preference.service.attach_job_lookup(ingestion.orchestrator)
+    preference.service.attach_job_lookup(ingestion.job_query)
 
     # --- Profile ---
     profile = build_profile(infra, tracked)
@@ -257,7 +257,7 @@ def create_app() -> FastAPI:
     preference.service.attach_dimension_scorer(
         MatchingDimensionScorerAdapter(
             orchestrator=matching.orchestrator,
-            job_lookup=ingestion.orchestrator,
+            job_lookup=ingestion.job_query,
             profile_service=profile.service,
         )
     )
@@ -268,7 +268,7 @@ def create_app() -> FastAPI:
     app.include_router(optimization_router)
 
     # --- Tracking ---
-    tracking = build_tracking(infra, ingestion.orchestrator)
+    tracking = build_tracking(infra, ingestion.job_query)
     app.state.tracking = tracking.provider
     app.include_router(tracking_router)
 
@@ -301,7 +301,7 @@ def create_app() -> FastAPI:
         infra,
         tracked,
         tracking_service=tracking.service,
-        ingestion_orchestrator=ingestion.orchestrator,
+        job_query=ingestion.job_query,
         matching_orchestrator=matching.orchestrator,
         cv_optimizer=optimization.cv_optimizer,
         interview_prep_service=interview.prep_service,

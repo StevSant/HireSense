@@ -25,6 +25,28 @@ class MatchingBuild:
     orchestrator: MatchingOrchestrator
 
 
+def _breakdown_weights(s: Any) -> dict[str, float]:
+    """Normalize the four heuristic weight percentages into fractions.
+
+    ScoreBreakdown.weighted_average multiplies by fractions, while the settings
+    are whole percentages, so divide by their own total rather than a literal
+    100 — that way a set which doesn't quite sum to 100 still produces a proper
+    weighted average instead of silently scaling every score down.
+    """
+    percentages = {
+        "semantic": float(s.weight_semantic),
+        "skill": float(s.weight_skill_match),
+        "experience": float(s.weight_experience),
+        "language": float(s.weight_language),
+    }
+    total = sum(percentages.values())
+    if total <= 0:
+        # Degenerate config: fall back to ScoreBreakdown's own defaults rather
+        # than dividing by zero or scoring every job 0.0.
+        return {}
+    return {key: value / total for key, value in percentages.items()}
+
+
 def build_matching(
     infra: SharedInfra,
     tracked: Callable[[str], Any],
@@ -81,6 +103,7 @@ def build_matching(
         embedding=infra.embedding,
         preference=preference,
         combined_scorer=combined_scorer,
+        breakdown_weights=_breakdown_weights(s),
     )
     batch_evaluation_service = BatchEvaluationService(
         orchestrator=matching_orchestrator,

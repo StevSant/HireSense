@@ -14,6 +14,7 @@ import { ApplicationsService } from '../../../core/services/applications.service
 import { CvOptimizationRunnerService } from '../../../core/services/cv-optimization-runner.service';
 import { ApplicationAggregate } from '../models/application-aggregate.model';
 import { ClaimBlockerReason } from '../models/cv-optimization.model';
+import { environment } from '../../../../environments/environment';
 
 type ViewMode = 'changes' | 'full';
 type PreviewSource = 'original' | 'optimized';
@@ -201,7 +202,7 @@ export class CvTabComponent {
     try {
       await navigator.clipboard.writeText(opt.optimized_tex);
       this.copyFlash.set(true);
-      setTimeout(() => this.copyFlash.set(false), 1800);
+      setTimeout(() => this.copyFlash.set(false), environment.transientFeedbackMs);
     } catch {
       this.downloadError.set('Clipboard access denied — use Download .tex instead.');
     }

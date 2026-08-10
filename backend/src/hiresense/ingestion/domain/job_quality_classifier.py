@@ -7,7 +7,7 @@ from typing import Any
 from hiresense.ingestion.domain.job_quality import JobQuality
 from hiresense.ingestion.domain.job_quality_verdict import JobQualityVerdict
 from hiresense.ingestion.domain.models import NormalizedJob
-from hiresense.matching.domain.scorers.json_extract import extract_json
+from hiresense.kernel import extract_json
 from hiresense.ports import LLMPort
 
 logger = logging.getLogger(__name__)

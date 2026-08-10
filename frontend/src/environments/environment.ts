@@ -29,4 +29,13 @@ export const environment = {
   // client-side need the whole list, but must not spin forever against a huge
   // table — past this they show a truncation notice instead.
   listMaxItems: 2000,
+  // How long a transient 'Copied!' / 'Saved!' confirmation stays on screen
+  // after a copy or save. One value for every such flash so the same gesture
+  // reads identically wherever it appears.
+  transientFeedbackMs: 2000,
+  // Manual 'Check closed' poll: the server keeps sweeping for closed listings
+  // in the background after the immediate response, so the job list is
+  // re-read on this interval, this many times, to surface late closures.
+  closureRevalidatePollMs: 15000,
+  closureRevalidatePollTicks: 8,
 };

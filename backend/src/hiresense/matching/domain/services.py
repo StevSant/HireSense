@@ -11,6 +11,7 @@ from opentelemetry import trace
 from pydantic import BaseModel, Field
 
 from hiresense.kernel.events import MatchCompletedEvent
+from hiresense.kernel.exceptions import UpstreamUnavailableError
 from hiresense.matching.domain.eligibility import (
     EligibilityResult,
     EligibilityStatus,
@@ -22,6 +23,7 @@ from hiresense.kernel.prompt_boundary import PromptBoundary
 from hiresense.matching.domain.semantic_scorer import SemanticScorer
 from hiresense.matching.domain.skill_matcher import SkillMatcher
 from hiresense.observability import get_domain_metrics, get_tracer
+from hiresense.ports.llm import LLMTimeoutError
 
 logger = logging.getLogger(__name__)
 _tracer = get_tracer("hiresense.matching")
@@ -56,9 +58,14 @@ class MatchingOrchestrator:
         embedding: Any | None = None,
         preference: Any | None = None,
         combined_scorer: Any | None = None,
+        breakdown_weights: dict[str, float] | None = None,
     ) -> None:
         self._llm = llm
         self._event_bus = event_bus
+        # Percentages for the four heuristic sub-scores, normalized to fractions.
+        # None keeps ScoreBreakdown's own defaults, so a bare orchestrator (tests,
+        # bare apps) scores exactly as before.
+        self._breakdown_weights = breakdown_weights
         self._dimension_scorers = dimension_scorers or []
         self._embedding = embedding
         # Optional, duck-typed preference port: exposes weight_overrides() ->
@@ -196,19 +203,31 @@ class MatchingOrchestrator:
     async def _fan_out(
         self, job: Any, profile: Any | None, scorers: list[Any]
     ) -> list[DimensionResult]:
-        async def safe_score(scorer: Any) -> DimensionResult:
+        async def safe_score(scorer: Any) -> DimensionResult | None:
             try:
                 return await scorer.score(job, profile)
-            except Exception as exc:
-                return DimensionResult(
-                    dimension=scorer.dimension_name,
-                    score=0.5,
-                    rationale=f"Evaluation failed: {exc}",
-                    weight=scorer.weight,
+            except Exception:
+                # A failed dimension used to be reported as score=0.5 at its full
+                # weight and with no log line, so a composite could be half
+                # invented without leaving a trace. Log it and drop the dimension
+                # instead: the composite is renormalized over the dimensions that
+                # actually scored (total_weight in evaluate() only sums what is
+                # returned here), and the response no longer shows a fabricated
+                # mid-range score as if the scorer had produced it.
+                logger.exception(
+                    "matching: dimension scorer %r failed — excluded from the composite",
+                    getattr(scorer, "dimension_name", scorer),
                 )
+                return None
 
         results = await asyncio.gather(*[safe_score(s) for s in scorers])
-        return list(results)
+        scored = [result for result in results if result is not None]
+        if scorers and not scored:
+            # Every wired scorer failed. There is nothing left to average, and
+            # evaluate()'s `total_weight == 0` branch would hand back a plausible
+            # 0.5 composite built from nothing at all.
+            raise UpstreamUnavailableError("all dimension scorers failed")
+        return scored
 
     async def analyze(
         self,
@@ -264,7 +283,7 @@ class MatchingOrchestrator:
             id=match_id,
             job_id=job_id,
             cv_id=cv_id,
-            overall_score=breakdown.weighted_average(),
+            overall_score=breakdown.weighted_average(self._breakdown_weights),
             breakdown=breakdown,
             matched_skills=skill_result.matched,
             missing_skills=skill_result.missing,
@@ -320,18 +339,20 @@ class MatchingOrchestrator:
             )
             cleaned = _strip_markdown_fence(response)
             return json.loads(cleaned)
-        except json.JSONDecodeError:
+        except LLMTimeoutError:
+            # Let the timeout surface as a 504 (issue #139) rather than folding it
+            # into a generic analysis failure.
+            raise
+        except json.JSONDecodeError as exc:
             logger.warning(
                 "Matching LLM returned non-JSON (first 500 chars): %r",
                 (cleaned if "cleaned" in locals() else response)[:500],
             )
-        except Exception:
+            raise UpstreamUnavailableError("match analysis failed") from exc
+        except Exception as exc:
+            # Do NOT fall back to experience_score=0.5 / language_score=0.5 — 0.5
+            # is a perfectly plausible score, so the user reads an outage as a
+            # genuine mediocre match and it gets persisted as one (issues
+            # #147/#142). Raise so the API returns a 503.
             logger.exception("LLM analysis failed")
-        return {
-            "experience_score": 0.5,
-            "language_score": 0.5,
-            "present_skills": [],
-            "pros": [],
-            "cons": [],
-            "recommendations": [],
-        }
+            raise UpstreamUnavailableError("match analysis failed") from exc

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from hiresense.admin.domain.effective_config import EffectiveFeatureConfig
@@ -16,6 +17,9 @@ from hiresense.admin.ports import (
     LLMSettingsRepositoryPort,
     LLMTestRunnerPort,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class LLMSettingsServiceError(RuntimeError):
@@ -294,12 +298,29 @@ class LLMSettingsService:
 
     def _safe_decrypt(self, ciphertext: str | None) -> str:
         if not ciphertext or not self._cipher.is_available:
+            # No stored key, or no encryption secret configured at all: nothing
+            # was attempted, so the env key is simply the configured source.
             return self._env_api_key
         try:
             return self._cipher.decrypt(ciphertext)
         except EncryptionUnavailableError:
+            # Declared degraded state — the cipher itself reports it via
+            # `is_available`, so the env fallback is the documented behavior.
             return self._env_api_key
         except Exception:
+            # Anything else means a stored key EXISTS but could not be read:
+            # corrupted ciphertext, a rotated/replaced encryption secret, or a
+            # tampered DB row. The fallback silently swaps in a DIFFERENT
+            # credential than the operator configured in the admin UI, so it must
+            # never be invisible — without this line the only symptom is
+            # confusing auth failures against the provider. Never log the
+            # ciphertext or either key.
+            logger.error(
+                "admin: the stored LLM API key could not be decrypted — falling back to the "
+                "environment key. The admin-configured key is unusable until it is re-saved; "
+                "check for a rotated encryption secret or a corrupted llm_settings row.",
+                exc_info=True,
+            )
             return self._env_api_key
 
     def _current_global_key_or_env(self) -> str:

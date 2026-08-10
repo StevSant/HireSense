@@ -15,6 +15,10 @@ def extract_json(response: str) -> Any | None:
     contents of the first fenced ```json block, and the widest bracketed
     span found in the text. Returns the decoded value (dict/list/...) or
     None when nothing parses — callers decide how to degrade.
+
+    Shared by every module that reads a JSON answer back from an LLM; it is
+    not matching-specific, so it lives in the kernel rather than in any one
+    bounded context.
     """
     if not response:
         return None

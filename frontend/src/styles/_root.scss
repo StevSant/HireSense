@@ -1,0 +1,70 @@
+// Publishes every design token from _tokens.scss as a CSS custom property.
+//
+// Included EXACTLY ONCE, from src/styles.scss. Angular compiles each component
+// stylesheet into its own bundle, so a component that `@use`d this file would
+// re-emit the whole :root block into that bundle. Components `@use`
+// `styles/index` instead, which forwards the Sass variables and mixins but
+// emits no CSS.
+
+@use 'tokens' as *;
+
+:root {
+  /* --- Surface --- */
+  --bg-root: #{$bg-root};
+  --bg-card: #{$bg-card};
+  --bg-inset: #{$bg-inset};
+  --bg-sidebar: #{$bg-sidebar};
+  --bg-sidebar-hover: #{$bg-sidebar-hover};
+  --bg-sidebar-active: #{$bg-sidebar-active};
+
+  /* --- Border --- */
+  --border-default: #{$border-default};
+  --border-subtle: #{$border-subtle};
+  --border-sidebar: #{$border-sidebar};
+
+  /* --- Text --- */
+  --text-primary: #{$text-primary};
+  --text-secondary: #{$text-secondary};
+  --text-muted: #{$text-muted};
+  --text-on-dark: #{$text-on-dark};
+  --text-on-dark-muted: #{$text-on-dark-muted};
+
+  /* --- Accent --- */
+  --accent: #{$accent};
+  --accent-hover: #{$accent-hover};
+  --accent-subtle: #{$accent-subtle};
+  --accent-bg: #{$accent-bg};
+  --accent-soft: #{$accent-soft};
+  --accent-text: #{$accent-text};
+
+  /* --- Semantic --- */
+  --success: #{$success};
+  --success-bg: #{$success-bg};
+  --danger: #{$danger};
+  --danger-bg: #{$danger-bg};
+  --danger-border: #{$danger-border};
+  --warning: #{$warning};
+  --warning-bg: #{$warning-bg};
+  --info-bg: #{$info-bg};
+  --info-text: #{$info-text};
+
+  /* --- Typography --- */
+  --font-display: #{$font-display};
+  --font-body: #{$font-body};
+  --font-mono: #{$font-mono};
+
+  /* --- Radius --- */
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-full: #{$radius-full};
+
+  /* --- Shadow --- */
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+
+  /* --- Transition --- */
+  --ease: #{$ease};
+  --duration: #{$duration};
+}

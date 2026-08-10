@@ -24,6 +24,7 @@ import { GenerateResponse } from './models/generate-response.model';
 import { createSortState } from '../../core/utils/sort-state';
 import { sortItems } from '../../core/utils/sort-items';
 import { parseSortToken } from '../../core/utils/parse-sort-token';
+import { environment } from '../../../environments/environment';
 import { ComboboxComponent, ComboboxOption } from '../../core/components/combobox';
 
 @Component({
@@ -230,7 +231,10 @@ export class OutreachComponent implements OnInit {
     navigator.clipboard?.writeText(text);
     this.copied.set(true);
     clearTimeout(this.copiedResetTimer);
-    this.copiedResetTimer = setTimeout(() => this.copied.set(false), 2000);
+    this.copiedResetTimer = setTimeout(
+      () => this.copied.set(false),
+      environment.transientFeedbackMs,
+    );
   }
 
   record(kind: OutreachEventKind): void {

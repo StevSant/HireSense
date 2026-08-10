@@ -11,14 +11,13 @@ from opentelemetry import trace
 
 from hiresense.ingestion.domain.application_classifier import classify_application
 from hiresense.ingestion.domain.identity import identity_key
-from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.work_authorization_facts import add_work_authorization_facts
 from hiresense.ingestion.domain.normalizer import JobNormalizer
 from hiresense.ingestion.domain.source_health import SourceHealthTracker, SourceRunStats
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.ports import JobsRepositoryPort
-from hiresense.ingestion.ports.jobs_repository import QualityUpdate, ScoreUpdate
+from hiresense.ingestion.ports.jobs_repository import QualityUpdate
 from hiresense.kernel.events import JobsIngestedEvent
 from hiresense.observability import get_domain_metrics, get_tracer
 
@@ -270,40 +269,6 @@ class IngestionOrchestrator:
                 # held by the run that is actually in flight.
                 if claimed:
                     self._run_in_flight = False
-
-    def store_job(self, job: NormalizedJob) -> None:
-        self._repository.upsert(job)
-
-    def get_job_by_id(self, job_id: str) -> NormalizedJob | None:
-        return self._repository.get_by_id(job_id)
-
-    def get_jobs_by_ids(self, job_ids: list[str]) -> dict[str, NormalizedJob]:
-        """Batch job enrichment: resolve many ids in one query (avoids the
-        per-row ``get_job_by_id`` N+1 when shaping list responses)."""
-        return self._repository.get_by_ids(job_ids)
-
-    def list_jobs(self, criteria: JobListCriteria | None = None) -> list[NormalizedJob]:
-        """Full corpus, or — given criteria — only rows matching the cheap
-        selective predicates (filtered DB-side by the SQL repository)."""
-        if criteria is None:
-            return self._repository.list_all()
-        return self._repository.list_filtered(criteria)
-
-    def persist_scores(
-        self,
-        job_id: str,
-        match_score: float | None,
-        semantic_score: float | None,
-    ) -> None:
-        self._repository.update_scores(job_id, match_score, semantic_score)
-
-    def persist_scores_batch(self, updates: list[ScoreUpdate]) -> None:
-        """Persist score updates for multiple jobs in a single batched write.
-
-        Delegates directly to repo.bulk_update_scores so the call site
-        executes one I/O round-trip regardless of corpus size.
-        """
-        self._repository.bulk_update_scores(updates)
 
     async def _prune_expired(self) -> None:
         if not self._retention_days or self._retention_days <= 0:

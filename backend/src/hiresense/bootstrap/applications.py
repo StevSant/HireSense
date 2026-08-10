@@ -18,7 +18,7 @@ def build_applications(
     tracked: Callable[[str], Any],
     *,
     tracking_service: Any,
-    ingestion_orchestrator: Any,
+    job_query: Any,
     matching_orchestrator: Any,
     cv_optimizer: Any,
     interview_prep_service: Any,
@@ -33,7 +33,7 @@ def build_applications(
     application_service = ApplicationService(
         repository=application_repo,
         tracking_service=tracking_service,
-        ingestion_orchestrator=ingestion_orchestrator,
+        job_query=job_query,
         skill_extractor=applications_skill_extractor,
     )
     artifact_service = ArtifactService(

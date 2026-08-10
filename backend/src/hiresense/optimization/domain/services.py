@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
 import logging
-import re
 import uuid
 from typing import Any
 
 from hiresense.claims.domain import CandidateClaim, CandidateClaimService
+from hiresense.kernel import extract_json
 from hiresense.optimization.domain.claim_evidence_validator import ClaimEvidenceValidator
 from hiresense.kernel.prompt_boundary import PromptBoundary
 from hiresense.optimization.domain.errors import OptimizationError
@@ -14,13 +13,6 @@ from hiresense.optimization.domain.models import OptimizationResult, SectionChan
 from hiresense.ports.llm import LLMTimeoutError
 
 logger = logging.getLogger(__name__)
-
-_MARKDOWN_FENCE_RE = re.compile(r"```(?:json)?\s*\n?(.*?)\n?```", re.DOTALL)
-
-
-def _strip_markdown_fence(text: str) -> str:
-    match = _MARKDOWN_FENCE_RE.search(text)
-    return match.group(1).strip() if match else text.strip()
 
 
 class CVOptimizer:
@@ -140,15 +132,14 @@ class CVOptimizer:
                 f"{PromptBoundary.untrusted_content_instruction()}"
             ),
         )
-        cleaned = _strip_markdown_fence(response)
-        try:
-            return json.loads(cleaned)
-        except json.JSONDecodeError:
+        suggestions = extract_json(response)
+        if not isinstance(suggestions, dict):
             logger.warning(
                 "CV optimizer got non-JSON LLM response (first 500 chars): %r",
-                cleaned[:500],
+                response[:500],
             )
-            raise
+            raise ValueError("CV optimizer LLM response was not a JSON object")
+        return suggestions
 
     def _verified_claims(self) -> list[CandidateClaim]:
         if self._claim_service is None:

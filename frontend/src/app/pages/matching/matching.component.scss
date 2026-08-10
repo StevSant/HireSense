@@ -1,20 +1,4 @@
-$primary: #4f46e5;
-$primary-dark: #4338ca;
-$primary-light: #e0e7ff;
-$primary-bg: #f5f3ff;
-$text-dark: #1a1a2e;
-$text-mid: #444;
-$text-light: #6b7280;
-$border: #e2e5ea;
-$surface: #ffffff;
-$bg: #f8f9fb;
-$danger: #dc2626;
-$danger-bg: #fef2f2;
-$success: #16a34a;
-$success-bg: #f0fdf4;
-$radius: 10px;
-$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-$transition: 0.2s ease;
+@use '../../../styles/index' as *;
 
 .page {
   max-width: 1000px;
@@ -26,14 +10,14 @@ $transition: 0.2s ease;
   h1 {
     font-size: 1.6rem;
     font-weight: 700;
-    color: $text-dark;
+    color: $text-primary;
     margin: 0 0 0.35rem;
     letter-spacing: -0.02em;
   }
 
   .page-subtitle {
     font-size: 0.9rem;
-    color: $text-light;
+    color: $text-secondary;
     margin: 0;
   }
 }
@@ -44,16 +28,16 @@ $transition: 0.2s ease;
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1rem;
-  background: $primary-bg;
-  border: 1px solid rgba($primary, 0.15);
+  background: $accent-bg;
+  border: 1px solid rgba($accent, 0.15);
   border-radius: 8px;
   margin-bottom: 1.25rem;
   font-size: 0.825rem;
-  color: $primary-dark;
+  color: $accent-hover;
   font-weight: 500;
 
   svg {
-    color: $primary;
+    color: $accent;
     flex-shrink: 0;
   }
 }
@@ -67,36 +51,36 @@ $transition: 0.2s ease;
     margin-bottom: 0.35rem;
     font-weight: 500;
     font-size: 0.825rem;
-    color: $text-mid;
+    color: $text-secondary;
   }
 
   select {
     width: 100%;
     padding: 0.55rem 0.75rem;
-    border: 1px solid $border;
+    border: 1px solid $border-default;
     border-radius: 8px;
     font-size: 0.875rem;
     font-family: inherit;
-    color: $text-dark;
-    background: $surface;
+    color: $text-primary;
+    background: $bg-card;
     cursor: pointer;
     transition:
-      border-color $transition,
-      box-shadow $transition;
+      border-color var(--duration) var(--ease),
+      box-shadow var(--duration) var(--ease);
 
     &:focus {
       outline: none;
-      border-color: $primary;
-      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+      border-color: $accent;
+      box-shadow: 0 0 0 3px rgba($accent, 0.1);
     }
   }
 }
 
 // --- Form ---
 .match-form {
-  background: $surface;
+  background: $bg-card;
   padding: 1.5rem;
-  border-radius: $radius;
+  border-radius: $radius-lg;
   box-shadow: $shadow-sm;
 }
 
@@ -111,29 +95,29 @@ $transition: 0.2s ease;
 .cv-language-label {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: $text-light;
+  color: $text-secondary;
   margin-right: 0.25rem;
 }
 
 .cv-lang-btn {
   padding: 0.4rem 0.9rem;
-  border: 1px solid $border;
+  border: 1px solid $border-default;
   border-radius: 6px;
   background: none;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: $text-light;
+  color: $text-secondary;
   cursor: pointer;
   transition: all 0.15s ease;
 
   &:hover {
-    border-color: $primary;
-    color: $primary;
+    border-color: $accent;
+    color: $accent;
   }
 
   &.active {
-    background: $primary;
-    border-color: $primary;
+    background: $accent;
+    border-color: $accent;
     color: white;
   }
 }
@@ -148,7 +132,7 @@ $transition: 0.2s ease;
     margin-bottom: 0.5rem;
     font-weight: 500;
     font-size: 0.8125rem;
-    color: $text-mid;
+    color: $text-secondary;
   }
 }
 
@@ -160,24 +144,24 @@ $transition: 0.2s ease;
 
 .skill-chip {
   padding: 0.3rem 0.7rem;
-  border: 1px solid $border;
+  border: 1px solid $border-default;
   border-radius: 9999px;
   background: none;
   font-size: 0.78rem;
   font-weight: 500;
-  color: $text-light;
+  color: $text-secondary;
   cursor: pointer;
   transition: all 0.15s ease;
 
   &:hover {
-    border-color: $primary;
-    color: $primary;
+    border-color: $accent;
+    color: $accent;
   }
 
   &.selected {
-    background: $primary-light;
-    border-color: rgba($primary, 0.3);
-    color: $primary-dark;
+    background: $accent-subtle;
+    border-color: rgba($accent, 0.3);
+    color: $accent-hover;
   }
 }
 
@@ -194,27 +178,27 @@ $transition: 0.2s ease;
     margin-bottom: 0.35rem;
     font-weight: 500;
     font-size: 0.825rem;
-    color: $text-mid;
+    color: $text-secondary;
   }
 
   textarea,
   input {
     width: 100%;
     padding: 0.5rem 0.75rem;
-    border: 1px solid $border;
+    border: 1px solid $border-default;
     border-radius: 8px;
     font-size: 0.875rem;
     font-family: inherit;
-    color: $text-dark;
+    color: $text-primary;
     box-sizing: border-box;
     transition:
-      border-color $transition,
-      box-shadow $transition;
+      border-color var(--duration) var(--ease),
+      box-shadow var(--duration) var(--ease);
 
     &:focus {
       outline: none;
-      border-color: $primary;
-      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+      border-color: $accent;
+      box-shadow: 0 0 0 3px rgba($accent, 0.1);
     }
 
     &::placeholder {
@@ -224,32 +208,7 @@ $transition: 0.2s ease;
 }
 
 // --- Buttons ---
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.5rem;
-  background: $primary;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition:
-    background $transition,
-    box-shadow $transition;
-
-  &:hover:not(:disabled) {
-    background: $primary-dark;
-    box-shadow: 0 2px 8px rgba($primary, 0.25);
-  }
-
-  &:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-}
+// `.btn-primary` comes from src/styles.scss — see the note there.
 
 .btn-spinner {
   width: 16px;
@@ -268,20 +227,20 @@ $transition: 0.2s ease;
 
 .btn-secondary {
   padding: 0.5rem 1.15rem;
-  background: $surface;
-  color: $primary;
-  border: 1px solid rgba($primary, 0.3);
+  background: $bg-card;
+  color: $accent;
+  border: 1px solid rgba($accent, 0.3);
   border-radius: 8px;
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
   transition:
-    background $transition,
-    border-color $transition;
+    background var(--duration) var(--ease),
+    border-color var(--duration) var(--ease);
 
   &:hover {
-    background: $primary-bg;
-    border-color: rgba($primary, 0.5);
+    background: $accent-bg;
+    border-color: rgba($accent, 0.5);
   }
 }
 
@@ -306,7 +265,7 @@ $transition: 0.2s ease;
   h2 {
     font-size: 1.3rem;
     font-weight: 700;
-    color: $text-dark;
+    color: $text-primary;
     letter-spacing: -0.01em;
   }
 }
@@ -315,9 +274,9 @@ $transition: 0.2s ease;
   display: flex;
   gap: 2.5rem;
   align-items: center;
-  background: $surface;
+  background: $bg-card;
   padding: 1.5rem;
-  border-radius: $radius;
+  border-radius: $radius-lg;
   margin-bottom: 1rem;
   box-shadow: $shadow-sm;
 }
@@ -339,7 +298,7 @@ $transition: 0.2s ease;
   }
   .score-label {
     font-size: 0.75rem;
-    color: $text-light;
+    color: $text-secondary;
   }
 }
 
@@ -356,12 +315,12 @@ $transition: 0.2s ease;
   .breakdown-label {
     width: 80px;
     font-size: 0.8rem;
-    color: $text-light;
+    color: $text-secondary;
   }
   .bar {
     flex: 1;
     height: 8px;
-    background: $bg;
+    background: $bg-inset;
     border-radius: 4px;
     overflow: hidden;
   }
@@ -375,7 +334,7 @@ $transition: 0.2s ease;
     text-align: right;
     font-size: 0.8rem;
     font-weight: 500;
-    color: $text-mid;
+    color: $text-secondary;
   }
 }
 
@@ -387,14 +346,14 @@ $transition: 0.2s ease;
 }
 
 .detail-card {
-  background: $surface;
+  background: $bg-card;
   padding: 1.25rem;
-  border-radius: $radius;
+  border-radius: $radius-lg;
   box-shadow: $shadow-sm;
 
   h3 {
     font-size: 0.8rem;
-    color: $text-light;
+    color: $text-secondary;
     margin-bottom: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -455,14 +414,14 @@ $transition: 0.2s ease;
 }
 
 .recommendations {
-  background: $surface;
+  background: $bg-card;
   padding: 1.25rem;
-  border-radius: $radius;
+  border-radius: $radius-lg;
   box-shadow: $shadow-sm;
 
   h3 {
     font-size: 0.8rem;
-    color: $text-light;
+    color: $text-secondary;
     margin-bottom: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -474,7 +433,7 @@ $transition: 0.2s ease;
   }
   li {
     font-size: 0.85rem;
-    color: $text-mid;
+    color: $text-secondary;
     padding: 0.25rem 0;
   }
 }
@@ -493,19 +452,19 @@ $transition: 0.2s ease;
   flex-direction: column;
   align-items: center;
   padding: 1.5rem;
-  background: $surface;
-  border-radius: $radius;
+  background: $bg-card;
+  border-radius: $radius-lg;
   box-shadow: $shadow-sm;
   margin-bottom: 1rem;
 
   .score-value {
     font-size: 2.5rem;
     font-weight: 700;
-    color: $text-dark;
+    color: $text-primary;
   }
   .score-label {
     font-size: 0.85rem;
-    color: $text-light;
+    color: $text-secondary;
   }
 }
 
@@ -516,9 +475,9 @@ $transition: 0.2s ease;
 }
 
 .dimension-card {
-  background: $surface;
+  background: $bg-card;
   padding: 1.25rem;
-  border-radius: $radius;
+  border-radius: $radius-lg;
   box-shadow: $shadow-sm;
 }
 
@@ -531,7 +490,7 @@ $transition: 0.2s ease;
   .dimension-name {
     font-weight: 600;
     font-size: 0.875rem;
-    color: $text-dark;
+    color: $text-primary;
   }
   .dimension-score {
     font-weight: 600;
@@ -541,7 +500,7 @@ $transition: 0.2s ease;
 
 .dimension-bar {
   height: 6px;
-  background: $bg;
+  background: $bg-inset;
   border-radius: 3px;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -555,14 +514,14 @@ $transition: 0.2s ease;
 
 .dimension-rationale {
   font-size: 0.8rem;
-  color: $text-mid;
+  color: $text-secondary;
   line-height: 1.5;
   margin: 0 0 0.35rem;
 }
 
 .dimension-weight {
   font-size: 0.72rem;
-  color: $text-light;
+  color: $text-secondary;
 }
 
 /* Side-by-side field pairs are too cramped on phones — stack them. */

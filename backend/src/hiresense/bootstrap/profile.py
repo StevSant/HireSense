@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from hiresense.adapters.latex import LatexCompiler
+from hiresense.adapters.llm import NullLLM
 from hiresense.bootstrap.shared_infra import SharedInfra
 from hiresense.profile.api.provider import ProfileProvider
 from hiresense.profile.domain import (
@@ -28,7 +29,11 @@ def build_profile(infra: SharedInfra, tracked: Callable[[str], Any]) -> ProfileB
     latex_parser = LaTeXParser()
     pdf_parser = PDFParser(llm=tracked("cv_parser"), char_limit=infra.settings.cv_parse_char_limit)
     skill_extractor = SkillExtractor()
-    translator = CVTranslator(llm=tracked("cv_translator"))
+    # `tracked` yields None when no LLM_API_KEY is configured (APP_MODE=local).
+    # The translator has no meaningful degraded output — a CV it can't translate
+    # is not a CV — so it gets a NullLLM that raises LLMNotConfiguredError,
+    # which the route surfaces as a 503 exactly as the old None-guard did.
+    translator = CVTranslator(llm=tracked("cv_translator") or NullLLM(feature="cv_translator"))
     latex_compiler = LatexCompiler(
         compiler=infra.settings.latex_compiler,
         timeout_seconds=infra.settings.latex_timeout_seconds,

@@ -6,6 +6,7 @@ from typing import Any
 
 from hiresense.inbox.domain.classification import EmailClassification
 from hiresense.inbox.domain.email_signal_kind import EmailSignalKind
+from hiresense.inbox.domain.errors import EmailClassificationError
 from hiresense.inbox.domain.inbound_email import InboundEmail
 from hiresense.kernel.prompt_boundary import PromptBoundary
 from hiresense.kernel.prompt_boundary_label import UntrustedContentLabel
@@ -29,21 +30,30 @@ SYSTEM_PROMPT = (
 
 
 class EmailClassifier:
-    """Pure LLM unit: classify an inbound email into a status signal. Never
-    raises — an LLM or parse failure yields job_related=False."""
+    """Pure LLM unit: classify an inbound email into a status signal.
+
+    ``job_related=False`` is a VERDICT ("this email is not about an application")
+    and the caller drops such emails without storing a signal. A failed
+    classification is therefore never reported that way — it raises
+    ``EmailClassificationError`` so the caller can retry or isolate it, instead
+    of an LLM outage quietly discarding every rejection and interview invite.
+    """
 
     def __init__(self, llm: Any | None) -> None:
         self._llm = llm
 
     async def classify(self, email: InboundEmail) -> EmailClassification:
         if self._llm is None:
+            # Deliberate degraded state, not a failure: with no LLM wired
+            # (APP_MODE=local) there is nothing to classify with, and retrying
+            # would never help.
             return EmailClassification(job_related=False)
         prompt = self._build_prompt(email)
         try:
             raw = await self._llm.complete(prompt, system=SYSTEM_PROMPT)
-        except Exception:  # noqa: BLE001 - classification is best-effort
-            logger.exception("inbox: classifier LLM call failed")
-            return EmailClassification(job_related=False)
+        except Exception as exc:
+            logger.exception("inbox: classifier LLM call failed for %r", email.message_id)
+            raise EmailClassificationError("email classification failed") from exc
         return self._parse(raw)
 
     @staticmethod
@@ -65,6 +75,9 @@ class EmailClassifier:
                 role=data.get("role"),
                 confidence=float(data.get("confidence", 0.0)),
             )
-        except Exception:  # noqa: BLE001 - tolerate any malformed LLM output
+        except Exception as exc:
+            # Unparseable output means the email was NOT classified. Reporting it
+            # as job_related=False would be the model asserting the email is
+            # irrelevant, and the caller would drop it for good.
             logger.warning("inbox: could not parse classifier output")
-            return EmailClassification(job_related=False)
+            raise EmailClassificationError("email classification response was unparseable") from exc

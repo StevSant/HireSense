@@ -5,8 +5,8 @@ import uuid as uuid_mod
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from hiresense.identity.api.dependencies import require_auth
-from hiresense.ingestion.api.dependencies import get_ingestion_orchestrator
-from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.ingestion.api.dependencies import get_job_query
+from hiresense.ingestion.domain.job_query_service import JobQueryService
 from hiresense.kernel import resolve_page_limit
 from hiresense.tracking.api.dependencies import get_tracking_service
 from hiresense.tracking.api.schemas import (
@@ -28,12 +28,12 @@ _MAX_PAGE_SIZE = 500
 
 def _enrich(
     app: TrackedApplication,
-    orchestrator: IngestionOrchestrator,
+    job_query: JobQueryService,
 ) -> TrackedApplicationResponse:
     response = TrackedApplicationResponse.model_validate(app)
     if app.job_id is None:
         return response
-    job = orchestrator.get_job_by_id(str(app.job_id))
+    job = job_query.get_job_by_id(str(app.job_id))
     if job is None:
         return response
     return response.model_copy(
@@ -51,7 +51,7 @@ def _enrich(
 def create_application(
     request: CreateApplicationRequest,
     service: TrackingService = Depends(get_tracking_service),
-    orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
+    job_query: JobQueryService = Depends(get_job_query),
 ) -> TrackedApplicationResponse:
     if request.job_id is not None:
         app = service.track_from_ingestion(str(request.job_id))
@@ -69,7 +69,7 @@ def create_application(
             source=request.source,
             posted_date=request.posted_date,
         )
-    return _enrich(app, orchestrator)
+    return _enrich(app, job_query)
 
 
 @router.get("", response_model=list[TrackedApplicationResponse])
@@ -80,7 +80,7 @@ def list_applications(
     limit: int | None = Query(None, ge=1),
     offset: int = Query(0, ge=0),
     service: TrackingService = Depends(get_tracking_service),
-    orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
+    job_query: JobQueryService = Depends(get_job_query),
 ) -> list[TrackedApplicationResponse]:
     settings = getattr(request.app.state, "settings", None)
     page = resolve_page_limit(
@@ -90,20 +90,20 @@ def list_applications(
     )
     apps = service.list(status=status, limit=page, offset=offset)
     response.headers["X-Total-Count"] = str(service.count(status=status))
-    return [_enrich(a, orchestrator) for a in apps]
+    return [_enrich(a, job_query) for a in apps]
 
 
 @router.get("/{id}", response_model=TrackedApplicationResponse)
 def get_application(
     id: uuid_mod.UUID,
     service: TrackingService = Depends(get_tracking_service),
-    orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
+    job_query: JobQueryService = Depends(get_job_query),
 ) -> TrackedApplicationResponse:
     try:
         app = service.get(id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return _enrich(app, orchestrator)
+    return _enrich(app, job_query)
 
 
 @router.patch("/{id}", response_model=TrackedApplicationResponse)
@@ -111,7 +111,7 @@ async def update_application(
     id: uuid_mod.UUID,
     request: UpdateApplicationRequest,
     service: TrackingService = Depends(get_tracking_service),
-    orchestrator: IngestionOrchestrator = Depends(get_ingestion_orchestrator),
+    job_query: JobQueryService = Depends(get_job_query),
 ) -> TrackedApplicationResponse:
     try:
         detail_changes = request.model_dump(exclude_unset=True, exclude={"status"})
@@ -124,7 +124,7 @@ async def update_application(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return _enrich(app, orchestrator)
+    return _enrich(app, job_query)
 
 
 @router.delete("/{id}", status_code=204)

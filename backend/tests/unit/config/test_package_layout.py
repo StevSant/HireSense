@@ -17,7 +17,7 @@ def test_public_symbols_importable(monkeypatch: pytest.MonkeyPatch) -> None:
     # Flat access across several groups still works.
     assert settings.otel_enabled is True
     assert settings.database_url.startswith("postgresql")
-    assert settings.weight_semantic == 15
+    assert settings.weight_semantic == 35
     assert settings.portfolio_ref_prefix == "hiresense"
     assert settings.app_mode is AppMode.LOCAL
 

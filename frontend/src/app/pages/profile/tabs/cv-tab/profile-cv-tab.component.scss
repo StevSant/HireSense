@@ -2,8 +2,8 @@
 
 // --- Upload Card ---
 .upload-card {
-  background: $surface;
-  border-radius: $radius;
+  background: $bg-card;
+  border-radius: $radius-lg;
   box-shadow: $shadow-sm;
   overflow: hidden;
 }
@@ -11,8 +11,8 @@
 // --- Tab Bar ---
 .tab-bar {
   display: flex;
-  border-bottom: 1px solid $border;
-  background: $bg;
+  border-bottom: 1px solid $border-default;
+  background: $bg-inset;
 }
 
 .tab {
@@ -25,23 +25,23 @@
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  color: $text-light;
+  color: $text-secondary;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition:
-    color $transition,
-    border-color $transition,
-    background $transition;
+    color var(--duration) var(--ease),
+    border-color var(--duration) var(--ease),
+    background var(--duration) var(--ease);
 
   svg {
     opacity: 0.5;
-    transition: opacity $transition;
+    transition: opacity var(--duration) var(--ease);
   }
 
   &:hover {
-    color: $text-mid;
-    background: rgba($primary, 0.03);
+    color: $text-secondary;
+    background: rgba($accent, 0.03);
 
     svg {
       opacity: 0.7;
@@ -49,9 +49,9 @@
   }
 
   &.active {
-    color: $primary;
-    border-bottom-color: $primary;
-    background: $surface;
+    color: $accent;
+    border-bottom-color: $accent;
+    background: $bg-card;
 
     svg {
       opacity: 1;
@@ -73,35 +73,35 @@
     margin-bottom: 0.35rem;
     font-weight: 500;
     font-size: 0.825rem;
-    color: $text-mid;
+    color: $text-secondary;
   }
 
   select {
     padding: 0.5rem 0.75rem;
-    border: 1px solid $border;
+    border: 1px solid $border-default;
     border-radius: 6px;
     font-size: 0.875rem;
     font-family: inherit;
-    color: $text-dark;
-    background: $surface;
+    color: $text-primary;
+    background: $bg-card;
     min-width: 140px;
     cursor: pointer;
     transition:
-      border-color $transition,
-      box-shadow $transition;
+      border-color var(--duration) var(--ease),
+      box-shadow var(--duration) var(--ease);
 
     &:focus {
       outline: none;
-      border-color: $primary;
-      box-shadow: 0 0 0 3px rgba($primary, 0.1);
+      border-color: $accent;
+      box-shadow: 0 0 0 3px rgba($accent, 0.1);
     }
   }
 }
 
 // --- Dropzone ---
 .dropzone {
-  border: 2px dashed $border;
-  border-radius: $radius;
+  border: 2px dashed $border-default;
+  border-radius: $radius-lg;
   padding: 2.5rem 1.5rem;
   text-align: center;
   transition:
@@ -113,25 +113,25 @@
   position: relative;
 
   &:hover {
-    border-color: rgba($primary, 0.4);
-    background: rgba($primary, 0.015);
+    border-color: rgba($accent, 0.4);
+    background: rgba($accent, 0.015);
   }
 
   &.drag-over {
-    border-color: $primary;
-    background: rgba($primary, 0.04);
-    box-shadow: 0 0 0 4px rgba($primary, 0.08);
+    border-color: $accent;
+    background: rgba($accent, 0.04);
+    box-shadow: 0 0 0 4px rgba($accent, 0.08);
 
     .dropzone-icon svg {
       transform: translateY(-4px);
-      color: $primary;
+      color: $accent;
     }
   }
 
   &.has-file {
     border-style: solid;
-    border-color: $primary-light;
-    background: rgba($primary, 0.02);
+    border-color: $accent-subtle;
+    background: rgba($accent, 0.02);
     padding: 1rem 1.25rem;
     cursor: default;
   }
@@ -148,7 +148,7 @@
   margin-bottom: 0.5rem;
 
   svg {
-    color: $text-light;
+    color: $text-secondary;
     transition:
       transform 0.3s ease,
       color 0.3s ease;
@@ -158,25 +158,25 @@
 .dropzone-title {
   font-size: 1rem;
   font-weight: 600;
-  color: $text-dark;
+  color: $text-primary;
   margin: 0;
 }
 
 .dropzone-hint {
   font-size: 0.85rem;
-  color: $text-light;
+  color: $text-secondary;
   margin: 0;
 }
 
 .browse-link {
-  color: $primary;
+  color: $accent;
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
-  transition: color $transition;
+  transition: color var(--duration) var(--ease);
 
   &:hover {
-    color: $primary-dark;
+    color: $accent-hover;
     text-decoration: underline;
   }
 }
@@ -200,12 +200,12 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: $primary-light;
+  background: $accent-subtle;
   border-radius: 8px;
   flex-shrink: 0;
 
   svg {
-    color: $primary;
+    color: $accent;
   }
 }
 
@@ -217,7 +217,7 @@
     display: block;
     font-size: 0.9rem;
     font-weight: 500;
-    color: $text-dark;
+    color: $text-primary;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -225,7 +225,7 @@
 
   .file-size {
     font-size: 0.78rem;
-    color: $text-light;
+    color: $text-secondary;
   }
 }
 
@@ -238,12 +238,12 @@
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: $text-light;
+  color: $text-secondary;
   cursor: pointer;
   flex-shrink: 0;
   transition:
-    background $transition,
-    color $transition;
+    background var(--duration) var(--ease),
+    color var(--duration) var(--ease);
 
   &:hover {
     background: $danger-bg;
@@ -260,25 +260,25 @@
     margin-bottom: 0.35rem;
     font-weight: 500;
     font-size: 0.825rem;
-    color: $text-mid;
+    color: $text-secondary;
   }
 }
 
 .tex-input {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid $border;
+  border: 1px solid $border-default;
   border-radius: 8px;
   font-size: 0.825rem;
   font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   line-height: 1.6;
-  color: $text-dark;
-  background: $bg;
+  color: $text-primary;
+  background: $bg-inset;
   box-sizing: border-box;
   resize: vertical;
   transition:
-    border-color $transition,
-    box-shadow $transition;
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
 
   &::placeholder {
     color: #c0c5ce;
@@ -286,17 +286,17 @@
 
   &:focus {
     outline: none;
-    border-color: $primary;
-    box-shadow: 0 0 0 3px rgba($primary, 0.1);
-    background: $surface;
+    border-color: $accent;
+    box-shadow: 0 0 0 3px rgba($accent, 0.1);
+    background: $bg-card;
   }
 }
 
 // --- Profile View ---
 .profile-view {
-  background: $surface;
+  background: $bg-card;
   padding: 1.75rem;
-  border-radius: $radius;
+  border-radius: $radius-lg;
   box-shadow: $shadow-sm;
 }
 
@@ -306,7 +306,7 @@
   align-items: center;
   margin-bottom: 1.5rem;
   padding-bottom: 1.25rem;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid $border-default;
 }
 
 .profile-identity {
@@ -317,7 +317,7 @@
   h2 {
     font-size: 1.3rem;
     font-weight: 700;
-    color: $text-dark;
+    color: $text-primary;
     margin: 0;
     letter-spacing: -0.01em;
   }
@@ -327,7 +327,7 @@
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  background: linear-gradient(135deg, $primary, $primary-dark);
+  background: linear-gradient(135deg, $accent, $accent-hover);
   color: white;
   display: flex;
   align-items: center;
@@ -340,7 +340,7 @@
 .profile-location {
   display: block;
   font-size: 0.82rem;
-  color: $text-light;
+  color: $text-secondary;
   margin-top: 0.1rem;
 }
 
@@ -350,9 +350,9 @@
   gap: 1.125rem 1.75rem;
   margin-bottom: 1.75rem;
   padding: 1.125rem 1.25rem;
-  background: $bg;
+  background: $bg-inset;
   border-radius: 8px;
-  border: 1px solid rgba($border, 0.6);
+  border: 1px solid rgba($border-default, 0.6);
 
   .info-item {
     min-width: 0;
@@ -362,7 +362,7 @@
     .label {
       display: block;
       font-size: 0.6875rem;
-      color: $text-light;
+      color: $text-secondary;
       margin-bottom: 0.3rem;
       text-transform: uppercase;
       letter-spacing: 0.06em;
@@ -371,7 +371,7 @@
 
     .value {
       font-size: 0.9rem;
-      color: $text-dark;
+      color: $text-primary;
       font-weight: 500;
       word-break: break-word;
       overflow-wrap: anywhere;
@@ -379,12 +379,12 @@
   }
 
   .info-link {
-    color: $primary;
+    color: $accent;
     text-decoration: none;
 
     &:hover {
       text-decoration: underline;
-      color: $primary-dark;
+      color: $accent-hover;
     }
   }
 }
@@ -393,8 +393,8 @@
   display: inline-block;
   align-self: flex-start;
   padding: 0.2rem 0.55rem;
-  background: $primary-light;
-  color: $primary-dark;
+  background: $accent-subtle;
+  color: $accent-hover;
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -406,7 +406,7 @@
   grid-template-columns: 220px 1fr;
   gap: 2.5rem;
   padding: 1.5rem 0;
-  border-top: 1px solid rgba($border, 0.6);
+  border-top: 1px solid rgba($border-default, 0.6);
 
   &:last-child {
     padding-bottom: 0;
@@ -414,7 +414,7 @@
 
   h3 {
     font-size: 0.7rem;
-    color: $text-light;
+    color: $text-secondary;
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -424,7 +424,7 @@
 
   .section-content {
     font-size: 0.9rem;
-    color: $text-mid;
+    color: $text-secondary;
     line-height: 1.65;
     white-space: pre-wrap;
     margin: 0;
@@ -447,8 +447,8 @@
 
 .skill-tag {
   padding: 0.3rem 0.65rem;
-  background: $primary-light;
-  color: $primary-dark;
+  background: $accent-subtle;
+  color: $accent-hover;
   border-radius: 6px;
   font-size: 0.78rem;
   font-weight: 500;
@@ -467,7 +467,7 @@
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: $text-light;
+  color: $text-secondary;
   font-weight: 600;
   margin-right: 0.25rem;
 }
@@ -475,31 +475,31 @@
 .lang-tab {
   padding: 0.35rem 0.9rem;
   background: none;
-  border: 1px solid $border;
+  border: 1px solid $border-default;
   border-radius: 6px;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: $text-light;
+  color: $text-secondary;
   cursor: pointer;
   transition: all 0.15s ease;
 
   &:hover {
-    border-color: $primary;
-    color: $primary;
+    border-color: $accent;
+    color: $accent;
   }
 
   &.active {
-    background: $primary;
-    border-color: $primary;
+    background: $accent;
+    border-color: $accent;
     color: white;
   }
 }
 
 // --- Inline upload (when adding another language) ---
 .inline-upload {
-  background: $bg;
-  border: 1px solid $border;
-  border-radius: $radius;
+  background: $bg-inset;
+  border: 1px solid $border-default;
+  border-radius: $radius-lg;
   padding: 1.25rem;
   margin-bottom: 1.25rem;
 }
@@ -513,7 +513,7 @@
   h3 {
     font-size: 1rem;
     font-weight: 600;
-    color: $text-dark;
+    color: $text-primary;
     text-transform: none;
     letter-spacing: 0;
   }

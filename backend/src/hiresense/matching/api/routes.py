@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.matching.api.dependencies import (
     get_batch_evaluation_service,
-    get_ingestion_orchestrator_for_matching,
+    get_job_query_for_matching,
     get_matching_orchestrator,
     get_optional_profile_service,
     get_tracking_service_for_matching,
@@ -108,7 +108,7 @@ async def batch_evaluate(
     body: BatchEvaluateRequest,
     batch_service: Annotated[object, Depends(get_batch_evaluation_service)],
     tracking_service: Annotated[object, Depends(get_tracking_service_for_matching)],
-    ingestion_orchestrator: Annotated[object, Depends(get_ingestion_orchestrator_for_matching)],
+    job_query: Annotated[object, Depends(get_job_query_for_matching)],
     profile_service: Annotated[object | None, Depends(get_optional_profile_service)],
 ) -> BatchEvaluationResponse:
     jobs: list[dict] = []
@@ -141,7 +141,7 @@ async def batch_evaluate(
             )
 
     if body.include_ingested:
-        for job in ingestion_orchestrator.list_jobs():
+        for job in job_query.list_jobs():
             jobs.append(
                 {
                     "title": job.title,

@@ -27,7 +27,7 @@ class FakeNormalizedJob:
         self.url = url
 
 
-class FakeIngestionOrchestrator:
+class FakeJobQuery:
     def __init__(self, jobs: dict[str, FakeNormalizedJob] | None = None) -> None:
         self._jobs = jobs or {}
 
@@ -154,7 +154,7 @@ class FakeSkillExtractor:
 @pytest.mark.asyncio
 async def test_create_from_ingested_job_copies_skills_without_llm() -> None:
     job_id = str(uuid.uuid4())
-    ingestion = FakeIngestionOrchestrator(
+    ingestion = FakeJobQuery(
         {
             job_id: FakeNormalizedJob(
                 job_id, "Software Engineer", "Fieldguide", "Build cool stuff", ["python", "fastapi"]
@@ -168,7 +168,7 @@ async def test_create_from_ingested_job_copies_skills_without_llm() -> None:
     service = ApplicationService(
         repository=repo,
         tracking_service=tracking,
-        ingestion_orchestrator=ingestion,
+        job_query=ingestion,
         skill_extractor=extractor,
     )
 
@@ -185,7 +185,7 @@ async def test_create_from_ingested_falls_back_to_llm_when_skills_empty() -> Non
     """LinkedIn/HN Hiring ingest jobs with skills=[] — the fallback runs the
     extractor against the description so the snapshot is still useful."""
     job_id = str(uuid.uuid4())
-    ingestion = FakeIngestionOrchestrator(
+    ingestion = FakeJobQuery(
         {
             job_id: FakeNormalizedJob(
                 job_id,
@@ -203,7 +203,7 @@ async def test_create_from_ingested_falls_back_to_llm_when_skills_empty() -> Non
     service = ApplicationService(
         repository=repo,
         tracking_service=tracking,
-        ingestion_orchestrator=ingestion,
+        job_query=ingestion,
         skill_extractor=extractor,
     )
 
@@ -219,7 +219,7 @@ async def test_create_from_ingested_falls_back_to_llm_when_skills_empty() -> Non
 async def test_create_from_ingested_skips_llm_when_description_empty() -> None:
     """If both skills and description are empty, the snapshot just stays INGESTED with []."""
     job_id = str(uuid.uuid4())
-    ingestion = FakeIngestionOrchestrator({job_id: FakeNormalizedJob(job_id, "X", "Y", "", [])})
+    ingestion = FakeJobQuery({job_id: FakeNormalizedJob(job_id, "X", "Y", "", [])})
     tracking = FakeTrackingService()
     repo = FakeRepo()
     extractor = FakeSkillExtractor(skills=["should_not_run"])
@@ -227,7 +227,7 @@ async def test_create_from_ingested_skips_llm_when_description_empty() -> None:
     service = ApplicationService(
         repository=repo,
         tracking_service=tracking,
-        ingestion_orchestrator=ingestion,
+        job_query=ingestion,
         skill_extractor=extractor,
     )
 
@@ -241,7 +241,7 @@ async def test_create_from_ingested_skips_llm_when_description_empty() -> None:
 
 @pytest.mark.asyncio
 async def test_create_from_manual_calls_llm_extractor() -> None:
-    ingestion = FakeIngestionOrchestrator()
+    ingestion = FakeJobQuery()
     tracking = FakeTrackingService()
     repo = FakeRepo()
     extractor = FakeSkillExtractor(skills=["python", "kubernetes"])
@@ -249,7 +249,7 @@ async def test_create_from_manual_calls_llm_extractor() -> None:
     service = ApplicationService(
         repository=repo,
         tracking_service=tracking,
-        ingestion_orchestrator=ingestion,
+        job_query=ingestion,
         skill_extractor=extractor,
     )
 
@@ -270,7 +270,7 @@ async def test_create_from_manual_passes_listing_metadata_to_tracking() -> None:
     service = ApplicationService(
         repository=FakeRepo(),
         tracking_service=tracking,
-        ingestion_orchestrator=FakeIngestionOrchestrator(),
+        job_query=FakeJobQuery(),
         skill_extractor=FakeSkillExtractor(skills=[]),
     )
 
@@ -295,7 +295,7 @@ async def test_create_from_manual_passes_listing_metadata_to_tracking() -> None:
 
 @pytest.mark.asyncio
 async def test_create_from_manual_with_empty_extraction_uses_manual_source() -> None:
-    ingestion = FakeIngestionOrchestrator()
+    ingestion = FakeJobQuery()
     tracking = FakeTrackingService()
     repo = FakeRepo()
     extractor = FakeSkillExtractor(skills=[])
@@ -303,7 +303,7 @@ async def test_create_from_manual_with_empty_extraction_uses_manual_source() -> 
     service = ApplicationService(
         repository=repo,
         tracking_service=tracking,
-        ingestion_orchestrator=ingestion,
+        job_query=ingestion,
         skill_extractor=extractor,
     )
 
@@ -315,7 +315,7 @@ async def test_create_from_manual_with_empty_extraction_uses_manual_source() -> 
 
 @pytest.mark.asyncio
 async def test_update_snapshot_in_place() -> None:
-    ingestion = FakeIngestionOrchestrator()
+    ingestion = FakeJobQuery()
     tracking = FakeTrackingService()
     repo = FakeRepo()
     extractor = FakeSkillExtractor(skills=[])
@@ -323,7 +323,7 @@ async def test_update_snapshot_in_place() -> None:
     service = ApplicationService(
         repository=repo,
         tracking_service=tracking,
-        ingestion_orchestrator=ingestion,
+        job_query=ingestion,
         skill_extractor=extractor,
     )
 
@@ -336,7 +336,7 @@ async def test_update_snapshot_in_place() -> None:
 
 @pytest.mark.asyncio
 async def test_regenerate_skills_calls_extractor() -> None:
-    ingestion = FakeIngestionOrchestrator()
+    ingestion = FakeJobQuery()
     tracking = FakeTrackingService()
     repo = FakeRepo()
     extractor = FakeSkillExtractor(skills=["aws"])
@@ -344,7 +344,7 @@ async def test_regenerate_skills_calls_extractor() -> None:
     service = ApplicationService(
         repository=repo,
         tracking_service=tracking,
-        ingestion_orchestrator=ingestion,
+        job_query=ingestion,
         skill_extractor=extractor,
     )
     agg = await service.create_from_manual("X", "Y", "desc", url=None)

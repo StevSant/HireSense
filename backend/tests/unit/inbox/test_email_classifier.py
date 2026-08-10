@@ -2,7 +2,12 @@ from datetime import datetime, timezone
 
 import pytest
 
-from hiresense.inbox.domain import EmailClassifier, EmailSignalKind, InboundEmail
+from hiresense.inbox.domain import (
+    EmailClassificationError,
+    EmailClassifier,
+    EmailSignalKind,
+    InboundEmail,
+)
 from hiresense.inbox.domain.email_classifier import _DATA_CLOSE, _DATA_OPEN
 
 
@@ -54,19 +59,30 @@ async def test_parses_structured_json():
 
 
 @pytest.mark.asyncio
-async def test_llm_error_returns_not_job_related():
-    result = await EmailClassifier(_LLM(raise_exc=RuntimeError("boom"))).classify(_email())
-    assert result.job_related is False
+async def test_llm_error_raises_instead_of_claiming_not_job_related():
+    """An outage must not be reported as the verdict "not job-related" — that
+    silently discards rejections and interview invites with no retry."""
+    with pytest.raises(EmailClassificationError):
+        await EmailClassifier(_LLM(raise_exc=RuntimeError("boom"))).classify(_email())
 
 
 @pytest.mark.asyncio
-async def test_unparseable_response_returns_not_job_related():
-    result = await EmailClassifier(_LLM(response="not json at all")).classify(_email())
+async def test_unparseable_response_raises_instead_of_claiming_not_job_related():
+    with pytest.raises(EmailClassificationError):
+        await EmailClassifier(_LLM(response="not json at all")).classify(_email())
+
+
+@pytest.mark.asyncio
+async def test_classified_not_job_related_is_still_a_plain_verdict():
+    """The negative verdict path must stay distinguishable from a failure."""
+    result = await EmailClassifier(_LLM(response='{"job_related": false}')).classify(_email())
     assert result.job_related is False
 
 
 @pytest.mark.asyncio
 async def test_no_llm_returns_not_job_related():
+    """No LLM wired (APP_MODE=local) is a deliberate degraded state, not a
+    failure: nothing was attempted and retrying would never help."""
     result = await EmailClassifier(None).classify(_email())
     assert result.job_related is False
 

@@ -104,7 +104,7 @@
 
     &.active {
       background: #fff;
-      color: #2563eb;
+      color: var(--accent);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
   }
@@ -126,6 +126,13 @@
     width: 100%;
     height: 200px;
     display: block;
+
+    // The bar colour lives here rather than on a `fill=` attribute in the
+    // template: SVG presentation attributes are not CSS, so `fill="var(...)"`
+    // would never resolve the token.
+    rect {
+      fill: var(--accent);
+    }
   }
 
   .chart-axis {
@@ -189,7 +196,7 @@
   }
 
   .row-bar-fill {
-    background: #2563eb;
+    background: var(--accent);
     height: 100%;
   }
 

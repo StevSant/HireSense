@@ -14,13 +14,7 @@ class ThoughtworksAdapter:
     open set in one call, so it supports snapshot closure.
     """
 
-    def __init__(
-        self,
-        http_client: Any,
-        *,
-        base_url: str = "https://www.thoughtworks.com/rest/careers/jobs",
-        timeout: float = 30.0,
-    ) -> None:
+    def __init__(self, http_client: Any, base_url: str, timeout: float) -> None:
         self._http = http_client
         self._base_url = base_url
         self._timeout = timeout

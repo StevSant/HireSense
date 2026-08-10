@@ -1,13 +1,8 @@
-$text-dark: #1a1a2e;
-$text-mid: #444;
-$text-light: #6b7280;
-$primary: #4f46e5;
-$primary-light: #e0e7ff;
-$border-subtle: rgba(226, 229, 234, 0.7);
+@use '../../../../../styles/index' as *;
 
 :host {
   display: block;
-  color: $text-mid;
+  color: $text-secondary;
   font-size: 0.9rem;
   line-height: 1.65;
 }
@@ -15,7 +10,7 @@ $border-subtle: rgba(226, 229, 234, 0.7);
 .block-heading {
   font-size: 0.95rem;
   font-weight: 600;
-  color: $text-dark;
+  color: $text-primary;
   letter-spacing: -0.01em;
   margin: 1.5rem 0 0.15rem;
 
@@ -28,7 +23,7 @@ $border-subtle: rgba(226, 229, 234, 0.7);
 .block-role {
   margin: 0 0 0.65rem;
   font-size: 0.85rem;
-  color: $text-light;
+  color: $text-secondary;
   font-style: italic;
 }
 
@@ -64,7 +59,7 @@ $border-subtle: rgba(226, 229, 234, 0.7);
       width: 5px;
       height: 5px;
       border-radius: 50%;
-      background: $primary;
+      background: $accent;
       opacity: 0.55;
     }
   }
@@ -83,14 +78,14 @@ $border-subtle: rgba(226, 229, 234, 0.7);
   }
 
   dt {
-    color: $text-dark;
+    color: $text-primary;
     font-weight: 600;
     font-size: 0.85rem;
   }
 
   dd {
     margin: 0;
-    color: $text-mid;
+    color: $text-secondary;
   }
 }
 

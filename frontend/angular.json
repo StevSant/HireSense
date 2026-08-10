@@ -4,7 +4,9 @@
   "cli": {
     "packageManager": "npm",
     "analytics": "4a9c33f4-b74b-47b0-b23f-4c810103fd32",
-    "schematicCollections": ["angular-eslint"]
+    "schematicCollections": [
+      "angular-eslint"
+    ]
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -31,7 +33,9 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.scss"]
+            "styles": [
+              "src/styles.scss"
+            ]
           },
           "configurations": {
             "production": {
@@ -62,7 +66,9 @@
                 {
                   "glob": "**/*",
                   "input": "public",
-                  "ignore": ["apply-assist.user.js"]
+                  "ignore": [
+                    "apply-assist.user.js"
+                  ]
                 }
               ],
               "fileReplacements": [
@@ -122,13 +128,34 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "setupFiles": ["src/test-setup.ts"]
+            "setupFiles": [
+              "src/test-setup.ts"
+            ],
+            "coverage": true,
+            "coverageReporters": [
+              "text-summary"
+            ],
+            "coverageExclude": [
+              "src/environments/**",
+              "src/**/*.model.ts",
+              "src/main.ts",
+              "src/test-setup.ts"
+            ],
+            "coverageThresholds": {
+              "statements": 74,
+              "branches": 71,
+              "functions": 62,
+              "lines": 79
+            }
           }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": {
-            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
+            ]
           }
         }
       }

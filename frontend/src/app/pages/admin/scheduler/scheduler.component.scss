@@ -16,12 +16,14 @@
     text-transform: capitalize;
     font-weight: 600;
     &--success {
-      color: var(--success, #2e7d32);
+      color: var(--success);
     }
     &--failure {
-      color: var(--danger, #c62828);
+      color: var(--danger);
     }
     &--skipped {
+      // `--muted` is not a published token, so this renders the #888 fallback
+      // rather than --text-muted. Left as-is: swapping it lightens the text.
       color: var(--muted, #888);
     }
   }

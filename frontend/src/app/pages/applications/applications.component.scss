@@ -5,9 +5,8 @@
   margin-bottom: 1.5rem;
 }
 
-.table-container {
-  overflow-x: auto;
-}
+// `.table-container` comes from src/styles.scss; the local copy only restated
+// its `overflow-x: auto`.
 
 .apps-table {
   width: 100%;
@@ -38,35 +37,10 @@
   }
 }
 
-.status-pill {
-  font-size: 0.8em;
-  padding: 2px 8px;
-  border-radius: 12px;
-  background: #e5e7eb;
-  color: #374151;
-
-  &.status-applied {
-    background: #dbeafe;
-    color: #1e40af;
-  }
-  &.status-interviewing {
-    background: #fef3c7;
-    color: #92400e;
-  }
-  &.status-offered {
-    background: #d1fae5;
-    color: #065f46;
-  }
-  &.status-accepted {
-    background: #d1fae5;
-    color: #065f46;
-    font-weight: 600;
-  }
-  &.status-rejected {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-}
+// No `.status-pill` here: this table renders status as a
+// `<select class="status-select status-*">`, styled further down. The pill
+// rules that used to sit at this spot were a verbatim copy of the ones in
+// application-detail.component.scss and matched nothing in this template.
 
 .score-pill {
   color: white;

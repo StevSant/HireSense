@@ -11,6 +11,8 @@ from opentelemetry import trace
 
 from hiresense.ingestion.domain.application_classifier import classify_application
 from hiresense.ingestion.domain.identity import identity_key
+from hiresense.ingestion.domain.job_closure_reason import JobClosureReason
+from hiresense.ingestion.domain.job_history_recorder import JobHistoryRecorder
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.work_authorization_facts import add_work_authorization_facts
 from hiresense.ingestion.domain.normalizer import JobNormalizer
@@ -47,6 +49,8 @@ class IngestionOrchestrator:
         quality_classifier: Any | None = None,
         health_tracker: SourceHealthTracker | None = None,
         source_concurrency: int = 8,
+        history: JobHistoryRecorder | None = None,
+        history_retention_days: int | None = None,
     ) -> None:
         self._sources = sources
         self._normalizers = normalizers
@@ -61,6 +65,10 @@ class IngestionOrchestrator:
         # Sources are independent hosts, so their fetches overlap; the per-source
         # DB/index work downstream still runs one at a time, in source order.
         self._source_concurrency = max(1, source_concurrency)
+        # None in tests and bare apps: every call site below is guarded, so a
+        # missing recorder degrades to "no history", never to an error.
+        self._history = history
+        self._history_retention_days = history_retention_days
         self._last_run_at: float = 0.0
         # Single-flight guard: True while a run() is mid-pass. Prevents two
         # concurrent /fetch triggers from both clearing the cooldown check and
@@ -77,11 +85,14 @@ class IngestionOrchestrator:
     async def run(
         self,
         filters: dict[str, Any] | None = None,
+        trigger: str = "fetch",
     ) -> list[NormalizedJob]:
         _metrics = get_domain_metrics()
         with _tracer.start_as_current_span("ingestion.run") as span:
             started = time.perf_counter()
             claimed = False
+            completed = False
+            run_id: str | None = None
             pending: dict[str, asyncio.Task[Any]] = {}
             try:
                 # Single-flight + cooldown gate. The in-flight check, the
@@ -97,6 +108,12 @@ class IngestionOrchestrator:
                     raise IngestionCooldownError(retry_after=remaining)
                 self._run_in_flight = True
                 claimed = True
+
+                run_id = (
+                    await asyncio.to_thread(self._history.start_run, trigger)
+                    if self._history
+                    else None
+                )
 
                 await self._prune_expired()
 
@@ -201,6 +218,9 @@ class IngestionOrchestrator:
                         else:
                             run_stats.jobs_deduplicated += 1
 
+                    if self._history is not None:
+                        await asyncio.to_thread(self._history.record_outcomes, run_id, outcomes)
+
                     indexed_count = len(touched)
                     _metrics.jobs_indexed_total.add(indexed_count, {"source": source_name})
 
@@ -220,6 +240,13 @@ class IngestionOrchestrator:
                         )
                         if closed_ids and self._indexer is not None:
                             await self._indexer.remove(closed_ids)
+                        if closed_ids and self._history is not None:
+                            await asyncio.to_thread(
+                                self._history.record_closures,
+                                closed_ids,
+                                JobClosureReason.SNAPSHOT_DISAPPEARANCE,
+                                run_id,
+                            )
 
                     self._health.record_run(
                         source_name,
@@ -258,6 +285,7 @@ class IngestionOrchestrator:
                 # Start the cooldown only after a fully successful pass, so a run
                 # that fails fast doesn't consume the window (#159).
                 self._last_run_at = time.monotonic()
+                completed = True
                 return new_jobs
             except IngestionCooldownError:
                 # Normal throttling, not an error — leave span status unset.
@@ -273,6 +301,14 @@ class IngestionOrchestrator:
                     for task in pending.values():
                         task.cancel()
                     await asyncio.gather(*pending.values(), return_exceptions=True)
+                if self._history is not None and run_id is not None:
+                    # 'failed' whenever we leave via an exception; the flag is
+                    # set on the success path just before returning.
+                    await asyncio.to_thread(
+                        self._history.finish_run,
+                        run_id,
+                        "completed" if completed else "failed",
+                    )
                 # Release the single-flight guard only if this call claimed it —
                 # a cooldown-rejected concurrent trigger must not clear the flag
                 # held by the run that is actually in flight.
@@ -317,6 +353,10 @@ class IngestionOrchestrator:
         return raw_jobs, run_stats, fetch_started
 
     async def _prune_expired(self) -> None:
+        await self._prune_jobs()
+        await self._prune_history()
+
+    async def _prune_jobs(self) -> None:
         if not self._retention_days or self._retention_days <= 0:
             return
         cutoff = datetime.now(timezone.utc) - timedelta(days=self._retention_days)
@@ -332,3 +372,9 @@ class IngestionOrchestrator:
                     await self._indexer.remove(removed_ids)  # evict orphan vectors
                 except Exception:
                     logger.exception("Failed to evict pruned job vectors")
+
+    async def _prune_history(self) -> None:
+        if self._history is None or not self._history_retention_days:
+            return
+        cutoff = datetime.now(timezone.utc) - timedelta(days=self._history_retention_days)
+        await asyncio.to_thread(self._history.prune, cutoff)

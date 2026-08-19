@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from enum import Enum
 
+from hiresense.ingestion.domain.job_closure_reason import JobClosureReason
+
 
 class Verdict(str, Enum):
     OPEN = "open"
@@ -25,3 +27,15 @@ def classify_listing(*, status_code: int, body: str, markers: list[str]) -> Verd
             return Verdict.CLOSED
         return Verdict.OPEN
     return Verdict.UNKNOWN
+
+
+def closure_reason(status_code: int) -> JobClosureReason:
+    """Which signal a CLOSED verdict rested on.
+
+    Only meaningful when classify_listing already returned CLOSED. 404/410 is
+    the listing being gone; anything else reaching here is a 200 page whose
+    body matched a closed-marker phrase.
+    """
+    if status_code in (404, 410):
+        return JobClosureReason.PROBE_404
+    return JobClosureReason.CLOSED_MARKER

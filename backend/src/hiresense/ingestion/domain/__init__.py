@@ -3,7 +3,11 @@ from hiresense.ingestion.domain.application_classifier import classify_applicati
 from hiresense.ingestion.domain.application_method import ApplicationMethod
 from hiresense.ingestion.domain.apply_access import ApplyAccess
 from hiresense.ingestion.domain.ats_platform import AtsPlatform
-from hiresense.ingestion.domain.closed_listing_classifier import Verdict, classify_listing
+from hiresense.ingestion.domain.closed_listing_classifier import (
+    Verdict,
+    classify_listing,
+    closure_reason,
+)
 from hiresense.ingestion.domain.dead_end_redirect import is_dead_end_redirect
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
@@ -97,6 +101,7 @@ __all__ = [
     "changed_score_updates",
     "classify_application",
     "classify_listing",
+    "closure_reason",
     "canonical_listing_key",
     "consolidate_cross_source_jobs",
     "content_hash",

@@ -7,9 +7,15 @@ from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urljoin
 
-from hiresense.ingestion.domain.closed_listing_classifier import Verdict, classify_listing
+from hiresense.ingestion.domain.closed_listing_classifier import (
+    Verdict,
+    classify_listing,
+    closure_reason,
+)
 from hiresense.ingestion.domain.dead_end_redirect import is_dead_end_redirect
 from hiresense.ingestion.domain.host_rate_limiter import HostRateLimiter
+from hiresense.ingestion.domain.job_closure_reason import JobClosureReason
+from hiresense.ingestion.domain.job_history_recorder import JobHistoryRecorder
 from hiresense.ingestion.domain.ssrf_guard import is_safe_probe_url
 
 logger = logging.getLogger(__name__)
@@ -67,10 +73,12 @@ class JobRevalidationService:
         user_agent: str | None = None,
         expired_redirect_markers: list[str] | None = None,
         clock: Callable[[], datetime] | None = None,
+        history: JobHistoryRecorder | None = None,
     ) -> None:
         self._http = http_client
         self._repo = repository
         self._indexer = indexer
+        self._history = history
         self._sources = sources
         self._markers = markers
         self._expired_redirect_markers = expired_redirect_markers or []
@@ -169,6 +177,10 @@ class JobRevalidationService:
         if expired:
             if self._indexer is not None:
                 await self._indexer.remove(expired)
+            if self._history is not None:
+                await asyncio.to_thread(
+                    self._history.record_closures, expired, JobClosureReason.EXPIRY
+                )
             logger.info("Revalidation: closed %d expired listing(s)", len(expired))
         return expired
 
@@ -210,17 +222,29 @@ class JobRevalidationService:
     async def _probe_and_close(self, jobs: list[Any]) -> list[str]:
         if not jobs:
             return []
-        verdicts = await asyncio.gather(*(self._probe_counted(j) for j in jobs))
-        to_close = [j.id for j, v in zip(jobs, verdicts) if v == Verdict.CLOSED]
+        results = await asyncio.gather(*(self._probe_counted(j) for j in jobs))
+        by_reason: dict[JobClosureReason, list[str]] = {}
+        to_close: list[str] = []
+        for job, (verdict, reason) in zip(jobs, results):
+            if verdict != Verdict.CLOSED:
+                continue
+            to_close.append(job.id)
+            # reason is always set on a CLOSED verdict; the fallback keeps a
+            # future classifier path from silently dropping the closure.
+            by_reason.setdefault(reason or JobClosureReason.PROBE_404, []).append(job.id)
         await asyncio.to_thread(self._repo.mark_checked, [j.id for j in jobs])
         if to_close:
             await asyncio.to_thread(self._repo.mark_closed, to_close)
             if self._indexer is not None:
                 await self._indexer.remove(to_close)
+            if self._history is not None:
+                for reason, ids in by_reason.items():
+                    # run_id stays None: the sweep is not an ingestion run.
+                    await asyncio.to_thread(self._history.record_closures, ids, reason)
         logger.info("Revalidation: probed %d, closed %d", len(jobs), len(to_close))
         return to_close
 
-    async def _probe_counted(self, job: Any) -> Verdict:
+    async def _probe_counted(self, job: Any) -> tuple[Verdict, JobClosureReason | None]:
         """Probe one job and advance the progress counter as it resolves.
 
         Counting once per finished chunk instead left `checked` at 0 for the ~100
@@ -228,11 +252,11 @@ class JobRevalidationService:
         reproducing the very "looks stuck" impression this progress exists to
         remove.
         """
-        verdict = await self._probe(job)
+        result = await self._probe(job)
         self._checked_count += 1
-        return verdict
+        return result
 
-    async def _probe(self, job: Any) -> Verdict:
+    async def _probe(self, job: Any) -> tuple[Verdict, JobClosureReason | None]:
         probe_url = self._probe_url(job)
         async with self._sem:
             try:
@@ -242,23 +266,25 @@ class JobRevalidationService:
                 # is how most of them signal removal. Closing here also stops the
                 # job being re-probed on every future sweep.
                 logger.info("Revalidation: dead-end redirect for %s (%s)", probe_url, exc)
-                return Verdict.CLOSED
+                return Verdict.CLOSED, JobClosureReason.DEAD_END_REDIRECT
             except _ProbeBlocked as exc:
                 # A refused (SSRF) or over-redirected target is not a closure
                 # signal — treat as UNKNOWN so a crafted listing can neither
                 # drive internal requests nor false-close a job.
                 logger.warning("Revalidation probe blocked for %s: %s", probe_url, exc)
-                return Verdict.UNKNOWN
+                return Verdict.UNKNOWN, None
             except Exception as exc:
                 # Transient transport failures must never close a job, but a
                 # silently swallowed probe makes sweeps undebuggable — log it.
                 logger.warning("Revalidation probe failed for %s: %s", probe_url, exc)
-                return Verdict.UNKNOWN
-            return classify_listing(
+                return Verdict.UNKNOWN, None
+            verdict = classify_listing(
                 status_code=status_code,
                 body=body,
                 markers=self._markers,
             )
+            reason = closure_reason(status_code) if verdict == Verdict.CLOSED else None
+            return verdict, reason
 
     async def _fetch_capped(self, url: str) -> tuple[int, str]:
         """Fetch ``url`` with an SSRF check on every hop and a capped body read.

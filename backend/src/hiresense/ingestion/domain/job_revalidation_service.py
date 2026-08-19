@@ -9,6 +9,7 @@ from urllib.parse import urljoin
 
 from hiresense.ingestion.domain.closed_listing_classifier import Verdict, classify_listing
 from hiresense.ingestion.domain.dead_end_redirect import is_dead_end_redirect
+from hiresense.ingestion.domain.host_rate_limiter import HostRateLimiter
 from hiresense.ingestion.domain.ssrf_guard import is_safe_probe_url
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,8 @@ class JobRevalidationService:
     this covers the rest by re-fetching each open job's URL and closing it when
     the page is gone (404/410) or carries a "no longer available" marker. UNKNOWN
     results (5xx, timeouts) never close a job. Network cost is bounded by a
-    per-run batch cap, a concurrency limit, and a per-request delay.
+    per-run batch cap, a global in-flight ceiling, and a per-host rate limit
+    (minimum interval + in-flight cap per board).
 
     Some sources don't expose closure on the public listing URL the user clicks:
     LinkedIn's `/jobs/view/<id>` returns a login wall server-side, but its guest
@@ -57,6 +59,7 @@ class JobRevalidationService:
         batch: int,
         concurrency: int,
         delay: float,
+        host_concurrency: int = 4,
         max_probe_bytes: int = 262144,
         max_redirects: int = 5,
         url_guard: Callable[[str], bool] | None = None,
@@ -85,8 +88,13 @@ class JobRevalidationService:
             else {}
         )
         self._batch = batch
+        # Two-level throttle. `_sem` is a whole-sweep ceiling on in-flight
+        # requests; the real politeness budget is per-host and lives in the
+        # limiter, so probes to different boards no longer queue behind each
+        # other. A single global semaphore made a sweep run at
+        # concurrency/(latency+delay) requests per second across ALL hosts.
         self._sem = asyncio.Semaphore(max(1, concurrency))
-        self._delay = delay
+        self._limiter = HostRateLimiter(min_interval=delay, concurrency=host_concurrency)
         # SSRF hardening: cap the streamed body and the redirect chain, and
         # validate every hop's target. Guard is injectable so tests run offline.
         self._max_probe_bytes = max(1, max_probe_bytes)
@@ -113,9 +121,10 @@ class JobRevalidationService:
 
         Walks the whole corpus in `batch`-sized chunks (oldest-checked first),
         closing per chunk so closures surface incrementally rather than only
-        when the full run finishes. Bounded by the concurrency limit + per-probe
-        delay, so a large corpus takes minutes — callers run it in the
-        background. Re-entrant triggers are skipped via the `_sweeping` guard.
+        when the full run finishes. Bounded by the per-host rate limit and the
+        global in-flight ceiling, so a large corpus still takes minutes —
+        callers run it in the background. Re-entrant triggers are skipped via
+        the `_sweeping` guard.
         """
         if self._sweeping:
             logger.info("Revalidation sweep already in progress; skipping trigger")
@@ -245,9 +254,6 @@ class JobRevalidationService:
                 # silently swallowed probe makes sweeps undebuggable — log it.
                 logger.warning("Revalidation probe failed for %s: %s", probe_url, exc)
                 return Verdict.UNKNOWN
-            finally:
-                if self._delay:
-                    await asyncio.sleep(self._delay)
             return classify_listing(
                 status_code=status_code,
                 body=body,
@@ -269,9 +275,14 @@ class JobRevalidationService:
             # DNS resolution inside the guard is blocking — offload it.
             if not await asyncio.to_thread(self._url_guard, current):
                 raise _ProbeBlocked(f"target is not a public http(s) address: {current}")
-            async with self._http.stream(
-                "GET", current, follow_redirects=False, headers=self._probe_headers
-            ) as resp:
+            # Pace by the hop's own host: a redirect chain that lands on another
+            # board must respect that board's interval, not the origin's.
+            async with (
+                self._limiter.slot(current),
+                self._http.stream(
+                    "GET", current, follow_redirects=False, headers=self._probe_headers
+                ) as resp,
+            ):
                 location = resp.headers.get("location")
                 if resp.status_code in _REDIRECT_STATUS and location:
                     target = urljoin(current, location)

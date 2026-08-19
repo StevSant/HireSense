@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -720,3 +721,64 @@ async def test_progress_advances_per_probe_not_per_chunk() -> None:
 
     assert seen_while_probing_b == [1], "progress should already count the finished probe"
     assert svc.progress()["checked"] == 2
+
+
+@pytest.mark.asyncio
+async def test_probes_to_distinct_hosts_are_not_serialized() -> None:
+    """The delay is a per-board interval, so unrelated boards run in parallel.
+
+    Under the previous single global semaphore + in-slot sleep, six probes cost
+    six delays regardless of which host they targeted.
+    """
+    repo = InMemoryJobsRepository()
+    urls = [f"https://board{i}.example/jobs/{i}" for i in range(6)]
+    for i, url in enumerate(urls):
+        repo.upsert(_job(str(i), url))
+    client = _Client({url: _Resp(200, "Apply now") for url in urls})
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["closed"],
+        batch=10,
+        concurrency=12,
+        delay=0.3,
+        url_guard=_allow_all,
+    )
+
+    started = time.perf_counter()
+    await svc.sweep()
+    elapsed = time.perf_counter() - started
+
+    # Every host's first request is free, so no probe should have waited.
+    assert elapsed < 0.25
+    assert len(client.requested) == 6
+
+
+@pytest.mark.asyncio
+async def test_probes_to_one_host_still_respect_the_interval() -> None:
+    """Politeness toward a single board is unchanged: N probes cost N-1 delays."""
+    repo = InMemoryJobsRepository()
+    urls = [f"https://one.example/jobs/{i}" for i in range(4)]
+    for i, url in enumerate(urls):
+        repo.upsert(_job(str(i), url))
+    client = _Client({url: _Resp(200, "Apply now") for url in urls})
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["closed"],
+        batch=10,
+        concurrency=12,
+        delay=0.3,
+        url_guard=_allow_all,
+    )
+
+    started = time.perf_counter()
+    await svc.sweep()
+    elapsed = time.perf_counter() - started
+
+    assert elapsed >= 0.85  # 3 waits of 0.3s
+    assert len(client.requested) == 4

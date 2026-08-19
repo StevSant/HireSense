@@ -13,7 +13,11 @@ from hiresense.ingestion.domain.cross_source_deduplicator import (
     consolidate_cross_source_jobs,
 )
 from hiresense.ingestion.domain.identity import identity_key
+from hiresense.ingestion.domain.ingestion_run_summary import IngestionRunSummary
+from hiresense.ingestion.domain.job_closure_reason import JobClosureReason
 from hiresense.ingestion.domain.job_embedding_indexer import JobEmbeddingIndexer
+from hiresense.ingestion.domain.job_history_event import JobHistoryEvent
+from hiresense.ingestion.domain.job_history_event_type import JobHistoryEventType
 from hiresense.ingestion.domain.job_filter import (
     JobQueryParams,
     PaginatedResult,
@@ -59,7 +63,11 @@ __all__ = [
     "AtsPlatform",
     "IngestionCooldownError",
     "IngestionOrchestrator",
+    "IngestionRunSummary",
+    "JobClosureReason",
     "JobEmbeddingIndexer",
+    "JobHistoryEvent",
+    "JobHistoryEventType",
     "JobRevalidationService",
     "OpenJob",
     "SOURCE_CAPABILITY_REGISTRY",

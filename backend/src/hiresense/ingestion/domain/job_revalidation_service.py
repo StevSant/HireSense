@@ -8,6 +8,7 @@ from typing import Any
 from urllib.parse import urljoin
 
 from hiresense.ingestion.domain.closed_listing_classifier import Verdict, classify_listing
+from hiresense.ingestion.domain.dead_end_redirect import is_dead_end_redirect
 from hiresense.ingestion.domain.ssrf_guard import is_safe_probe_url
 
 logger = logging.getLogger(__name__)
@@ -15,6 +16,12 @@ logger = logging.getLogger(__name__)
 # Status codes that carry a Location we follow — manually, re-validating each
 # hop — so an allowlisted host can't bounce the probe to an internal target.
 _REDIRECT_STATUS = frozenset({301, 302, 303, 307, 308})
+
+
+class _DeadEndRedirect(Exception):
+    """A probe was redirected to a generic landing page (site root, or a URL
+    carrying a configured expired-listing marker). Signals CLOSED without
+    spending a second request on the landing page itself."""
 
 
 class _ProbeBlocked(Exception):
@@ -55,6 +62,7 @@ class JobRevalidationService:
         url_guard: Callable[[str], bool] | None = None,
         probe_url_builders: dict[str, Callable[[Any], str]] | None = None,
         user_agent: str | None = None,
+        expired_redirect_markers: list[str] | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._http = http_client
@@ -62,6 +70,7 @@ class JobRevalidationService:
         self._indexer = indexer
         self._sources = sources
         self._markers = markers
+        self._expired_redirect_markers = expired_redirect_markers or []
         self._probe_url_builders = probe_url_builders or {}
         # A browser-like header set: the shared client's default python-httpx UA
         # is 403'd by some listing hosts, which would mask a real closure signal
@@ -87,6 +96,12 @@ class JobRevalidationService:
         # Guards against overlapping sweeps (fetch + the manual button can both
         # trigger one); a second trigger while one runs is a no-op.
         self._sweeping = False
+        # Sweep progress, read by GET /ingestion/revalidate/status. A full sweep
+        # of a large corpus runs for tens of minutes; without this the UI can
+        # only show an indefinite "still scanning" banner it can never clear.
+        self._checked_count = 0
+        self._total_count = 0
+        self._closed_count = 0
 
     def _probe_url(self, job: Any) -> str:
         """The URL to probe for closure — a per-source override or job.url."""
@@ -108,6 +123,9 @@ class JobRevalidationService:
         self._sweeping = True
         closed: list[str] = []
         checked: set[str] = set()
+        self._checked_count = 0
+        self._closed_count = 0
+        self._total_count = await asyncio.to_thread(self._repo.count_open, self._sources)
         try:
             # Expiry-based closure first: sources whose public pages block URL
             # probes (e.g. Himalayas) carry a source-declared expiry_date instead.
@@ -125,6 +143,7 @@ class JobRevalidationService:
                     break
                 checked.update(j.id for j in jobs)
                 closed.extend(await self._probe_and_close(jobs))
+                self._closed_count = len(closed)
             logger.info(
                 "Revalidation sweep complete: probed %d, closed %d",
                 len(checked),
@@ -158,6 +177,19 @@ class JobRevalidationService:
         jobs = await asyncio.to_thread(self._collect_probeable, job_ids)
         return await self._probe_and_close(jobs)
 
+    def progress(self) -> dict[str, Any]:
+        """Snapshot of the current (or last) sweep, for the status endpoint.
+
+        `total` is the open-job count captured when the sweep started, so the
+        ratio is stable even as jobs close underneath it.
+        """
+        return {
+            "sweeping": self._sweeping,
+            "checked": self._checked_count,
+            "total": self._total_count,
+            "closed": self._closed_count,
+        }
+
     def _collect_probeable(self, job_ids: list[str]) -> list[Any]:
         jobs: list[Any] = []
         for job_id in job_ids:
@@ -169,7 +201,7 @@ class JobRevalidationService:
     async def _probe_and_close(self, jobs: list[Any]) -> list[str]:
         if not jobs:
             return []
-        verdicts = await asyncio.gather(*(self._probe(j) for j in jobs))
+        verdicts = await asyncio.gather(*(self._probe_counted(j) for j in jobs))
         to_close = [j.id for j, v in zip(jobs, verdicts) if v == Verdict.CLOSED]
         await asyncio.to_thread(self._repo.mark_checked, [j.id for j in jobs])
         if to_close:
@@ -179,11 +211,29 @@ class JobRevalidationService:
         logger.info("Revalidation: probed %d, closed %d", len(jobs), len(to_close))
         return to_close
 
+    async def _probe_counted(self, job: Any) -> Verdict:
+        """Probe one job and advance the progress counter as it resolves.
+
+        Counting once per finished chunk instead left `checked` at 0 for the ~100
+        seconds a 100-job chunk takes, so the UI opened on "0 of 1873" —
+        reproducing the very "looks stuck" impression this progress exists to
+        remove.
+        """
+        verdict = await self._probe(job)
+        self._checked_count += 1
+        return verdict
+
     async def _probe(self, job: Any) -> Verdict:
         probe_url = self._probe_url(job)
         async with self._sem:
             try:
                 status_code, body = await self._fetch_capped(probe_url)
+            except _DeadEndRedirect as exc:
+                # The board bounced a specific listing to a generic page, which
+                # is how most of them signal removal. Closing here also stops the
+                # job being re-probed on every future sweep.
+                logger.info("Revalidation: dead-end redirect for %s (%s)", probe_url, exc)
+                return Verdict.CLOSED
             except _ProbeBlocked as exc:
                 # A refused (SSRF) or over-redirected target is not a closure
                 # signal — treat as UNKNOWN so a crafted listing can neither
@@ -224,7 +274,10 @@ class JobRevalidationService:
             ) as resp:
                 location = resp.headers.get("location")
                 if resp.status_code in _REDIRECT_STATUS and location:
-                    current = urljoin(current, location)
+                    target = urljoin(current, location)
+                    if is_dead_end_redirect(url, target, self._expired_redirect_markers):
+                        raise _DeadEndRedirect(f"{url} -> {target}")
+                    current = target
                     continue
                 body = await self._read_capped(resp)
                 return resp.status_code, body

@@ -82,6 +82,26 @@ class IngestionSettings(BaseSettings):
     job_revalidation_interval_hours: int = 24
     # Max jobs probed per sweep run (oldest-checked first) — bounds network cost.
     job_revalidation_batch: int = 100
+    # Sources the URL-probe sweep skips entirely. hn_hiring/csv expose no
+    # reliable per-URL closure signal; himalayas and jobicy answer every probe
+    # with a challenge/403, so a probe can only ever return UNKNOWN — they burn
+    # a request per job per sweep and close nothing. Those with a declared
+    # expiry_date are closed by the sweep's expiry pass instead.
+    job_revalidation_excluded_sources: list[str] = [
+        "hn_hiring",
+        "csv",
+        "himalayas",
+        "jobicy",
+    ]
+    # URL substrings that identify a redirect target as an expired-listing
+    # landing page. A board that bounces a removed listing to a generic search
+    # page (LinkedIn) is signalling closure in the redirect itself; recognising
+    # it closes the job without fetching the landing page. See
+    # domain/dead_end_redirect.py — a redirect to the site root is detected
+    # structurally and needs no marker here.
+    job_revalidation_expired_redirect_markers: list[str] = [
+        "trk=expired_jd_redirect",
+    ]
     # Concurrent URL probes + per-request delay (seconds) for politeness.
     job_revalidation_concurrency: int = 2
     job_revalidation_delay: float = 1.0

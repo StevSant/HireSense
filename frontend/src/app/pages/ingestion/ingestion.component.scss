@@ -236,11 +236,23 @@ table {
   }
 }
 
+/* The toggles move as one group at the end of the bar. Giving each label its
+   own `margin-left: auto` split the free space between them, stranding one
+   mid-bar and shrinking both until their labels wrapped mid-word. */
+.sort-toggles {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin-left: auto;
+}
+
 .toggle-label {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  margin-left: auto;
+  white-space: nowrap;
   cursor: pointer;
   user-select: none;
 }

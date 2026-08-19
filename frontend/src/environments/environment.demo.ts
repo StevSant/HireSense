@@ -13,4 +13,9 @@ export const environment = {
   transientFeedbackMs: 2000,
   closureRevalidatePollMs: 15000,
   closureRevalidatePollTicks: 8,
+  // Ceiling on status polls while a background sweep runs. A full sweep of a
+  // few thousand listings takes tens of minutes (it is deliberately throttled),
+  // so the old 8-tick / 2-minute budget gave up long before it finished and the
+  // banner was left claiming work that had already stopped being reported.
+  closureRevalidateMaxPollTicks: 240,
 };

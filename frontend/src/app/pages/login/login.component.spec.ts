@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
@@ -42,7 +43,7 @@ describe('LoginComponent', () => {
     expect(cmp.loading()).toBe(false);
   });
 
-  it('surfaces an error when login resolves without a session', () => {
+  it('reports a failed session probe rather than blaming the credential', () => {
     const navigate = vi.fn();
     const fixture = mount(makeAuth({ login: () => of<SessionUser | null>(null) }), { navigate });
     const cmp = fixture.componentInstance;
@@ -50,7 +51,9 @@ describe('LoginComponent', () => {
     cmp.onSubmit();
 
     expect(navigate).not.toHaveBeenCalled();
-    expect(cmp.error()).toBe('Invalid credentials');
+    expect(cmp.error()).toBe(
+      'Signed in, but the session was not established — check that cookies are enabled for this site.',
+    );
     expect(cmp.loading()).toBe(false);
   });
 
@@ -61,7 +64,21 @@ describe('LoginComponent', () => {
     cmp.onSubmit();
 
     expect(cmp.loading()).toBe(false);
-    expect(cmp.error()).toBe('Invalid credentials');
+    expect(cmp.error()).toBe('Sign-in failed unexpectedly — see the browser console for details.');
+  });
+
+  it('surfaces the real reason a login was rejected instead of a blanket message', () => {
+    const fixture = mount(
+      makeAuth({
+        login: () =>
+          throwError(() => new HttpErrorResponse({ status: 429, url: '/api/auth/login' })),
+      }),
+    );
+    const cmp = fixture.componentInstance;
+
+    cmp.onSubmit();
+
+    expect(cmp.error()).toBe('Too many login attempts — wait a few minutes and try again.');
   });
 
   it('keeps loading true while the login request is in flight', () => {

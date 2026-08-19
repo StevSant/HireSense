@@ -566,3 +566,157 @@ async def test_probe_body_read_is_capped() -> None:
 
     assert closed == []  # marker beyond the cap was never read
     assert all(j.status == "open" for j in repo.list_all())
+
+
+@pytest.mark.asyncio
+async def test_redirect_to_site_root_closes_without_fetching_the_landing_page() -> None:
+    """A board that 301s a removed listing to its homepage is signalling closure.
+
+    Following the hop cost a second request and then classified a *homepage*
+    body, which matches no marker — so the job stayed open and was re-probed on
+    every sweep forever.
+    """
+    repo, a, b = _seed()
+    client = _Client(
+        {
+            a.url: _Resp(200, "Apply now"),
+            b.url: _Resp(301, location="https://e.com/"),
+            "https://e.com/": _Resp(200, "Browse thousands of remote jobs"),
+        }
+    )
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["closed"],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
+        url_guard=_allow_all,
+    )
+
+    closed = await svc.sweep()
+
+    assert closed == ["b"]
+    # The landing page was never requested — that is the whole point.
+    assert "https://e.com/" not in client.requested
+
+
+@pytest.mark.asyncio
+async def test_expired_redirect_marker_closes_the_job() -> None:
+    repo, a, b = _seed()
+    client = _Client(
+        {
+            a.url: _Resp(200, "Apply now"),
+            b.url: _Resp(301, location="https://e.com/jobs/generic-search?trk=expired_jd_redirect"),
+        }
+    )
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["closed"],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
+        url_guard=_allow_all,
+        expired_redirect_markers=["trk=expired_jd_redirect"],
+    )
+
+    assert await svc.sweep() == ["b"]
+
+
+@pytest.mark.asyncio
+async def test_canonical_url_rewrite_is_followed_not_treated_as_closed() -> None:
+    """getonbrd rewrites /jobs/<slug> to /jobs/<category>/<slug>. That is a live
+    listing at a tidier URL, not a dead end, so the redirect must be followed."""
+    repo, a, b = _seed()
+    client = _Client(
+        {
+            a.url: _Resp(200, "Apply now"),
+            b.url: _Resp(301, location="https://e.com/jobs/programming/b"),
+            "https://e.com/jobs/programming/b": _Resp(200, "Apply now"),
+        }
+    )
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["closed"],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
+        url_guard=_allow_all,
+        expired_redirect_markers=["trk=expired_jd_redirect"],
+    )
+
+    assert await svc.sweep() == []
+    assert "https://e.com/jobs/programming/b" in client.requested
+
+
+@pytest.mark.asyncio
+async def test_progress_reports_a_ratio_and_settles_after_the_sweep() -> None:
+    repo, a, b = _seed()
+    client = _Client({a.url: _Resp(200, "Apply now"), b.url: _Resp(404)})
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["closed"],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
+        url_guard=_allow_all,
+    )
+
+    assert svc.progress() == {"sweeping": False, "checked": 0, "total": 0, "closed": 0}
+
+    await svc.sweep()
+
+    # total is captured at sweep start, so it still counts the job that closed.
+    assert svc.progress() == {"sweeping": False, "checked": 2, "total": 2, "closed": 1}
+
+
+@pytest.mark.asyncio
+async def test_progress_advances_per_probe_not_per_chunk() -> None:
+    """A 100-job chunk takes ~100 seconds. Counting only when the chunk finished
+    left the UI showing "0 of N" for that whole time — which is exactly the
+    looks-stuck impression the progress endpoint exists to remove."""
+    repo, a, b = _seed()
+    seen_while_probing_b: list[int] = []
+
+    class _ObservingResp(_Resp):
+        def __init__(self, svc_box: list[JobRevalidationService]) -> None:
+            super().__init__(200, "Apply now")
+            self._svc_box = svc_box
+
+        async def aiter_bytes(self, chunk_size: int = 65536):
+            # Sampled while b is being probed, after a has already resolved.
+            seen_while_probing_b.append(self._svc_box[0].progress()["checked"])
+            async for chunk in super().aiter_bytes(chunk_size):
+                yield chunk
+
+    box: list[JobRevalidationService] = []
+    client = _Client({a.url: _Resp(200, "Apply now"), b.url: _ObservingResp(box)})
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["closed"],
+        batch=10,
+        # Serial, so `a` is fully resolved before `b` is probed.
+        concurrency=1,
+        delay=0.0,
+        url_guard=_allow_all,
+    )
+    box.append(svc)
+
+    await svc.sweep()
+
+    assert seen_while_probing_b == [1], "progress should already count the finished probe"
+    assert svc.progress()["checked"] == 2

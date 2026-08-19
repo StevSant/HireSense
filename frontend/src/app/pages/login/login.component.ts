@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { mapLoginError } from './login-error.util';
 
 @Component({
   selector: 'app-login',
@@ -39,11 +40,16 @@ export class LoginComponent {
           if (user) {
             this.router.navigate(['/dashboard']);
           } else {
-            this.error.set('Invalid credentials');
+            // A rejected credential arrives on the error path, so reaching here
+            // means the credential was accepted but the follow-up /auth/me probe
+            // failed — the session cookie never took hold.
+            this.error.set(
+              'Signed in, but the session was not established — check that cookies are enabled for this site.',
+            );
           }
         },
-        error: () => {
-          this.error.set('Invalid credentials');
+        error: (err: unknown) => {
+          this.error.set(mapLoginError(err));
         },
       });
   }

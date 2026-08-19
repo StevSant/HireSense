@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, of, timer } from 'rxjs';
-import { catchError, debounceTime, filter, map, switchMap, take } from 'rxjs/operators';
+import { catchError, debounceTime, filter, map, switchMap, take, takeWhile } from 'rxjs/operators';
 import { ApplicationsService } from '@core/services/applications.service';
 import { IngestionService } from '@core/services/ingestion.service';
 import { createSortState } from '@core/utils/sort-state';
@@ -331,25 +331,55 @@ export class IngestionStore {
           this.revalidating.set(false);
           this.loadJobs(false); // reflect the immediate (visible-page) closures
           this.revalidateNotice.set(
-            `Closed ${res.closed} job(s) on this page. Still scanning the rest of your jobs for closed listings in the background — more may drop off shortly.`,
+            `Closed ${res.closed} job(s) on this page. Now scanning the rest of your jobs in the background…`,
           );
-          timer(environment.closureRevalidatePollMs, environment.closureRevalidatePollMs)
-            .pipe(
-              // Skip ticks while the tab is backgrounded — no point burning a
-              // request (and the user's attention budget) on a poll they
-              // can't see; it resumes polling on the next visible tick.
-              filter(() => document.visibilityState === 'visible'),
-              take(environment.closureRevalidatePollTicks),
-              takeUntilDestroyed(this.destroyRef),
-            )
-            .subscribe({
-              next: () => this.loadJobs(false),
-              complete: () => this.revalidateNotice.set(''),
-            });
+          this.pollSweepProgress();
         },
         error: (err: HttpErrorResponse) => {
           this.revalidating.set(false);
           this.error.set(err.error?.detail || 'Failed to check for closed jobs');
+        },
+      });
+  }
+
+  // Follows the background sweep to completion via the cheap status endpoint.
+  //
+  // The previous version polled the JOB LIST on a fixed 8-tick budget, which was
+  // wrong in both directions: it gave up after ~2 minutes while a real sweep of
+  // a few thousand listings runs for tens of minutes (leaving a banner that
+  // claimed work nobody was reporting any more), and every tick re-ran the job
+  // feed — LLM scoring included — to discover nothing had changed. Now the
+  // ratio comes from in-memory counters, and the list is only re-read when the
+  // closed count actually moves, plus once when the sweep finishes.
+  private pollSweepProgress(): void {
+    let lastClosed = -1;
+    timer(environment.closureRevalidatePollMs, environment.closureRevalidatePollMs)
+      .pipe(
+        // Skip ticks while the tab is backgrounded — no point burning a
+        // request (and the user's attention budget) on a poll they
+        // can't see; it resumes polling on the next visible tick.
+        filter(() => document.visibilityState === 'visible'),
+        switchMap(() =>
+          this.ingestionService.revalidationStatus().pipe(catchError(() => of(null))),
+        ),
+        // Inclusive so the terminal (sweeping: false) snapshot is delivered
+        // before the stream completes — that is what clears the banner.
+        takeWhile((status) => status === null || status.sweeping, true),
+        take(environment.closureRevalidateMaxPollTicks),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (status) => {
+          if (status === null) return;
+          if (status.closed !== lastClosed) {
+            lastClosed = status.closed;
+            this.loadJobs(false);
+          }
+          this.revalidateNotice.set(
+            status.sweeping
+              ? `Scanning for closed listings: ${status.checked} of ${status.total} checked, ${status.closed} closed so far…`
+              : `Scan complete: ${status.closed} listing(s) closed.`,
+          );
         },
       });
   }

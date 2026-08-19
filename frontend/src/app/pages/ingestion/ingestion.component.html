@@ -183,24 +183,26 @@
   <!-- Sort bar -->
   @if (jobs().length > 0) {
     <div class="sort-bar">
-      <label class="toggle-label">
-        <input
-          type="checkbox"
-          [checked]="includeClosed()"
-          (change)="onIncludeClosedChange($event)"
-          class="toggle-checkbox"
-        />
-        Show closed
-      </label>
-      <label class="toggle-label">
-        <input
-          type="checkbox"
-          [checked]="includeLowQuality()"
-          (change)="onIncludeLowQualityChange($event)"
-          class="toggle-checkbox"
-        />
-        Show low-quality
-      </label>
+      <div class="sort-toggles">
+        <label class="toggle-label">
+          <input
+            type="checkbox"
+            [checked]="includeClosed()"
+            (change)="onIncludeClosedChange($event)"
+            class="toggle-checkbox"
+          />
+          Show closed
+        </label>
+        <label class="toggle-label">
+          <input
+            type="checkbox"
+            [checked]="includeLowQuality()"
+            (change)="onIncludeLowQualityChange($event)"
+            class="toggle-checkbox"
+          />
+          Show low-quality
+        </label>
+      </div>
     </div>
   }
 

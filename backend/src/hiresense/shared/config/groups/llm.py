@@ -63,5 +63,13 @@ class LLMSettings(BaseSettings):
     # Smaller output cap for "classifier" features that return a short verdict
     # (a label, a confidence, a brief extraction) rather than long-form text.
     llm_classifier_max_tokens: int = 512
+    # Larger output cap for features whose ONE response carries many items: the
+    # quick scorer scores a whole page of jobs per call, the dimension scorer
+    # returns six scored dimensions. Truncation there is not a shortened answer
+    # but an unparseable one -- the JSON is cut mid-array and the whole batch is
+    # discarded (see quick_scoring_service._parse), so the cap must cover the
+    # widest batch, not the average one. A cap is a ceiling, not a charge: only
+    # tokens actually emitted are billed.
+    llm_batch_max_tokens: int = 6144
     # Cap on extracted CV/resume text (chars) passed to the LLM parser prompt.
     cv_parse_char_limit: int = 20000

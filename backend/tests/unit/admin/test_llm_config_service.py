@@ -214,19 +214,33 @@ def test_classifier_feature_keys_get_the_small_cap() -> None:
         assert config.extra_params["max_tokens"] == 512, feature_key
 
 
-def test_match_quick_scorer_gets_the_default_cap_not_the_classifier_cap() -> None:
-    """match_quick_scorer returns batched per-job JSON for up to
-    match_quick_batch_size jobs in one call — it needs the larger default,
-    not the small classifier cap, even though it is also a "classifier"."""
+def test_batched_features_get_the_batch_cap_not_the_default_or_classifier_cap() -> None:
+    """One response from these carries a whole batch — a page of scored jobs, or
+    six scored dimensions — so a cap sized for a single verdict truncates the
+    JSON mid-array and the whole batch is discarded rather than shortened."""
     row = _FakeSettingsRow(
         provider="anthropic", model="claude-sonnet-4-6", api_key_encrypted=None, extra_params={}
     )
     svc = _service(row, {}, APIKeyCipher(""))
-    config = svc.resolve("match_quick_scorer")
-    assert config.extra_params["max_tokens"] == 2048
+    assert svc.resolve("match_quick_scorer").extra_params["max_tokens"] == 6144
+    assert svc.resolve("match_dimension_scorer").extra_params["max_tokens"] == 6144
+    # A single-shot feature is unaffected by the batch tier.
+    assert svc.resolve("seniority_scorer").extra_params["max_tokens"] == 2048
 
 
-def test_custom_default_and_classifier_caps_are_honored() -> None:
+def test_admin_set_max_tokens_still_wins_for_a_batched_feature() -> None:
+    """The batch cap is only a default: an explicit admin value takes priority."""
+    row = _FakeSettingsRow(
+        provider="anthropic",
+        model="claude-sonnet-4-6",
+        api_key_encrypted=None,
+        extra_params={"max_tokens": 1234},
+    )
+    svc = _service(row, {}, APIKeyCipher(""))
+    assert svc.resolve("match_quick_scorer").extra_params["max_tokens"] == 1234
+
+
+def test_custom_default_classifier_and_batch_caps_are_honored() -> None:
     svc = LLMConfigService(
         settings_repo=_SettingsRepo(None),
         override_repo=_OverrideRepo({}),
@@ -236,9 +250,11 @@ def test_custom_default_and_classifier_caps_are_honored() -> None:
         env_api_key="env-key",
         default_max_tokens=4096,
         classifier_max_tokens=256,
+        batch_max_tokens=9000,
     )
     assert svc.resolve("seniority_scorer").extra_params["max_tokens"] == 4096
     assert svc.resolve("job_quality_classifier").extra_params["max_tokens"] == 256
+    assert svc.resolve("match_quick_scorer").extra_params["max_tokens"] == 9000
 
 
 def test_invalidate_clears_cache() -> None:

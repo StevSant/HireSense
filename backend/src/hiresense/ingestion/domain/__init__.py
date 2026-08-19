@@ -3,6 +3,7 @@ from hiresense.ingestion.domain.application_classifier import classify_applicati
 from hiresense.ingestion.domain.application_method import ApplicationMethod
 from hiresense.ingestion.domain.ats_platform import AtsPlatform
 from hiresense.ingestion.domain.closed_listing_classifier import Verdict, classify_listing
+from hiresense.ingestion.domain.dead_end_redirect import is_dead_end_redirect
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
 from hiresense.ingestion.domain.cross_source_deduplicator import (
@@ -46,6 +47,7 @@ from hiresense.ingestion.domain.ssrf_guard import is_safe_probe_url
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 
 __all__ = [
+    "is_dead_end_redirect",
     "ApplicationClassification",
     "ApplicationMethod",
     "AtsPlatform",

@@ -80,6 +80,9 @@ export const API_ROUTES = {
     // A full board pass is a multi-minute network operation of its own class.
     fetch: defineRoute('/ingestion/fetch', 'fetch'),
     revalidate: defineRoute('/ingestion/revalidate', 'llm'),
+    // Cheap in-memory counter read, polled while a sweep runs — default budget,
+    // deliberately not the 'llm' one the sweep trigger needs.
+    revalidateStatus: defineRoute('/ingestion/revalidate/status'),
     // Listing jobs re-ranks them, which can reach embeddings and the LLM.
     jobs: defineRoute('/ingestion/jobs', 'llm'),
     job: defineRoute('/ingestion/jobs/:jobId', 'llm'),

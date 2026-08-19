@@ -282,6 +282,21 @@ class JobsRepository(SqlRepository):
             session.commit()
         return to_close
 
+    def count_open(self, sources: list[str]) -> int:
+        """How many open jobs of the given sources exist — the denominator the
+        sweep reports as progress. Counted DB-side, not by loading rows."""
+        if not sources:
+            return 0
+        with self._session_factory() as session:
+            return int(
+                session.scalar(
+                    select(func.count())
+                    .select_from(IngestedJob)
+                    .where(IngestedJob.status == "open", IngestedJob.source.in_(sources))
+                )
+                or 0
+            )
+
     def find_open_stale(self, sources: list[str], limit: int) -> list[NormalizedJob]:
         """Open jobs of the given sources, oldest-checked first (never-checked
         first), capped at `limit`. Used to pace the URL-probe sweep."""

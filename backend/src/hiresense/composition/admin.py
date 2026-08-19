@@ -52,6 +52,7 @@ def build_admin(infra: SharedInfra) -> AdminBuild:
         },
         default_max_tokens=s.llm_default_max_tokens,
         classifier_max_tokens=s.llm_classifier_max_tokens,
+        batch_max_tokens=s.llm_batch_max_tokens,
     )
     test_runner = LLMTestRunner(factory=factory)
     settings_service = LLMSettingsService(

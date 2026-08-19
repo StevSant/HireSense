@@ -679,3 +679,44 @@ async def test_progress_reports_a_ratio_and_settles_after_the_sweep() -> None:
 
     # total is captured at sweep start, so it still counts the job that closed.
     assert svc.progress() == {"sweeping": False, "checked": 2, "total": 2, "closed": 1}
+
+
+@pytest.mark.asyncio
+async def test_progress_advances_per_probe_not_per_chunk() -> None:
+    """A 100-job chunk takes ~100 seconds. Counting only when the chunk finished
+    left the UI showing "0 of N" for that whole time — which is exactly the
+    looks-stuck impression the progress endpoint exists to remove."""
+    repo, a, b = _seed()
+    seen_while_probing_b: list[int] = []
+
+    class _ObservingResp(_Resp):
+        def __init__(self, svc_box: list[JobRevalidationService]) -> None:
+            super().__init__(200, "Apply now")
+            self._svc_box = svc_box
+
+        async def aiter_bytes(self, chunk_size: int = 65536):
+            # Sampled while b is being probed, after a has already resolved.
+            seen_while_probing_b.append(self._svc_box[0].progress()["checked"])
+            async for chunk in super().aiter_bytes(chunk_size):
+                yield chunk
+
+    box: list[JobRevalidationService] = []
+    client = _Client({a.url: _Resp(200, "Apply now"), b.url: _ObservingResp(box)})
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["closed"],
+        batch=10,
+        # Serial, so `a` is fully resolved before `b` is probed.
+        concurrency=1,
+        delay=0.0,
+        url_guard=_allow_all,
+    )
+    box.append(svc)
+
+    await svc.sweep()
+
+    assert seen_while_probing_b == [1], "progress should already count the finished probe"
+    assert svc.progress()["checked"] == 2

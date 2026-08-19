@@ -143,7 +143,6 @@ class JobRevalidationService:
                     break
                 checked.update(j.id for j in jobs)
                 closed.extend(await self._probe_and_close(jobs))
-                self._checked_count = len(checked)
                 self._closed_count = len(closed)
             logger.info(
                 "Revalidation sweep complete: probed %d, closed %d",
@@ -202,7 +201,7 @@ class JobRevalidationService:
     async def _probe_and_close(self, jobs: list[Any]) -> list[str]:
         if not jobs:
             return []
-        verdicts = await asyncio.gather(*(self._probe(j) for j in jobs))
+        verdicts = await asyncio.gather(*(self._probe_counted(j) for j in jobs))
         to_close = [j.id for j, v in zip(jobs, verdicts) if v == Verdict.CLOSED]
         await asyncio.to_thread(self._repo.mark_checked, [j.id for j in jobs])
         if to_close:
@@ -211,6 +210,18 @@ class JobRevalidationService:
                 await self._indexer.remove(to_close)
         logger.info("Revalidation: probed %d, closed %d", len(jobs), len(to_close))
         return to_close
+
+    async def _probe_counted(self, job: Any) -> Verdict:
+        """Probe one job and advance the progress counter as it resolves.
+
+        Counting once per finished chunk instead left `checked` at 0 for the ~100
+        seconds a 100-job chunk takes, so the UI opened on "0 of 1873" —
+        reproducing the very "looks stuck" impression this progress exists to
+        remove.
+        """
+        verdict = await self._probe(job)
+        self._checked_count += 1
+        return verdict
 
     async def _probe(self, job: Any) -> Verdict:
         probe_url = self._probe_url(job)

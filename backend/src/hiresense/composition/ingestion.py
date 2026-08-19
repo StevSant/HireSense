@@ -294,24 +294,11 @@ def build_ingestion(
     # URL-probe revalidation sweep for the boards bucket. Snapshot sources
     # (portals) get disappearance-based closure during ingestion, so the sweep
     # only targets feed/search sources whose listings stay live after closing.
-    # hn_hiring is excluded: HN "Who's Hiring" comment permalinks have no
-    # reliable per-URL closure signal — a live comment and HN's rate-limit page
-    # BOTH render "Sorry." (the rate-limit one as HTTP 429), so a marker would
-    # either be throttled into UNKNOWN or false-close a live item whose page
-    # text/replies contain "sorry". HN staleness is age-based (max_age_days)
-    # instead. csv has no live URL to probe.
-    # himalayas is excluded: its public listing pages sit behind bot protection
-    # that 403s the probe (a browser UA doesn't help — fingerprint/JS challenge),
-    # so a probe could only ever return UNKNOWN. Its API declares a per-job
-    # expiryDate instead, so the sweep's expiry pass (close_expired) handles its
-    # closure. hn_hiring/csv have no reliable per-URL closure signal.
-    # Import fallbacks without durable live URLs are still included when they
-    # expose http(s) job URLs — probes that fail stay UNKNOWN (never close).
-    _revalidation_excluded = {
-        "hn_hiring",
-        "csv",
-        "himalayas",
-    }
+    # Which sources are skipped, and why, is declared in config
+    # (job_revalidation_excluded_sources) so it is tunable per deployment rather
+    # than frozen in the wiring. Sources that stay in the list but fail a probe
+    # remain UNKNOWN and are never closed on that basis.
+    _revalidation_excluded = set(s.job_revalidation_excluded_sources)
     revalidation_sources = [
         name for name in s.enabled_job_sources if name not in _revalidation_excluded
     ]
@@ -338,6 +325,7 @@ def build_ingestion(
         max_redirects=s.job_revalidation_max_redirects,
         probe_url_builders={"linkedin": _linkedin_probe_url},
         user_agent=s.job_revalidation_user_agent,
+        expired_redirect_markers=s.job_revalidation_expired_redirect_markers,
     )
 
     # Resolve the portals config relative to the hiresense package root (not

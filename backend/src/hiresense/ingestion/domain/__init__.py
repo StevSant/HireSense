@@ -52,6 +52,7 @@ from hiresense.ingestion.domain.source_health import (
     SourceRunStats,
 )
 from hiresense.ingestion.domain.ssrf_guard import is_safe_probe_url
+from hiresense.ingestion.domain.tracked_job_fields import TRACKED_FIELDS, diff_job_fields
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 
 __all__ = [
@@ -76,8 +77,10 @@ __all__ = [
     "SourceHealthStatus",
     "SourceHealthTracker",
     "SourceRunStats",
+    "TRACKED_FIELDS",
     "UpsertResult",
     "detect_closures",
+    "diff_job_fields",
     "JobQuality",
     "JobQualityClassifier",
     "JobQualityVerdict",

@@ -354,29 +354,49 @@ class JobFeedService:
             # Match-sort only (unlike the outer gate): champions exist to fix
             # RANKING fairness, which is meaningless under a non-match sort even
             # if min_score is what triggered the outer pass.
+            # Two cold-start failures, fixed in ONE batched LLM pass:
+            #  * DEPTH (window) — the page-level pass below scores only the
+            #    visible 20, but page 1 is *selected* before any real score
+            #    exists. A job the heuristic ranks 40th never reaches a page, so
+            #    it never gets scored, so it never rises: the displayed top-20
+            #    stayed wrong until several requests had warmed the cache.
+            #  * FAIRNESS (champions) — the heuristic is source-biased, so
+            #    without a per-source floor page 1 fills with the verbose-text
+            #    sources and a strong getonboard job (structured tags) stays
+            #    buried until the user filters by that source.
+            # Both select from the same heuristic ranking, so they share one
+            # score_page call; already-cached members cost nothing, which drives
+            # the steady-state extra LLM cost to zero.
             champions_k = (
                 settings.ingestion_source_champions_per_source if settings is not None else 0
             )
+            window_n = settings.ingestion_match_scoring_window if settings is not None else 0
             if (
                 rescore
-                and champions_k > 0
-                and source is None
+                and (champions_k > 0 or window_n > 0)
                 and effective_sort.startswith("match_")
             ):
-                taken: dict[str, int] = {}
-                champions: list[NormalizedJob] = []
-                for job in sorted(all_jobs, key=lambda j: j.match_score or 0.0, reverse=True):
-                    if taken.get(job.source, 0) >= champions_k:
-                        continue
-                    taken[job.source] = taken.get(job.source, 0) + 1
-                    if job.id not in cached_quick:
-                        champions.append(job)
-                if champions:
-                    champion_quick = await self._quick_scoring.score_page(
-                        champions, candidate_skills, candidate_summary, llm_on_miss=True
+                ranked = sorted(all_jobs, key=lambda j: j.match_score or 0.0, reverse=True)
+                selected: dict[str, NormalizedJob] = {}
+                if window_n > 0:
+                    for job in ranked[:window_n]:
+                        selected[job.id] = job
+                # Champions stay all-sources-only: a per-source floor is
+                # meaningless once the view is already filtered to one source.
+                if champions_k > 0 and source is None:
+                    taken: dict[str, int] = {}
+                    for job in ranked:
+                        if taken.get(job.source, 0) >= champions_k:
+                            continue
+                        taken[job.source] = taken.get(job.source, 0) + 1
+                        selected[job.id] = job
+                priority = [j for j in selected.values() if j.id not in cached_quick]
+                if priority:
+                    priority_quick = await self._quick_scoring.score_page(
+                        priority, candidate_skills, candidate_summary, llm_on_miss=True
                     )
-                    if champion_quick:
-                        all_jobs = [_apply_quick(j, champion_quick.get(j.id)) for j in all_jobs]
+                    if priority_quick:
+                        all_jobs = [_apply_quick(j, priority_quick.get(j.id)) for j in all_jobs]
 
         params = JobQueryParams(
             page=page,

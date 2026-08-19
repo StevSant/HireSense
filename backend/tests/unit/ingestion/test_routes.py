@@ -1055,6 +1055,9 @@ async def test_cold_cache_source_champions_rank_globally() -> None:
         ingestion_max_job_age_days=0,
         ingestion_max_page_size=100,
         ingestion_source_champions_per_source=2,
+        # 0 keeps this test exercising the per-source champion path in isolation;
+        # the global top-N window has its own test below.
+        ingestion_match_scoring_window=0,
     )
     app.dependency_overrides[get_ingestion_orchestrator] = lambda: _Orch()
     app.dependency_overrides[get_job_query] = lambda: _Orch()
@@ -1080,6 +1083,104 @@ async def test_cold_cache_source_champions_rank_globally() -> None:
     # (cache-empty), before pagination.
     champion_call = next(c for c in quick.calls if c[0] is True)
     assert champion_call[1] == ["gob-2", "gob-best", "hn-1", "hn-2"]
+
+
+class _DeepWindowQuickScoring:
+    """Scores one deeply-buried job strongly; everything else stays heuristic."""
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[bool, list[str]]] = []
+
+    async def score_page(self, jobs, skills, summary, llm_on_miss=True):
+        from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
+        from hiresense.ingestion.domain.quick_match_verdict import QuickMatchVerdict
+
+        self.calls.append((llm_on_miss, sorted(j.id for j in jobs)))
+        if not llm_on_miss:
+            return {}
+        out = {}
+        for j in jobs:
+            if j.id == "buried-gem":
+                out[j.id] = QuickMatchResult(
+                    job_id=j.id, score=0.95, verdict=QuickMatchVerdict.STRONG
+                )
+        return out
+
+
+@pytest.mark.asyncio
+async def test_scoring_window_lifts_a_job_no_page_or_champion_pass_would_reach() -> None:
+    """A single-source corpus where the strong job is buried past page 1.
+
+    The champions pass cannot help (one source, and the gem is not in its top-K),
+    and the page-level pass never sees the job because page 1 is selected on
+    heuristic scores. Only the global top-N window reaches it.
+    """
+    from types import SimpleNamespace
+
+    from hiresense.ingestion.api.dependencies import get_quick_scoring
+
+    def _job(id_, score):
+        return NormalizedJob(
+            id=id_,
+            title=id_,
+            company="Co",
+            description="d",
+            skills=[],
+            source="hn_hiring",
+            source_type="api",
+            language="en",
+            url=f"https://e.com/{id_}",
+            match_score=score,
+        )
+
+    # buried-gem sits 6th by heuristic: off a 2-row page 1, outside a top-2
+    # per-source champion set, but inside a window of 10.
+    jobs = [_job(f"filler-{i}", 0.9 - i * 0.05) for i in range(5)]
+    jobs.append(_job("buried-gem", 0.4))
+
+    class _Orch:
+        async def run(self, filters=None):
+            return []
+
+        def list_jobs(self, criteria=None):
+            return list(jobs)
+
+        def persist_scores(self, *a):
+            pass
+
+        def persist_scores_batch(self, updates):
+            pass
+
+    quick = _DeepWindowQuickScoring()
+    app = FastAPI()
+    app.state.settings = SimpleNamespace(
+        ingestion_min_match_score=0.0,
+        ingestion_max_job_age_days=0,
+        ingestion_max_page_size=100,
+        ingestion_source_champions_per_source=2,
+        ingestion_match_scoring_window=10,
+    )
+    app.dependency_overrides[get_ingestion_orchestrator] = lambda: _Orch()
+    app.dependency_overrides[get_job_query] = lambda: _Orch()
+    app.dependency_overrides[get_portal_scanner] = lambda: FakeScanner()
+    app.dependency_overrides[get_profile_service] = lambda: FakeProfileSummaryOnly()
+    app.dependency_overrides[get_semantic_scoring] = lambda: None
+    app.dependency_overrides[get_quick_scoring] = lambda: quick
+    app.dependency_overrides[require_auth] = lambda: "test-user"
+    app.include_router(router)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get(
+            "/ingestion/jobs", params={"tab": "boards", "page_size": 2, "min_score": 0}
+        )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["jobs"][0]["id"] == "buried-gem"
+    assert body["jobs"][0]["match_score"] == 0.95
+    # One batched LLM call covering the whole window, not a per-page trickle.
+    window_call = next(c for c in quick.calls if c[0] is True)
+    assert "buried-gem" in window_call[1]
 
 
 # ---------------------------------------------------------------------------

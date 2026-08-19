@@ -89,7 +89,10 @@ click**.
 5. **Frontend** — the job detail panel and the standalone job page show a warning band above
    the actions when `apply_access` is walled, and "View Original" now opens
    `preferred_apply_url` (confirmed ATS form → board-supplied direct apply URL → listing
-   page) instead of always the listing page.
+   page) instead of always the listing page. The job **list** carries a compact marker next
+   to the source badge (`🔒` paid / `👤` free account, note in the `title`) so a page of
+   results can be triaged without opening each row, and its "View" link uses
+   `preferred_apply_url` too.
 6. **CrunchBoard disabled by default** in `IngestionSettings.enabled_job_sources` and
    `.env.example`, with the dead feed documented in its `limitations`.
 
@@ -99,9 +102,16 @@ the UI.
 
 ## Follow-ups not taken
 
-- **Jobicy's Cloudflare challenge** never resolved even in a real browser, so "View Original"
-  for a Jobicy listing may dead-end. Marked `unknown`; worth re-checking before trusting that
-  source for anything but discovery.
+- **Jobicy is unreachable from this machine.** Re-probed 2026-08-19: the Cloudflare
+  "Verificación de seguridad en curso" interstitial never resolves, and it blocks
+  `jobicy.com/` itself, not just job pages — so it is a blanket block on the client or IP,
+  not a per-listing gate. The v2 API keeps answering normally (`id`, `url`, `jobSlug`,
+  `jobTitle`, `companyName`, `jobIndustry`, `jobType`, `jobGeo`, `jobLevel`, `pubDate`,
+  descriptions) and carries **no** employer apply link, so if the page is unreachable the
+  listing is unactionable — we ingest jobs nobody can apply to. Two candidate causes remain,
+  and they need a human click to tell apart: Cloudflare fingerprinting the automated browser,
+  or the IP/region being blocked outright. If it is the latter, jobicy should move to
+  `enabled_by_default=False` like crunchboard. Left `unknown` and enabled pending that check.
 - **Demoting walled sources in ranking** (pushing `remoteok` down `SOURCE_TIER`, adding a
   `?hide_walled=` filter) was considered and deferred — badging first, so the signal is
   visible before it changes ranking behaviour.

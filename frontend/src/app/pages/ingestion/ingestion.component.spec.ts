@@ -5,7 +5,10 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { IngestionComponent } from './ingestion.component';
 import { environment } from '../../../environments/environment';
 
-const jobsPayload = (connectionsByJob: Record<string, number> = {}) => ({
+const jobsPayload = (
+  connectionsByJob: Record<string, number> = {},
+  jobOverrides: Record<string, unknown> = {},
+) => ({
   jobs: [
     {
       id: 'job-1',
@@ -28,6 +31,7 @@ const jobsPayload = (connectionsByJob: Record<string, number> = {}) => ({
       reasons: [],
       dealbreakers: [],
       status: 'open',
+      ...jobOverrides,
     },
   ],
   total: 1,
@@ -286,5 +290,74 @@ describe('IngestionComponent — visibility-gated revalidation poll', () => {
     const reread = jobsReqs(httpMock);
     expect(reread.length).toBe(1);
     reread[0].flush(jobsPayload());
+  });
+});
+
+describe('IngestionComponent — apply-access marker', () => {
+  let httpMock: HttpTestingController;
+
+  beforeEach(async () => {
+    TestBed.resetTestingModule();
+    localStorage.clear();
+    await TestBed.configureTestingModule({
+      imports: [IngestionComponent],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => httpMock.verify());
+
+  function renderWith(jobOverrides: Record<string, unknown>): HTMLElement {
+    const fixture = TestBed.createComponent(IngestionComponent);
+    fixture.detectChanges();
+    flushBootstrapGets(httpMock);
+    httpMock
+      .match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`)[0]
+      .flush(jobsPayload({}, jobOverrides));
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  it('marks a paywalled listing so the list can be triaged without opening it', () => {
+    const el = renderWith({
+      source: 'remoteok',
+      apply_access: 'paid_required',
+      apply_access_note: 'RemoteOK routes Apply through its paid premium page.',
+    });
+
+    const marker = el.querySelector('.apply-wall');
+    expect(marker).toBeTruthy();
+    expect(marker!.classList.contains('apply-wall--paid')).toBe(true);
+    expect(marker!.getAttribute('title')).toContain('paid premium page');
+  });
+
+  it('marks a free-account wall without the paid styling', () => {
+    const marker = renderWith({
+      source: 'weworkremotely',
+      apply_access: 'account_required',
+    }).querySelector('.apply-wall');
+
+    expect(marker).toBeTruthy();
+    expect(marker!.classList.contains('apply-wall--paid')).toBe(false);
+    expect(marker!.getAttribute('title')).toContain('free account');
+  });
+
+  it('leaves an unwalled listing unmarked', () => {
+    expect(renderWith({ apply_access: 'direct' }).querySelector('.apply-wall')).toBeNull();
+  });
+
+  it('points View at the direct apply URL when the board gave us one', () => {
+    const link = renderWith({
+      preferred_apply_url: 'https://job-boards.greenhouse.io/acme/jobs/9',
+    }).querySelector('.actions-cell a.link');
+
+    expect(link!.getAttribute('href')).toBe('https://job-boards.greenhouse.io/acme/jobs/9');
+  });
+
+  it('falls back to the listing URL when there is no direct apply URL', () => {
+    const link = renderWith({}).querySelector('.actions-cell a.link');
+
+    expect(link!.getAttribute('href')).toBe('https://example.com/job-1');
   });
 });

@@ -441,6 +441,22 @@ tr.closed {
 }
 
 /* --- LinkedIn connections badge --- */
+/* Marks a board that walls its apply hop, so the list can be triaged without
+   opening every job. Detail copy lives in the title attribute. */
+.apply-wall {
+  margin-left: 0.3rem;
+  font-size: 0.75rem;
+  vertical-align: middle;
+  cursor: help;
+  opacity: 0.75;
+
+  /* A paywall costs money, an account costs a signup — the paid one earns
+     full contrast so it reads first when scanning a column of rows. */
+  &--paid {
+    opacity: 1;
+  }
+}
+
 .connections-badge {
   display: inline-block;
   margin-left: 0.375rem;

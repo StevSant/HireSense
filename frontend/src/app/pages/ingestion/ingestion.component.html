@@ -275,12 +275,31 @@
               </td>
               <td>
                 <span class="badge source-badge-{{ job.source }}">{{ job.source }}</span>
+                @if (job.apply_access === 'paid_required') {
+                  <span
+                    class="apply-wall apply-wall--paid"
+                    [title]="job.apply_access_note || 'Applying requires a paid subscription'"
+                    aria-label="Applying requires a paid subscription"
+                    >🔒</span
+                  >
+                } @else if (job.apply_access === 'account_required') {
+                  <span
+                    class="apply-wall"
+                    [title]="job.apply_access_note || 'Applying requires a free account'"
+                    aria-label="Applying requires a free account"
+                    >👤</span
+                  >
+                }
               </td>
               <td class="date-cell">
                 {{ job.posted_date ? (job.posted_date | date: 'mediumDate') : '—' }}
               </td>
               <td class="actions-cell">
-                <a [href]="job.url" target="_blank" class="link" (click)="$event.stopPropagation()"
+                <a
+                  [href]="job.preferred_apply_url || job.url"
+                  target="_blank"
+                  class="link"
+                  (click)="$event.stopPropagation()"
                   >View</a
                 >
                 <app-feedback-controls

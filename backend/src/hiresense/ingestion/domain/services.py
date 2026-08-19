@@ -46,6 +46,7 @@ class IngestionOrchestrator:
         closure_miss_threshold: int = 2,
         quality_classifier: Any | None = None,
         health_tracker: SourceHealthTracker | None = None,
+        source_concurrency: int = 8,
     ) -> None:
         self._sources = sources
         self._normalizers = normalizers
@@ -57,6 +58,9 @@ class IngestionOrchestrator:
         self._closure_miss_threshold = closure_miss_threshold
         self._quality_classifier = quality_classifier
         self._health = health_tracker or SourceHealthTracker()
+        # Sources are independent hosts, so their fetches overlap; the per-source
+        # DB/index work downstream still runs one at a time, in source order.
+        self._source_concurrency = max(1, source_concurrency)
         self._last_run_at: float = 0.0
         # Single-flight guard: True while a run() is mid-pass. Prevents two
         # concurrent /fetch triggers from both clearing the cooldown check and
@@ -78,6 +82,7 @@ class IngestionOrchestrator:
         with _tracer.start_as_current_span("ingestion.run") as span:
             started = time.perf_counter()
             claimed = False
+            pending: dict[str, asyncio.Task[Any]] = {}
             try:
                 # Single-flight + cooldown gate. The in-flight check, the
                 # cooldown check, and the claim below all run with no intervening
@@ -98,6 +103,20 @@ class IngestionOrchestrator:
                 new_jobs: list[NormalizedJob] = []
                 all_touched: list[NormalizedJob] = []
 
+                # Every source's fetch is launched up front so the network waits
+                # overlap; previously an 8-source pass paid the sum of all of
+                # them. Results are still consumed in declaration order, so the
+                # DB writes, indexing and returned job order are unchanged.
+                fetch_sem = asyncio.Semaphore(self._source_concurrency)
+                pending.update(
+                    {
+                        source.source_name(): asyncio.create_task(
+                            self._fetch_source(source, filters, fetch_sem)
+                        )
+                        for source in self._sources
+                        if self._normalizers.get(source.source_name()) is not None
+                    }
+                )
                 for source in self._sources:
                     source_name = source.source_name()
                     normalizer = self._normalizers.get(source_name)
@@ -105,24 +124,7 @@ class IngestionOrchestrator:
                         logger.warning("No normalizer for source: %s", source_name)
                         continue
 
-                    fetch_started = time.perf_counter()
-                    run_stats = SourceRunStats()
-                    with _tracer.start_as_current_span("ingestion.source.fetch") as fetch_span:
-                        fetch_span.set_attribute("source", source_name)
-                        try:
-                            raw_jobs = await source.fetch_jobs(filters)
-                        except Exception as exc:
-                            fetch_span.set_status(trace.Status(trace.StatusCode.ERROR))
-                            logger.exception("Failed to fetch from %s", source_name)
-                            raw_jobs = None
-                            run_stats.success = False
-                            run_stats.error = f"{type(exc).__name__}: {exc}"
-                        finally:
-                            duration_ms = (time.perf_counter() - fetch_started) * 1000.0
-                            _metrics.source_fetch_duration_ms.record(
-                                duration_ms,
-                                {"source": source_name},
-                            )
+                    raw_jobs, run_stats, fetch_started = await pending.pop(source_name)
                     if raw_jobs is None:
                         self._health.record_run(
                             source_name,
@@ -264,11 +266,55 @@ class IngestionOrchestrator:
                 span.set_status(trace.Status(trace.StatusCode.ERROR))
                 raise
             finally:
+                # If processing raised part-way through, the still-running fetches
+                # would outlive the run and surface as "task exception was never
+                # retrieved". Cancel and drain whatever was never consumed.
+                if pending:
+                    for task in pending.values():
+                        task.cancel()
+                    await asyncio.gather(*pending.values(), return_exceptions=True)
                 # Release the single-flight guard only if this call claimed it —
                 # a cooldown-rejected concurrent trigger must not clear the flag
                 # held by the run that is actually in flight.
                 if claimed:
                     self._run_in_flight = False
+
+    async def _fetch_source(
+        self,
+        source: Any,
+        filters: dict[str, Any] | None,
+        semaphore: asyncio.Semaphore,
+    ) -> tuple[list[Any] | None, SourceRunStats, float]:
+        """Fetch one source's raw jobs, isolating its failures.
+
+        Returns ``(raw_jobs, stats, started)`` with ``raw_jobs=None`` when the
+        fetch failed — the caller skips disappearance-based closure in that case,
+        so a broken source can never mass-close its jobs. Timing starts when this
+        source actually begins fetching (after any wait for a concurrency slot),
+        keeping the recorded duration a measure of the source, not of queueing.
+        """
+        _metrics = get_domain_metrics()
+        source_name = source.source_name()
+        async with semaphore:
+            fetch_started = time.perf_counter()
+            run_stats = SourceRunStats()
+            with _tracer.start_as_current_span("ingestion.source.fetch") as fetch_span:
+                fetch_span.set_attribute("source", source_name)
+                try:
+                    raw_jobs = await source.fetch_jobs(filters)
+                except Exception as exc:
+                    fetch_span.set_status(trace.Status(trace.StatusCode.ERROR))
+                    logger.exception("Failed to fetch from %s", source_name)
+                    raw_jobs = None
+                    run_stats.success = False
+                    run_stats.error = f"{type(exc).__name__}: {exc}"
+                finally:
+                    duration_ms = (time.perf_counter() - fetch_started) * 1000.0
+                    _metrics.source_fetch_duration_ms.record(
+                        duration_ms,
+                        {"source": source_name},
+                    )
+        return raw_jobs, run_stats, fetch_started
 
     async def _prune_expired(self) -> None:
         if not self._retention_days or self._retention_days <= 0:

@@ -422,3 +422,109 @@ async def test_successful_run_starts_cooldown() -> None:
 
     with pytest.raises(IngestionCooldownError):
         await orch.run()
+
+
+class _SlowSource:
+    """A source whose fetch blocks until released, to observe fetch overlap."""
+
+    def __init__(self, name: str, gate: asyncio.Event, tracker: list[str]) -> None:
+        self._name = name
+        self._gate = gate
+        self._tracker = tracker
+
+    def source_name(self) -> str:
+        return self._name
+
+    def source_type(self) -> SourceType:
+        return SourceType.API
+
+    def supports_snapshot_closure(self) -> bool:
+        return False
+
+    async def fetch_jobs(self, filters=None) -> list[RawJobListing]:
+        self._tracker.append(self._name)
+        await self._gate.wait()
+        return []
+
+
+@pytest.mark.asyncio
+async def test_sources_are_fetched_concurrently() -> None:
+    """All source fetches start before any of them finishes.
+
+    Serially, source 2 could not begin until source 1 returned — so an 8-source
+    pass paid the sum of every source's latency instead of the slowest one.
+    """
+    gate = asyncio.Event()
+    started: list[str] = []
+    names = ["s1", "s2", "s3"]
+    sources = [_SlowSource(n, gate, started) for n in names]
+    orch = IngestionOrchestrator(
+        sources=sources,
+        normalizers={n: FakeNormalizer() for n in names},
+        event_bus=InMemoryEventBus(),
+        repository=InMemoryJobsRepository(),
+        cooldown_seconds=0,
+    )
+
+    run = asyncio.create_task(orch.run())
+    # Let the fan-out schedule every fetch while all of them are still blocked.
+    for _ in range(10):
+        await asyncio.sleep(0)
+    assert started == names
+
+    gate.set()
+    await run
+
+
+@pytest.mark.asyncio
+async def test_source_concurrency_limit_is_respected() -> None:
+    gate = asyncio.Event()
+    started: list[str] = []
+    names = ["s1", "s2", "s3"]
+    sources = [_SlowSource(n, gate, started) for n in names]
+    orch = IngestionOrchestrator(
+        sources=sources,
+        normalizers={n: FakeNormalizer() for n in names},
+        event_bus=InMemoryEventBus(),
+        repository=InMemoryJobsRepository(),
+        cooldown_seconds=0,
+        source_concurrency=2,
+    )
+
+    run = asyncio.create_task(orch.run())
+    for _ in range(10):
+        await asyncio.sleep(0)
+    assert started == ["s1", "s2"]
+
+    gate.set()
+    await run
+    assert started == names
+
+
+@pytest.mark.asyncio
+async def test_failing_source_does_not_abort_the_others() -> None:
+    class _Boom:
+        def source_name(self) -> str:
+            return "boom"
+
+        def source_type(self) -> SourceType:
+            return SourceType.API
+
+        def supports_snapshot_closure(self) -> bool:
+            return False
+
+        async def fetch_jobs(self, filters=None):
+            raise RuntimeError("upstream down")
+
+    repo = InMemoryJobsRepository()
+    orch = IngestionOrchestrator(
+        sources=[_Boom(), FakeJobSource()],
+        normalizers={"boom": FakeNormalizer(), "fake": FakeNormalizer()},
+        event_bus=InMemoryEventBus(),
+        repository=repo,
+        cooldown_seconds=0,
+    )
+
+    new_jobs = await orch.run()
+
+    assert [j.title for j in new_jobs] == ["Engineer"]

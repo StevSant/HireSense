@@ -27,8 +27,28 @@
       </div>
     </header>
 
+    @if (j.apply_access === 'paid_required' || j.apply_access === 'account_required') {
+      <p
+        class="job-apply-warning"
+        [class.job-apply-warning--paid]="j.apply_access === 'paid_required'"
+      >
+        {{
+          j.apply_access === 'paid_required'
+            ? '🔒 Paid subscription to apply'
+            : '👤 Free account to apply'
+        }}
+        @if (j.apply_access_note) {
+          — {{ j.apply_access_note }}
+        }
+      </p>
+    }
+
     <div class="job-actions">
-      <a [href]="j.url" target="_blank" rel="noopener" class="job-btn job-btn-primary"
+      <a
+        [href]="j.preferred_apply_url || j.url"
+        target="_blank"
+        rel="noopener"
+        class="job-btn job-btn-primary"
         >View Original ↗</a
       >
       @if (tracked()) {

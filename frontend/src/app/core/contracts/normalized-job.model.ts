@@ -33,6 +33,15 @@ export interface NormalizedJob {
   ats_type?: string | null;
   // A URL we're confident is a direct application form (set for ats_form).
   apply_url?: string | null;
+  // Whether the candidate can actually reach the application form from this
+  // board. 'paid_required' = the board paywalls its apply hop (RemoteOK);
+  // 'account_required' = a free account on the board is needed.
+  apply_access?: 'direct' | 'account_required' | 'paid_required' | 'unknown';
+  // One-sentence explanation shown when apply_access is not 'direct'.
+  apply_access_note?: string;
+  // Best URL to open: a confirmed ATS form, else a board-supplied direct apply
+  // URL, else the listing page. Prefer this over `url` for "View Original".
+  preferred_apply_url?: string;
   posted_date: string | null;
   remote_modality?: 'remote' | 'hybrid' | 'on_site' | null;
   // Displayed match %. Mirrors llm_score when the LLM quick scorer has run,

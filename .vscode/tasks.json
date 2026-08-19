@@ -47,13 +47,20 @@
     },
     {
       "label": "all",
-      "dependsOn": ["db", "observability", "backend", "frontend"],
+      "dependsOn": ["db", "backend", "frontend"],
       "dependsOrder": "parallel",
       "problemMatcher": [],
       "group": {
         "kind": "build",
         "isDefault": true
       }
+    },
+    {
+      "label": "all + observability",
+      "dependsOn": ["db", "observability", "backend", "frontend"],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "group": "build"
     }
   ]
 }

@@ -85,6 +85,22 @@
 }
 
 /* ---- Action bar ---- */
+.job-apply-warning {
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-sm);
+  background: var(--warning-bg);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.45;
+
+  &--paid {
+    border-color: var(--danger-border);
+    background: var(--danger-bg);
+  }
+}
+
 .job-actions {
   display: flex;
   flex-wrap: wrap;

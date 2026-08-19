@@ -159,9 +159,21 @@
       <button (click)="goToInterview()" class="btn-shortcut">Prep Interview</button>
     </div>
 
+    <!-- Apply-access warning: this board walls its apply hop -->
+    @if (applyWarning(); as warning) {
+      <div class="apply-warning" [class.apply-warning--paid]="warning.paid">
+        <span class="apply-warning__label"
+          >{{ warning.paid ? '🔒' : '👤' }} {{ warning.label }}</span
+        >
+        @if (warning.note) {
+          <span class="apply-warning__note">{{ warning.note }}</span>
+        }
+      </div>
+    }
+
     <!-- Actions -->
     <div class="panel-actions">
-      <a [href]="job().url" target="_blank" rel="noopener" class="btn-primary btn-action">
+      <a [href]="applyUrl()" target="_blank" rel="noopener" class="btn-primary btn-action">
         View Original ↗
       </a>
       @if (tracked()) {

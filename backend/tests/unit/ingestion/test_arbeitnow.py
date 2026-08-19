@@ -104,3 +104,26 @@ def test_arbeitnow_normalizer_on_site() -> None:
     result = ArbeitnowNormalizer().normalize(raw)
     assert result["remote_modality"] == "on_site"
     assert result["location"] == "Berlin"
+
+
+def test_normalizer_records_the_direct_apply_hop_as_application_url() -> None:
+    """Arbeitnow's `<listing>/apply` 302s to the employer ATS, skipping the board."""
+    raw = RawJobListing(source="arbeitnow", source_id="123", raw_data=SAMPLE_JOB)
+
+    result = ArbeitnowNormalizer().normalize(raw)
+
+    assert result["source_metadata"]["application_url"] == f"{SAMPLE_JOB['url']}/apply"
+    # The listing URL stays canonical — the closure sweep probes it.
+    assert result["url"] == SAMPLE_JOB["url"]
+
+
+def test_normalizer_omits_application_url_when_the_listing_has_no_url() -> None:
+    raw = RawJobListing(
+        source="arbeitnow",
+        source_id="123",
+        raw_data={**SAMPLE_JOB, "url": ""},
+    )
+
+    result = ArbeitnowNormalizer().normalize(raw)
+
+    assert result["source_metadata"] == {}

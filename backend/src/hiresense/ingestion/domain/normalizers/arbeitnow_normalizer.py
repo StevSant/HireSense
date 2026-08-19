@@ -25,6 +25,14 @@ class ArbeitnowNormalizer:
             except (ValueError, OSError):
                 pass
         tags = d.get("tags") or []
+        url = d.get("url", "")
+        metadata: dict[str, Any] = {}
+        # Arbeitnow's own `<listing>/apply` hop 302s straight to the employer's
+        # ATS (verified against Greenhouse), so recording it lets the UI skip
+        # the aggregator page entirely. The listing URL stays canonical because
+        # the closure sweep probes it.
+        if url:
+            metadata["application_url"] = f"{url.rstrip('/')}/apply"
         return {
             "title": d.get("title", ""),
             "company": d.get("company_name", ""),
@@ -32,8 +40,9 @@ class ArbeitnowNormalizer:
             "skills": [t for t in tags if isinstance(t, str)],
             "location": location,
             "salary_range": None,
-            "url": d.get("url", ""),
+            "url": url,
             "language": "en",
             "posted_date": posted_date,
             "remote_modality": remote_modality,
+            "source_metadata": metadata,
         }

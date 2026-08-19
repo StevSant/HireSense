@@ -70,6 +70,24 @@ export class JobDetailPanelComponent {
     return Array.isArray(raw) ? raw : [];
   });
 
+  // Open the direct application URL when the board gave us one — that hop
+  // skips the aggregator's own apply page, which is where the walls live.
+  applyUrl = computed(() => this.job().preferred_apply_url || this.job().url);
+
+  // Non-null only when applying is walled, so the template can warn before the
+  // user clicks through and hits a paywall or signup form.
+  applyWarning = computed<{ label: string; note: string; paid: boolean } | null>(() => {
+    const job = this.job();
+    const access = job.apply_access;
+    if (access !== 'paid_required' && access !== 'account_required') return null;
+    const paid = access === 'paid_required';
+    return {
+      label: paid ? 'Paid subscription to apply' : 'Free account to apply',
+      note: job.apply_access_note ?? '',
+      paid,
+    };
+  });
+
   metaChips = computed(() => {
     const job = this.job();
     const chips: string[] = [];

@@ -172,4 +172,60 @@ describe('JobDetailPanelComponent', () => {
     } as unknown as MouseEvent);
     expect(closed).toBe(true);
   });
+  describe('apply-access warning', () => {
+    it('warns before sending the user to a board that paywalls applying', () => {
+      const fixture = mount(
+        makeJob({
+          source: 'remoteok',
+          apply_access: 'paid_required',
+          apply_access_note: 'RemoteOK routes Apply through its paid premium page.',
+        }),
+      );
+
+      const warning = fixture.nativeElement.querySelector('.apply-warning');
+      expect(warning).toBeTruthy();
+      expect(warning.classList.contains('apply-warning--paid')).toBe(true);
+      expect(warning.textContent).toContain('Paid subscription to apply');
+      expect(warning.textContent).toContain('paid premium page');
+    });
+
+    it('warns about a free-account wall without the paid styling', () => {
+      const fixture = mount(
+        makeJob({ source: 'weworkremotely', apply_access: 'account_required' }),
+      );
+
+      const warning = fixture.nativeElement.querySelector('.apply-warning');
+      expect(warning.classList.contains('apply-warning--paid')).toBe(false);
+      expect(warning.textContent).toContain('Free account to apply');
+    });
+
+    it('shows no warning when the apply hop reaches the employer', () => {
+      const fixture = mount(makeJob({ apply_access: 'direct' }));
+
+      expect(fixture.nativeElement.querySelector('.apply-warning')).toBeNull();
+      expect(fixture.componentInstance.applyWarning()).toBeNull();
+    });
+
+    it('shows no warning when apply access was never audited', () => {
+      expect(mount(makeJob()).componentInstance.applyWarning()).toBeNull();
+    });
+
+    it('opens the direct apply URL when the board gave us one', () => {
+      const fixture = mount(
+        makeJob({ preferred_apply_url: 'https://job-boards.greenhouse.io/acme/jobs/9' }),
+      );
+
+      expect(fixture.nativeElement.querySelector('.panel-actions a').getAttribute('href')).toBe(
+        'https://job-boards.greenhouse.io/acme/jobs/9',
+      );
+    });
+
+    it('falls back to the listing URL when there is no direct apply URL', () => {
+      const fixture = mount();
+
+      expect(fixture.nativeElement.querySelector('.panel-actions a').getAttribute('href')).toBe(
+        'https://example.com/job-1',
+      );
+    });
+  });
 });

@@ -4,9 +4,14 @@ import hashlib
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from hiresense.ingestion.domain.application_method import ApplicationMethod
+from hiresense.ingestion.domain.apply_access import ApplyAccess
+from hiresense.ingestion.domain.source_capabilities import (
+    source_apply_access,
+    source_apply_access_note,
+)
 
 
 class RawJobListing(BaseModel):
@@ -78,6 +83,33 @@ class NormalizedJob(BaseModel):
     verdict: str | None = None
     reasons: list[str] = Field(default_factory=list)
     dealbreakers: list[str] = Field(default_factory=list)
+
+    # Apply-access is a property of the *board*, not of the posting, so it is
+    # resolved from the source capability registry at read time rather than
+    # persisted. That keeps it correct for jobs ingested before the audit and
+    # needs no migration when a board changes its policy.
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def apply_access(self) -> ApplyAccess:
+        return source_apply_access(self.source)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def apply_access_note(self) -> str:
+        return source_apply_access_note(self.source)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def preferred_apply_url(self) -> str:
+        """Best URL to send the candidate to.
+
+        A confirmed ATS form wins, then a board-supplied direct application URL
+        (Dice `applyUrl`, YC `applyUrl`, Arbeitnow's `/apply` hop), then the
+        listing page. Anything that skips the aggregator's own apply hop is
+        preferable — that hop is exactly where the walls live.
+        """
+        metadata_url = self.source_metadata.get("application_url")
+        return self.apply_url or (metadata_url if isinstance(metadata_url, str) else "") or self.url
 
     def dedup_key(self) -> str:
         raw = (

@@ -238,6 +238,38 @@
   }
 }
 
+/* ---- Apply-access warning ---- */
+.apply-warning {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0 1.5rem 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-sm);
+  background: var(--warning-bg);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+
+  &--paid {
+    border-color: var(--danger-border);
+    background: var(--danger-bg);
+  }
+}
+
+.apply-warning__label {
+  font-weight: 600;
+  color: var(--warning);
+
+  .apply-warning--paid & {
+    color: var(--danger);
+  }
+}
+
+.apply-warning__note {
+  line-height: 1.4;
+}
+
 /* ---- Actions ---- */
 .panel-actions {
   padding: 1rem 1.5rem;

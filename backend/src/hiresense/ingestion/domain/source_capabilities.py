@@ -117,7 +117,8 @@ SOURCE_CAPABILITY_REGISTRY: dict[str, SourceCapabilities] = {
         display_name="Jobicy",
         apply_access=ApplyAccess.UNKNOWN,
         apply_access_note=(
-            "Job pages sit behind a Cloudflare challenge that does not resolve for every visitor."
+            "Job pages load normally for humans but sit behind a Cloudflare challenge "
+            "that blocks automated clients, so the apply hop has not been audited."
         ),
         source_type=SourceType.API,
         integration="official_api",

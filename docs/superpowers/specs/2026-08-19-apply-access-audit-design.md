@@ -102,16 +102,18 @@ the UI.
 
 ## Follow-ups not taken
 
-- **Jobicy is unreachable from this machine.** Re-probed 2026-08-19: the Cloudflare
-  "Verificación de seguridad en curso" interstitial never resolves, and it blocks
-  `jobicy.com/` itself, not just job pages — so it is a blanket block on the client or IP,
-  not a per-listing gate. The v2 API keeps answering normally (`id`, `url`, `jobSlug`,
-  `jobTitle`, `companyName`, `jobIndustry`, `jobType`, `jobGeo`, `jobLevel`, `pubDate`,
-  descriptions) and carries **no** employer apply link, so if the page is unreachable the
-  listing is unactionable — we ingest jobs nobody can apply to. Two candidate causes remain,
-  and they need a human click to tell apart: Cloudflare fingerprinting the automated browser,
-  or the IP/region being blocked outright. If it is the latter, jobicy should move to
-  `enabled_by_default=False` like crunchboard. Left `unknown` and enabled pending that check.
+- **Jobicy's apply hop is unaudited, not broken.** Cloudflare's "Verificación de seguridad"
+  interstitial blocks every automated client we can drive — plain HTTP with a full browser
+  header set returns `403`, and a CDP-controlled tab stalls on the challenge even with the
+  user's own profile and a warm `cf_clearance` cookie. **The site loads normally for a human**
+  (confirmed by the user 2026-08-19), so the source is healthy and stays enabled; we simply
+  cannot reach a job page to see what its Apply button does. Its v2 API carries no employer
+  apply link (`id`, `url`, `jobSlug`, `jobTitle`, `companyName`, `jobIndustry`, `jobType`,
+  `jobGeo`, `jobLevel`, `pubDate`, descriptions), so the verdict can only come from a human
+  opening one listing. Left `unknown`, which renders no badge — the honest default.
+- **Auditing a Cloudflare-protected board needs a human.** Any future re-audit of jobicy (or
+  a board that adopts the same protection) has to be done by hand; automated probing cannot
+  reach these pages and a `403` must not be read as "the listing is dead".
 - **Demoting walled sources in ranking** (pushing `remoteok` down `SOURCE_TIER`, adding a
   `?hide_walled=` filter) was considered and deferred — badging first, so the signal is
   visible before it changes ranking behaviour.

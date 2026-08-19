@@ -25,3 +25,10 @@ class VectorStorePort(Protocol):
     async def delete(self, ids: list[str]) -> None: ...
 
     async def get_vector(self, id: str) -> list[float] | None: ...
+
+    async def get_metadata(self, ids: list[str]) -> dict[str, dict[str, Any]]: ...
+
+    """Stored metadata for ``ids``, keyed by id; missing ids are absent.
+
+    One bulk read so callers can tell which vectors are already current without
+    a query per id."""

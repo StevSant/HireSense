@@ -128,6 +128,23 @@ class PgVectorStore:
             return None
         return _parse_vector(str(row.embedding))
 
+    async def get_metadata(self, ids: list[str]) -> dict[str, dict[str, Any]]:
+        if not ids:
+            return {}
+        return await asyncio.to_thread(self._get_metadata_sync, ids)
+
+    def _get_metadata_sync(self, ids: list[str]) -> dict[str, dict[str, Any]]:
+        stmt = text(f"SELECT id, metadata FROM {self._table} WHERE id = ANY(:ids)")
+        with self._session_factory() as session:
+            rows = session.execute(stmt, {"ids": list(ids)}).all()
+        out: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            meta = row.metadata
+            if isinstance(meta, str):
+                meta = json.loads(meta)
+            out[str(row.id)] = meta or {}
+        return out
+
     async def delete(self, ids: list[str]) -> None:
         if not ids:
             return

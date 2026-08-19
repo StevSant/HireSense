@@ -22,7 +22,11 @@ async def test_embed_delegates_to_sentence_transformer() -> None:
 
     result = await adapter.embed(["hello", "world"])
 
-    fake_model.encode.assert_called_once_with(["hello", "world"])
+    # Batch size and the silenced progress bar are part of the encode contract:
+    # the default bar writes a line per batch into the ingestion logs.
+    fake_model.encode.assert_called_once_with(
+        ["hello", "world"], batch_size=64, show_progress_bar=False
+    )
     assert result == [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
 
 
@@ -52,7 +56,7 @@ async def test_concurrent_first_calls_load_model_exactly_once() -> None:
     load_calls = 0
 
     class _FakeModel:
-        def encode(self, texts):
+        def encode(self, texts, **kwargs):
             return [[0.1] for _ in texts]
 
     def fake_load():

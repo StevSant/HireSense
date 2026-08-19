@@ -61,7 +61,9 @@ async def test_index_upserts_each_job_with_bucket_metadata() -> None:
     assert ids == {jobs[0].id, jobs[1].id}
     for _id, vec, meta in store.upserts:
         assert vec == [0.1, 0.2, 0.3]
-        assert meta == {"bucket": "boards", "source": "test"}
+        assert meta["bucket"] == "boards" and meta["source"] == "test"
+        # Carries the embedded-text hash so a later pass can skip re-encoding.
+        assert meta["text_hash"]
 
 
 @pytest.mark.asyncio
@@ -192,3 +194,102 @@ async def test_successful_index_records_no_failure(monkeypatch) -> None:
 
     assert await indexer.index([_make_job()]) == 1
     assert metrics.automation_failures_total.calls == []
+
+
+class _HashingVectorStore(_FakeVectorStore):
+    """Vector store that remembers metadata, like the real pgvector adapter."""
+
+    async def get_metadata(self, ids: list[str]) -> dict[str, dict]:
+        stored = {i: m for i, _v, m in self.upserts}
+        return {i: stored[i] for i in ids if i in stored}
+
+
+@pytest.mark.asyncio
+async def test_unchanged_jobs_are_not_re_embedded() -> None:
+    job = _make_job()
+    embedding = _FakeEmbedding()
+    store = _HashingVectorStore()
+    indexer = JobEmbeddingIndexer(embedding, store, bucket="boards")
+
+    assert await indexer.index([job]) == 1
+    assert await indexer.index([job]) == 0
+
+    # Second pass embeds nothing and leaves the stored vector untouched.
+    assert len(embedding.calls) == 1
+    assert len(store.upserts) == 1
+
+
+@pytest.mark.asyncio
+async def test_changed_text_is_re_embedded() -> None:
+    job = _make_job(title="SWE")
+    embedding = _FakeEmbedding()
+    store = _HashingVectorStore()
+    indexer = JobEmbeddingIndexer(embedding, store, bucket="boards")
+    await indexer.index([job])
+
+    changed = job.model_copy(update={"title": "Staff SWE"})
+    assert await indexer.index([changed]) == 1
+    assert len(embedding.calls) == 2
+
+
+@pytest.mark.asyncio
+async def test_only_the_stale_subset_is_embedded() -> None:
+    a, b = _make_job(title="A"), _make_job(title="B")
+    embedding = _FakeEmbedding()
+    store = _HashingVectorStore()
+    indexer = JobEmbeddingIndexer(embedding, store, bucket="boards")
+    await indexer.index([a])
+    embedding.calls.clear()
+
+    assert await indexer.index([a, b]) == 1
+    # Exactly one text embedded — b's — not the whole pair.
+    assert embedding.calls == [[_job_text_of(b)]]
+
+
+def _job_text_of(job: NormalizedJob) -> str:
+    from hiresense.ingestion.domain.embedding_text import job_text
+
+    return job_text(job)
+
+
+@pytest.mark.asyncio
+async def test_store_without_metadata_support_still_embeds_everything() -> None:
+    """A store that cannot report hashes must not silently skip indexing."""
+    job = _make_job()
+    embedding = _FakeEmbedding()
+    store = _FakeVectorStore()  # no get_metadata
+    indexer = JobEmbeddingIndexer(embedding, store, bucket="boards")
+
+    assert await indexer.index([job]) == 1
+    assert await indexer.index([job]) == 1
+    assert len(embedding.calls) == 2
+
+
+@pytest.mark.asyncio
+async def test_metadata_lookup_failure_falls_back_to_embedding_all() -> None:
+    class _Broken(_FakeVectorStore):
+        async def get_metadata(self, ids: list[str]) -> dict[str, dict]:
+            raise RuntimeError("db down")
+
+    job = _make_job()
+    embedding = _FakeEmbedding()
+    indexer = JobEmbeddingIndexer(embedding, _Broken(), bucket="boards")
+
+    assert await indexer.index([job]) == 1
+    assert len(embedding.calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_vector_without_text_hash_is_treated_as_stale() -> None:
+    """Vectors written before this change carry no hash and must be refreshed."""
+
+    class _Legacy(_FakeVectorStore):
+        async def get_metadata(self, ids: list[str]) -> dict[str, dict]:
+            return {i: {"bucket": "boards", "source": "test"} for i in ids}
+
+    job = _make_job()
+    embedding = _FakeEmbedding()
+    indexer = JobEmbeddingIndexer(embedding, _Legacy(), bucket="boards")
+
+    assert await indexer.index([job]) == 1
+    assert len(embedding.calls) == 1

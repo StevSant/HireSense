@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from hiresense.ingestion.domain.embedding_text import job_text
+from hiresense.ingestion.domain.embedding_text import job_text, job_text_hash
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.shared.observability import get_domain_metrics
 
@@ -33,20 +33,38 @@ class JobEmbeddingIndexer:
     async def index(self, jobs: list[NormalizedJob]) -> int:
         if not jobs:
             return 0
-        texts = [job_text(j) for j in jobs]
+        hashes = {job.id: job_text_hash(job) for job in jobs}
+        stale = await self._select_stale(jobs, hashes)
+        skipped = len(jobs) - len(stale)
+        if skipped:
+            # Embedding is by far the most expensive step of an ingestion pass
+            # (seconds per batch of 32 on CPU), and a job whose embedded text is
+            # unchanged — the common case, including a close/reopen round trip —
+            # would otherwise be re-encoded to produce the identical vector.
+            logger.info(
+                "Job embedding: %d of %d job(s) already current, re-embedding %d",
+                skipped,
+                len(jobs),
+                len(stale),
+            )
+        if not stale:
+            return 0
+
+        texts = [job_text(j) for j in stale]
         try:
             vectors = await self._embedding.embed(texts)
         except Exception:
             logger.exception(
                 "Job embedding batch failed (size=%d) — none of these jobs will appear in "
                 "semantic search until POST /ingestion/backfill-embeddings is run",
-                len(jobs),
+                len(stale),
             )
             get_domain_metrics().automation_failures_total.add(
                 1, {"component": "job_embedding_index"}
             )
             return 0
 
+        jobs = stale
         indexed = 0
         empty = 0
         for job, vec in zip(jobs, vectors):
@@ -57,7 +75,11 @@ class JobEmbeddingIndexer:
                 await self._vector_store.upsert(
                     job.id,
                     vec,
-                    {"bucket": self._bucket, "source": job.source},
+                    {
+                        "bucket": self._bucket,
+                        "source": job.source,
+                        "text_hash": hashes[job.id],
+                    },
                 )
                 indexed += 1
             except Exception:
@@ -75,6 +97,29 @@ class JobEmbeddingIndexer:
                 len(jobs),
             )
         return indexed
+
+    async def _select_stale(
+        self, jobs: list[NormalizedJob], hashes: dict[str, str]
+    ) -> list[NormalizedJob]:
+        """The subset of ``jobs`` whose stored vector is missing or out of date.
+
+        Stores that predate ``get_metadata`` (simple in-memory ones) return every
+        job, preserving the original always-embed behaviour rather than silently
+        skipping work they cannot verify. A stored vector with no ``text_hash``
+        is likewise treated as stale, so the first pass after this change
+        backfills the hash instead of trusting an unlabelled vector.
+        """
+        reader = getattr(self._vector_store, "get_metadata", None)
+        if reader is None:
+            return jobs
+        try:
+            stored = await reader([j.id for j in jobs])
+        except Exception:
+            logger.exception(
+                "Vector metadata lookup failed — re-embedding all %d job(s)", len(jobs)
+            )
+            return jobs
+        return [j for j in jobs if (stored.get(j.id) or {}).get("text_hash") != hashes[j.id]]
 
     async def remove(self, job_ids: list[str]) -> None:
         """Drop closed jobs from the vector store so they leave semantic search.

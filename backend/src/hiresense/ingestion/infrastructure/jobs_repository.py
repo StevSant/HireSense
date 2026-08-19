@@ -10,6 +10,7 @@ from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
 from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
+from hiresense.shared.kernel import as_utc
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 from hiresense.ingestion.infrastructure.models import IngestedJob
@@ -343,15 +344,18 @@ class JobsRepository(SqlRepository):
         if criteria.company:
             target = criteria.company.strip().lower()
             stmt = stmt.where(func.lower(func.trim(IngestedJob.company)) == target)
+        # posted_date is timestamptz; a naive bound (query params parse naive)
+        # would be coerced using the session timezone and silently shift the
+        # window by the server's UTC offset.
         if criteria.date_from:
             stmt = stmt.where(
                 IngestedJob.posted_date.is_not(None),
-                IngestedJob.posted_date >= criteria.date_from,
+                IngestedJob.posted_date >= as_utc(criteria.date_from),
             )
         if criteria.date_to:
             stmt = stmt.where(
                 IngestedJob.posted_date.is_not(None),
-                IngestedJob.posted_date <= criteria.date_to,
+                IngestedJob.posted_date <= as_utc(criteria.date_to),
             )
         return self._select_all(stmt, _to_domain)
 

@@ -4,6 +4,7 @@ import dataclasses
 from datetime import datetime
 
 from hiresense.ingestion.domain.models import NormalizedJob
+from hiresense.shared.kernel import as_utc
 
 
 @dataclasses.dataclass(frozen=True)
@@ -33,8 +34,11 @@ class JobListCriteria:
             return False
         if self.company and job.company.strip().lower() != self.company.strip().lower():
             return False
-        if self.date_from and (job.posted_date is None or job.posted_date < self.date_from):
+        # Normalised on both sides: criteria dates arrive naive from query
+        # params while posted_date is aware, and comparing them raises.
+        posted = as_utc(job.posted_date)
+        if self.date_from and (posted is None or posted < as_utc(self.date_from)):
             return False
-        if self.date_to and (job.posted_date is None or job.posted_date > self.date_to):
+        if self.date_to and (posted is None or posted > as_utc(self.date_to)):
             return False
         return True

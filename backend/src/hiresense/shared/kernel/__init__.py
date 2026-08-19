@@ -1,3 +1,4 @@
+from hiresense.shared.kernel.as_utc import as_utc
 from hiresense.shared.kernel.email_message import EmailMessage
 from hiresense.shared.kernel.exception_handlers import register_domain_exception_handlers
 from hiresense.shared.kernel.json_extract import extract_json
@@ -9,6 +10,7 @@ from hiresense.shared.kernel.skill_aliases import SKILL_ALIASES
 from hiresense.shared.kernel.skill_normalization import normalize_skill
 
 __all__ = [
+    "as_utc",
     "EmailMessage",
     "LRUCache",
     "SKILL_ALIASES",

@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 
 from hiresense.ingestion.domain.job_sort import sort_jobs
+from hiresense.shared.kernel import as_utc
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.seniority import (
     SeniorityLevel,
@@ -95,14 +96,19 @@ def filter_and_paginate(
         skill_set = {s.strip().lower() for s in params.skills.split(",") if s.strip()}
         filtered = [j for j in filtered if skill_set & {s.lower() for s in j.skills}]
 
+    # Both sides are normalised: query params arrive naive, stored posted_date
+    # is aware, and comparing them raises TypeError (a 500 on the Date From
+    # filter). Jobs with no posted_date stay excluded, as before.
     if params.date_from:
+        date_from = as_utc(params.date_from)
         filtered = [
-            j for j in filtered if j.posted_date is not None and j.posted_date >= params.date_from
+            j for j in filtered if (p := as_utc(j.posted_date)) is not None and p >= date_from
         ]
 
     if params.date_to:
+        date_to = as_utc(params.date_to)
         filtered = [
-            j for j in filtered if j.posted_date is not None and j.posted_date <= params.date_to
+            j for j in filtered if (p := as_utc(j.posted_date)) is not None and p <= date_to
         ]
 
     if params.min_score is not None:

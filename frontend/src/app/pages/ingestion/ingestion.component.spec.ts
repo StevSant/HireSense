@@ -252,6 +252,10 @@ describe('IngestionComponent — visibility-gated revalidation poll', () => {
     return mock.match((r) => r.url === `${environment.apiUrl}/ingestion/jobs`);
   }
 
+  function statusReqs(mock: HttpTestingController) {
+    return mock.match((r) => r.url === `${environment.apiUrl}/ingestion/revalidate/status`);
+  }
+
   it('skips poll ticks while the tab is hidden and resumes once visible', () => {
     const fixture = TestBed.createComponent(IngestionComponent);
     const component = fixture.componentInstance;
@@ -267,14 +271,20 @@ describe('IngestionComponent — visibility-gated revalidation poll', () => {
     // revalidate()'s own immediate reload of the visible page.
     jobsReqs(httpMock)[0].flush(jobsPayload());
 
+    // The poll now reads the cheap sweep-status endpoint, not the scored feed.
     setVisibility('hidden');
     vi.advanceTimersByTime(environment.closureRevalidatePollMs);
+    expect(statusReqs(httpMock).length).toBe(0);
     expect(jobsReqs(httpMock).length).toBe(0);
 
     setVisibility('visible');
     vi.advanceTimersByTime(environment.closureRevalidatePollMs);
-    const polled = jobsReqs(httpMock);
+    const polled = statusReqs(httpMock);
     expect(polled.length).toBe(1);
-    polled[0].flush(jobsPayload());
+    // A moved closed count is what earns a re-read of the page.
+    polled[0].flush({ sweeping: false, checked: 40, total: 40, closed: 2 });
+    const reread = jobsReqs(httpMock);
+    expect(reread.length).toBe(1);
+    reread[0].flush(jobsPayload());
   });
 });

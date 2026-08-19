@@ -139,6 +139,12 @@ class InMemoryJobsRepository:
                 self._jobs[jid] = job.model_copy(update={"status": "closed"})
         return to_close
 
+    def count_open(self, sources: list[str]) -> int:
+        if not sources:
+            return 0
+        src = set(sources)
+        return sum(1 for j in self._jobs.values() if j.status == "open" and j.source in src)
+
     def find_open_stale(self, sources: list[str], limit: int) -> list[NormalizedJob]:
         if not sources:
             return []

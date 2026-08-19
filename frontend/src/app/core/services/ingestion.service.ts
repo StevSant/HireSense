@@ -6,6 +6,7 @@ import { FetchResponse } from '@core/contracts/fetch-response.model';
 import { JobAnalysis } from '@core/contracts/job-analysis.model';
 import { JobFilters } from '@core/contracts/job-filters.model';
 import { NormalizedJob } from '@core/contracts/normalized-job.model';
+import { RevalidationStatus } from '@core/contracts/revalidation-status.model';
 import { PaginatedJobsResponse } from '@core/contracts/paginated-jobs-response.model';
 import { PortalEntry } from '@core/contracts/portal-entry.model';
 import { ScanPortalsRequest } from '@core/contracts/scan-portals-request.model';
@@ -36,6 +37,12 @@ export class IngestionService {
       API_ROUTES.ingestion.revalidate(),
       { job_ids: jobIds },
     );
+  }
+
+  // Progress of the background sweep started by revalidate(). Cheap enough to
+  // poll: the backend answers from in-memory counters without touching the DB.
+  revalidationStatus(): Observable<RevalidationStatus> {
+    return this.api.get<RevalidationStatus>(API_ROUTES.ingestion.revalidateStatus());
   }
 
   queryJobs(

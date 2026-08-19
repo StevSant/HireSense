@@ -139,6 +139,30 @@ class RevalidationResponse(BaseModel):
     closed_ids: list[str] = []
 
 
+class RevalidationStatusResponse(BaseModel):
+    """Progress of the background sweep, so the UI can show a real ratio and
+    clear its banner on completion instead of claiming work forever."""
+
+    sweeping: bool
+    checked: int
+    total: int
+    closed: int
+
+
+@router.get("/revalidate/status", response_model=RevalidationStatusResponse)
+async def revalidation_status(
+    service: Annotated[JobRevalidationService | None, Depends(get_revalidation_service)],
+) -> RevalidationStatusResponse:
+    """Cheap, poll-friendly snapshot: reads in-memory counters, touches no DB.
+
+    Deliberately NOT rate-limited alongside the expensive endpoints — it exists
+    to be polled while a sweep of thousands of listings runs for tens of minutes.
+    """
+    if service is None:
+        raise HTTPException(status_code=503, detail="Revalidation is not configured")
+    return RevalidationStatusResponse(**service.progress())
+
+
 @router.post("/revalidate", response_model=RevalidationResponse)
 async def revalidate_jobs(
     service: Annotated[JobRevalidationService | None, Depends(get_revalidation_service)],

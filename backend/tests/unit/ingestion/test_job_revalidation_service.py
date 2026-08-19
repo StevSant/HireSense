@@ -566,3 +566,116 @@ async def test_probe_body_read_is_capped() -> None:
 
     assert closed == []  # marker beyond the cap was never read
     assert all(j.status == "open" for j in repo.list_all())
+
+
+@pytest.mark.asyncio
+async def test_redirect_to_site_root_closes_without_fetching_the_landing_page() -> None:
+    """A board that 301s a removed listing to its homepage is signalling closure.
+
+    Following the hop cost a second request and then classified a *homepage*
+    body, which matches no marker — so the job stayed open and was re-probed on
+    every sweep forever.
+    """
+    repo, a, b = _seed()
+    client = _Client(
+        {
+            a.url: _Resp(200, "Apply now"),
+            b.url: _Resp(301, location="https://e.com/"),
+            "https://e.com/": _Resp(200, "Browse thousands of remote jobs"),
+        }
+    )
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["closed"],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
+        url_guard=_allow_all,
+    )
+
+    closed = await svc.sweep()
+
+    assert closed == ["b"]
+    # The landing page was never requested — that is the whole point.
+    assert "https://e.com/" not in client.requested
+
+
+@pytest.mark.asyncio
+async def test_expired_redirect_marker_closes_the_job() -> None:
+    repo, a, b = _seed()
+    client = _Client(
+        {
+            a.url: _Resp(200, "Apply now"),
+            b.url: _Resp(301, location="https://e.com/jobs/generic-search?trk=expired_jd_redirect"),
+        }
+    )
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["closed"],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
+        url_guard=_allow_all,
+        expired_redirect_markers=["trk=expired_jd_redirect"],
+    )
+
+    assert await svc.sweep() == ["b"]
+
+
+@pytest.mark.asyncio
+async def test_canonical_url_rewrite_is_followed_not_treated_as_closed() -> None:
+    """getonbrd rewrites /jobs/<slug> to /jobs/<category>/<slug>. That is a live
+    listing at a tidier URL, not a dead end, so the redirect must be followed."""
+    repo, a, b = _seed()
+    client = _Client(
+        {
+            a.url: _Resp(200, "Apply now"),
+            b.url: _Resp(301, location="https://e.com/jobs/programming/b"),
+            "https://e.com/jobs/programming/b": _Resp(200, "Apply now"),
+        }
+    )
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["closed"],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
+        url_guard=_allow_all,
+        expired_redirect_markers=["trk=expired_jd_redirect"],
+    )
+
+    assert await svc.sweep() == []
+    assert "https://e.com/jobs/programming/b" in client.requested
+
+
+@pytest.mark.asyncio
+async def test_progress_reports_a_ratio_and_settles_after_the_sweep() -> None:
+    repo, a, b = _seed()
+    client = _Client({a.url: _Resp(200, "Apply now"), b.url: _Resp(404)})
+    svc = JobRevalidationService(
+        http_client=client,
+        repository=repo,
+        indexer=None,
+        sources=["remotive"],
+        markers=["closed"],
+        batch=10,
+        concurrency=1,
+        delay=0.0,
+        url_guard=_allow_all,
+    )
+
+    assert svc.progress() == {"sweeping": False, "checked": 0, "total": 0, "closed": 0}
+
+    await svc.sweep()
+
+    # total is captured at sweep start, so it still counts the job that closed.
+    assert svc.progress() == {"sweeping": False, "checked": 2, "total": 2, "closed": 1}

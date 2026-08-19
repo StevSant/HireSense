@@ -19,6 +19,7 @@ import {
 import { FetchResponse } from '@core/contracts/fetch-response.model';
 import { IngestionStore } from './ingestion.store';
 import { environment } from '../../../environments/environment';
+import { RevalidationStatus } from '@core/contracts/revalidation-status.model';
 
 interface RevalidateResponse {
   started: boolean;
@@ -128,6 +129,7 @@ interface SetupOptions {
   readonly queryJobs?: () => Observable<PaginatedJobsResponse>;
   readonly fetchJobs?: () => Observable<FetchResponse>;
   readonly revalidate?: () => Observable<RevalidateResponse>;
+  readonly revalidationStatus?: () => Observable<RevalidationStatus>;
   readonly loadPortals?: () => Observable<PortalEntry[]>;
   readonly listSources?: () => Observable<SourcesResponse>;
   readonly sourcesHealth?: () => Observable<SourcesHealthResponse>;
@@ -147,6 +149,11 @@ function setup(over: SetupOptions = {}) {
   const revalidate = vi.fn(
     over.revalidate ??
       ((): Observable<RevalidateResponse> => of({ started: true, closed: 0, closed_ids: [] })),
+  );
+  const revalidationStatus = vi.fn(
+    over.revalidationStatus ??
+      ((): Observable<RevalidationStatus> =>
+        of({ sweeping: false, checked: 0, total: 0, closed: 0 })),
   );
   const loadPortals = vi.fn(over.loadPortals ?? (() => of<PortalEntry[]>([])));
   const listSources = vi.fn(
@@ -178,6 +185,7 @@ function setup(over: SetupOptions = {}) {
           queryJobs,
           fetchJobs,
           revalidate,
+          revalidationStatus,
           loadPortals,
           listSources,
           sourcesHealth,
@@ -197,6 +205,7 @@ function setup(over: SetupOptions = {}) {
     queryJobs,
     fetchJobs,
     revalidate,
+    revalidationStatus,
     loadPortals,
     listSources,
     sourcesHealth,
@@ -731,23 +740,74 @@ describe('IngestionStore closure revalidation', () => {
     );
   });
 
-  it('polls for background closures and drops the notice once the poll is done', () => {
-    const { store, queryJobs } = setup();
+  it('reports sweep progress as a ratio while it runs, then a completion notice', () => {
+    const statuses: RevalidationStatus[] = [
+      { sweeping: true, checked: 100, total: 300, closed: 4 },
+      { sweeping: true, checked: 200, total: 300, closed: 9 },
+      { sweeping: false, checked: 300, total: 300, closed: 11 },
+    ];
+    let tick = 0;
+    const { store } = setup({
+      revalidationStatus: () => of(statuses[Math.min(tick++, statuses.length - 1)]),
+    });
     store.init();
     store.loadJobs();
-
     store.revalidate();
-    expect(queryJobs).toHaveBeenCalledTimes(2);
 
     vi.advanceTimersByTime(environment.closureRevalidatePollMs);
-    expect(queryJobs).toHaveBeenCalledTimes(3);
-    expect(store.revalidateNotice()).not.toBe('');
+    expect(store.revalidateNotice()).toContain('100 of 300 checked');
 
-    vi.advanceTimersByTime(
-      environment.closureRevalidatePollMs * environment.closureRevalidatePollTicks,
-    );
-    expect(queryJobs).toHaveBeenCalledTimes(2 + environment.closureRevalidatePollTicks);
-    expect(store.revalidateNotice()).toBe('');
+    vi.advanceTimersByTime(environment.closureRevalidatePollMs);
+    expect(store.revalidateNotice()).toContain('200 of 300 checked');
+
+    vi.advanceTimersByTime(environment.closureRevalidatePollMs);
+    expect(store.revalidateNotice()).toBe('Scan complete: 11 listing(s) closed.');
+  });
+
+  it('stops polling once the sweep reports it has finished', () => {
+    const { store, revalidationStatus } = setup({
+      revalidationStatus: () => of({ sweeping: false, checked: 5, total: 5, closed: 0 }),
+    });
+    store.init();
+    store.loadJobs();
+    store.revalidate();
+
+    vi.advanceTimersByTime(environment.closureRevalidatePollMs);
+    expect(revalidationStatus).toHaveBeenCalledTimes(1);
+
+    // Well past the old 8-tick budget: a settled sweep must not be polled again.
+    vi.advanceTimersByTime(environment.closureRevalidatePollMs * 20);
+    expect(revalidationStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-reads the page only when the closed count moves, not on every tick', () => {
+    const statuses: RevalidationStatus[] = [
+      { sweeping: true, checked: 100, total: 300, closed: 0 },
+      { sweeping: true, checked: 200, total: 300, closed: 0 },
+      { sweeping: true, checked: 300, total: 300, closed: 3 },
+    ];
+    let tick = 0;
+    const { store, queryJobs } = setup({
+      revalidationStatus: () => of(statuses[Math.min(tick++, statuses.length - 1)]),
+    });
+    store.init();
+    store.loadJobs();
+    store.revalidate();
+    // init + the immediate post-revalidate read.
+    expect(queryJobs).toHaveBeenCalledTimes(2);
+
+    // First tick: closed moved 0 -> 0 relative to the sentinel, so one read.
+    vi.advanceTimersByTime(environment.closureRevalidatePollMs);
+    expect(queryJobs).toHaveBeenCalledTimes(3);
+
+    // Second tick: still 0 closed — nothing changed, so no re-read (the old
+    // version re-ran the whole scored feed here).
+    vi.advanceTimersByTime(environment.closureRevalidatePollMs);
+    expect(queryJobs).toHaveBeenCalledTimes(3);
+
+    // Third tick: 3 closed — worth re-reading.
+    vi.advanceTimersByTime(environment.closureRevalidatePollMs);
+    expect(queryJobs).toHaveBeenCalledTimes(4);
   });
 
   it('clears the spinner and reports the failure without re-reading the page', () => {

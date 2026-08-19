@@ -9,6 +9,7 @@ from hiresense.shared.infrastructure import SqlRepository
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
 from hiresense.ingestion.domain.identity import identity_key
+from hiresense.ingestion.domain.tracked_job_fields import diff_job_fields
 from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.shared.kernel import as_utc
 from hiresense.ingestion.domain.models import NormalizedJob
@@ -113,8 +114,12 @@ class JobsRepository(SqlRepository):
     @staticmethod
     def _apply_to_row(
         row: IngestedJob, job: NormalizedJob, new_hash: str, now: datetime
-    ) -> UpsertResult:
-        """Apply one job's upsert semantics to an existing row (no commit)."""
+    ) -> tuple[UpsertResult, dict[str, Any]]:
+        """Apply one job's upsert semantics to an existing row (no commit).
+
+        Returns the result and the old-vs-new diff. The diff MUST be taken
+        before the assignments below, which destroy the old values.
+        """
         row.last_seen_at = now
         row.missed_count = 0
         reopened = row.status == "closed"
@@ -123,6 +128,7 @@ class JobsRepository(SqlRepository):
             row.closed_at = None
 
         changed = row.content_hash != new_hash
+        changed_fields: dict[str, Any] = diff_job_fields(row, job) if changed else {}
         if changed:
             row.title = job.title
             row.company = job.company
@@ -142,10 +148,13 @@ class JobsRepository(SqlRepository):
             row.updated_at = now
 
         if reopened:
-            return UpsertResult.REOPENED
+            # A reopen carries no diff even when content also changed: the
+            # headline event is the reopen, and REOPENED already implies a
+            # re-index downstream.
+            return UpsertResult.REOPENED, {}
         if changed:
-            return UpsertResult.UPDATED
-        return UpsertResult.UNCHANGED
+            return UpsertResult.UPDATED, changed_fields
+        return UpsertResult.UNCHANGED, {}
 
     def upsert(self, job: NormalizedJob) -> UpsertResult:
         ident = identity_key(job)
@@ -164,7 +173,7 @@ class JobsRepository(SqlRepository):
                 session.commit()
                 return UpsertResult.INSERTED
 
-            result = self._apply_to_row(row, job, new_hash, now)
+            result, _ = self._apply_to_row(row, job, new_hash, now)
             session.commit()
             return result
 
@@ -201,8 +210,12 @@ class JobsRepository(SqlRepository):
                     outcomes.append(UpsertOutcome(job=job, result=UpsertResult.INSERTED))
                     continue
                 resolved = job.model_copy(update={"id": row.id})
-                result = self._apply_to_row(row, resolved, content_hash(resolved), now)
-                outcomes.append(UpsertOutcome(job=resolved, result=result))
+                result, changed_fields = self._apply_to_row(
+                    row, resolved, content_hash(resolved), now
+                )
+                outcomes.append(
+                    UpsertOutcome(job=resolved, result=result, changed_fields=changed_fields)
+                )
             session.commit()
         return outcomes
 

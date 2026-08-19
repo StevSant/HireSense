@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 from datetime import datetime
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from hiresense.ingestion.domain.models import NormalizedJob
 
@@ -40,10 +40,16 @@ class UpsertOutcome:
     `job` carries the RESOLVED id: when the identity already existed, the
     stored row's id replaces the caller's freshly generated one (absorbing the
     old get_id_by_identity pre-lookup).
+
+    `changed_fields` is the old-vs-new diff for UPDATED outcomes and empty for
+    every other result. It is captured here because _apply_to_row is the only
+    place both states are in scope; discarding it there is what made job
+    history impossible to reconstruct after the fact.
     """
 
     job: NormalizedJob
     result: "UpsertResult"
+    changed_fields: dict[str, Any] = dataclasses.field(default_factory=dict)
 
 
 class JobsRepositoryPort(Protocol):

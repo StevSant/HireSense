@@ -18,6 +18,7 @@ from hiresense.ingestion.domain.job_closure_reason import JobClosureReason
 from hiresense.ingestion.domain.job_embedding_indexer import JobEmbeddingIndexer
 from hiresense.ingestion.domain.job_history_event import JobHistoryEvent
 from hiresense.ingestion.domain.job_history_event_type import JobHistoryEventType
+from hiresense.ingestion.domain.job_history_recorder import JobHistoryRecorder
 from hiresense.ingestion.domain.job_filter import (
     JobQueryParams,
     PaginatedResult,
@@ -69,6 +70,7 @@ __all__ = [
     "JobEmbeddingIndexer",
     "JobHistoryEvent",
     "JobHistoryEventType",
+    "JobHistoryRecorder",
     "JobRevalidationService",
     "OpenJob",
     "SOURCE_CAPABILITY_REGISTRY",

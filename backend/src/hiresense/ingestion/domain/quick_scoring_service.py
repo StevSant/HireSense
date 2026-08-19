@@ -204,7 +204,17 @@ class QuickScoringService:
         if isinstance(data, dict):
             data = [data]
         if not isinstance(data, list):
-            logger.warning("Quick scoring: unparseable response: %s", str(response)[:200])
+            # Log the length and the TAIL alongside the head: the common failure
+            # is a response truncated at the model's output cap, which looks
+            # perfectly well-formed from the front. The tail is what shows the
+            # array was cut mid-item.
+            text = str(response)
+            logger.warning(
+                "Quick scoring: unparseable response (%d chars); head=%r tail=%r",
+                len(text),
+                text[:160],
+                text[-160:],
+            )
             return []
 
         # Positional fallback is only sound when the model returned exactly one

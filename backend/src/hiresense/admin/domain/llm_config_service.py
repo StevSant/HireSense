@@ -13,19 +13,28 @@ logger = logging.getLogger(__name__)
 # Feature keys whose output is a short verdict — a label, a confidence score,
 # a brief extraction — rather than long-form or batched generation. These get
 # the smaller `llm_classifier_max_tokens` default instead of
-# `llm_default_max_tokens`. match_quick_scorer is deliberately NOT included
-# here even though it "classifies": it returns batched per-job JSON for up to
-# match_quick_batch_size jobs in a single call, so it needs the larger default
-# to avoid truncating the tail of the batch. match_dimension_scorer is
-# excluded for the same reason: one response carries 6 dimensions, each with
-# a score and a rationale, and truncation would silently drop the tail
-# dimensions rather than just shortening one verdict.
+# `llm_default_max_tokens`.
 CLASSIFIER_FEATURE_KEYS: frozenset[str] = frozenset(
     {
         "inbox-classification",
         "job_quality_classifier",
         "application_skill_extractor",
         "preference_explanation",
+    }
+)
+
+# Feature keys whose ONE response carries many items, so the cap has to cover
+# the whole batch rather than a single verdict: the quick scorer emits per-job
+# JSON for up to match_quick_batch_size jobs per call, and the dimension scorer
+# returns six scored dimensions. Truncation here does not shorten the answer, it
+# invalidates it — the JSON is cut mid-array and the whole batch is discarded
+# (quick_scoring_service._parse). These shared `llm_default_max_tokens` with
+# single-shot features until a full 20-job page proved to need ~2.7k output
+# tokens against a 2048 cap, so every full batch came back unparseable.
+BATCH_FEATURE_KEYS: frozenset[str] = frozenset(
+    {
+        "match_quick_scorer",
+        "match_dimension_scorer",
     }
 )
 
@@ -52,6 +61,7 @@ class LLMConfigService:
         feature_default_models: dict[str, str] | None = None,
         default_max_tokens: int = 2048,
         classifier_max_tokens: int = 512,
+        batch_max_tokens: int = 6144,
     ) -> None:
         self._settings_repo = settings_repo
         self._override_repo = override_repo
@@ -63,6 +73,7 @@ class LLMConfigService:
         # class never imports the settings module directly.
         self._default_max_tokens = default_max_tokens
         self._classifier_max_tokens = classifier_max_tokens
+        self._batch_max_tokens = batch_max_tokens
         # Per-feature default model used only when there is no admin override
         # and no global settings row (i.e. the .env fallback path). Lets a
         # feature ship with a different default model than the global env one
@@ -119,12 +130,7 @@ class LLMConfigService:
         # row or feature override) has already set one — an explicit
         # admin-set max_tokens always wins.
         if "max_tokens" not in extra_params:
-            default = (
-                self._classifier_max_tokens
-                if feature_key in CLASSIFIER_FEATURE_KEYS
-                else self._default_max_tokens
-            )
-            extra_params = {**extra_params, "max_tokens": default}
+            extra_params = {**extra_params, "max_tokens": self._default_cap_for(feature_key)}
 
         return ResolvedConfig(
             provider=provider,
@@ -133,6 +139,13 @@ class LLMConfigService:
             extra_params=extra_params,
             source=source,
         )
+
+    def _default_cap_for(self, feature_key: str) -> int:
+        if feature_key in CLASSIFIER_FEATURE_KEYS:
+            return self._classifier_max_tokens
+        if feature_key in BATCH_FEATURE_KEYS:
+            return self._batch_max_tokens
+        return self._default_max_tokens
 
     def _decrypt_or_env_fallback(self, ciphertext: str | None) -> str:
         if not ciphertext:

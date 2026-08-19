@@ -19,14 +19,14 @@ class IngestionSettings(BaseSettings):
         "arbeitnow",
         "themuse",
         "dice",
-        "crunchboard",
         "yc_jobs",
     ]
     # NOTE: `linkedin` is a fragile guest-endpoint HTML scraper (ToS-risky,
     # breaks on markup changes and rate-limits aggressively). It's kept enabled
     # by default for its on-site coverage; drop it here if it misbehaves.
-    # `dice` uses Dice's official MCP search. `crunchboard` uses the official
-    # RSS feed. `yc_jobs` parses public Work at a Startup Inertia JSON.
+    # `dice` uses Dice's official MCP search. `yc_jobs` parses public Work at a
+    # Startup Inertia JSON. `crunchboard` is off by default — its jobs.rss now
+    # 301-redirects to jobboard.io and yields zero jobs.
     # Import fallbacks (`indeed`, `wellfound`, `glassdoor`, `monster`) are
     # opt-in — add them here and place JSONL/CSV under csv_import_dir.
 
@@ -53,6 +53,16 @@ class IngestionSettings(BaseSettings):
     # first filtering by that source. Champions are cached per profile, so the
     # steady-state extra LLM cost is zero. 0 disables the pass.
     ingestion_source_champions_per_source: int = 3
+
+    # Cold-start ranking DEPTH (distinct from the per-source fairness above). The
+    # page-level LLM pass only scores the visible 20, but page 1 is *selected*
+    # before any real score exists — so a job the heuristic ranks 40th never
+    # reaches a page, never gets scored, and never rises no matter how good it
+    # is. On a full match-sorted rescore, LLM quick-score the global heuristic
+    # top-N so the first page reflects real scores instead of converging over
+    # several requests. Cached per profile, so steady-state cost is zero.
+    # 0 disables the pass.
+    ingestion_match_scoring_window: int = 100
 
     # Hide job listings whose posted_date is older than this many days (stale /
     # re-surfaced postings — e.g. WeWorkRemotely keeps the original RSS pubDate
@@ -102,9 +112,19 @@ class IngestionSettings(BaseSettings):
     job_revalidation_expired_redirect_markers: list[str] = [
         "trk=expired_jd_redirect",
     ]
-    # Concurrent URL probes + per-request delay (seconds) for politeness.
-    job_revalidation_concurrency: int = 2
-    job_revalidation_delay: float = 1.0
+    # How many job sources fetch concurrently in one ingestion pass. Sources are
+    # independent hosts, so their network waits overlap; the per-source DB and
+    # indexing work downstream still runs serially, in declaration order.
+    ingestion_source_concurrency: int = 8
+
+    # Probe throttling. The politeness budget is per-host: `delay` is the
+    # minimum seconds between two requests to the SAME board and
+    # `host_concurrency` caps that board's in-flight probes, so unrelated boards
+    # run in parallel instead of sharing one queue. `concurrency` is only a
+    # whole-sweep ceiling on total in-flight requests.
+    job_revalidation_concurrency: int = 12
+    job_revalidation_host_concurrency: int = 4
+    job_revalidation_delay: float = 0.5
     # SSRF hardening for the URL-probe sweep. probe_url derives from ingested,
     # attacker-influenceable data (job board / HN / CSV), so each probe target
     # (and every redirect hop) is validated to be http/https resolving to a

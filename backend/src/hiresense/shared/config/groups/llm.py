@@ -25,6 +25,14 @@ class LLMSettings(BaseSettings):
     llm_timeout: float = 60.0
     embedding_model: str = "all-mpnet-base-v2"
     embedding_device: str = "cpu"
+    # Texts per encode batch. Larger batches amortise the per-batch overhead of
+    # CPU inference; 64 measured better than the library default of 32 without
+    # a meaningful memory cost at this model size.
+    embedding_batch_size: int = 64
+    # Cap torch's intra-op threads. Unbounded, encode saturates every core and
+    # starves the event loop, so concurrent source fetches stop making progress
+    # while a batch runs. 0 leaves torch's own default in place.
+    embedding_torch_threads: int = 4
     # Embedding vector dimension — must match the model above (all-mpnet-base-v2
     # produces 768-dim vectors). The pgvector column and ANN index are sized to
     # this; changing the model means changing this and re-running the embedding

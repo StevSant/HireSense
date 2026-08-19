@@ -284,6 +284,7 @@ def build_ingestion(
         closure_miss_threshold=s.job_closure_miss_threshold,
         quality_classifier=quality_classifier,
         health_tracker=health_tracker,
+        source_concurrency=s.ingestion_source_concurrency,
     )
 
     # Job lookups / score persistence for the boards bucket. Shares the very
@@ -321,6 +322,7 @@ def build_ingestion(
         batch=s.job_revalidation_batch,
         concurrency=s.job_revalidation_concurrency,
         delay=s.job_revalidation_delay,
+        host_concurrency=s.job_revalidation_host_concurrency,
         max_probe_bytes=s.job_revalidation_max_probe_bytes,
         max_redirects=s.job_revalidation_max_redirects,
         probe_url_builders={"linkedin": _linkedin_probe_url},

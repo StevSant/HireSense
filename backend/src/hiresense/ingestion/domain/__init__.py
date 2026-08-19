@@ -1,11 +1,13 @@
 from hiresense.ingestion.domain.application_classification import ApplicationClassification
 from hiresense.ingestion.domain.application_classifier import classify_application
 from hiresense.ingestion.domain.application_method import ApplicationMethod
+from hiresense.ingestion.domain.apply_access import ApplyAccess
 from hiresense.ingestion.domain.ats_platform import AtsPlatform
 from hiresense.ingestion.domain.closed_listing_classifier import Verdict, classify_listing
 from hiresense.ingestion.domain.dead_end_redirect import is_dead_end_redirect
 from hiresense.ingestion.domain.closure_detector import OpenJob, detect_closures
 from hiresense.ingestion.domain.content_hash import content_hash
+from hiresense.ingestion.domain.host_rate_limiter import HostRateLimiter
 from hiresense.ingestion.domain.cross_source_deduplicator import (
     canonical_listing_key,
     consolidate_cross_source_jobs,
@@ -35,6 +37,8 @@ from hiresense.ingestion.domain.source_capabilities import (
     SourceCapabilities,
     get_source_capabilities,
     list_source_capabilities,
+    source_apply_access,
+    source_apply_access_note,
     source_tier,
 )
 from hiresense.ingestion.domain.source_health import (
@@ -47,9 +51,11 @@ from hiresense.ingestion.domain.ssrf_guard import is_safe_probe_url
 from hiresense.ingestion.domain.upsert_result import UpsertResult
 
 __all__ = [
+    "HostRateLimiter",
     "is_dead_end_redirect",
     "ApplicationClassification",
     "ApplicationMethod",
+    "ApplyAccess",
     "AtsPlatform",
     "IngestionCooldownError",
     "IngestionOrchestrator",
@@ -86,6 +92,8 @@ __all__ = [
     "identity_key",
     "is_safe_probe_url",
     "list_source_capabilities",
+    "source_apply_access",
+    "source_apply_access_note",
     "load_portals_config",
     "sort_jobs",
     "source_tier",

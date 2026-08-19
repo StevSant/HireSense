@@ -42,6 +42,7 @@ from hiresense.ingestion.api.provider import IngestionProvider
 from hiresense.ingestion.domain import (
     IngestionOrchestrator,
     JobEmbeddingIndexer,
+    JobHistoryRecorder,
     JobQualityClassifier,
     JobQueryService,
     JobRevalidationService,
@@ -83,7 +84,11 @@ from hiresense.ingestion.domain.normalizers import (
 )
 from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
 from hiresense.ingestion.domain.source_health import SourceHealthTracker
-from hiresense.ingestion.infrastructure import JobMatchCacheRepository, JobsRepository
+from hiresense.ingestion.infrastructure import (
+    JobHistoryRepository,
+    JobMatchCacheRepository,
+    JobsRepository,
+)
 from hiresense.ingestion.infrastructure import PlaywrightPageRenderer
 from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
 from hiresense.composition.shared_infra import SharedInfra
@@ -254,6 +259,11 @@ def build_ingestion(
     boards_jobs_repo = JobsRepository(session_factory=infra.sync_session_factory, bucket="boards")
     portals_jobs_repo = JobsRepository(session_factory=infra.sync_session_factory, bucket="portals")
 
+    # One history store shared by the orchestrator and the sweep: the audit
+    # trail spans both, and a job's timeline interleaves their events.
+    job_history_repo = JobHistoryRepository(session_factory=infra.sync_session_factory)
+    job_history_recorder = JobHistoryRecorder(store=job_history_repo)
+
     # Persist embeddings of newly ingested jobs into the vector store (when one is
     # configured) so semantic search survives restarts. Per-bucket so search can
     # filter by tab. None when no vector store is wired (e.g. tests) → no-op.
@@ -285,6 +295,8 @@ def build_ingestion(
         quality_classifier=quality_classifier,
         health_tracker=health_tracker,
         source_concurrency=s.ingestion_source_concurrency,
+        history=job_history_recorder,
+        history_retention_days=s.job_history_retention_days,
     )
 
     # Job lookups / score persistence for the boards bucket. Shares the very
@@ -328,6 +340,7 @@ def build_ingestion(
         probe_url_builders={"linkedin": _linkedin_probe_url},
         user_agent=s.job_revalidation_user_agent,
         expired_redirect_markers=s.job_revalidation_expired_redirect_markers,
+        history=job_history_recorder,
     )
 
     # Resolve the portals config relative to the hiresense package root (not
@@ -473,6 +486,7 @@ def build_ingestion(
         pre_ranker=pre_ranker,
         revalidation_service=revalidation_service,
         backfill_service=backfill_service,
+        job_history=job_history_repo,
     )
     return IngestionBuild(
         provider=provider,

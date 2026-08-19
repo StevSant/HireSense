@@ -82,6 +82,14 @@ class IngestionSettings(BaseSettings):
     # enough that closed jobs linger with their badge before deletion.
     ingestion_job_retention_days: int = Field(default=90, ge=0, le=3650)
 
+    # Days to retain per-job history events before pruning, on the same pass
+    # that prunes jobs. Independent of ingestion_job_retention_days: history is
+    # small per row and is the only record of what a past run did, so it is
+    # worth keeping at least as long as the jobs it describes. 0 disables
+    # pruning entirely. The FK cascade is a second, independent bound —
+    # deleting a job removes its history regardless of age.
+    job_history_retention_days: int = Field(default=90, ge=0, le=3650)
+
     # --- Job closure / revalidation ---
     # Consecutive snapshot fetches a previously-seen job may be missing before
     # it is marked closed (guards against a transient/empty fetch).

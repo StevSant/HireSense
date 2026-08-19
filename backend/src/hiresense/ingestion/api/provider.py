@@ -9,6 +9,7 @@ from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
 from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
 from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
 from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.ingestion.ports.job_history import JobHistoryPort
 from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
 
 
@@ -25,6 +26,7 @@ class IngestionProvider:
         pre_ranker: SemanticPreRanker | None = None,
         revalidation_service: JobRevalidationService | None = None,
         backfill_service: EmbeddingBackfillService | None = None,
+        job_history: JobHistoryPort | None = None,
     ) -> None:
         self._orchestrator = orchestrator
         self._job_query = job_query
@@ -36,6 +38,7 @@ class IngestionProvider:
         self._pre_ranker = pre_ranker
         self._revalidation_service = revalidation_service
         self._backfill_service = backfill_service
+        self._job_history = job_history
 
     def get_orchestrator(self) -> IngestionOrchestrator:
         return self._orchestrator
@@ -66,3 +69,6 @@ class IngestionProvider:
 
     def get_backfill_service(self) -> EmbeddingBackfillService | None:
         return self._backfill_service
+
+    def get_job_history(self) -> JobHistoryPort | None:
+        return self._job_history

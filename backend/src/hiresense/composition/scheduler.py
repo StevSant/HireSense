@@ -59,7 +59,10 @@ def build_scheduler(
     definitions = [
         JobDefinition(
             name="ingestion_fetch",
-            run=ingestion_orchestrator.run,
+            # Bare `ingestion_orchestrator.run` would record every scheduled
+            # pass as a manual fetch; the lambda is what makes the two
+            # distinguishable in the run history.
+            run=lambda: ingestion_orchestrator.run(trigger="scheduler"),
             cron=settings.ingestion_schedule,
             interval_hours=None,
             count_items=len,

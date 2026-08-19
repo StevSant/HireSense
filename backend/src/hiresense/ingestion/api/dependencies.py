@@ -13,6 +13,7 @@ from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
 from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
 from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
 from hiresense.ingestion.domain.services import IngestionOrchestrator
+from hiresense.ingestion.ports.job_history import JobHistoryPort
 from hiresense.ingestion.api.job_feed_service import JobFeedService
 from hiresense.matching.domain.deep_analysis_service import DeepAnalysisService
 from hiresense.network.api.dependencies import get_contacts_repository
@@ -76,6 +77,13 @@ def get_backfill_service(request: Request) -> EmbeddingBackfillService | None:
     # The endpoint handles None with a 503 response.
     ingestion = getattr(request.app.state, "ingestion", None)
     return ingestion.get_backfill_service() if ingestion is not None else None
+
+
+def get_job_history(request: Request) -> JobHistoryPort | None:
+    # Defensive: tests and bare apps without app.state.ingestion → None,
+    # matching every other optional collaborator here.
+    ingestion = getattr(request.app.state, "ingestion", None)
+    return ingestion.get_job_history() if ingestion is not None else None
 
 
 def get_job_feed(

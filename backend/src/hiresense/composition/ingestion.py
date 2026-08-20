@@ -427,6 +427,8 @@ def build_ingestion(
         retention_days=s.ingestion_job_retention_days,
         indexer=portals_indexer,
         closure_miss_threshold=s.job_closure_miss_threshold,
+        history=job_history_recorder,
+        history_retention_days=s.job_history_retention_days,
     )
 
     from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker

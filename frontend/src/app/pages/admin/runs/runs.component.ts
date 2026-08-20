@@ -19,6 +19,7 @@ import { JobHistoryEvent, JobHistoryEventType } from '@core/contracts/job-histor
 const TRIGGER_LABELS: Record<string, string> = {
   fetch: 'Manual fetch',
   scheduler: 'Scheduled',
+  portal_scan: 'Portal scan',
 };
 const UNKNOWN_TRIGGER_LABEL = 'Unknown trigger';
 

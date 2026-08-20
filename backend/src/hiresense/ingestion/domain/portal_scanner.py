@@ -10,6 +10,8 @@ from pydantic import BaseModel
 
 from hiresense.ingestion.domain.application_classifier import classify_application
 from hiresense.ingestion.domain.identity import identity_key
+from hiresense.ingestion.domain.job_closure_reason import JobClosureReason
+from hiresense.ingestion.domain.job_history_recorder import JobHistoryRecorder
 from hiresense.ingestion.domain.job_list_criteria import JobListCriteria
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.work_authorization_facts import add_work_authorization_facts
@@ -54,6 +56,8 @@ class PortalScanner:
         retention_days: int | None = None,
         indexer: Any | None = None,
         closure_miss_threshold: int = 2,
+        history: JobHistoryRecorder | None = None,
+        history_retention_days: int | None = None,
     ) -> None:
         self._config = config
         self._adapters = adapters
@@ -63,6 +67,10 @@ class PortalScanner:
         self._retention_days = retention_days
         self._indexer = indexer
         self._closure_miss_threshold = closure_miss_threshold
+        # None in tests and bare apps: every call site below is guarded, so a
+        # missing recorder degrades to "no history", never to an error.
+        self._history = history
+        self._history_retention_days = history_retention_days
 
     def list_jobs(self, criteria: JobListCriteria | None = None) -> list[NormalizedJob]:
         """Full corpus, or — given criteria — only rows matching the cheap
@@ -105,6 +113,16 @@ class PortalScanner:
         return portals
 
     async def _prune_expired(self) -> None:
+        await self._prune_jobs()
+        await self._prune_history()
+
+    async def _prune_history(self) -> None:
+        if self._history is None or not self._history_retention_days:
+            return
+        cutoff = datetime.now(timezone.utc) - timedelta(days=self._history_retention_days)
+        await asyncio.to_thread(self._history.prune, cutoff)
+
+    async def _prune_jobs(self) -> None:
         if not self._retention_days or self._retention_days <= 0:
             return
         cutoff = datetime.now(timezone.utc) - timedelta(days=self._retention_days)
@@ -122,6 +140,37 @@ class PortalScanner:
                     logger.exception("Failed to evict pruned job vectors")
 
     async def scan(self, filters: ScanFilters) -> ScanResult:
+        """Scan the configured portals, recording the pass in the audit trail.
+
+        A portal scan runs the same lifecycle as a board fetch — upsert,
+        snapshot closure, pruning — so it opens and closes its own run row. The
+        'portal_scan' trigger is what tells the two apart on the runs page.
+        """
+        run_id: str | None = None
+        completed = False
+        if self._history is not None:
+            run_id = await asyncio.to_thread(self._history.start_run, "portal_scan")
+            if run_id is None:
+                # The scan still runs, but its events land with run_id=NULL —
+                # unattributable, and on run-scoped queries indistinguishable
+                # from a URL-probe sweep closure.
+                logger.warning(
+                    "Portal scan run header could not be opened; "
+                    "this scan's history will be recorded without a run id"
+                )
+        try:
+            result = await self._scan(filters, run_id)
+            completed = True
+            return result
+        finally:
+            if self._history is not None and run_id is not None:
+                await asyncio.to_thread(
+                    self._history.finish_run,
+                    run_id,
+                    "completed" if completed else "failed",
+                )
+
+    async def _scan(self, filters: ScanFilters, run_id: str | None) -> ScanResult:
         await self._prune_expired()
 
         portals = self._filter_portals(filters)
@@ -207,6 +256,9 @@ class PortalScanner:
                     if outcome.result == UpsertResult.INSERTED:
                         new_jobs.append(outcome.job)
 
+            if self._history is not None:
+                await asyncio.to_thread(self._history.record_outcomes, run_id, outcomes)
+
             if touched and self._indexer is not None:
                 await self._indexer.index(touched)
 
@@ -221,6 +273,13 @@ class PortalScanner:
                 )
                 if closed_ids and self._indexer is not None:
                     await self._indexer.remove(closed_ids)
+                if closed_ids and self._history is not None:
+                    await asyncio.to_thread(
+                        self._history.record_closures,
+                        closed_ids,
+                        JobClosureReason.SNAPSHOT_DISAPPEARANCE,
+                        run_id,
+                    )
 
         duplicates = total_fetched - len(new_jobs)
 

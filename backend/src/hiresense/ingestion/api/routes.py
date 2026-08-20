@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime
 from typing import Annotated, Literal
 
@@ -13,14 +14,17 @@ from hiresense.ingestion.api.dependencies import (
     get_backfill_service,
     get_ingestion_orchestrator,
     get_job_feed,
+    get_job_history,
     get_portal_scanner,
     get_portals_config,
     get_revalidation_service,
 )
 from hiresense.ingestion.domain.embedding_backfill_service import EmbeddingBackfillService
+from hiresense.ingestion.domain.ingestion_run_summary import IngestionRunSummary
 from hiresense.ingestion.domain.job_filter import (
     PaginatedResult,
 )
+from hiresense.ingestion.domain.job_history_event import JobHistoryEvent
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
@@ -32,6 +36,7 @@ from hiresense.ingestion.domain.source_capabilities import (
     list_source_capabilities,
 )
 from hiresense.ingestion.domain.source_health import SourceHealth
+from hiresense.ingestion.ports.job_history import JobHistoryPort
 from hiresense.matching.domain.deep_analysis_result import DeepAnalysisResult
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"], dependencies=[Depends(require_auth)])
@@ -279,6 +284,61 @@ async def get_job(
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return job
+
+
+class JobHistoryResponse(BaseModel):
+    events: list[JobHistoryEvent]
+
+
+class IngestionRunsResponse(BaseModel):
+    runs: list[IngestionRunSummary]
+
+
+class IngestionRunDetailResponse(BaseModel):
+    run: IngestionRunSummary
+    events: list[JobHistoryEvent]
+
+
+def _require_history(history: JobHistoryPort | None) -> JobHistoryPort:
+    if history is None:
+        raise HTTPException(status_code=503, detail="Job history is not configured")
+    return history
+
+
+@router.get("/jobs/{job_id}/history", response_model=JobHistoryResponse)
+async def get_job_history_events(
+    job_id: str,
+    history: Annotated[JobHistoryPort | None, Depends(get_job_history)],
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> JobHistoryResponse:
+    store = _require_history(history)
+    events = await asyncio.to_thread(store.list_events_for_job, job_id, limit)
+    return JobHistoryResponse(events=events)
+
+
+@router.get("/runs", response_model=IngestionRunsResponse)
+async def list_ingestion_runs(
+    history: Annotated[JobHistoryPort | None, Depends(get_job_history)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 25,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> IngestionRunsResponse:
+    store = _require_history(history)
+    runs = await asyncio.to_thread(store.list_runs, limit, offset)
+    return IngestionRunsResponse(runs=runs)
+
+
+@router.get("/runs/{run_id}", response_model=IngestionRunDetailResponse)
+async def get_ingestion_run(
+    run_id: str,
+    history: Annotated[JobHistoryPort | None, Depends(get_job_history)],
+    limit: Annotated[int, Query(ge=1, le=500)] = 200,
+) -> IngestionRunDetailResponse:
+    store = _require_history(history)
+    run = await asyncio.to_thread(store.get_run, run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    events = await asyncio.to_thread(store.list_events_for_run, run_id, limit)
+    return IngestionRunDetailResponse(run=run, events=events)
 
 
 @router.get("/portals", response_model=list[PortalEntry])

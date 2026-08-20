@@ -56,6 +56,20 @@ describe('JobHistoryTimelineComponent', () => {
     expect(itemLabels(fixture)).toEqual(['Updated', 'Ingested']);
   });
 
+  it('renders two identical same-timestamp events without a duplicate-key error', () => {
+    const duplicate = {
+      job_id: 'job-1',
+      event: 'updated',
+      changed_fields: {},
+      reason: null,
+      occurred_at: '2026-08-19T10:00:00Z',
+    };
+    const fixture = createComponent();
+    flush(fixture, [duplicate, { ...duplicate }]);
+    const items = (fixture.nativeElement as HTMLElement).querySelectorAll('.job-history-item');
+    expect(items.length).toBe(2);
+  });
+
   it('renders an inserted event as "Ingested"', () => {
     const fixture = createComponent();
     flush(fixture, [

@@ -53,6 +53,7 @@ function mount(
     getJob: () => of(job()),
     getCachedAnalysis: () => undefined,
     getJobAnalysis: () => of(analysis),
+    getJobHistory: () => of({ events: [] }),
     trackedJobIds: () => new Set<string>(),
     markTracked: () => {},
     ...over,

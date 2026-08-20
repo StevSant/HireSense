@@ -1,0 +1,59 @@
+.job-history {
+  .job-history-state {
+    color: var(--text-muted, #666);
+    font-size: 0.9rem;
+  }
+
+  .job-history-error {
+    color: var(--danger);
+  }
+
+  .job-history-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .job-history-item {
+    border-left: 2px solid var(--border, #e2e2e2);
+    padding-left: 0.75rem;
+  }
+
+  .job-history-item-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  .job-history-label {
+    font-weight: 600;
+
+    &--closed {
+      color: var(--danger);
+    }
+    &--reopened,
+    &--inserted {
+      color: var(--success);
+    }
+  }
+
+  .job-history-time {
+    color: var(--text-muted, #666);
+    font-size: 0.85rem;
+  }
+
+  .job-history-reason {
+    margin: 0.25rem 0 0;
+    font-size: 0.9rem;
+    color: var(--text-muted, #666);
+  }
+
+  .job-history-changes {
+    margin: 0.25rem 0 0;
+    padding-left: 1rem;
+    font-size: 0.9rem;
+  }
+}

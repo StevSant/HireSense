@@ -19,6 +19,7 @@ import { MatchBreakdownComponent } from '../ingestion/components/match-breakdown
 import { MatchSkillsComponent } from '../ingestion/components/match-skills/match-skills.component';
 import { JobDescriptionComponent } from '../ingestion/components/job-description/job-description.component';
 import { FeedbackControlsComponent } from '../ingestion/components/feedback-controls/feedback-controls.component';
+import { JobHistoryTimelineComponent } from './job-history-timeline/job-history-timeline.component';
 import { formatScorePercent } from '../../core/utils/format-score-percent';
 import { scoreColor } from '../../core/utils/score-color';
 
@@ -35,6 +36,7 @@ type Feature = 'matching' | 'optimization' | 'interview';
     MatchSkillsComponent,
     JobDescriptionComponent,
     FeedbackControlsComponent,
+    JobHistoryTimelineComponent,
   ],
   templateUrl: './job.component.html',
   styleUrl: './job.component.scss',

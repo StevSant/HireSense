@@ -1,0 +1,36 @@
+<section class="job-card job-history">
+  <h2 class="job-section-label">History</h2>
+
+  @if (loading()) {
+    <p class="job-history-state">Loading history…</p>
+  } @else if (error()) {
+    <p class="job-history-state job-history-error">{{ error() }}</p>
+  } @else if (events().length === 0) {
+    <p class="job-history-state">
+      No recorded history — this job predates the audit trail, which begins 19 Aug 2026.
+    </p>
+  } @else {
+    <ol class="job-history-list">
+      @for (event of events(); track event.occurred_at + event.event) {
+        <li class="job-history-item">
+          <div class="job-history-item-header">
+            <span class="job-history-label job-history-label--{{ event.event }}">{{
+              label(event)
+            }}</span>
+            <time class="job-history-time">{{ event.occurred_at | date: 'medium' }}</time>
+          </div>
+          @if (event.reason) {
+            <p class="job-history-reason">{{ reasonLabel(event.reason) }}</p>
+          }
+          @if (changes(event).length) {
+            <ul class="job-history-changes">
+              @for (change of changes(event); track change) {
+                <li>{{ change }}</li>
+              }
+            </ul>
+          }
+        </li>
+      }
+    </ol>
+  }
+</section>

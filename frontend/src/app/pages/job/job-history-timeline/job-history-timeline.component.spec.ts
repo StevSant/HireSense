@@ -14,6 +14,13 @@ describe('JobHistoryTimelineComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
+  afterEach(() => {
+    // Guards against a test that fires an unexpected request, or leaves one
+    // outstanding — the DOM-assertion rewrite dropped the per-test verify()
+    // calls this replaces.
+    httpMock.verify();
+  });
+
   function createComponent(jobId = 'job-1') {
     const fixture = TestBed.createComponent(JobHistoryTimelineComponent);
     fixture.componentRef.setInput('jobId', jobId);

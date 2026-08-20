@@ -47,4 +47,33 @@ describe('IngestionService', () => {
     expect(req.request.params.get('company')).toBe('Acme');
     req.flush(empty);
   });
+
+  it('requests job history for a job id', () => {
+    service.getJobHistory('job-1').subscribe();
+    const req = httpMock.expectOne((r) => r.url.endsWith('/ingestion/jobs/job-1/history'));
+    expect(req.request.method).toBe('GET');
+    req.flush({ events: [] });
+  });
+
+  it('passes the limit through as a query param', () => {
+    service.getJobHistory('job-1', 10).subscribe();
+    const req = httpMock.expectOne((r) => r.url.endsWith('/ingestion/jobs/job-1/history'));
+    expect(req.request.params.get('limit')).toBe('10');
+    req.flush({ events: [] });
+  });
+
+  it('requests the run list with limit and offset', () => {
+    service.listRuns(5, 10).subscribe();
+    const req = httpMock.expectOne((r) => r.url.endsWith('/ingestion/runs'));
+    expect(req.request.params.get('limit')).toBe('5');
+    expect(req.request.params.get('offset')).toBe('10');
+    req.flush({ runs: [] });
+  });
+
+  it('requests one run by id', () => {
+    service.getRun('run-1').subscribe();
+    const req = httpMock.expectOne((r) => r.url.endsWith('/ingestion/runs/run-1'));
+    expect(req.request.method).toBe('GET');
+    req.flush({ run: {}, events: [] });
+  });
 });

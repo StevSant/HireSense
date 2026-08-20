@@ -3,8 +3,10 @@ import { HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { ApiClient, API_ROUTES } from '@core/api';
 import { FetchResponse } from '@core/contracts/fetch-response.model';
+import { IngestionRunDetail, IngestionRunSummary } from '@core/contracts/ingestion-run.model';
 import { JobAnalysis } from '@core/contracts/job-analysis.model';
 import { JobFilters } from '@core/contracts/job-filters.model';
+import { JobHistoryEvent } from '@core/contracts/job-history-event.model';
 import { NormalizedJob } from '@core/contracts/normalized-job.model';
 import { RevalidationStatus } from '@core/contracts/revalidation-status.model';
 import { PaginatedJobsResponse } from '@core/contracts/paginated-jobs-response.model';
@@ -107,6 +109,25 @@ export class IngestionService {
           this.jobAnalysisCache.update((cache) => ({ ...cache, [jobId]: analysis })),
         ),
       );
+  }
+
+  getJobHistory(jobId: string, limit?: number): Observable<{ events: JobHistoryEvent[] }> {
+    let params = new HttpParams();
+    if (limit !== undefined) params = params.set('limit', String(limit));
+    return this.api.get<{ events: JobHistoryEvent[] }>(API_ROUTES.ingestion.jobHistory({ jobId }), {
+      params,
+    });
+  }
+
+  listRuns(limit?: number, offset?: number): Observable<{ runs: IngestionRunSummary[] }> {
+    let params = new HttpParams();
+    if (limit !== undefined) params = params.set('limit', String(limit));
+    if (offset !== undefined) params = params.set('offset', String(offset));
+    return this.api.get<{ runs: IngestionRunSummary[] }>(API_ROUTES.ingestion.runs(), { params });
+  }
+
+  getRun(runId: string): Observable<IngestionRunDetail> {
+    return this.api.get<IngestionRunDetail>(API_ROUTES.ingestion.run({ runId }));
   }
 
   loadPortals(): Observable<PortalEntry[]> {

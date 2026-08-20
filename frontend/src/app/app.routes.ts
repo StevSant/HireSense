@@ -197,6 +197,12 @@ export const routes: Routes = [
           import('./pages/admin/scheduler/scheduler.component').then((m) => m.SchedulerComponent),
       },
       {
+        path: 'admin/runs',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./pages/admin/runs/runs.component').then((m) => m.RunsComponent),
+      },
+      {
         path: 'admin/notifications',
         canActivate: [adminGuard],
         loadComponent: () =>

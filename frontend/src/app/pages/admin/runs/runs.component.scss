@@ -1,0 +1,87 @@
+.runs {
+  padding: 1rem;
+
+  .runs-state {
+    color: var(--text-muted, #666);
+    font-size: 0.9rem;
+  }
+
+  .runs-error {
+    color: var(--danger);
+  }
+
+  .runs-table-scroll {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border, #e2e2e2);
+    white-space: nowrap;
+  }
+
+  .expand-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .status {
+    text-transform: capitalize;
+    font-weight: 600;
+    &--completed {
+      color: var(--success);
+    }
+    &--failed {
+      color: var(--danger);
+    }
+    &--running {
+      color: var(--muted, #888);
+    }
+  }
+
+  .run-events-row td {
+    white-space: normal;
+    background: var(--surface-muted, #f7f7f7);
+  }
+
+  .run-events-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+
+    li {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+
+    .event-label {
+      font-weight: 600;
+      &--closed {
+        color: var(--danger);
+      }
+      &--reopened,
+      &--inserted {
+        color: var(--success);
+      }
+    }
+
+    time {
+      color: var(--text-muted, #666);
+      font-size: 0.85rem;
+    }
+  }
+}

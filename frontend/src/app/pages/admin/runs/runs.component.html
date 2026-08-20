@@ -1,0 +1,83 @@
+<section class="runs">
+  <h1>Ingestion runs</h1>
+
+  @if (loading()) {
+    <p class="runs-state">Loading ingestion runs…</p>
+  } @else if (error()) {
+    <p class="runs-state runs-error">{{ error() }}</p>
+  } @else if (runs().length === 0) {
+    <p class="runs-state">No ingestion runs yet.</p>
+  } @else {
+    <div class="runs-table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Started</th>
+            <th>Duration</th>
+            <th>Trigger</th>
+            <th>Status</th>
+            <th>Inserted</th>
+            <th>Updated</th>
+            <th>Reopened</th>
+            <th>Closed</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (run of runs(); track run.id) {
+            <tr class="run-row">
+              <td>
+                <button
+                  type="button"
+                  class="expand-toggle"
+                  (click)="toggleRun(run.id)"
+                  [attr.aria-expanded]="expandedRunId() === run.id"
+                >
+                  {{ expandedRunId() === run.id ? '▾' : '▸' }}
+                </button>
+              </td>
+              <td>{{ run.started_at | date: 'medium' }}</td>
+              <td class="duration">{{ duration(run) ?? '—' }}</td>
+              <td>{{ triggerLabel(run.trigger) }}</td>
+              <td>
+                <span class="status status--{{ run.status }}">{{ statusLabel(run.status) }}</span>
+              </td>
+              <td>{{ run.inserted }}</td>
+              <td>{{ run.updated }}</td>
+              <td>{{ run.reopened }}</td>
+              <td>{{ run.closed }}</td>
+            </tr>
+            @if (expandedRunId() === run.id) {
+              <tr class="run-events-row">
+                <td [attr.colspan]="9">
+                  @if (eventsLoading() === run.id) {
+                    <p class="runs-state">Loading events…</p>
+                  } @else if (eventsError()) {
+                    <p class="runs-state runs-error">{{ eventsError() }}</p>
+                  } @else if (eventsByRunId()[run.id]?.length === 0) {
+                    <p class="runs-state">No events recorded for this run.</p>
+                  } @else {
+                    <ul class="run-events-list">
+                      @for (
+                        event of eventsByRunId()[run.id];
+                        track event.job_id + event.occurred_at
+                      ) {
+                        <li>
+                          <span class="event-label event-label--{{ event.event }}">{{
+                            eventLabel(event)
+                          }}</span>
+                          <span class="event-job">{{ event.job_id }}</span>
+                          <time>{{ event.occurred_at | date: 'medium' }}</time>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

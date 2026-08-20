@@ -115,3 +115,54 @@ def test_prune_removes_events_past_the_cutoff_and_keeps_recent_ones():
     assert deleted == 1
     assert repo.list_events_for_job("old", limit=10) == []
     assert len(repo.list_events_for_job("new", limit=10)) == 1
+
+
+def test_prune_runs_removes_only_runs_that_have_no_events_left():
+    repo = _repo()
+    empty = repo.start_run("fetch", NOW - timedelta(days=200))
+    still_used = repo.start_run("scheduler", NOW - timedelta(days=200))
+    repo.insert_events(still_used, [_event("a", JobHistoryEventType.INSERTED, at=NOW)])
+
+    removed = repo.prune_runs_without_events(NOW - timedelta(days=90))
+
+    assert removed == 1
+    assert repo.get_run(empty) is None
+    assert repo.get_run(still_used) is not None
+
+
+def test_prune_runs_never_nulls_out_a_surviving_events_run_id():
+    """run_id is ON DELETE SET NULL — a run pruned out from under its events
+    would rewrite orchestrator closures into indistinguishable sweep closures."""
+    repo = _repo()
+    run_id = repo.start_run("fetch", NOW - timedelta(days=200))
+    repo.insert_events(
+        run_id,
+        [
+            _event(
+                "a",
+                JobHistoryEventType.CLOSED,
+                at=NOW,
+                reason=JobClosureReason.SNAPSHOT_DISAPPEARANCE,
+            )
+        ],
+    )
+
+    repo.prune_runs_without_events(NOW - timedelta(days=90))
+
+    assert [e.job_id for e in repo.list_events_for_run(run_id, limit=10)] == ["a"]
+
+
+def test_prune_runs_keeps_runs_newer_than_the_cutoff():
+    repo = _repo()
+    recent = repo.start_run("fetch", NOW)
+
+    assert repo.prune_runs_without_events(NOW - timedelta(days=90)) == 0
+    assert repo.get_run(recent) is not None
+
+
+def test_a_malformed_run_id_reads_as_no_such_run_rather_than_raising():
+    """The id comes straight off the URL; a stale bookmark must be a 404."""
+    repo = _repo()
+
+    assert repo.get_run("not-a-uuid") is None
+    assert repo.list_events_for_run("not-a-uuid", limit=10) == []

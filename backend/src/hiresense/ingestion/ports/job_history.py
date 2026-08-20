@@ -43,3 +43,13 @@ class JobHistoryPort(Protocol):
     def prune_events_older_than(self, cutoff: datetime) -> int:
         """Delete events with occurred_at < cutoff. Returns the row count."""
         ...
+
+    def prune_runs_without_events(self, cutoff: datetime) -> int:
+        """Delete runs started before cutoff that have no events left.
+
+        Must run strictly AFTER prune_events_older_than, and must never touch a
+        run that still owns events: run_id is ON DELETE SET NULL, so deleting
+        such a run would silently rewrite its closures to run_id=NULL and make
+        them indistinguishable from URL-probe sweep closures.
+        """
+        ...

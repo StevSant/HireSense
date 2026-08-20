@@ -54,19 +54,26 @@ class JobHistoryRecorder:
             self._fail("finish_run")
 
     def record_outcomes(self, run_id: str | None, outcomes: list[UpsertOutcome]) -> None:
-        now = self._clock()
-        events = [
-            JobHistoryEvent(
-                job_id=outcome.job.id,
-                event=_RESULT_TO_EVENT[outcome.result],
-                changed_fields=outcome.changed_fields,
-                occurred_at=now,
-            )
-            for outcome in outcomes
-            # UNCHANGED is a no-op, not history.
-            if outcome.result in _RESULT_TO_EVENT
-        ]
-        self._write(run_id, events)
+        # The guard wraps the whole body, not just the store call: building the
+        # events (clock, the _RESULT_TO_EVENT subscript, Pydantic validation) is
+        # just as capable of raising, and an audit trail must never be able to
+        # fail the ingestion pass that feeds it.
+        try:
+            now = self._clock()
+            events = [
+                JobHistoryEvent(
+                    job_id=outcome.job.id,
+                    event=_RESULT_TO_EVENT[outcome.result],
+                    changed_fields=outcome.changed_fields,
+                    occurred_at=now,
+                )
+                for outcome in outcomes
+                # UNCHANGED is a no-op, not history.
+                if outcome.result in _RESULT_TO_EVENT
+            ]
+            self._write(run_id, events)
+        except Exception:
+            self._fail("record_outcomes")
 
     def record_closures(
         self,
@@ -74,19 +81,22 @@ class JobHistoryRecorder:
         reason: JobClosureReason,
         run_id: str | None = None,
     ) -> None:
-        now = self._clock()
-        self._write(
-            run_id,
-            [
-                JobHistoryEvent(
-                    job_id=job_id,
-                    event=JobHistoryEventType.CLOSED,
-                    reason=reason,
-                    occurred_at=now,
-                )
-                for job_id in job_ids
-            ],
-        )
+        try:
+            now = self._clock()
+            self._write(
+                run_id,
+                [
+                    JobHistoryEvent(
+                        job_id=job_id,
+                        event=JobHistoryEventType.CLOSED,
+                        reason=reason,
+                        occurred_at=now,
+                    )
+                    for job_id in job_ids
+                ],
+            )
+        except Exception:
+            self._fail("record_closures")
 
     def prune(self, cutoff: datetime) -> None:
         try:
@@ -95,6 +105,17 @@ class JobHistoryRecorder:
                 logger.info("Pruned %d job history events older than %s", deleted, cutoff)
         except Exception:
             self._fail("prune")
+            # Run pruning is deliberately skipped when event pruning failed:
+            # run_id is ON DELETE SET NULL, so deleting a run whose events are
+            # still there would rewrite surviving orchestrator closures to
+            # run_id=NULL — indistinguishable from URL-probe sweep closures.
+            return
+        try:
+            removed = self._store.prune_runs_without_events(cutoff)
+            if removed:
+                logger.info("Pruned %d ingestion runs older than %s", removed, cutoff)
+        except Exception:
+            self._fail("prune_runs")
 
     def _write(self, run_id: str | None, events: list[JobHistoryEvent]) -> None:
         if not events:

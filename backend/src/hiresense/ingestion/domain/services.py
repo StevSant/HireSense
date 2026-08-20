@@ -114,6 +114,15 @@ class IngestionOrchestrator:
                     if self._history
                     else None
                 )
+                if self._history is not None and run_id is None:
+                    # The pass still runs, but every event it writes lands with
+                    # run_id=NULL — unattributable, and on run-scoped queries
+                    # indistinguishable from a URL-probe sweep closure.
+                    logger.warning(
+                        "Ingestion run header could not be opened (trigger=%s); "
+                        "this pass's history will be recorded without a run id",
+                        trigger,
+                    )
 
                 await self._prune_expired()
 

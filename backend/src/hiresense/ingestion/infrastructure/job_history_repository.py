@@ -13,6 +13,18 @@ from hiresense.ingestion.infrastructure.job_history_event_orm import JobHistoryE
 from hiresense.shared.infrastructure.sql_repository import SqlRepository
 
 
+def _as_uuid(run_id: str) -> uuid_mod.UUID | None:
+    """Parse a caller-supplied run id, or None when it is not a UUID at all.
+
+    Run ids arrive straight off the URL, so a stale bookmark or a truncated
+    copy-paste must read as "no such run" (404), never as a 500.
+    """
+    try:
+        return uuid_mod.UUID(run_id)
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
 def _to_domain(row: JobHistoryEventOrm) -> JobHistoryEvent:
     return JobHistoryEvent(
         job_id=row.job_id,
@@ -84,10 +96,13 @@ class JobHistoryRepository(SqlRepository):
             return [_to_domain(r) for r in rows]
 
     def list_events_for_run(self, run_id: str, limit: int) -> list[JobHistoryEvent]:
+        resolved = _as_uuid(run_id)
+        if resolved is None:
+            return []
         with self._session_factory() as session:
             rows = session.scalars(
                 select(JobHistoryEventOrm)
-                .where(JobHistoryEventOrm.run_id == uuid_mod.UUID(run_id))
+                .where(JobHistoryEventOrm.run_id == resolved)
                 .order_by(JobHistoryEventOrm.occurred_at.desc())
                 .limit(limit)
             ).all()
@@ -108,7 +123,9 @@ class JobHistoryRepository(SqlRepository):
             return [self._summary(r, counts.get(r.id, {})) for r in runs]
 
     def get_run(self, run_id: str) -> IngestionRunSummary | None:
-        resolved = uuid_mod.UUID(run_id)
+        resolved = _as_uuid(run_id)
+        if resolved is None:
+            return None
         with self._session_factory() as session:
             row = session.get(IngestionRunOrm, resolved)
             if row is None:
@@ -120,6 +137,30 @@ class JobHistoryRepository(SqlRepository):
         with self._session_factory() as session:
             result = session.execute(
                 delete(JobHistoryEventOrm).where(JobHistoryEventOrm.occurred_at < cutoff)
+            )
+            session.commit()
+            return int(result.rowcount or 0)
+
+    def prune_runs_without_events(self, cutoff: datetime) -> int:
+        """Delete runs started before cutoff that own no events any more.
+
+        The NOT EXISTS clause is load-bearing, not an optimisation: run_id is
+        ON DELETE SET NULL, so deleting a run that still owns events would
+        rewrite those events to run_id=NULL and make orchestrator closures
+        indistinguishable from URL-probe sweep closures. Callers must also run
+        this only after prune_events_older_than.
+        """
+        with self._session_factory() as session:
+            still_referenced = (
+                select(JobHistoryEventOrm.id)
+                .where(JobHistoryEventOrm.run_id == IngestionRunOrm.id)
+                .exists()
+            )
+            result = session.execute(
+                delete(IngestionRunOrm).where(
+                    IngestionRunOrm.started_at < cutoff,
+                    ~still_referenced,
+                )
             )
             session.commit()
             return int(result.rowcount or 0)

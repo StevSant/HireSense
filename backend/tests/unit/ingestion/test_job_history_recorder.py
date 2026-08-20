@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
 from hiresense.ingestion.domain import (
     JobClosureReason,
@@ -20,6 +21,7 @@ class FakeStore:
         self.finished: list[tuple[str, str]] = []
         self.batches: list[tuple[str | None, list]] = []
         self.pruned: list[datetime] = []
+        self.pruned_runs: list[datetime] = []
 
     def start_run(self, trigger, started_at):
         self.runs.append((trigger, started_at))
@@ -35,6 +37,10 @@ class FakeStore:
         self.pruned.append(cutoff)
         return 0
 
+    def prune_runs_without_events(self, cutoff):
+        self.pruned_runs.append(cutoff)
+        return 0
+
 
 class ExplodingStore(FakeStore):
     def start_run(self, trigger, started_at):
@@ -42,6 +48,15 @@ class ExplodingStore(FakeStore):
 
     def insert_events(self, run_id, events):
         raise RuntimeError("db down")
+
+
+class _Boom:
+    """Stands in for a job whose id cannot be read — the failure the recorder
+    must absorb before it ever reaches the store."""
+
+    @property
+    def id(self) -> str:
+        raise RuntimeError("job id unavailable")
 
 
 def _job(job_id: str) -> NormalizedJob:
@@ -149,3 +164,55 @@ def test_finish_run_with_no_run_id_is_a_no_op():
     store = FakeStore()
     _recorder(store).finish_run(None, "failed")
     assert store.finished == []
+
+
+def test_a_malformed_outcome_cannot_escape_record_outcomes():
+    """The guarantee is structural: event construction is inside the try too."""
+    store = FakeStore()
+    exploding = SimpleNamespace(result=UpsertResult.INSERTED, job=_Boom(), changed_fields={})
+
+    _recorder(store).record_outcomes("run-1", [exploding])
+
+    assert store.batches == []
+
+
+def test_an_unmapped_upsert_result_cannot_escape_record_outcomes():
+    """A future UpsertResult member must not fail the ingestion pass."""
+    store = FakeStore()
+    unmapped = SimpleNamespace(result="a-future-result", job=_job("a"), changed_fields={})
+
+    _recorder(store).record_outcomes("run-1", [unmapped])
+
+    assert store.batches == []
+
+
+def test_a_failing_clock_cannot_escape_record_closures():
+    store = FakeStore()
+
+    def boom() -> datetime:
+        raise RuntimeError("clock down")
+
+    JobHistoryRecorder(store=store, clock=boom).record_closures(["a"], JobClosureReason.EXPIRY)
+
+    assert store.batches == []
+
+
+def test_prune_removes_events_then_the_runs_they_left_behind():
+    store = FakeStore()
+    _recorder(store).prune(NOW)
+
+    assert store.pruned == [NOW]
+    assert store.pruned_runs == [NOW]
+
+
+def test_runs_are_not_pruned_when_event_pruning_failed():
+    """Deleting a run whose events survive would null out their run_id."""
+
+    class EventPruneFails(FakeStore):
+        def prune_events_older_than(self, cutoff):
+            raise RuntimeError("db down")
+
+    store = EventPruneFails()
+    _recorder(store).prune(NOW)
+
+    assert store.pruned_runs == []

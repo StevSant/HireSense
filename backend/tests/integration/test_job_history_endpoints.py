@@ -15,10 +15,15 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 from hiresense.identity.api.dependencies import require_auth
 from hiresense.ingestion.api import router
 from hiresense.ingestion.api.dependencies import get_job_history
 from hiresense.ingestion.domain import IngestionRunSummary, JobHistoryEvent, JobHistoryEventType
+from hiresense.ingestion.infrastructure import JobHistoryRepository
+from hiresense.shared.infrastructure.database import Base
 
 
 def _event(job_id: str, event: JobHistoryEventType, occurred_at: datetime) -> JobHistoryEvent:
@@ -63,6 +68,23 @@ class _FakeJobHistoryPort:
             if run.id == run_id:
                 return run
         return None
+
+
+class _RealParsingJobHistoryPort(_FakeJobHistoryPort):
+    """Delegates run lookups to the real repository, so the route is exercised
+    against the same id parsing production uses."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        engine = create_engine("sqlite://")
+        Base.metadata.create_all(engine)
+        self._repo = JobHistoryRepository(session_factory=sessionmaker(bind=engine))
+
+    def list_events_for_run(self, run_id: str, limit: int) -> list[JobHistoryEvent]:
+        return self._repo.list_events_for_run(run_id, limit)
+
+    def get_run(self, run_id: str) -> IngestionRunSummary | None:
+        return self._repo.get_run(run_id)
 
 
 def _build_app(history: object | None) -> FastAPI:
@@ -162,6 +184,17 @@ async def test_run_detail_for_an_unknown_id_returns_404() -> None:
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/ingestion/runs/unknown-run")
+
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_run_detail_for_a_malformed_id_returns_404_not_500() -> None:
+    """A stale bookmark is a client mistake, not a server error."""
+    app = _build_app(_RealParsingJobHistoryPort())
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.get("/ingestion/runs/not-a-uuid")
 
     assert resp.status_code == 404
 

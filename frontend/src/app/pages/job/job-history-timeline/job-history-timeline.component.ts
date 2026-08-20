@@ -32,8 +32,9 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 // Human-readable labels for the tracked fields that can appear in
-// `changed_fields`. Anything not listed here (there shouldn't be anything)
-// falls back to the raw key.
+// `changed_fields`. A field the backend adds later without a matching
+// frontend release falls back to a neutral label rather than leaking the
+// raw snake_case key.
 const FIELD_LABELS: Record<string, string> = {
   title: 'Title',
   company: 'Company',
@@ -42,6 +43,9 @@ const FIELD_LABELS: Record<string, string> = {
   employment_type: 'Employment type',
   description: 'Description',
 };
+const UNKNOWN_FIELD_LABEL = 'Field';
+const UNKNOWN_EVENT_LABEL = 'Event';
+const UNKNOWN_REASON_LABEL = 'reason not recorded';
 
 @Component({
   selector: 'app-job-history-timeline',
@@ -84,12 +88,12 @@ export class JobHistoryTimelineComponent implements OnInit {
   }
 
   label(event: JobHistoryEvent): string {
-    return EVENT_LABELS[event.event];
+    return EVENT_LABELS[event.event] ?? UNKNOWN_EVENT_LABEL;
   }
 
   reasonLabel(reason: string | null): string | null {
     if (!reason) return null;
-    return REASON_LABELS[reason] ?? reason;
+    return REASON_LABELS[reason] ?? UNKNOWN_REASON_LABEL;
   }
 
   changes(event: JobHistoryEvent): string[] {
@@ -99,7 +103,7 @@ export class JobHistoryTimelineComponent implements OnInit {
   }
 
   private describeChange(field: string, value: ChangedValue): string {
-    const label = FIELD_LABELS[field] ?? field;
+    const label = FIELD_LABELS[field] ?? UNKNOWN_FIELD_LABEL;
     if ('changed' in value) {
       return `${label} updated`;
     }

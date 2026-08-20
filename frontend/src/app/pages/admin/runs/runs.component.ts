@@ -56,7 +56,9 @@ export class RunsComponent implements OnInit {
   readonly expandedRunId = signal<string | null>(null);
   readonly eventsByRunId = signal<Record<string, JobHistoryEvent[]>>({});
   readonly eventsLoading = signal<string | null>(null);
-  readonly eventsError = signal<string | null>(null);
+  // Scoped by run id, like eventsLoading — a stale error for one run must
+  // never bleed into another run's already-cached (successfully loaded) row.
+  readonly eventsErrorByRunId = signal<Record<string, string>>({});
 
   ngOnInit(): void {
     this.load();
@@ -89,7 +91,11 @@ export class RunsComponent implements OnInit {
     if (this.eventsByRunId()[runId]) return;
 
     this.eventsLoading.set(runId);
-    this.eventsError.set(null);
+    this.eventsErrorByRunId.update((byId) => {
+      const next = { ...byId };
+      delete next[runId];
+      return next;
+    });
     this.ingestion
       .getRun(runId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -99,7 +105,10 @@ export class RunsComponent implements OnInit {
           this.eventsLoading.set(null);
         },
         error: () => {
-          this.eventsError.set('Failed to load run events.');
+          this.eventsErrorByRunId.update((byId) => ({
+            ...byId,
+            [runId]: 'Failed to load run events.',
+          }));
           this.eventsLoading.set(null);
         },
       });

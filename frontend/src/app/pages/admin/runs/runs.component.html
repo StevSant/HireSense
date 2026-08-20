@@ -52,8 +52,8 @@
                 <td [attr.colspan]="9">
                   @if (eventsLoading() === run.id) {
                     <p class="runs-state">Loading events…</p>
-                  } @else if (eventsError()) {
-                    <p class="runs-state runs-error">{{ eventsError() }}</p>
+                  } @else if (eventsErrorByRunId()[run.id]) {
+                    <p class="runs-state runs-error">{{ eventsErrorByRunId()[run.id] }}</p>
                   } @else if (eventsByRunId()[run.id]?.length === 0) {
                     <p class="runs-state">No events recorded for this run.</p>
                   } @else {

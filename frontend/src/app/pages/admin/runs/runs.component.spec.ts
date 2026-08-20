@@ -200,4 +200,89 @@ describe('RunsComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Failed to load');
   });
+
+  it('does not leak one run failed-event-fetch error onto another run already loaded from cache', () => {
+    const fixture = TestBed.createComponent(RunsComponent);
+    fixture.detectChanges();
+    flushRuns(fixture, [
+      {
+        id: 'run-a',
+        started_at: '2026-08-19T10:00:00Z',
+        finished_at: '2026-08-19T10:01:00Z',
+        trigger: 'fetch',
+        status: 'completed',
+        inserted: 0,
+        updated: 0,
+        reopened: 0,
+        closed: 0,
+      },
+      {
+        id: 'run-c',
+        started_at: '2026-08-19T11:00:00Z',
+        finished_at: '2026-08-19T11:01:00Z',
+        trigger: 'fetch',
+        status: 'completed',
+        inserted: 0,
+        updated: 0,
+        reopened: 0,
+        closed: 0,
+      },
+    ]);
+
+    const rows = fixture.nativeElement.querySelectorAll('tbody tr.run-row');
+    const toggleA = rows[0].querySelector('button.expand-toggle');
+    const toggleC = rows[1].querySelector('button.expand-toggle');
+
+    // Expand run A, whose detail fetch fails.
+    toggleA.click();
+    fixture.detectChanges();
+    httpMock
+      .expectOne((r) => r.url === '/api/ingestion/runs/run-a')
+      .flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Failed to load run events');
+
+    // Collapse A.
+    toggleA.click();
+    fixture.detectChanges();
+
+    // Expand run C for the first time — it fetches successfully.
+    toggleC.click();
+    fixture.detectChanges();
+    httpMock
+      .expectOne((r) => r.url === '/api/ingestion/runs/run-c')
+      .flush({
+        run: {
+          id: 'run-c',
+          started_at: '2026-08-19T11:00:00Z',
+          finished_at: '2026-08-19T11:01:00Z',
+          trigger: 'fetch',
+          status: 'completed',
+          inserted: 0,
+          updated: 0,
+          reopened: 0,
+          closed: 0,
+        },
+        events: [
+          {
+            job_id: 'job-c',
+            event: 'inserted',
+            changed_fields: {},
+            reason: null,
+            occurred_at: '2026-08-19T11:00:30Z',
+          },
+        ],
+      });
+    fixture.detectChanges();
+
+    // Collapse C, then re-expand it — this is a cache hit, no new request.
+    toggleC.click();
+    fixture.detectChanges();
+    toggleC.click();
+    fixture.detectChanges();
+
+    const expandedRow = fixture.nativeElement.querySelector('tr.run-events-row');
+    expect(expandedRow.textContent).toContain('job-c');
+    expect(expandedRow.textContent).not.toContain('Failed to load');
+  });
 });

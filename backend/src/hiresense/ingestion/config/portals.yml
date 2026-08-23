@@ -86,6 +86,11 @@ portals:
     board_id: nubank
     categories: [latam, fintech]
 
+  - name: CodeRoad
+    platform: greenhouse
+    board_id: coderoad
+    categories: [latam, software-services, backend, ai]
+
   - name: Kavak
     platform: lever
     board_id: kavak

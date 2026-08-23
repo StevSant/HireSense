@@ -110,3 +110,20 @@ def test_filter_by_company() -> None:
     filtered = [p for p in config.portals if p.name in ["Anthropic"]]
     assert len(filtered) == 1
     assert filtered[0].board_id == "anthropic"
+
+
+def test_shipped_portals_include_coderoad_greenhouse_board() -> None:
+    config_path = (
+        Path(__file__).parents[3]
+        / "src"
+        / "hiresense"
+        / "ingestion"
+        / "config"
+        / "portals.yml"
+    )
+    config = load_portals_config(config_path)
+
+    coderoad = next(portal for portal in config.portals if portal.name == "CodeRoad")
+    assert coderoad.platform == "greenhouse"
+    assert coderoad.board_id == "coderoad"
+    assert coderoad.enabled is True

@@ -33,9 +33,9 @@ Company portals live in `ingestion/config/portals.yml` and are scanned with
 - `render`: `http` or `browser`
 - `selectors`: optional CSS selectors like `job_links`, `title`, `location`, `description`, plus `href_regex`, `skip_detail`, `max_jobs`
 
-Examples of companies seeded with this pattern: Encora (Greenhouse), Globant
-(SAP job-requisition API), Thoughtworks (careers JSON API), Cognizant (HTTP
-listing scraper with `/jobs/{id}` href filter).
+Examples of companies seeded with this pattern: CodeRoad and Encora (Greenhouse),
+Globant (SAP job-requisition API), Thoughtworks (careers JSON API), Cognizant
+(HTTP listing scraper with `/jobs/{id}` href filter).
 
 ## Opportunities
 

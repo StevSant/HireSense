@@ -1,4 +1,12 @@
 <div class="apply-tab">
+  @if (isClosed() && !isApplied()) {
+    <div class="alert alert-error">
+      <strong>This posting is marked closed.</strong>
+      The employer may no longer accept applications. Do not submit this draft unless you already
+      applied before it closed.
+    </div>
+  }
+
   <!-- Step 1: cover letter -->
   <section class="step">
     <div class="step-header">
@@ -122,25 +130,37 @@
   <section class="step">
     <div class="step-header">
       <span class="step-num" [class.done]="isApplied()">3</span>
-      <h3>Submit on the job board</h3>
+      <h3>Submit on the employer’s site</h3>
     </div>
 
     <p class="hint">
-      Open the original job posting and upload the bundle. Only after the job board confirms your
-      submission, mark this application as <em>applied</em> so it shows up in your tracker.
+      Open the original job posting and upload the bundle yourself. After the employer site confirms
+      your submission, record it here so it shows up in your tracker.
     </p>
 
     <div class="submit-row">
       @if (aggregate().url) {
-        <button class="btn-secondary" (click)="openJob()">🚀 Open job posting</button>
+        <button class="btn-secondary" (click)="openJob()" [disabled]="isClosed()">
+          @if (isClosed()) {
+            Job posting closed
+          } @else {
+            🚀 Open job posting
+          }
+        </button>
       }
-      <button class="btn-primary" (click)="markApplied()" [disabled]="marking() || isApplied()">
+      <button
+        class="btn-primary"
+        (click)="markApplied()"
+        [disabled]="marking() || isApplied() || isClosed()"
+      >
         @if (marking()) {
           Marking...
         } @else if (isApplied()) {
           ✓ Applied
+        } @else if (isClosed()) {
+          Posting closed
         } @else {
-          Mark as applied
+          I submitted — mark as applied
         }
       </button>
 

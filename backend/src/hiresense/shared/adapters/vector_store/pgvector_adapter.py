@@ -7,7 +7,7 @@ from typing import Any
 from sqlalchemy import bindparam, text
 
 from hiresense.shared.observability import get_tracer
-from hiresense.shared.ports.vector_store import ScoredResult
+from hiresense.shared.ports.vector_store import ScoredResult, VectorUpsert
 
 # Default table name for the generic vector store. Kept off the ORM models so
 # the heavy `vector` column type never reaches the sqlite-backed unit tests;
@@ -48,6 +48,12 @@ class PgVectorStore:
     async def upsert(self, id: str, embedding: list[float], metadata: dict[str, Any]) -> None:
         await asyncio.to_thread(self._upsert_sync, id, embedding, metadata)
 
+    async def upsert_many(self, items: list[VectorUpsert]) -> None:
+        """Upsert multiple vectors with one session, executemany, and commit."""
+        if not items:
+            return
+        await asyncio.to_thread(self._upsert_many_sync, items)
+
     def _upsert_sync(self, id: str, embedding: list[float], metadata: dict[str, Any]) -> None:
         stmt = text(
             f"INSERT INTO {self._table} (id, embedding, metadata) "
@@ -64,6 +70,25 @@ class PgVectorStore:
                     "metadata": json.dumps(metadata or {}),
                 },
             )
+            session.commit()
+
+    def _upsert_many_sync(self, items: list[VectorUpsert]) -> None:
+        stmt = text(
+            f"INSERT INTO {self._table} (id, embedding, metadata) "
+            "VALUES (:id, CAST(:embedding AS vector), CAST(:metadata AS jsonb)) "
+            "ON CONFLICT (id) DO UPDATE SET "
+            "embedding = EXCLUDED.embedding, metadata = EXCLUDED.metadata"
+        )
+        params = [
+            {
+                "id": id,
+                "embedding": _vector_literal(embedding),
+                "metadata": json.dumps(metadata or {}),
+            }
+            for id, embedding, metadata in items
+        ]
+        with self._session_factory() as session:
+            session.execute(stmt, params)
             session.commit()
 
     async def search(

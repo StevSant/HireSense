@@ -66,6 +66,7 @@ export const API_ROUTES = {
   },
   autopilot: {
     drafts: defineRoute('/autopilot/drafts'),
+    run: defineRoute('/autopilot/run'),
   },
   coverLetterTemplates: {
     root: defineRoute('/cover-letter-templates'),
@@ -93,7 +94,10 @@ export const API_ROUTES = {
     portals: defineRoute('/ingestion/portals'),
     sources: defineRoute('/ingestion/sources'),
     sourcesHealth: defineRoute('/ingestion/sources/health'),
-    scanPortals: defineRoute('/ingestion/scan-portals', 'llm'),
+    // Portal scans wait on multiple external ATS endpoints and can return
+    // partial results, but they do not call the LLM. Give them the same long
+    // network budget as a board fetch.
+    scanPortals: defineRoute('/ingestion/scan-portals', 'fetch'),
   },
   interview: {
     stories: defineRoute('/interview/stories'),

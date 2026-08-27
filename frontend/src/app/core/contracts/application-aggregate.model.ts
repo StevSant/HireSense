@@ -29,4 +29,6 @@ export interface ApplicationAggregate {
   optimization_count: number;
   interview_prep_count: number;
   cover_letter_count: number;
+  /** Live ingestion lifecycle for linked jobs; absent for manual applications. */
+  job_status?: 'open' | 'closed' | string | null;
 }

@@ -1,5 +1,17 @@
 import { JobVerdict } from '@core/contracts/job-verdict.model';
 
+export type OpportunityType =
+  | 'internship'
+  | 'entry_level'
+  | 'full_time'
+  | 'part_time'
+  | 'contract'
+  | 'temporary'
+  | 'other'
+  | 'unknown';
+
+export type InternationalPathway = 'international' | 'visa_sponsorship' | 'worldwide_remote';
+
 export interface SourceProvenance {
   source: string;
   url?: string | null;
@@ -34,7 +46,7 @@ export interface NormalizedJob {
   // A URL we're confident is a direct application form (set for ats_form).
   apply_url?: string | null;
   // Whether the candidate can actually reach the application form from this
-  // board. 'paid_required' = the board paywalls its apply hop (RemoteOK);
+  // board. 'paid_required' = the board paywalls its apply hop;
   // 'account_required' = a free account on the board is needed.
   apply_access?: 'direct' | 'account_required' | 'paid_required' | 'unknown';
   // One-sentence explanation shown when apply_access is not 'direct'.
@@ -52,5 +64,13 @@ export interface NormalizedJob {
   verdict: JobVerdict | null;
   reasons: string[];
   dealbreakers: string[];
+  // Derived from the normalized employment type and conservative seniority
+  // detection. Older API responses may omit these optional fields.
+  opportunity_type?: OpportunityType;
+  // Explicit routes stated or structurally indicated by the posting; an empty
+  // list means no international route was identified.
+  international_pathways?: InternationalPathway[];
+  requires_existing_work_authorization?: boolean | null;
+  visa_sponsorship_available?: boolean | null;
   status?: 'open' | 'closed';
 }

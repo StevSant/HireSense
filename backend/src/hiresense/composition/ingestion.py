@@ -27,7 +27,6 @@ from hiresense.ingestion.adapters import (
     LinkedInAdapter,
     MonsterAdapter,
     RecruiteeAdapter,
-    RemoteOKAdapter,
     RemotiveAdapter,
     SmartRecruitersAdapter,
     TheMuseAdapter,
@@ -71,7 +70,6 @@ from hiresense.ingestion.domain.normalizers import (
     LinkedInNormalizer,
     MonsterNormalizer,
     RecruiteeNormalizer,
-    RemoteOKNormalizer,
     RemotiveNormalizer,
     SmartRecruitersNormalizer,
     TheMuseNormalizer,
@@ -116,9 +114,6 @@ def build_ingestion(
         if source_name == "remotive":
             sources.append(RemotiveAdapter(http_client=http_client, base_url=s.remotive_api_url))
             normalizers["remotive"] = RemotiveNormalizer()
-        elif source_name == "remoteok":
-            sources.append(RemoteOKAdapter(http_client=http_client, base_url=s.remoteok_api_url))
-            normalizers["remoteok"] = RemoteOKNormalizer()
         elif source_name == "csv":
             sources.append(CSVImportAdapter(import_dir=s.csv_import_dir))
             normalizers["csv"] = CSVNormalizer()
@@ -429,6 +424,7 @@ def build_ingestion(
         closure_miss_threshold=s.job_closure_miss_threshold,
         history=job_history_recorder,
         history_retention_days=s.job_history_retention_days,
+        source_concurrency=s.ingestion_source_concurrency,
     )
 
     from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
@@ -475,6 +471,7 @@ def build_ingestion(
         portals_repo=portals_jobs_repo,
         embedding=infra.embedding,
         vector_store=infra.vector_store,
+        chunk_size=s.embedding_backfill_chunk_size,
     )
 
     provider = IngestionProvider(

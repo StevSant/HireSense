@@ -555,6 +555,7 @@ describe('IngestionStore source catalog', () => {
         of({
           sources: [
             makeSource('remotive'),
+            makeSource('jobicy'),
             makeSource('linkedin', { wired: false, requiresCredentials: true }),
             makeSource('workday', { wired: false, integration: 'import_fallback' }),
             makeSource('retired', { enabled: false, wired: false, requiresCredentials: true }),
@@ -575,6 +576,11 @@ describe('IngestionStore source catalog', () => {
     const warnings = store.sourceWarnings();
     expect(warnings.failing.map((h) => h.source)).toEqual(['remotive', 'jobicy']);
     expect(warnings.unavailable.map((s) => s.capabilities.source)).toEqual(['linkedin', 'workday']);
+
+    // Board adapter health must not be presented as a company-portal failure.
+    store.activeTab.set('portals');
+    expect(store.sourceWarnings().failing).toEqual([]);
+    expect(store.sourceWarnings().unavailable).toEqual([]);
   });
 
   it('leaves the board dropdown empty rather than guessing when the catalog fails', () => {
@@ -666,13 +672,16 @@ describe('IngestionStore portals and scanning', () => {
 
 describe('IngestionStore fetch', () => {
   it('reports the ingested count and refreshes without paying for a rescore', () => {
-    const { store, queryJobs } = setup({ fetchJobs: () => of({ count: 3, jobs: [] }) });
+    const { store, queryJobs } = setup({
+      fetchJobs: () => of({ count: 3, jobs: [makeJob({ id: 'job-new' })] }),
+    });
     store.init();
 
     store.fetchJobs();
 
     expect(store.fetching()).toBe(false);
     expect(store.fetchNotice()).toContain('3 new job(s)');
+    expect(store.isRecentlyFetched('job-new')).toBe(true);
     expect(queryJobs).toHaveBeenLastCalledWith(
       'boards',
       1,

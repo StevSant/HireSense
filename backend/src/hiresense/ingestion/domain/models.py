@@ -8,6 +8,10 @@ from pydantic import BaseModel, Field, computed_field
 
 from hiresense.ingestion.domain.application_method import ApplicationMethod
 from hiresense.ingestion.domain.apply_access import ApplyAccess
+from hiresense.ingestion.domain.opportunity import (
+    classify_opportunity_type,
+    international_pathways,
+)
 from hiresense.ingestion.domain.source_capabilities import (
     source_apply_access,
     source_apply_access_note,
@@ -83,6 +87,23 @@ class NormalizedJob(BaseModel):
     verdict: str | None = None
     reasons: list[str] = Field(default_factory=list)
     dealbreakers: list[str] = Field(default_factory=list)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def opportunity_type(self) -> str:
+        """Normalized role type used by the opportunity filter and UI."""
+        return classify_opportunity_type(self.employment_type, self.title, self.description).value
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def international_pathways(self) -> list[str]:
+        """Explicit routes that may make this posting useful internationally."""
+        return international_pathways(
+            visa_sponsorship_available=self.visa_sponsorship_available,
+            remote_modality=self.remote_modality,
+            countries=self.countries,
+            location=self.location,
+        )
 
     # Apply-access is a property of the *board*, not of the posting, so it is
     # resolved from the source capability registry at read time rather than

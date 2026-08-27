@@ -29,6 +29,9 @@ class LLMSettings(BaseSettings):
     # CPU inference; 64 measured better than the library default of 32 without
     # a meaningful memory cost at this model size.
     embedding_batch_size: int = 64
+    # Number of jobs materialized per embedding backfill chunk. This bounds
+    # memory use and limits the failure scope of a backfill pass.
+    embedding_backfill_chunk_size: int = 256
     # Cap torch's intra-op threads. Unbounded, encode saturates every core and
     # starves the event loop, so concurrent source fetches stop making progress
     # while a batch runs. 0 leaves torch's own default in place.

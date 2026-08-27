@@ -29,8 +29,10 @@
         }
       </div>
       <div class="header-actions">
-        @if (agg.url) {
+        @if (agg.url && agg.job_status !== 'closed') {
           <a [href]="agg.url" target="_blank" rel="noopener" class="btn-secondary">Open job ↗</a>
+        } @else if (agg.job_status === 'closed') {
+          <span class="closed-job-badge">Job posting closed</span>
         }
         <button
           type="button"
@@ -95,7 +97,11 @@
     <section class="tab-body">
       @switch (activeTab()) {
         @case ('job') {
-          <app-job-tab [aggregate]="agg" (changed)="reload()" />
+          <app-job-tab
+            [aggregate]="agg"
+            (changed)="reload()"
+            (detailsChanged)="updateDetails($event)"
+          />
         }
         @case ('match') {
           <app-match-tab [aggregate]="agg" (changed)="reload()" />

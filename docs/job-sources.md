@@ -11,7 +11,7 @@ portals from `portals.yml`. Capability metadata is available at
 | `dice` | Official MCP `search_jobs` | URL probe | Configure `DICE_QUERY`, remote/page limits |
 | `crunchboard` | Official `jobs.rss` | URL probe | Latest-window feed |
 | `yc_jobs` | Public Work at a Startup Inertia JSON | URL probe | Role list via `YC_JOBS_ROLES`; optional company enrich |
-| Existing boards | API / RSS / HTML | see capabilities | Remotive, RemoteOK, Jobicy, … |
+| Existing boards | API / RSS / HTML | see capabilities | Remotive, Jobicy, Himalayas, … |
 
 ## Company portals
 

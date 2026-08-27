@@ -11,7 +11,7 @@ from hiresense.shared.ports.llm import (
     MeteredLLMPort,
 )
 from hiresense.shared.ports.llm_not_configured_error import LLMNotConfiguredError
-from hiresense.shared.ports.vector_store import ScoredResult, VectorStorePort
+from hiresense.shared.ports.vector_store import ScoredResult, VectorStorePort, VectorUpsert
 
 __all__ = [
     "EmbeddingPort",
@@ -28,4 +28,5 @@ __all__ = [
     "MeteredLLMPort",
     "ScoredResult",
     "VectorStorePort",
+    "VectorUpsert",
 ]

@@ -10,7 +10,7 @@ class HostRateLimiter:
     """Paces outbound requests per target host instead of globally.
 
     A single global semaphore + per-request sleep throttles every host behind
-    one queue: probing getonbrd waits on a remoteok request that shares no
+    one queue: probing one source waits on a request to another source that shares no
     infrastructure with it. The politeness budget that motivates the throttle is
     per-host, so this keys it that way — each host gets its own minimum interval
     between requests and its own in-flight cap, and unrelated hosts proceed in

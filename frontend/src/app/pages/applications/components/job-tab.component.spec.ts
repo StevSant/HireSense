@@ -116,6 +116,30 @@ describe('JobTabComponent', () => {
     });
   });
 
+  it('keeps the save confirmation after details are updated', () => {
+    const { fixture, update } = mount();
+    const detailsChanged = vi.fn();
+    fixture.componentInstance.detailsChanged.subscribe(detailsChanged);
+
+    fixture.componentInstance.saveDetails();
+
+    expect(update).toHaveBeenCalled();
+    expect(detailsChanged).toHaveBeenCalledWith(expect.objectContaining({ id: 'app-1' }));
+    expect(fixture.componentInstance.detailsSaved()).toBe(true);
+  });
+
+  it('keeps the details confirmation when the parent merges the saved aggregate', () => {
+    const { fixture } = mount();
+    const component = fixture.componentInstance;
+
+    component.saveDetails();
+    fixture.componentRef.setInput('aggregate', makeAggregate({ title: 'Updated title' }));
+    fixture.detectChanges();
+
+    expect(component.title()).toBe('Updated title');
+    expect(component.detailsSaved()).toBe(true);
+  });
+
   it('shows bounded listing metadata inputs for a manual application', () => {
     const { fixture } = mount(makeAggregate({ job_id: null }));
     const element: HTMLElement = fixture.nativeElement;

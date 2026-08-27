@@ -1,5 +1,6 @@
 import asyncio
 import uuid
+from types import SimpleNamespace
 
 import pytest
 
@@ -59,6 +60,14 @@ class _Drafter:
         return uuid.uuid4(), DraftStatus.DRAFTED, None
 
 
+class _JobQuery:
+    def __init__(self, jobs):
+        self.jobs = jobs
+
+    def get_job_by_id(self, job_id):
+        return self.jobs.get(job_id)
+
+
 class _Notifier:
     def __init__(self):
         self.calls = []
@@ -96,6 +105,28 @@ async def test_skips_already_drafted():
     repo, drafter = _Repo(drafted={"a"}), _Drafter()
     result = await _svc([_Entry("a"), _Entry("b")], repo, drafter).run()
     assert drafter.calls == ["b"]
+    assert result.created == 1
+    assert result.skipped == 1
+
+
+@pytest.mark.asyncio
+async def test_skips_jobs_marked_closed_after_digest_creation():
+    repo, drafter = _Repo(), _Drafter()
+    job_query = _JobQuery(
+        {
+            "open": SimpleNamespace(status="open"),
+            "closed": SimpleNamespace(status="closed"),
+        }
+    )
+    result = await AutopilotPipelineService(
+        latest_digest=lambda: _Digest([_Entry("open"), _Entry("closed")]),
+        drafter=drafter,
+        repo=repo,
+        job_query=job_query,
+        top_n=3,
+    ).run()
+
+    assert drafter.calls == ["open"]
     assert result.created == 1
     assert result.skipped == 1
 

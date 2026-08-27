@@ -177,7 +177,9 @@ def get_application(
     job = (
         job_query.get_job_by_id(str(application.job_id)) if application.job_id is not None else None
     )
-    return application.model_copy(update=_effective_listing_metadata(application, job))
+    updates = _effective_listing_metadata(application, job)
+    updates["job_status"] = getattr(job, "status", None) if job is not None else None
+    return application.model_copy(update=updates)
 
 
 @router.delete("/{application_id}", status_code=204)

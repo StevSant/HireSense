@@ -25,12 +25,14 @@ class AutopilotPipelineService:
         drafter: ApplicationDrafter,
         repo: DraftRepository,
         top_n: int,
+        job_query: Any | None = None,
         concurrency: int = 3,
         notifier: Any | None = None,
     ) -> None:
         self._latest_digest = latest_digest
         self._drafter = drafter
         self._repo = repo
+        self._job_query = job_query
         self._top_n = top_n
         self._concurrency = concurrency
         self._notifier = notifier
@@ -84,6 +86,15 @@ class AutopilotPipelineService:
         to_draft: list[Any] = []
         skipped = 0
         for entry in entries:
+            if self._job_query is not None:
+                current_job = await asyncio.to_thread(
+                    self._job_query.get_job_by_id,
+                    entry.job_id,
+                )
+                if current_job is None or getattr(current_job, "status", "open") != "open":
+                    skipped += 1
+                    logger.info("autopilot: skipping closed or missing job %r", entry.job_id)
+                    continue
             if await asyncio.to_thread(self._repo.exists_for_job, entry.job_id):
                 skipped += 1
                 continue

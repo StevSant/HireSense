@@ -58,6 +58,7 @@ class PortalScanner:
         closure_miss_threshold: int = 2,
         history: JobHistoryRecorder | None = None,
         history_retention_days: int | None = None,
+        source_concurrency: int = 8,
     ) -> None:
         self._config = config
         self._adapters = adapters
@@ -71,6 +72,7 @@ class PortalScanner:
         # missing recorder degrades to "no history", never to an error.
         self._history = history
         self._history_retention_days = history_retention_days
+        self._source_concurrency = max(1, source_concurrency)
 
     def list_jobs(self, criteria: JobListCriteria | None = None) -> list[NormalizedJob]:
         """Full corpus, or — given criteria — only rows matching the cheap
@@ -111,6 +113,40 @@ class PortalScanner:
             portals = [p for p in portals if p.name in company_set]
 
         return portals
+
+    async def _fetch_portal(
+        self, portal: PortalEntry, semaphore: asyncio.Semaphore
+    ) -> tuple[PortalEntry, Any, Any, str, str, list[Any]] | ScanError | None:
+        """Fetch one portal while allowing other portal requests to proceed."""
+        adapter = self._adapters.get(portal.platform)
+        effective_platform = (
+            adapter.detect_platform(portal)
+            if adapter is not None and hasattr(adapter, "detect_platform")
+            else portal.platform
+        )
+        normalizer = self._normalizers.get(effective_platform)
+
+        if adapter is None:
+            logger.warning("No adapter for platform: %s", portal.platform)
+            return None
+        if normalizer is None:
+            logger.warning("No normalizer for platform: %s", effective_platform)
+            return None
+
+        source_type = adapter.source_type().value if hasattr(adapter, "source_type") else "api"
+        if portal.platform == "auto":
+            source_type = "scraper" if effective_platform == "scraper" else "api"
+
+        try:
+            async with semaphore:
+                if hasattr(adapter, "fetch_portal"):
+                    raw_jobs = await adapter.fetch_portal(portal)
+                else:
+                    raw_jobs = await adapter.fetch_jobs(portal.board_id, portal.name)
+        except Exception as exc:
+            return ScanError(portal=portal.name, platform=effective_platform, error=str(exc))
+
+        return portal, adapter, normalizer, effective_platform, source_type, raw_jobs
 
     async def _prune_expired(self) -> None:
         await self._prune_jobs()
@@ -178,43 +214,20 @@ class PortalScanner:
         errors: list[ScanError] = []
         total_fetched = 0
 
-        for portal in portals:
-            adapter = self._adapters.get(portal.platform)
-            effective_platform = (
-                adapter.detect_platform(portal)
-                if adapter is not None and hasattr(adapter, "detect_platform")
-                else portal.platform
-            )
-            normalizer = self._normalizers.get(effective_platform)
+        fetch_semaphore = asyncio.Semaphore(self._source_concurrency)
+        fetched_portals = await asyncio.gather(
+            *(self._fetch_portal(portal, fetch_semaphore) for portal in portals)
+        )
 
-            if adapter is None:
-                logger.warning("No adapter for platform: %s", portal.platform)
+        # Keep persistence serial and deterministic; only the external portal
+        # requests above run concurrently.
+        for fetched in fetched_portals:
+            if isinstance(fetched, ScanError):
+                errors.append(fetched)
                 continue
-            if normalizer is None:
-                logger.warning("No normalizer for platform: %s", portal.platform)
+            if fetched is None:
                 continue
-            source_type = (
-                adapter.source_type().value
-                if adapter is not None and hasattr(adapter, "source_type")
-                else "api"
-            )
-            if portal.platform == "auto":
-                source_type = "scraper" if effective_platform == "scraper" else "api"
-
-            try:
-                if hasattr(adapter, "fetch_portal"):
-                    raw_jobs = await adapter.fetch_portal(portal)
-                else:
-                    raw_jobs = await adapter.fetch_jobs(portal.board_id, portal.name)
-            except Exception as exc:
-                errors.append(
-                    ScanError(
-                        portal=portal.name,
-                        platform=effective_platform,
-                        error=str(exc),
-                    )
-                )
-                continue
+            portal, adapter, normalizer, effective_platform, source_type, raw_jobs = fetched
 
             normalized: list[NormalizedJob] = []
             for raw in raw_jobs:

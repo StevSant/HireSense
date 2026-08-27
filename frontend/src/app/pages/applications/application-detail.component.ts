@@ -7,6 +7,7 @@ import { CoverLetterRunnerService } from '../../core/services/cover-letter-runne
 import { CvOptimizationRunnerService } from '../../core/services/cv-optimization-runner.service';
 import { PortfolioService } from '../../core/services/portfolio.service';
 import { ApplicationAggregate } from '@core/contracts/application-aggregate.model';
+import { TrackedApplication } from '@core/contracts/tracked-application.model';
 import { PortfolioVisit } from '@core/contracts/portfolio-engagement.model';
 import { JobTabComponent } from './components/job-tab.component';
 import { MatchTabComponent } from './components/match-tab.component';
@@ -131,6 +132,10 @@ export class ApplicationDetailComponent implements OnInit {
   reload(): void {
     const agg = this.aggregate();
     if (agg) this.load(agg.id);
+  }
+
+  updateDetails(updated: TrackedApplication): void {
+    this.aggregate.update((current) => (current ? { ...current, ...updated } : current));
   }
 
   backToList(): void {

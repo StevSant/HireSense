@@ -27,6 +27,7 @@ from hiresense.ingestion.domain.job_filter import (
 from hiresense.ingestion.domain.job_history_event import JobHistoryEvent
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.models import NormalizedJob
+from hiresense.ingestion.domain.opportunity import InternationalPathway, OpportunityType
 from hiresense.ingestion.domain.portal_config import PortalEntry, PortalsConfig
 from hiresense.ingestion.domain.portal_scanner import PortalScanner, ScanFilters, ScanResult
 from hiresense.ingestion.domain.seniority import SeniorityLevel
@@ -230,6 +231,8 @@ async def list_jobs(
     rescore: bool = True,
     max_age_days: int | None = None,
     include_low_quality: bool = False,
+    opportunity_type: OpportunityType | None = None,
+    international_pathway: InternationalPathway | None = None,
 ) -> PaginatedResult:
     return await feed.list_jobs(
         tab=tab,
@@ -252,6 +255,8 @@ async def list_jobs(
         rescore=rescore,
         max_age_days=max_age_days,
         include_low_quality=include_low_quality,
+        opportunity_type=opportunity_type,
+        international_pathway=international_pathway,
     )
 
 

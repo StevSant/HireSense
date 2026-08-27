@@ -16,10 +16,7 @@ class ApplyAccess(str, enum.Enum):
     ACCOUNT_REQUIRED — applying needs a free account on the board
                        (We Work Remotely, Himalayas, Get on Board, LinkedIn,
                        Work at a Startup).
-    PAID_REQUIRED    — the apply hop is behind a paid subscription. RemoteOK
-                       routes every Apply button through /l/<id>, which serves
-                       its $14.95/mo premium interstitial and never exposes the
-                       employer URL.
+    PAID_REQUIRED    — the apply hop is behind a paid subscription.
     UNKNOWN          — not audited, or the board's behaviour varies per posting.
     """
 

@@ -251,4 +251,10 @@ def _parse_hn_comment(html: str) -> dict[str, str | None]:
         _classify_extra(extra, result)
 
     result["description"] = "\n".join(lines[1:]).strip()
+    # HN employers often advertise several openings in the body and use the
+    # header only for company, location, work mode, and salary. Keep those
+    # legitimate company posts instead of making ingestion call them
+    # malformed; the detail page still contains the complete role list.
+    if not result["title"]:
+        result["title"] = "Multiple roles"
     return result

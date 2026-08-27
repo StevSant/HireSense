@@ -20,6 +20,7 @@ def build_autopilot(
     *,
     applications_provider: Any,
     latest_digest: Callable[[], Any],
+    job_query: Any | None = None,
     notification_service: Any = None,
 ) -> AutopilotBuild | None:
     s = infra.settings
@@ -36,6 +37,7 @@ def build_autopilot(
         latest_digest=latest_digest,
         drafter=drafter,
         repo=repo,
+        job_query=job_query,
         top_n=s.autopilot_pipeline_top_n,
         concurrency=s.autopilot_draft_concurrency,
         notifier=notification_service,

@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, input, output } from '@angular/core';
 import { JobFilters } from '@core/contracts/job-filters.model';
+import { InternationalPathway, OpportunityType } from '@core/contracts/normalized-job.model';
 import { SeniorityLevel } from '@core/contracts/seniority-level.model';
 import { detectUserLocation } from '../../../../core/utils/detect-user-location';
 import { ComboboxComponent, ComboboxOption } from '../../../../core/components/combobox';
@@ -125,6 +126,16 @@ export class JobFiltersComponent implements OnInit {
     if (Number.isFinite(parsed) && parsed >= 0) {
       this.emitFilters({ max_years_experience: parsed });
     }
+  }
+
+  onOpportunityTypeChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value as OpportunityType | '';
+    this.emitFilters({ opportunity_type: value || undefined });
+  }
+
+  onInternationalPathwayChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value as InternationalPathway | '';
+    this.emitFilters({ international_pathway: value || undefined });
   }
 
   isSenioritySelected(level: SeniorityLevel): boolean {

@@ -79,6 +79,20 @@
       }
     }
 
+    .event-job {
+      color: var(--accent-text, var(--accent));
+      font-weight: 600;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    .event-context {
+      color: var(--text-secondary, #666);
+    }
+
     time {
       color: var(--text-muted, #666);
       font-size: 0.85rem;

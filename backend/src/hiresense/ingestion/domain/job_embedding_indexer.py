@@ -67,12 +67,13 @@ class JobEmbeddingIndexer:
         jobs = stale
         indexed = 0
         empty = 0
+        pending: list[tuple[str, list[float], dict[str, Any]]] = []
         for job, vec in zip(jobs, vectors):
             if not vec:
                 empty += 1
                 continue
-            try:
-                await self._vector_store.upsert(
+            pending.append(
+                (
                     job.id,
                     vec,
                     {
@@ -81,12 +82,9 @@ class JobEmbeddingIndexer:
                         "text_hash": hashes[job.id],
                     },
                 )
-                indexed += 1
-            except Exception:
-                logger.exception("Vector upsert failed for job %s", job.id)
-                get_domain_metrics().automation_failures_total.add(
-                    1, {"component": "job_embedding_upsert"}
-                )
+            )
+
+        indexed = await self._upsert_pending(pending)
         if empty:
             # The embedding port handed back blanks. Silently skipping them left
             # no trace at all, so a degraded model looked like a clean run.
@@ -96,6 +94,38 @@ class JobEmbeddingIndexer:
                 empty,
                 len(jobs),
             )
+        return indexed
+
+    async def _upsert_pending(
+        self, items: list[tuple[str, list[float], dict[str, Any]]]
+    ) -> int:
+        if not items:
+            return 0
+
+        bulk_upsert = getattr(self._vector_store, "upsert_many", None)
+        if callable(bulk_upsert):
+            try:
+                await bulk_upsert(items)
+                return len(items)
+            except Exception:
+                # Keep the old per-vector recovery path for a partial adapter or
+                # a transient bulk failure. A single bad row should not hide all
+                # other embeddings from semantic search.
+                logger.exception(
+                    "Bulk vector upsert failed (size=%d); retrying individually",
+                    len(items),
+                )
+
+        indexed = 0
+        for job_id, vector, metadata in items:
+            try:
+                await self._vector_store.upsert(job_id, vector, metadata)
+                indexed += 1
+            except Exception:
+                logger.exception("Vector upsert failed for job %s", job_id)
+                get_domain_metrics().automation_failures_total.add(
+                    1, {"component": "job_embedding_upsert"}
+                )
         return indexed
 
     async def _select_stale(

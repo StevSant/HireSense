@@ -9,7 +9,6 @@ class IngestionSettings(BaseSettings):
     ingestion_schedule: str = "0 */6 * * *"
     enabled_job_sources: list[str] = [
         "remotive",
-        "remoteok",
         "jobicy",
         "himalayas",
         "hn_hiring",
@@ -35,11 +34,9 @@ class IngestionSettings(BaseSettings):
 
     # Ingestion job-listing default minimum match score (0.0–1.0). Jobs with
     # match_score below this value are hidden from the listing. Override per
-    # request with the ?min_score= query param. Default 0.0 (show all) — the
-    # match column + sort=match_desc are the primary triage path. Bumping
-    # this re-introduces the tag-dilution failure mode for verbose-tag
-    # sources like getonboard; only raise if scoring is also fixed.
-    ingestion_min_match_score: float = 0.0
+    # request with the ?min_score= query param. Keep persistence independent:
+    # match scores are profile-dependent and must not be used to delete jobs.
+    ingestion_min_match_score: float = Field(default=0.4, ge=0.0, le=1.0)
 
     # Hard cap on the ?page_size accepted by job-listing endpoints. Values
     # above this are clamped server-side to bound per-request memory and

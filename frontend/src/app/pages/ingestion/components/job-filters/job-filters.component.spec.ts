@@ -176,6 +176,22 @@ describe('JobFiltersComponent', () => {
     expect(emitted[1].max_years_experience).toBeUndefined();
   });
 
+  it('emits the opportunity and international pathway filters', () => {
+    const fixture = mount();
+    const emitted: JobFilters[] = [];
+    fixture.componentInstance.filtersChange.subscribe((f) => emitted.push(f));
+
+    fixture.componentInstance.onOpportunityTypeChange({
+      target: { value: 'internship' },
+    } as unknown as Event);
+    fixture.componentInstance.onInternationalPathwayChange({
+      target: { value: 'visa_sponsorship' },
+    } as unknown as Event);
+
+    expect(emitted[0].opportunity_type).toBe('internship');
+    expect(emitted[1].international_pathway).toBe('visa_sponsorship');
+  });
+
   it('clearAll resets filters but preserves stored location preferences', () => {
     localStorage.setItem('hiresense.user_location', 'Chile');
     localStorage.setItem('hiresense.strict_location_match', 'true');

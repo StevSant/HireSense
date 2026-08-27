@@ -66,7 +66,19 @@
                           <span class="event-label event-label--{{ event.event }}">{{
                             eventLabel(event)
                           }}</span>
-                          <span class="event-job">{{ event.job_id }}</span>
+                          <a
+                            class="event-job"
+                            [href]="'/dashboard/job/' + event.job_id"
+                            >{{ event.job_title || event.job_id }}</a
+                          >
+                          @if (event.job_company || event.job_source) {
+                            <span class="event-context">
+                              {{ event.job_company || 'Unknown company' }}
+                              @if (event.job_source) {
+                                <span aria-hidden="true">·</span> {{ event.job_source }}
+                              }
+                            </span>
+                          }
                           <time>{{ event.occurred_at | date: 'medium' }}</time>
                         </li>
                       }

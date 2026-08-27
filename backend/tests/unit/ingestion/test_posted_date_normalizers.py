@@ -1,4 +1,4 @@
-"""Regression: previously Remotive/RemoteOK/LinkedIn didn't surface posted_date,
+"""Regression: previously Remotive/LinkedIn didn't surface posted_date,
 so the ingestion table showed '—' for every job.
 """
 
@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from hiresense.ingestion.domain.models import RawJobListing
-from hiresense.ingestion.domain.normalizer import RemoteOKNormalizer, RemotiveNormalizer
+from hiresense.ingestion.domain.normalizer import RemotiveNormalizer
 from hiresense.ingestion.domain.normalizers.linkedin_normalizer import LinkedInNormalizer
 
 
@@ -24,18 +24,6 @@ def test_remotive_parses_publication_date() -> None:
 def test_remotive_handles_missing_publication_date() -> None:
     raw = _raw({"title": "x"})
     result = RemotiveNormalizer().normalize(raw)
-    assert result["posted_date"] is None
-
-
-def test_remoteok_parses_date_field() -> None:
-    raw = _raw({"position": "x", "date": "2026-03-27T10:00:00"})
-    result = RemoteOKNormalizer().normalize(raw)
-    assert result["posted_date"] == datetime(2026, 3, 27, 10, 0, tzinfo=timezone.utc)
-
-
-def test_remoteok_handles_missing_date() -> None:
-    raw = _raw({"position": "x"})
-    result = RemoteOKNormalizer().normalize(raw)
     assert result["posted_date"] is None
 
 

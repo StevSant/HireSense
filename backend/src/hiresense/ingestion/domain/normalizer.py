@@ -27,25 +27,6 @@ class RemotiveNormalizer:
         }
 
 
-class RemoteOKNormalizer:
-    def normalize(self, raw: RawJobListing) -> dict[str, Any]:
-        d = raw.raw_data
-        salary_min = d.get("salary_min")
-        salary_max = d.get("salary_max")
-        salary_range = f"${salary_min}-${salary_max}" if salary_min and salary_max else None
-        return {
-            "title": d.get("position", ""),
-            "company": d.get("company", ""),
-            "description": strip_html(d.get("description", "")),
-            "skills": d.get("tags", []),
-            "location": d.get("location", "Worldwide"),
-            "salary_range": salary_range,
-            "url": d.get("url", ""),
-            "language": "en",
-            "posted_date": parse_iso_date(d.get("date")),
-        }
-
-
 class CSVNormalizer:
     def normalize(self, raw: RawJobListing) -> dict[str, Any]:
         d = raw.raw_data

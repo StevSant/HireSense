@@ -1,4 +1,5 @@
 import { SeniorityLevel } from '@core/contracts/seniority-level.model';
+import { InternationalPathway, OpportunityType } from '@core/contracts/normalized-job.model';
 
 export interface JobFilters {
   source?: string;
@@ -26,4 +27,6 @@ export interface JobFilters {
     | 'date_desc'; // retained alias for backward compatibility
   seniority?: SeniorityLevel[];
   max_years_experience?: number;
+  opportunity_type?: OpportunityType;
+  international_pathway?: InternationalPathway;
 }

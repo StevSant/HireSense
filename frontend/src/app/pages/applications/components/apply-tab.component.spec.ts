@@ -115,6 +115,13 @@ describe('ApplyTabComponent', () => {
     expect(fixture.componentInstance.isApplied()).toBe(true);
   });
 
+  it('recognizes a linked posting that ingestion marked closed', () => {
+    const { fixture } = mount(makeAggregate({ job_status: 'closed' }));
+
+    expect(fixture.componentInstance.isClosed()).toBe(true);
+    expect(fixture.componentInstance.isApplied()).toBe(false);
+  });
+
   it('downloads the tailored CV when an optimization exists', () => {
     const downloadCvPdf = vi.fn(() => of(new Blob(['cv'])));
     const downloadOriginalCvPdf = vi.fn(() => of(new Blob(['cv'])));

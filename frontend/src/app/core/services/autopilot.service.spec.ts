@@ -34,4 +34,14 @@ describe('AutopilotService', () => {
     ]);
     expect((result as unknown[]).length).toBe(1);
   });
+
+  it('starts a preparation run', () => {
+    let result: unknown;
+    service.run().subscribe((r) => (result = r));
+    const req = httpMock.expectOne('/api/autopilot/run');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({});
+    req.flush({ status: 'started' });
+    expect(result).toEqual({ status: 'started' });
+  });
 });

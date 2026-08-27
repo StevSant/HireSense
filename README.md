@@ -72,7 +72,7 @@ with skill overlap and tiered LLM scoring — then helps you act on the results,
 
 ## ✨ Features
 
-- **Multi-source ingestion** — job boards (Remotive, RemoteOK, Jobicy, Himalayas,
+- **Multi-source ingestion** — job boards (Remotive, Jobicy, Himalayas,
   WeWorkRemotely, GetOnBoard, LinkedIn, HN "Who is hiring?", Arbeitnow, The Muse,
   Dice, CrunchBoard, Y Combinator Jobs; plus optional Adzuna and import fallbacks
   for Indeed / Wellfound / Glassdoor / Monster) and company ATS portals

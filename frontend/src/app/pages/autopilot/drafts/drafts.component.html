@@ -1,18 +1,90 @@
-<section class="drafts">
-  <h1>Autopilot drafts</h1>
-  @if (drafts().length === 0) {
-    <p>No drafts yet.</p>
-  }
-  @for (d of drafts(); track d.id) {
-    <div class="draft">
-      <div class="meta">
-        <strong>{{ d.job_title || d.job_id }}</strong>
-        <small>{{ d.company }}</small>
+<div class="page drafts-page">
+  <header class="page-header">
+    <div>
+      <p class="drafts-eyebrow">Application workflow</p>
+      <h1>Autopilot drafts</h1>
+      <p class="page-subtitle">
+        Prepare applications from the latest Auto-Hunt matches. HireSense creates a deduplicated
+        application, CV, and cover letter for review; it never submits to an external site
+        automatically.
+      </p>
+    </div>
+    <div class="header-actions">
+      <button
+        class="btn-secondary"
+        type="button"
+        (click)="load()"
+        [disabled]="loading() || preparing()"
+      >
+        Refresh
+      </button>
+      <button class="btn-primary" type="button" (click)="prepare()" [disabled]="preparing()">
+        @if (preparing()) {
+          Preparing…
+        } @else {
+          Prepare batch
+        }
+      </button>
+    </div>
+  </header>
+
+  <section class="card drafts-card">
+    <div class="card-header">
+      <div>
+        <h2>Ready for review</h2>
+        <p class="card-subtitle">Review the prepared materials before submitting anywhere.</p>
       </div>
-      <span class="status status--{{ d.status }}">{{ d.status }}</span>
-      @if (d.application_id) {
-        <a [routerLink]="['/dashboard/applications', d.application_id]">Review</a>
+      @if (drafts().length > 0) {
+        <span class="badge"
+          >{{ drafts().length }} {{ drafts().length === 1 ? 'draft' : 'drafts' }}</span
+        >
       }
     </div>
-  }
-</section>
+
+    <div class="guardrail alert-info">
+      <strong>Human review required.</strong>
+      Submit each draft on the employer’s site, then mark the application as Applied in the
+      application detail page.
+    </div>
+
+    @if (notice()) {
+      <p class="notice alert-info" role="status">{{ notice() }}</p>
+    }
+    @if (error()) {
+      <p class="error alert-error" role="alert">{{ error() }}</p>
+    }
+    @if (loading()) {
+      <p class="loading-state">Loading drafts…</p>
+    } @else if (drafts().length === 0) {
+      <div class="empty-state">
+        <p class="empty-state-title">No drafts yet</p>
+        <p class="empty-state-hint">
+          Run Auto-Hunt first, then prepare a batch from its strongest matches.
+        </p>
+      </div>
+    } @else {
+      <div class="draft-list">
+        @for (d of drafts(); track d.id) {
+          <article class="draft-row">
+            <div class="draft-meta">
+              <strong class="draft-title">{{ d.job_title || d.job_id }}</strong>
+              <span class="draft-company">{{ d.company || 'Company not specified' }}</span>
+            </div>
+            <span class="status status--{{ d.status }}">{{ d.status }}</span>
+            @if (d.application_id) {
+              <a
+                class="link draft-action"
+                [routerLink]="['/dashboard/applications', d.application_id]"
+                [queryParams]="{ tab: 'apply' }"
+              >
+                Review &amp; submit
+              </a>
+            } @else {
+              <span class="draft-action muted">Preparing…</span>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+</div>

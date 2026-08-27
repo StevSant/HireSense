@@ -29,9 +29,10 @@ class BatchResult(BaseModel):
 
 
 class BatchEvaluationService:
-    def __init__(self, orchestrator: Any, concurrency: int = 3) -> None:
+    def __init__(self, orchestrator: Any, concurrency: int = 3, max_jobs: int = 100) -> None:
         self._orchestrator = orchestrator
         self._semaphore = asyncio.Semaphore(concurrency)
+        self.max_jobs = max(1, max_jobs)
 
     async def evaluate_batch(
         self, jobs: list[dict], profile: Any | None = None

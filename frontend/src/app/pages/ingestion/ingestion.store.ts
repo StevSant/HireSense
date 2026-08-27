@@ -65,6 +65,9 @@ export class IngestionStore {
   revalidateNotice = signal('');
   // Explains why the visible ranked page may look unchanged after a fetch.
   fetchNotice = signal('');
+  // New rows returned by the most recent manual fetch. Kept in the page store
+  // so the refreshed list can identify exactly which jobs that fetch added.
+  recentlyFetchedJobIds = signal<Set<string>>(new Set<string>());
   error = signal('');
 
   // LinkedIn connections map (job.id → count), populated from paginated response.
@@ -107,11 +110,28 @@ export class IngestionStore {
   sourceCatalog = signal<SourceInfo[]>([]);
   sourceHealth = signal<SourceHealth[]>([]);
   sourceWarnings = computed(() => {
+    // Board health and portal scan health are different concerns. The health
+    // endpoint tracks configured board adapters, so showing that list on the
+    // Company Portals tab makes an unrelated HN warning look like a portal
+    // failure (and was especially confusing while a portal scan was running).
+    const boardNames = new Set(
+      this.boardSources().length > 0
+        ? this.boardSources()
+        : this.sourceCatalog()
+            .filter((s) => !ATS_PORTAL_SOURCES.includes(s.capabilities.source))
+            .map((s) => s.capabilities.source),
+    );
+    const healthSources = this.activeTab() === 'boards' ? boardNames : new Set<string>();
     const failing = this.sourceHealth().filter(
-      (h) => h.status === 'failing' || h.status === 'degraded',
+      (h) =>
+        healthSources.has(h.source) &&
+        (h.status === 'failing' || h.status === 'degraded'),
     );
     const unavailable = this.sourceCatalog().filter(
       (s) =>
+        (this.activeTab() === 'boards'
+          ? !ATS_PORTAL_SOURCES.includes(s.capabilities.source)
+          : ATS_PORTAL_SOURCES.includes(s.capabilities.source)) &&
         s.enabled &&
         !s.wired &&
         (s.capabilities.requires_credentials || s.capabilities.integration === 'import_fallback'),
@@ -298,6 +318,7 @@ export class IngestionStore {
       .subscribe({
         next: (res) => {
           this.fetching.set(false);
+          this.recentlyFetchedJobIds.set(new Set(res.jobs.map((job) => job.id)));
           this.fetchNotice.set(
             `Fetch complete: ${res.count} new job(s) ingested. The saved list was refreshed; closed-listing checks continue in the background.`,
           );
@@ -416,7 +437,8 @@ export class IngestionStore {
       .subscribe({
         next: (res) => {
           this.scanSummary.set(
-            `Scan complete: ${res.total_fetched} fetched, ${res.new} new, ${res.duplicates} duplicates.`,
+            `Scan complete: ${res.total_fetched} fetched, ${res.new} new, ${res.duplicates} duplicates` +
+              (res.errors.length > 0 ? `, ${res.errors.length} portal(s) failed.` : '.'),
           );
           this.scanErrors.set(res.errors);
           this.scanning.set(false);
@@ -534,6 +556,10 @@ export class IngestionStore {
 
   isDimmed(jobId: string): boolean {
     return this.dimmedJobIds().has(jobId);
+  }
+
+  isRecentlyFetched(jobId: string): boolean {
+    return this.recentlyFetchedJobIds().has(jobId);
   }
 
   connectionsCount(jobId: string): number | undefined {

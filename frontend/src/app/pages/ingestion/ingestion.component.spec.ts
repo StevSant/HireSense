@@ -319,19 +319,6 @@ describe('IngestionComponent — apply-access marker', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  it('marks a paywalled listing so the list can be triaged without opening it', () => {
-    const el = renderWith({
-      source: 'remoteok',
-      apply_access: 'paid_required',
-      apply_access_note: 'RemoteOK routes Apply through its paid premium page.',
-    });
-
-    const marker = el.querySelector('.apply-wall');
-    expect(marker).toBeTruthy();
-    expect(marker!.classList.contains('apply-wall--paid')).toBe(true);
-    expect(marker!.getAttribute('title')).toContain('paid premium page');
-  });
-
   it('marks a free-account wall without the paid styling', () => {
     const marker = renderWith({
       source: 'weworkremotely',

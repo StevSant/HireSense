@@ -404,6 +404,7 @@ def test_get_prefers_live_ingested_metadata_with_field_fallback(
         salary_range="USD 2,000/mo",
         source="Live source",
         posted_date=None,
+        status="closed",
     )
 
     try:
@@ -416,6 +417,7 @@ def test_get_prefers_live_ingested_metadata_with_field_fallback(
     assert body["salary_range"] == "USD 2,000/mo"
     assert body["source"] == "Live source"
     assert body["posted_date"].startswith("2026-06-01")
+    assert body["job_status"] == "closed"
 
 
 def test_get_missing_returns_404(client: TestClient):

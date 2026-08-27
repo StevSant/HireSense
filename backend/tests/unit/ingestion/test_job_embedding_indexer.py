@@ -46,6 +46,16 @@ class _FakeVectorStore:
         self.deletes.append(list(ids))
 
 
+class _BulkVectorStore(_FakeVectorStore):
+    def __init__(self) -> None:
+        super().__init__()
+        self.bulk_upserts: list[list[tuple[str, list[float], dict]]] = []
+
+    async def upsert_many(self, items: list[tuple[str, list[float], dict]]) -> None:
+        self.bulk_upserts.append(list(items))
+        self.upserts.extend(items)
+
+
 @pytest.mark.asyncio
 async def test_index_upserts_each_job_with_bucket_metadata() -> None:
     embedding = _FakeEmbedding()
@@ -64,6 +74,18 @@ async def test_index_upserts_each_job_with_bucket_metadata() -> None:
         assert meta["bucket"] == "boards" and meta["source"] == "test"
         # Carries the embedded-text hash so a later pass can skip re-encoding.
         assert meta["text_hash"]
+
+
+@pytest.mark.asyncio
+async def test_index_uses_bulk_vector_upsert_when_available() -> None:
+    embedding = _FakeEmbedding()
+    store = _BulkVectorStore()
+    indexer = JobEmbeddingIndexer(embedding, store, bucket="boards")
+    jobs = [_make_job("A"), _make_job("B")]
+
+    assert await indexer.index(jobs) == 2
+    assert len(store.bulk_upserts) == 1
+    assert [item[0] for item in store.bulk_upserts[0]] == [jobs[0].id, jobs[1].id]
 
 
 @pytest.mark.asyncio

@@ -19,6 +19,7 @@ from hiresense.ingestion.domain.portal_scanner import PortalScanner
 from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
 from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
 from hiresense.ingestion.domain.job_scorer import combine_fit_score, score_job_against_skills
+from hiresense.ingestion.domain.opportunity import InternationalPathway, OpportunityType
 from hiresense.ingestion.domain.score_change_filter import changed_score_updates
 from hiresense.ingestion.domain.semantic_pre_ranker import SemanticPreRanker
 from hiresense.ingestion.domain.semantic_scoring_service import SemanticScoringService
@@ -175,6 +176,8 @@ class JobFeedService:
         rescore: bool = True,
         max_age_days: int | None = None,
         include_low_quality: bool = False,
+        opportunity_type: OpportunityType | None = None,
+        international_pathway: InternationalPathway | None = None,
     ) -> PaginatedResult:
         # Default min_score / max_age_days from settings when the client doesn't
         # specify them (pass 0 explicitly to disable either filter). Tests mount the
@@ -417,6 +420,8 @@ class JobFeedService:
             include_closed=include_closed,
             max_age_days=max_age_days,
             include_low_quality=include_low_quality,
+            opportunity_type=opportunity_type,
+            international_pathway=international_pathway,
         )
         result = filter_and_paginate(all_jobs, params)
 
@@ -487,6 +492,17 @@ class JobFeedService:
                 result.jobs = [_apply_quick(j, quick_results.get(j.id)) for j in result.jobs]
                 if effective_sort.startswith("match_"):
                     result.jobs = sort_jobs(result.jobs, effective_sort)
+
+        # Semantic and quick scoring can update a visible job after the first
+        # membership gate. Apply the same floor once more so a newly computed
+        # low score cannot leak into the response. A missing score remains
+        # visible because there is no profile-dependent value to compare.
+        if min_score is not None:
+            result.jobs = [
+                job
+                for job in result.jobs
+                if job.match_score is None or job.match_score >= min_score
+            ]
 
         # "You know someone here" badge data: one GROUP BY over the visible page's
         # companies. Contacts never enter prompts — this is a display-only count.

@@ -66,6 +66,17 @@ class _FakeVectorStore:
             self.store.pop(id_, None)
 
 
+class _BulkVectorStore(_FakeVectorStore):
+    def __init__(self) -> None:
+        super().__init__()
+        self.bulk_calls: list[list[tuple[str, list[float], dict]]] = []
+
+    async def upsert_many(self, items: list[tuple[str, list[float], dict]]) -> None:
+        self.bulk_calls.append(list(items))
+        for id_, vector, metadata in items:
+            self.store[id_] = (vector, metadata)
+
+
 class _FakeRepo:
     def __init__(self, jobs: list[NormalizedJob] = None) -> None:
         self._jobs = {j.id: j for j in (jobs or [])}
@@ -354,6 +365,26 @@ async def test_backfill_skips_closed_jobs() -> None:
     assert result.boards == 1
     assert "open-1" in store.store
     assert "closed-1" not in store.store
+
+
+@pytest.mark.asyncio
+async def test_backfill_chunks_embedding_and_bulk_upserts() -> None:
+    jobs = [_job(f"job-{i}") for i in range(5)]
+    embedding = _FakeEmbedding()
+    store = _BulkVectorStore()
+    svc = EmbeddingBackfillService(
+        boards_repo=_FakeRepo(jobs),
+        portals_repo=_FakeRepo([]),
+        embedding=embedding,
+        vector_store=store,
+        chunk_size=2,
+    )
+
+    result = await svc.run()
+
+    assert result.boards == 5
+    assert [len(call) for call in embedding.calls] == [2, 2, 1]
+    assert [len(call) for call in store.bulk_calls] == [2, 2, 1]
 
 
 # ---------------------------------------------------------------------------

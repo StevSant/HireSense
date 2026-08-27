@@ -32,4 +32,32 @@ describe('DraftsComponent', () => {
     ]);
     expect(fixture.componentInstance.drafts().length).toBe(1);
   });
+
+  it('starts preparation and refreshes the list', () => {
+    const fixture = TestBed.createComponent(DraftsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne('/api/autopilot/drafts?limit=20').flush([]);
+
+    fixture.componentInstance.prepare();
+    const run = httpMock.expectOne('/api/autopilot/run');
+    expect(run.request.method).toBe('POST');
+    run.flush({ status: 'started' });
+
+    const refresh = httpMock.expectOne('/api/autopilot/drafts?limit=20');
+    refresh.flush([
+      {
+        id: '2',
+        job_id: 'j2',
+        application_id: 'a2',
+        job_title: 'Platform Engineer',
+        company: 'Globex',
+        status: 'pending',
+        detail: null,
+      },
+    ]);
+
+    expect(fixture.componentInstance.preparing()).toBe(false);
+    expect(fixture.componentInstance.notice()).toContain('Preparation started');
+    expect(fixture.componentInstance.drafts().length).toBe(1);
+  });
 });

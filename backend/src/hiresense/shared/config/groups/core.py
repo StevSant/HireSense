@@ -137,6 +137,8 @@ class CoreSettings(BaseSettings):
 
     # Batch processing
     batch_concurrency: int = 3
+    # Hard cap on jobs evaluated by one expensive batch-matching request.
+    batch_evaluation_max_jobs: int = 100
 
     # Pagination (list endpoints: applications, cover letters, tracking)
     # Default page size when the client omits ?limit — generous so existing

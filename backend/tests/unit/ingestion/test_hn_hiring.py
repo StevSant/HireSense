@@ -64,6 +64,13 @@ SEEKING_FREELANCER_POST = _comment(
     "SEEKING FREELANCER | React, Node | Remote<p>Available 20h/week.</p>",
 )
 
+SEEKING_PROFILE_POST = _comment(
+    304,
+    "Location: Blacksburg, Virginia, USA | Remote: Yes | Technologies: Python, React"
+    "<p>Willing to relocate: Yes (Anywhere in the US)</p>"
+    "<p>Résumé: https://example.com/resume</p>",
+)
+
 
 # ---------------------------------------------------------------------------
 # Tests
@@ -92,6 +99,12 @@ async def test_seeking_work_posts_are_rejected() -> None:
 @pytest.mark.asyncio
 async def test_seeking_freelancer_posts_are_rejected() -> None:
     jobs = await _adapter([COMPANY_POST, SEEKING_FREELANCER_POST]).fetch_jobs()
+    assert [j.source_id for j in jobs] == ["101"]
+
+
+@pytest.mark.asyncio
+async def test_resume_style_seeker_posts_are_rejected() -> None:
+    jobs = await _adapter([COMPANY_POST, SEEKING_PROFILE_POST]).fetch_jobs()
     assert [j.source_id for j in jobs] == ["101"]
 
 

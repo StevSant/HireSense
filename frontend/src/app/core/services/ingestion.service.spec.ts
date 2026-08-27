@@ -48,6 +48,19 @@ describe('IngestionService', () => {
     req.flush(empty);
   });
 
+  it('queryJobs sends the opportunity pathway filters', () => {
+    service
+      .queryJobs('boards', 1, 20, {
+        opportunity_type: 'internship',
+        international_pathway: 'visa_sponsorship',
+      })
+      .subscribe();
+    const req = httpMock.expectOne((r) => r.url === '/api/ingestion/jobs');
+    expect(req.request.params.get('opportunity_type')).toBe('internship');
+    expect(req.request.params.get('international_pathway')).toBe('visa_sponsorship');
+    req.flush(empty);
+  });
+
   it('requests job history for a job id', () => {
     service.getJobHistory('job-1').subscribe();
     const req = httpMock.expectOne((r) => r.url.endsWith('/ingestion/jobs/job-1/history'));

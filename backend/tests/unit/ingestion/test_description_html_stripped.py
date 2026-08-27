@@ -1,4 +1,4 @@
-"""Regression: previously Remotive/RemoteOK/CSV/LinkedIn passed raw HTML
+"""Regression: previously Remotive/CSV/LinkedIn passed raw HTML
 through, causing <p>, <strong>, <br> to appear as literal text in the job
 detail panel on the frontend.
 """
@@ -10,7 +10,6 @@ import pytest
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.ingestion.domain.normalizer import (
     CSVNormalizer,
-    RemoteOKNormalizer,
     RemotiveNormalizer,
 )
 from hiresense.ingestion.domain.normalizers.linkedin_normalizer import LinkedInNormalizer
@@ -27,7 +26,6 @@ def _raw(data: dict) -> RawJobListing:
     "normalizer",
     [
         RemotiveNormalizer(),
-        RemoteOKNormalizer(),
         CSVNormalizer(),
         LinkedInNormalizer(),
     ],

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
@@ -162,6 +162,16 @@ async def batch_evaluate(
                     "source_id": str(job.id),
                 }
             )
+
+    max_jobs = getattr(batch_service, "max_jobs", 100)
+    if len(jobs) > max_jobs:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"Batch evaluation is limited to {max_jobs} jobs; "
+                f"received {len(jobs)}"
+            ),
+        )
 
     profile = (
         await profile_service.get_profile(body.profile_id)

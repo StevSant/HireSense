@@ -55,7 +55,8 @@
     <div class="source-health-banner" role="status">
       @for (h of sourceWarnings().failing; track h.source) {
         <span class="health-chip health-{{ h.status }}"
-          >{{ h.source }}: {{ h.status }}{{ h.last_error ? ' — ' + h.last_error : '' }}</span
+          >{{ h.source }}: {{ h.status }}{{ healthDetails(h)
+          }}{{ h.last_error ? ' — ' + h.last_error : '' }}</span
         >
       }
       @for (s of sourceWarnings().unavailable; track s.capabilities.source) {
@@ -255,8 +256,30 @@
               </td>
               <td class="title" [title]="job.title">
                 {{ job.title || '—' }}
+                @if (job.opportunity_type === 'internship') {
+                  <span class="badge badge-internship">Internship</span>
+                } @else if (job.opportunity_type === 'entry_level') {
+                  <span class="badge badge-entry-level">Entry-level</span>
+                }
+                @if (job.international_pathways?.includes('visa_sponsorship')) {
+                  <span
+                    class="badge badge-sponsorship"
+                    title="The posting explicitly mentions visa sponsorship"
+                    >Visa</span
+                  >
+                }
+                @if (job.international_pathways?.includes('worldwide_remote')) {
+                  <span
+                    class="badge badge-worldwide"
+                    title="Remote with no explicit country restriction"
+                    >Worldwide remote</span
+                  >
+                }
                 @if (job.status === 'closed') {
                   <span class="badge badge-closed">Closed</span>
+                }
+                @if (isRecentlyFetched(job.id)) {
+                  <span class="badge badge-new" title="Added by the most recent fetch">New</span>
                 }
               </td>
               <td class="cell-truncate" [title]="job.company">

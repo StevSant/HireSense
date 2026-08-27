@@ -51,6 +51,12 @@
     color: var(--text-muted, #666);
   }
 
+  .job-history-run {
+    margin: 0.25rem 0 0;
+    color: var(--accent-text, var(--text-muted, #666));
+    font-size: 0.8rem;
+  }
+
   .job-history-changes {
     margin: 0.25rem 0 0;
     padding-left: 1rem;

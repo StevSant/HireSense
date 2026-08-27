@@ -11,8 +11,13 @@ class ScoredResult:
     metadata: dict[str, Any]
 
 
+VectorUpsert = tuple[str, list[float], dict[str, Any]]
+
+
 class VectorStorePort(Protocol):
     async def upsert(self, id: str, embedding: list[float], metadata: dict[str, Any]) -> None: ...
+
+    async def upsert_many(self, items: list[VectorUpsert]) -> None: ...
 
     async def search(
         self,

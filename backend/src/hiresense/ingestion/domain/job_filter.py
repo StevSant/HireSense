@@ -7,6 +7,12 @@ from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 
 from hiresense.ingestion.domain.job_sort import sort_jobs
+from hiresense.ingestion.domain.opportunity import (
+    InternationalPathway,
+    OpportunityType,
+    classify_opportunity_type,
+    international_pathways,
+)
 from hiresense.shared.kernel import as_utc
 from hiresense.ingestion.domain.models import NormalizedJob
 from hiresense.ingestion.domain.seniority import (
@@ -31,10 +37,8 @@ class JobQueryParams(BaseModel):
     sort: str | None = None
     # Hide jobs whose match_score is below this threshold (0.0–1.0). When
     # None, no filter is applied. Jobs with match_score == None (not yet
-    # scored, e.g. no profile) are passed through regardless. Jobs whose
-    # semantic_score is still None are also exempt: their match_score is a
-    # skill-only blend that semantic scoring hasn't had a chance to rescue
-    # yet (see filter_and_paginate for the rationale).
+    # scored, e.g. no profile) are passed through because there is no score
+    # against which to apply a profile-dependent threshold.
     min_score: float | None = None
     # Seniority filter. When set, only jobs whose detected seniority is in
     # this set are returned. UNKNOWN passes through unless explicitly excluded.
@@ -52,6 +56,10 @@ class JobQueryParams(BaseModel):
     # surfaced postings). None or <= 0 disables the filter. Jobs with no
     # posted_date are never hidden (unknown age).
     max_age_days: int | None = None
+    # Derived opportunity lens. These filters intentionally run in Python
+    # because they combine source fields and conservative title detection.
+    opportunity_type: OpportunityType | None = None
+    international_pathway: InternationalPathway | None = None
 
 
 class PaginatedResult(BaseModel):
@@ -113,17 +121,14 @@ def filter_and_paginate(
 
     if params.min_score is not None:
         threshold = params.min_score
-        # Only gate jobs that have a *fully computed* score. When semantic_score
-        # is None the match_score is a skill-only blend (combine_fit_score falls
-        # back to the skill side); culling on that would unfairly drop a
-        # low-keyword / high-semantic job — e.g. verbose-tag sources like
-        # getonboard suffer tag dilution on the skill side — before the
-        # page-level semantic scoring pass can rescue it. Such jobs pass through
-        # here and are gated, if at all, only once a real semantic score exists.
+        # Apply the floor to every persisted score. The old semantic-score
+        # exemption allowed clearly irrelevant jobs to leak into the default
+        # list indefinitely, especially after a score-only sort or restart.
+        # Jobs with no score still pass so a profile can be added later.
         filtered = [
             j
             for j in filtered
-            if j.match_score is None or j.semantic_score is None or j.match_score >= threshold
+            if j.match_score is None or j.match_score >= threshold
         ]
 
     if params.seniority_levels:
@@ -133,6 +138,27 @@ def filter_and_paginate(
     if params.max_years_experience is not None:
         cap = params.max_years_experience
         filtered = [j for j in filtered if (extract_min_years(j.description) or 0) <= cap]
+
+    if params.opportunity_type:
+        filtered = [
+            j
+            for j in filtered
+            if classify_opportunity_type(j.employment_type, j.title, j.description)
+            == params.opportunity_type
+        ]
+
+    if params.international_pathway:
+        filtered = [
+            j
+            for j in filtered
+            if params.international_pathway.value
+            in international_pathways(
+                visa_sponsorship_available=j.visa_sponsorship_available,
+                remote_modality=j.remote_modality,
+                countries=j.countries,
+                location=j.location,
+            )
+        ]
 
     if params.max_age_days is not None and params.max_age_days > 0:
         cutoff = datetime.now(timezone.utc) - timedelta(days=params.max_age_days)

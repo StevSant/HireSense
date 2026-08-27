@@ -10,6 +10,7 @@ from hiresense.ingestion.domain.ingestion_run_summary import IngestionRunSummary
 from hiresense.ingestion.domain.job_history_event import JobHistoryEvent
 from hiresense.ingestion.infrastructure.ingestion_run_orm import IngestionRunOrm
 from hiresense.ingestion.infrastructure.job_history_event_orm import JobHistoryEventOrm
+from hiresense.ingestion.infrastructure.models import IngestedJob
 from hiresense.shared.infrastructure.sql_repository import SqlRepository
 
 
@@ -25,13 +26,23 @@ def _as_uuid(run_id: str) -> uuid_mod.UUID | None:
         return None
 
 
-def _to_domain(row: JobHistoryEventOrm) -> JobHistoryEvent:
+def _to_domain(
+    row: JobHistoryEventOrm,
+    *,
+    run: IngestionRunOrm | None = None,
+    job: IngestedJob | None = None,
+) -> JobHistoryEvent:
     return JobHistoryEvent(
         job_id=row.job_id,
         event=row.event,
         changed_fields=row.changed_fields or {},
         reason=row.reason,
         occurred_at=row.occurred_at,
+        run_id=str(run.id) if run is not None else None,
+        run_trigger=run.trigger if run is not None else None,
+        job_title=job.title if job is not None else None,
+        job_company=job.company if job is not None else None,
+        job_source=job.source if job is not None else None,
     )
 
 
@@ -87,26 +98,29 @@ class JobHistoryRepository(SqlRepository):
 
     def list_events_for_job(self, job_id: str, limit: int) -> list[JobHistoryEvent]:
         with self._session_factory() as session:
-            rows = session.scalars(
-                select(JobHistoryEventOrm)
+            rows = session.execute(
+                select(JobHistoryEventOrm, IngestionRunOrm)
+                .outerjoin(IngestionRunOrm, JobHistoryEventOrm.run_id == IngestionRunOrm.id)
                 .where(JobHistoryEventOrm.job_id == job_id)
                 .order_by(JobHistoryEventOrm.occurred_at.desc())
                 .limit(limit)
             ).all()
-            return [_to_domain(r) for r in rows]
+            return [_to_domain(event, run=run) for event, run in rows]
 
     def list_events_for_run(self, run_id: str, limit: int) -> list[JobHistoryEvent]:
         resolved = _as_uuid(run_id)
         if resolved is None:
             return []
         with self._session_factory() as session:
-            rows = session.scalars(
-                select(JobHistoryEventOrm)
+            rows = session.execute(
+                select(JobHistoryEventOrm, IngestedJob, IngestionRunOrm)
+                .outerjoin(IngestedJob, JobHistoryEventOrm.job_id == IngestedJob.id)
+                .join(IngestionRunOrm, JobHistoryEventOrm.run_id == IngestionRunOrm.id)
                 .where(JobHistoryEventOrm.run_id == resolved)
                 .order_by(JobHistoryEventOrm.occurred_at.desc())
                 .limit(limit)
             ).all()
-            return [_to_domain(r) for r in rows]
+            return [_to_domain(event, run=run, job=job) for event, job, run in rows]
 
     def list_runs(self, limit: int, offset: int) -> list[IngestionRunSummary]:
         with self._session_factory() as session:

@@ -355,6 +355,7 @@ def create_app() -> FastAPI:
         infra,
         applications_provider=app.state.applications_provider,
         latest_digest=autohunt.service.latest,
+        job_query=ingestion.job_query,
         notification_service=notifications.service,
     )
     if autopilot is not None:

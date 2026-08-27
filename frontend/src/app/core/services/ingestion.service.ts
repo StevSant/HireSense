@@ -87,6 +87,12 @@ export class IngestionService {
     if (filters.max_years_experience !== undefined && filters.max_years_experience !== null) {
       params = params.set('max_years_experience', filters.max_years_experience.toString());
     }
+    if (filters.opportunity_type) {
+      params = params.set('opportunity_type', filters.opportunity_type);
+    }
+    if (filters.international_pathway) {
+      params = params.set('international_pathway', filters.international_pathway);
+    }
 
     return this.api.get<PaginatedJobsResponse>(API_ROUTES.ingestion.jobs(), { params });
   }

@@ -143,3 +143,17 @@ def test_batch_evaluate_skips_missing_tracked_ids() -> None:
     assert response.status_code == 200
     data = response.json()
     assert data["total_jobs"] == 0
+
+
+def test_batch_evaluate_rejects_batches_over_the_limit() -> None:
+    class LimitedBatchService(FakeBatchService):
+        max_jobs = 2
+
+    app = _make_app()
+    app.dependency_overrides[get_batch_evaluation_service] = lambda: LimitedBatchService()
+    client = TestClient(app)
+
+    response = client.post("/matching/batch-evaluate", json={"include_ingested": True})
+
+    assert response.status_code == 413
+    assert "limited to 2 jobs" in response.json()["detail"]

@@ -12,8 +12,8 @@ class JobListCriteria:
     """Cheap, selective predicates a repository can evaluate DB-side.
 
     Deliberately limited to filters with direct column equivalents — the
-    Python-only heuristics (keyword, seniority detection, years extraction,
-    strict_location, the min_score semantic-None exemption) stay in
+    Python-only heuristics (keyword, seniority and opportunity detection, years
+    extraction, international pathways, strict_location) stay in
     filter_and_paginate, which re-applies these predicates idempotently.
     """
 

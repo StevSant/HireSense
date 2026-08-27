@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid as uuid_mod
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from hiresense.matching.domain.eligibility import EligibilityStatus
 
@@ -40,7 +40,7 @@ class EvaluationResponse(BaseModel):
 
 
 class BatchEvaluateRequest(BaseModel):
-    tracked_app_ids: list[uuid_mod.UUID] = []
+    tracked_app_ids: list[uuid_mod.UUID] = Field(default_factory=list, max_length=100)
     include_ingested: bool = False
     profile_id: str | None = None
 

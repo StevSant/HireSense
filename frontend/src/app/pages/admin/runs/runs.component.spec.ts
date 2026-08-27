@@ -164,6 +164,9 @@ describe('RunsComponent', () => {
       events: [
         {
           job_id: 'job-1',
+          job_title: 'Senior Backend Engineer',
+          job_company: 'Acme',
+          job_source: 'greenhouse',
           event: 'inserted',
           changed_fields: {},
           reason: null,
@@ -173,7 +176,13 @@ describe('RunsComponent', () => {
     });
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('job-1');
+    expect(fixture.nativeElement.textContent).toContain('Senior Backend Engineer');
+    expect(fixture.nativeElement.textContent).toContain('Acme');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector(
+        'a.event-job[href="/dashboard/job/job-1"]',
+      ),
+    ).not.toBeNull();
 
     // Collapsing and re-expanding must not re-fetch.
     toggle.click();

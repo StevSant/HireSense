@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { ApplicationsService } from '../../../core/services/applications.service';
 import { TrackingService } from '../../../core/services/tracking.service';
 import { ApplicationAggregate } from '@core/contracts/application-aggregate.model';
+import { TrackedApplication } from '@core/contracts/tracked-application.model';
 import { SkillChipsComponent } from './skill-chips.component';
 
 @Component({
@@ -29,6 +30,7 @@ export class JobTabComponent implements OnChanges {
 
   aggregate = input.required<ApplicationAggregate>();
   changed = output<void>();
+  detailsChanged = output<TrackedApplication>();
 
   description = signal('');
   skills = signal<string[]>([]);
@@ -49,12 +51,14 @@ export class JobTabComponent implements OnChanges {
   postedDate = signal('');
   detailsSaving = signal(false);
   detailsSaved = signal(false);
+  private hydratedApplicationId: string | null = null;
 
   ngOnChanges(): void {
-    const snap = this.aggregate().job_snapshot;
+    const aggregate = this.aggregate();
+    const isNewApplication = this.hydratedApplicationId !== aggregate.id;
+    const snap = aggregate.job_snapshot;
     this.description.set(snap?.description ?? '');
     this.skills.set(snap?.required_skills ?? []);
-    const aggregate = this.aggregate();
     this.title.set(aggregate.title);
     this.company.set(aggregate.company);
     this.url.set(aggregate.url ?? '');
@@ -65,7 +69,10 @@ export class JobTabComponent implements OnChanges {
     this.listingSource.set(aggregate.source ?? '');
     this.postedDate.set(aggregate.posted_date?.slice(0, 10) ?? '');
     this.saved.set(false);
-    this.detailsSaved.set(false);
+    if (isNewApplication) {
+      this.detailsSaved.set(false);
+      this.hydratedApplicationId = aggregate.id;
+    }
   }
 
   source = computed(() => this.aggregate().job_snapshot?.source ?? 'manual');
@@ -130,10 +137,10 @@ export class JobTabComponent implements OnChanges {
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
+        next: (updated) => {
           this.detailsSaving.set(false);
           this.detailsSaved.set(true);
-          this.changed.emit();
+          this.detailsChanged.emit(updated);
         },
         error: (err) => {
           this.error.set(err?.error?.detail ?? 'Save failed');

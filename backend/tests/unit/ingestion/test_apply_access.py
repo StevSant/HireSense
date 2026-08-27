@@ -1,10 +1,4 @@
-"""Apply-access: can a candidate actually reach the application form?
-
-Audited 2026-08-19 after a RemoteOK listing sent the user to a $14.95/mo
-premium interstitial instead of the employer. These tests pin the audited
-verdicts so a future edit to the capability registry can't silently drop a
-warning the UI depends on.
-"""
+"""Apply-access: can a candidate actually reach the application form?"""
 
 from __future__ import annotations
 
@@ -17,6 +11,7 @@ from hiresense.ingestion.domain.source_capabilities import (
     source_apply_access,
     source_apply_access_note,
 )
+from hiresense.shared.config.groups import IngestionSettings
 
 
 def _job(source: str, **overrides) -> NormalizedJob:
@@ -32,9 +27,21 @@ def _job(source: str, **overrides) -> NormalizedJob:
     )
 
 
-def test_remoteok_is_marked_paid_because_its_apply_hop_is_paywalled() -> None:
-    assert source_apply_access("remoteok") is ApplyAccess.PAID_REQUIRED
-    assert "premium" in source_apply_access_note("remoteok").lower()
+def test_no_registered_source_requires_a_paid_subscription() -> None:
+    assert all(
+        caps.apply_access is not ApplyAccess.PAID_REQUIRED
+        for caps in SOURCE_CAPABILITY_REGISTRY.values()
+    )
+
+
+def test_no_paid_apply_source_is_enabled_by_default() -> None:
+    default_sources = IngestionSettings.model_fields["enabled_job_sources"].default
+
+    assert isinstance(default_sources, list)
+    assert all(
+        source_apply_access(source) is not ApplyAccess.PAID_REQUIRED
+        for source in default_sources
+    )
 
 
 @pytest.mark.parametrize(
@@ -63,9 +70,9 @@ def test_every_walled_source_explains_itself() -> None:
 
 
 def test_job_exposes_apply_access_from_its_source() -> None:
-    payload = _job("remoteok").model_dump(mode="json")
+    payload = _job("weworkremotely").model_dump(mode="json")
 
-    assert payload["apply_access"] == "paid_required"
+    assert payload["apply_access"] == "account_required"
     assert payload["apply_access_note"]
 
 

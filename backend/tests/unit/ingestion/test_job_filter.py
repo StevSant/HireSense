@@ -397,20 +397,14 @@ def test_min_score_exempts_unscored_jobs() -> None:
     assert out.total == 1
 
 
-def test_min_score_exempts_jobs_without_semantic_score() -> None:
-    """Regression for #39: a low skill-only blend (no semantic score yet) must
-    survive the gate so the page-level semantic pass can rescue it.
-
-    Mirrors a verbose-tag source (e.g. getonboard) whose skill-overlap score is
-    diluted to a low value but whose semantic fit hasn't been computed on the
-    first request after restart / passthrough pre-ranking.
-    """
+def test_min_score_gates_skill_only_scores_too() -> None:
+    """The default floor must not leak low heuristic scores before rescoring."""
     jobs = [
         _job(id="getonboard", match_score=0.1, semantic_score=None),
         _job(id="culled", match_score=0.1, semantic_score=0.1),
     ]
     out = filter_and_paginate(jobs, JobQueryParams(min_score=0.5))
-    assert {j.id for j in out.jobs} == {"getonboard"}
+    assert out.total == 0
 
 
 def test_company_filter_is_exact_and_case_insensitive() -> None:

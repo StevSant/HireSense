@@ -19,6 +19,13 @@
             }}</span>
             <time class="job-history-time">{{ event.occurred_at | date: 'medium' }}</time>
           </div>
+          @if (event.run_id) {
+            <p class="job-history-run">
+              {{ event.run_trigger === 'scheduler' ? 'Scheduled fetch' : 'Manual fetch' }}
+              <span aria-hidden="true">·</span>
+              {{ event.run_id.slice(0, 8) }}
+            </p>
+          }
           @if (event.reason) {
             <p class="job-history-reason">{{ reasonLabel(event.reason) }}</p>
           }

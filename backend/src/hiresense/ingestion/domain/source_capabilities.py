@@ -62,7 +62,6 @@ SOURCE_TIER: dict[str, int] = {
     "wellfound": 1,
     "getonboard": 2,
     "remotive": 2,
-    "remoteok": 2,
     "jobicy": 2,
     "himalayas": 2,
     "weworkremotely": 2,
@@ -93,21 +92,6 @@ SOURCE_CAPABILITY_REGISTRY: dict[str, SourceCapabilities] = {
         integration="official_api",
         enabled_by_default=True,
         supports_keyword_search=True,
-        provides_salary=True,
-        provides_technology_tags=True,
-        closure_strategy="url_probe",
-    ),
-    "remoteok": SourceCapabilities(
-        source="remoteok",
-        display_name="RemoteOK",
-        apply_access=ApplyAccess.PAID_REQUIRED,
-        apply_access_note=(
-            "RemoteOK routes Apply through /l/<id>, which serves its paid premium "
-            "page; the employer URL is never exposed."
-        ),
-        source_type=SourceType.API,
-        integration="official_api",
-        enabled_by_default=True,
         provides_salary=True,
         provides_technology_tags=True,
         closure_strategy="url_probe",

@@ -36,6 +36,7 @@ export class ApplyTabComponent {
   isApplied = computed(
     () => this.aggregate().status === 'applied' || !!this.aggregate().applied_at,
   );
+  isClosed = computed(() => this.aggregate().job_status === 'closed');
 
   downloadingCv = signal(false);
   downloadingLetter = signal(false);
@@ -132,12 +133,16 @@ export class ApplyTabComponent {
     const url = this.aggregate().url;
     // The job URL is ingested (attacker-influenceable); openExternalUrl only
     // opens it when it is a safe http(s) scheme, blocking javascript:/data: sinks.
-    if (url) {
+    if (url && !this.isClosed()) {
       openExternalUrl(url);
     }
   }
 
   markApplied(): void {
+    if (this.isClosed() && !this.isApplied()) {
+      this.error.set('This posting is marked closed; verify that you submitted before it closed.');
+      return;
+    }
     this.marking.set(true);
     this.error.set('');
     this.service

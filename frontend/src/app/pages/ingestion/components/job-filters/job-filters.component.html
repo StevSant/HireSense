@@ -74,6 +74,45 @@
   </div>
 </div>
 
+<div class="pathway-bar">
+  <div class="filter-item">
+    <label class="filter-label" for="filter-opportunity-type">Opportunity type</label>
+    <select
+      id="filter-opportunity-type"
+      class="filter-control filter-select"
+      [value]="filters().opportunity_type ?? ''"
+      (change)="onOpportunityTypeChange($event)"
+    >
+      <option value="">All opportunities</option>
+      <option value="internship">Internships</option>
+      <option value="entry_level">Entry-level / graduate</option>
+      <option value="full_time">Full-time</option>
+      <option value="part_time">Part-time</option>
+      <option value="contract">Contract</option>
+      <option value="temporary">Temporary</option>
+    </select>
+  </div>
+
+  <div class="filter-item">
+    <label class="filter-label" for="filter-international-pathway">International pathway</label>
+    <select
+      id="filter-international-pathway"
+      class="filter-control filter-select"
+      [value]="filters().international_pathway ?? ''"
+      (change)="onInternationalPathwayChange($event)"
+    >
+      <option value="">Any pathway</option>
+      <option value="international">Visa or worldwide remote</option>
+      <option value="visa_sponsorship">Visa sponsorship stated</option>
+      <option value="worldwide_remote">Worldwide remote</option>
+    </select>
+  </div>
+
+  <p class="pathway-note">
+    Use these filters to separate internships and roles that may support an international move.
+  </p>
+</div>
+
 <div class="location-pref-bar">
   <div class="filter-item">
     <label class="filter-label" for="filter-user-location">My country</label>

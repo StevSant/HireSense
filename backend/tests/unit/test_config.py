@@ -27,12 +27,12 @@ def test_settings_enabled_sources_parsed(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setenv("AUTH_PASSWORD", "pass")
     monkeypatch.setenv("JWT_SECRET_KEY", "secret")
     monkeypatch.setenv("LLM_API_KEY", "sk-test")
-    monkeypatch.setenv("ENABLED_JOB_SOURCES", "remotive,remoteok")
+    monkeypatch.setenv("ENABLED_JOB_SOURCES", "remotive,jobicy")
 
     from hiresense.shared.config import Settings
 
     settings = Settings()
-    assert settings.enabled_job_sources == ["remotive", "remoteok"]
+    assert settings.enabled_job_sources == ["remotive", "jobicy"]
 
 
 @pytest.mark.parametrize(

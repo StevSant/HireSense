@@ -6,6 +6,7 @@ import { SortableHeaderDirective } from '@core/components/sortable-header';
 import { FeedbackKind } from '@core/contracts/feedback-kind.model';
 import { JobFilters } from '@core/contracts/job-filters.model';
 import { NormalizedJob } from '@core/contracts/normalized-job.model';
+import { SourceHealth } from '@core/contracts/source-capability.model';
 import { scoreClass } from '@core/utils/score-class';
 import { FeedbackControlsComponent } from './components/feedback-controls/feedback-controls.component';
 import { JobDetailPanelComponent } from './components/job-detail-panel/job-detail-panel.component';
@@ -63,6 +64,7 @@ export class IngestionComponent implements OnInit {
   revalidating = this.store.revalidating;
   revalidateNotice = this.store.revalidateNotice;
   fetchNotice = this.store.fetchNotice;
+  recentlyFetchedJobIds = this.store.recentlyFetchedJobIds;
   error = this.store.error;
 
   portals = this.store.portals;
@@ -170,8 +172,24 @@ export class IngestionComponent implements OnInit {
     return this.store.isDimmed(jobId);
   }
 
+  isRecentlyFetched(jobId: string): boolean {
+    return this.store.isRecentlyFetched(jobId);
+  }
+
   scoreBadgeClass(score: number): string {
     return scoreClass(score);
+  }
+
+  healthDetails(health: SourceHealth): string {
+    const details: string[] = [];
+    if (health.parse_failures > 0) details.push(`${health.parse_failures} parse failure(s)`);
+    if (health.jobs_rejected_malformed > 0) {
+      details.push(`${health.jobs_rejected_malformed} malformed job(s) rejected`);
+    }
+    if (health.rate_limited_count > 0) {
+      details.push(`${health.rate_limited_count} rate limit(s)`);
+    }
+    return details.length > 0 ? ` (${details.join(', ')})` : '';
   }
 
   connectionsCount(jobId: string): number | undefined {

@@ -39,7 +39,19 @@ def _is_seeker_post(text: str) -> bool:
     plain = strip_html(text[:_HEADER_SCAN_CHARS])
     header = plain.split("\n", 1)[0]
     first_part = header.split("|", 1)[0].strip().upper()
-    return first_part.startswith(_SEEKER_HEADER_PREFIXES)
+    if first_part.startswith(_SEEKER_HEADER_PREFIXES):
+        return True
+
+    # Some seeker posts use a résumé-style header instead of the explicit
+    # "SEEKING WORK" marker. They describe a person with location,
+    # technologies, and relocation preferences rather than an employer role.
+    if first_part.startswith("LOCATION:"):
+        upper = plain.upper()
+        return any(
+            marker in upper
+            for marker in ("WILLING TO RELOCATE:", "TECHNOLOGIES:", "RÉSUMÉ:", "RESUME:")
+        )
+    return False
 
 
 class HNHiringAdapter:

@@ -91,8 +91,24 @@ export class JobDetailPanelComponent {
   metaChips = computed(() => {
     const job = this.job();
     const chips: string[] = [];
-    if (job.employment_type) chips.push(job.employment_type.replaceAll('_', ' '));
+    if (job.opportunity_type && job.opportunity_type !== 'unknown') {
+      chips.push(this.opportunityTypeLabel(job.opportunity_type));
+    } else if (job.employment_type) {
+      chips.push(job.employment_type.replaceAll('_', ' '));
+    }
     if (job.remote_modality) chips.push(job.remote_modality.replaceAll('_', ' '));
+    if (job.international_pathways?.includes('visa_sponsorship')) {
+      chips.push('visa sponsorship stated');
+    }
+    if (job.international_pathways?.includes('worldwide_remote')) {
+      chips.push('worldwide remote');
+    }
+    if (job.requires_existing_work_authorization === true) {
+      chips.push('existing work authorization required');
+    }
+    if (job.visa_sponsorship_available === false) {
+      chips.push('no visa sponsorship stated');
+    }
     const meta = job.source_metadata ?? {};
     for (const key of ['yc_batch', 'company_stage', 'employer_type', 'company_rating'] as const) {
       const value = meta[key];
@@ -103,6 +119,19 @@ export class JobDetailPanelComponent {
     if (meta['easy_apply'] === true) chips.push('easy apply');
     return chips;
   });
+
+  private opportunityTypeLabel(type: NonNullable<NormalizedJob['opportunity_type']>): string {
+    const labels: Record<string, string> = {
+      internship: 'Internship',
+      entry_level: 'Entry-level / graduate',
+      full_time: 'Full-time',
+      part_time: 'Part-time',
+      contract: 'Contract',
+      temporary: 'Temporary',
+      other: 'Other',
+    };
+    return labels[type] ?? type.replaceAll('_', ' ');
+  }
 
   onOverlayClick(event: MouseEvent): void {
     if ((event.target as HTMLElement).classList.contains('panel-overlay')) {

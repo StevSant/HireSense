@@ -173,22 +173,6 @@ describe('JobDetailPanelComponent', () => {
     expect(closed).toBe(true);
   });
   describe('apply-access warning', () => {
-    it('warns before sending the user to a board that paywalls applying', () => {
-      const fixture = mount(
-        makeJob({
-          source: 'remoteok',
-          apply_access: 'paid_required',
-          apply_access_note: 'RemoteOK routes Apply through its paid premium page.',
-        }),
-      );
-
-      const warning = fixture.nativeElement.querySelector('.apply-warning');
-      expect(warning).toBeTruthy();
-      expect(warning.classList.contains('apply-warning--paid')).toBe(true);
-      expect(warning.textContent).toContain('Paid subscription to apply');
-      expect(warning.textContent).toContain('paid premium page');
-    });
-
     it('warns about a free-account wall without the paid styling', () => {
       const fixture = mount(
         makeJob({ source: 'weworkremotely', apply_access: 'account_required' }),

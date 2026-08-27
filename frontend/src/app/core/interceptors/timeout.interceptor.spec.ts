@@ -73,6 +73,19 @@ describe('timeoutInterceptor', () => {
 
     expect(received).toEqual({ count: 0, jobs: [] });
   });
+  it('keeps a company portal scan alive beyond the normal LLM timeout budget', () => {
+    let received: unknown;
+    http.post('/api/ingestion/scan-portals', {}).subscribe((res) => {
+      received = res;
+    });
+
+    vi.advanceTimersByTime(environment.httpTimeoutLlmMs + 1000);
+    const req = httpMock.expectOne('/api/ingestion/scan-portals');
+    expect(req.cancelled).toBeFalsy();
+    req.flush({ total_fetched: 0, new: 0, duplicates: 0, jobs: [], errors: [] });
+
+    expect(received).toEqual({ total_fetched: 0, new: 0, duplicates: 0, jobs: [], errors: [] });
+  });
   it('times out a source ingestion fetch only after its dedicated fetch budget', () => {
     let captured: unknown;
     http.post('/api/ingestion/fetch', {}).subscribe({
@@ -120,7 +133,6 @@ describe('timeoutInterceptor', () => {
     '/api/profile/translate',
     '/api/profile/upload-file',
     '/api/ingestion/jobs',
-    '/api/ingestion/scan-portals',
     '/api/ingestion/revalidate',
   ])('gives %s the LLM timeout budget, not the default one', (url) => {
     let captured: unknown;
@@ -140,6 +152,23 @@ describe('timeoutInterceptor', () => {
 
     // Past the LLM budget: now it must time out.
     vi.advanceTimersByTime(environment.httpTimeoutLlmMs);
+    expect(req.cancelled).toBe(true);
+    expect(captured).toMatchObject({ status: 408 });
+  });
+
+  it('gives a portal scan the dedicated fetch timeout budget', () => {
+    let captured: unknown;
+    http.post('/api/ingestion/scan-portals', {}).subscribe({
+      error: (e) => {
+        captured = e;
+      },
+    });
+
+    vi.advanceTimersByTime(environment.httpTimeoutFetchMs - 1);
+    const req = httpMock.expectOne('/api/ingestion/scan-portals');
+    expect(req.cancelled).toBeFalsy();
+
+    vi.advanceTimersByTime(1);
     expect(req.cancelled).toBe(true);
     expect(captured).toMatchObject({ status: 408 });
   });

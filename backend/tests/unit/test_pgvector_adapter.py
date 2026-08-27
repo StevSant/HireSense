@@ -88,6 +88,28 @@ async def test_upsert_builds_insert_on_conflict() -> None:
 
 
 @pytest.mark.asyncio
+async def test_upsert_many_uses_one_executemany_commit() -> None:
+    factory = _FakeSessionFactory()
+    store = PgVectorStore(factory, dim=3)
+
+    await store.upsert_many(
+        [
+            ("job-1", [0.1, 0.2, 0.3], {"bucket": "boards"}),
+            ("job-2", [0.4, 0.5, 0.6], {"bucket": "portals"}),
+        ]
+    )
+
+    sql, params = factory.session.executed[0]
+    assert "INSERT INTO vector_embeddings" in sql
+    assert "ON CONFLICT (id) DO UPDATE" in sql
+    assert isinstance(params, list)
+    assert [item["id"] for item in params] == ["job-1", "job-2"]
+    assert params[0]["embedding"] == "[0.1,0.2,0.3]"
+    assert json.loads(params[1]["metadata"]) == {"bucket": "portals"}
+    assert factory.session.commits == 1
+
+
+@pytest.mark.asyncio
 async def test_search_returns_scored_results_and_applies_filters() -> None:
     rows = [_Row("job-1", {"bucket": "boards"}, 0.92)]
     factory = _FakeSessionFactory(rows)

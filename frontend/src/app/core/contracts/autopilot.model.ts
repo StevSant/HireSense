@@ -7,3 +7,7 @@ export interface AutopilotDraft {
   status: 'pending' | 'drafted' | 'partial' | 'failed';
   detail: string | null;
 }
+
+export interface AutopilotRunResponse {
+  status: 'started' | 'already_running';
+}

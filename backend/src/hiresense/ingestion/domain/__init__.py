@@ -35,6 +35,7 @@ from hiresense.ingestion.domain.job_quality_classifier import JobQualityClassifi
 from hiresense.ingestion.domain.job_quality_verdict import JobQualityVerdict
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
 from hiresense.ingestion.domain.job_sort import sort_jobs
+from hiresense.ingestion.domain.opportunity import InternationalPathway, OpportunityType
 from hiresense.ingestion.domain.portal_config import load_portals_config
 from hiresense.ingestion.domain.portal_scanner import PortalScanner
 from hiresense.ingestion.domain.quick_match_result import QuickMatchResult
@@ -90,6 +91,8 @@ __all__ = [
     "JobQuality",
     "JobQualityClassifier",
     "JobQualityVerdict",
+    "InternationalPathway",
+    "OpportunityType",
     "JobQueryService",
     "JobListCriteria",
     "JobQueryParams",

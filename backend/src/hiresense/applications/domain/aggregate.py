@@ -84,3 +84,4 @@ class ApplicationAggregate(BaseModel):
     optimization_count: int
     interview_prep_count: int
     cover_letter_count: int = 0
+    job_status: str | None = None

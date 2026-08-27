@@ -91,6 +91,24 @@ describe('JobHistoryTimelineComponent', () => {
     expect(itemLabels(fixture)).toEqual(['Ingested']);
   });
 
+  it('shows which fetch produced an event when run provenance is available', () => {
+    const fixture = createComponent();
+    flush(fixture, [
+      {
+        job_id: 'job-1',
+        event: 'inserted',
+        changed_fields: {},
+        reason: null,
+        occurred_at: '2026-08-18T10:00:00Z',
+        run_id: '12345678-abcd',
+        run_trigger: 'fetch',
+      },
+    ]);
+    const run = (fixture.nativeElement as HTMLElement).querySelector('.job-history-run');
+    expect(run?.textContent).toContain('Manual fetch');
+    expect(run?.textContent).toContain('12345678');
+  });
+
   it('renders a reopened event as "Reopened"', () => {
     const fixture = createComponent();
     flush(fixture, [

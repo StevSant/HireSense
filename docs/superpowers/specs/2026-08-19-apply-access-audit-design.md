@@ -1,10 +1,18 @@
 # Apply-access audit — can the candidate actually apply?
 
 **Date:** 2026-08-19
-**Status:** implemented
+**Status:** implemented; RemoteOK removed on 2026-08-23
 **Trigger:** A RemoteOK listing surfaced by HireSense (AI Intern @ CertifyOS, 75% match)
 sent the user to `remoteok.com/premium` — a $14.95/mo subscription page — instead of the
 employer's application form.
+
+## Product follow-up (2026-08-23)
+
+The original audit decision was to badge walled listings while retaining discovery.
+That is not useful for this product when there is no free employer-link alternative, so
+RemoteOK was removed from the shipped source registry, adapter wiring, configuration,
+and frontend source catalog. Existing RemoteOK listings and derived search data were
+purged from the database.
 
 ## Problem
 

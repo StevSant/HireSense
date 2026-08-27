@@ -10,4 +10,10 @@ export interface JobHistoryEvent {
   changed_fields: Record<string, ChangedValue>;
   reason: string | null;
   occurred_at: string;
+  /** Read-side provenance; absent for closures from an unscoped sweep. */
+  run_id?: string | null;
+  run_trigger?: string | null;
+  job_title?: string | null;
+  job_company?: string | null;
+  job_source?: string | null;
 }

@@ -41,11 +41,13 @@ class EmbeddingBackfillService:
         portals_repo: JobsRepositoryPort,
         embedding: EmbeddingPort,
         vector_store: VectorStorePort | None,
+        chunk_size: int = 256,
     ) -> None:
         self._boards_repo = boards_repo
         self._portals_repo = portals_repo
         self._embedding = embedding
         self._vector_store = vector_store
+        self._chunk_size = max(1, chunk_size)
 
     async def run(self) -> BackfillResult:
         """Embed + upsert open jobs in both buckets. Returns per-bucket counts."""
@@ -53,7 +55,6 @@ class EmbeddingBackfillService:
             logger.warning("EmbeddingBackfillService: vector store not configured, skipping")
             return BackfillResult(boards=0, portals=0)
 
-        # NOTE: single-batch embed; chunk if corpus grows large
         # Open-only, filtered DB-side; low-quality jobs are still indexed
         # (quality is a display concern, not an embedding one).
         open_only = JobListCriteria(include_closed=False, include_low_quality=True)
@@ -68,28 +69,57 @@ class EmbeddingBackfillService:
         if not jobs:
             return 0
 
-        texts = [job_text(j) for j in jobs]
-        try:
-            vectors = await self._embedding.embed(texts)
-        except Exception:
-            logger.exception(
-                "Backfill embedding batch failed (bucket=%s, size=%d)", bucket, len(jobs)
-            )
-            return 0
-
         indexed = 0
-        for job, vec in zip(jobs, vectors):
-            if not vec:
-                continue
+        for start in range(0, len(jobs), self._chunk_size):
+            chunk = jobs[start : start + self._chunk_size]
+            texts = [job_text(j) for j in chunk]
             try:
-                await self._vector_store.upsert(
-                    job.id,
-                    vec,
-                    {"bucket": bucket, "source": job.source},
-                )
-                indexed += 1
+                vectors = await self._embedding.embed(texts)
             except Exception:
-                logger.exception("Backfill vector upsert failed for job %s", job.id)
+                logger.exception(
+                    "Backfill embedding batch failed (bucket=%s, size=%d)",
+                    bucket,
+                    len(chunk),
+                )
+                continue
+
+            items = [
+                (job.id, vec, {"bucket": bucket, "source": job.source})
+                for job, vec in zip(chunk, vectors)
+                if vec
+            ]
+            indexed += await self._upsert_chunk(items, bucket=bucket)
 
         logger.info("Backfill indexed %d/%d jobs (bucket=%s)", indexed, len(jobs), bucket)
+        return indexed
+
+    async def _upsert_chunk(
+        self,
+        items: list[tuple[str, list[float], dict[str, str]]],
+        *,
+        bucket: str,
+    ) -> int:
+        if not items or self._vector_store is None:
+            return 0
+
+        bulk_upsert = getattr(self._vector_store, "upsert_many", None)
+        if callable(bulk_upsert):
+            try:
+                await bulk_upsert(items)
+                return len(items)
+            except Exception:
+                logger.exception(
+                    "Backfill bulk vector upsert failed (bucket=%s, size=%d); "
+                    "retrying individually",
+                    bucket,
+                    len(items),
+                )
+
+        indexed = 0
+        for job_id, vector, metadata in items:
+            try:
+                await self._vector_store.upsert(job_id, vector, metadata)
+                indexed += 1
+            except Exception:
+                logger.exception("Backfill vector upsert failed for job %s", job_id)
         return indexed

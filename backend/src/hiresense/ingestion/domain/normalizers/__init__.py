@@ -1,6 +1,5 @@
 from hiresense.ingestion.domain.normalizer import (
     CSVNormalizer,
-    RemoteOKNormalizer,
     RemotiveNormalizer,
 )
 from hiresense.ingestion.domain.normalizers.adzuna_normalizer import AdzunaNormalizer
@@ -58,7 +57,6 @@ __all__ = [
     "LinkedInNormalizer",
     "MonsterNormalizer",
     "RecruiteeNormalizer",
-    "RemoteOKNormalizer",
     "RemotiveNormalizer",
     "SmartRecruitersNormalizer",
     "TheMuseNormalizer",

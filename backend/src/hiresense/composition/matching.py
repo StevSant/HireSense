@@ -115,6 +115,7 @@ def build_matching(
     batch_evaluation_service = BatchEvaluationService(
         orchestrator=dimension_evaluator,
         concurrency=s.batch_concurrency,
+        max_jobs=s.batch_evaluation_max_jobs,
     )
     provider = MatchingProvider(
         dimension_evaluator=dimension_evaluator,

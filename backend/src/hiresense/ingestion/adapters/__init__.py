@@ -14,7 +14,6 @@ from hiresense.ingestion.adapters.jobicy import JobicyAdapter
 from hiresense.ingestion.adapters.lever_adapter import LeverAdapter
 from hiresense.ingestion.adapters.linkedin import LinkedInAdapter
 from hiresense.ingestion.adapters.recruitee_adapter import RecruiteeAdapter
-from hiresense.ingestion.adapters.remoteok import RemoteOKAdapter
 from hiresense.ingestion.adapters.remotive import RemotiveAdapter
 from hiresense.ingestion.adapters.smartrecruiters_adapter import SmartRecruitersAdapter
 from hiresense.ingestion.adapters.structured_import import (
@@ -52,7 +51,6 @@ __all__ = [
     "LinkedInAdapter",
     "MonsterAdapter",
     "RecruiteeAdapter",
-    "RemoteOKAdapter",
     "RemotiveAdapter",
     "SmartRecruitersAdapter",
     "TheMuseAdapter",

@@ -4,10 +4,12 @@ import uuid as uuid_mod
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, insert, select
 
 from hiresense.ingestion.domain.ingestion_run_summary import IngestionRunSummary
 from hiresense.ingestion.domain.job_history_event import JobHistoryEvent
+from hiresense.ingestion.domain.job_closure_reason import JobClosureReason
+from hiresense.ingestion.domain.job_history_event_type import JobHistoryEventType
 from hiresense.ingestion.infrastructure.ingestion_run_orm import IngestionRunOrm
 from hiresense.ingestion.infrastructure.job_history_event_orm import JobHistoryEventOrm
 from hiresense.ingestion.infrastructure.models import IngestedJob
@@ -34,9 +36,9 @@ def _to_domain(
 ) -> JobHistoryEvent:
     return JobHistoryEvent(
         job_id=row.job_id,
-        event=row.event,
+        event=JobHistoryEventType(row.event),
         changed_fields=row.changed_fields or {},
-        reason=row.reason,
+        reason=JobClosureReason(row.reason) if row.reason is not None else None,
         occurred_at=row.occurred_at,
         run_id=str(run.id) if run is not None else None,
         run_trigger=run.trigger if run is not None else None,
@@ -80,7 +82,7 @@ class JobHistoryRepository(SqlRepository):
             # One executemany for the whole batch: a fetch produces ~1,000+
             # events per cycle and per-row inserts would dominate the pass.
             session.execute(
-                JobHistoryEventOrm.__table__.insert(),
+                insert(JobHistoryEventOrm),
                 [
                     {
                         "id": uuid_mod.uuid4(),

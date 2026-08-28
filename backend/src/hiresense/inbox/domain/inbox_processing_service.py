@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
+import re
 from typing import Any, Callable
 
 from hiresense.inbox.domain.application_matcher import ApplicationMatcher
@@ -103,6 +105,8 @@ class InboxProcessingService:
             message_id=email.message_id,
             from_address=email.from_address,
             subject=email.subject,
+            evidence_excerpt=_evidence_excerpt(email.body),
+            evidence_hash=hashlib.sha256(email.body.encode("utf-8")).hexdigest(),
             received_at=email.received_at,
             kind=classification.kind,
             company=classification.company,
@@ -112,3 +116,9 @@ class InboxProcessingService:
             proposed_status=proposed,
         )
         return await asyncio.to_thread(self._repo.add, signal)
+
+
+def _evidence_excerpt(body: str, limit: int = 600) -> str:
+    """Keep a reviewable, bounded citation without persisting full email bodies."""
+    compact = re.sub(r"\s+", " ", body).strip()
+    return compact[:limit] + ("…" if len(compact) > limit else "")

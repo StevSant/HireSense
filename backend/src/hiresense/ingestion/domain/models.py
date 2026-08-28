@@ -4,7 +4,7 @@ import hashlib
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, model_validator
 
 from hiresense.ingestion.domain.application_method import ApplicationMethod
 from hiresense.ingestion.domain.apply_access import ApplyAccess
@@ -19,9 +19,27 @@ from hiresense.ingestion.domain.source_capabilities import (
 
 
 class RawJobListing(BaseModel):
-    source: str
-    source_id: str
-    raw_data: dict[str, Any]
+    source: str = Field(min_length=1, max_length=50)
+    source_id: str = Field(min_length=1, max_length=255)
+    raw_data: dict[str, Any] = Field(min_length=1)
+    fetch_metadata: "SourceFetchMetadata" = Field(default_factory=lambda: SourceFetchMetadata())
+
+    @model_validator(mode="after")
+    def normalize_identity(self) -> "RawJobListing":
+        self.source = self.source.strip()
+        self.source_id = self.source_id.strip()
+        if not self.source or not self.source_id:
+            raise ValueError("raw job listings require non-empty source and source_id")
+        return self
+
+
+class SourceFetchMetadata(BaseModel):
+    """Optional adapter telemetry carried with each raw listing."""
+
+    complete: bool = True
+    pages_fetched: int = Field(default=1, ge=0)
+    parser_confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    warnings: list[str] = Field(default_factory=list)
 
 
 class NormalizedJob(BaseModel):

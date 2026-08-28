@@ -189,6 +189,11 @@ export class IngestionComponent implements OnInit {
     if (health.rate_limited_count > 0) {
       details.push(`${health.rate_limited_count} rate limit(s)`);
     }
+    const parserConfidence = health.parser_confidence;
+    if (parserConfidence !== null && parserConfidence !== undefined && parserConfidence < 0.8) {
+      details.push(`${Math.round(parserConfidence * 100)}% parser confidence`);
+    }
+    if (health.last_fetch_complete === false) details.push('incomplete snapshot; closure skipped');
     return details.length > 0 ? ` (${details.join(', ')})` : '';
   }
 

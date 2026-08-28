@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import subprocess
 import tempfile
 import textwrap
 from pathlib import Path
@@ -54,30 +55,36 @@ class LatexCompiler:
         #    LaTeX argument parsing for commands like \titleformat.
         cleaned = tex_source.encode("utf-8", errors="replace").decode("utf-8")
         cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
-        with tempfile.TemporaryDirectory(prefix="hiresense-tex-") as tmp:
-            tmp_path = Path(tmp)
-            source_path = tmp_path / "doc.tex"
-            # newline="" disables Python's universal-newlines translation on
-            # write so our normalized LFs land on disk unchanged.
-            source_path.write_text(cleaned, encoding="utf-8", newline="")
+        try:
+            with tempfile.TemporaryDirectory(prefix="hiresense-tex-") as tmp:
+                tmp_path = Path(tmp)
+                source_path = tmp_path / "doc.tex"
+                # newline="" disables Python's universal-newlines translation on
+                # write so our normalized LFs land on disk unchanged.
+                source_path.write_text(cleaned, encoding="utf-8", newline="")
 
-            for _ in range(2):
-                result = self._run_once(tmp_path, source_path)
-                if result.returncode != 0:
-                    log = self._tail_log(tmp_path / "doc.log")
-                    raise LatexCompileError(
-                        f"{self._compiler} exited with code {result.returncode}.\n"
-                        f"Last log lines:\n{log}"
-                    )
+                for _ in range(2):
+                    result = self._run_once(tmp_path, source_path)
+                    if result.returncode != 0:
+                        log = self._tail_log(tmp_path / "doc.log")
+                        raise LatexCompileError(
+                            f"{self._compiler} exited with code {result.returncode}.\n"
+                            f"Last log lines:\n{log}"
+                        )
 
-            pdf_path = tmp_path / "doc.pdf"
-            if not pdf_path.exists():
-                raise LatexCompileError(f"{self._compiler} produced no PDF")
-            return pdf_path.read_bytes()
+                pdf_path = tmp_path / "doc.pdf"
+                if not pdf_path.exists():
+                    raise LatexCompileError(f"{self._compiler} produced no PDF")
+                return pdf_path.read_bytes()
+        except LatexCompileError:
+            raise
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise LatexCompileError(
+                f"Unable to compile LaTeX with {self._compiler}: {exc}"
+            ) from exc
 
     def _run_once(self, working_dir: Path, source: Path):
         import os
-        import subprocess
 
         # Untrusted LaTeX reaches this compiler (raw user CVs, LLM-spliced
         # optimized CVs). Disable shell-escape entirely so `\write18{...}` can

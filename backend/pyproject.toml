@@ -90,6 +90,11 @@ include = ["src/hiresense"]
 typeCheckingMode = "basic"
 pythonVersion = "3.12"
 pythonPlatform = "All"
+# Make local and CI checks resolve the environment created by `uv sync`.
+# Without this, pyright finds its own runner package but not the project's
+# FastAPI/Pydantic/SQLAlchemy dependencies on Windows.
+venvPath = "."
+venv = ".venv"
 
 # Debt ledger, not configuration. Every path here fails `basic` today; the list
 # only ever shrinks. Checking is ON everywhere else, so a NEW file is type-checked

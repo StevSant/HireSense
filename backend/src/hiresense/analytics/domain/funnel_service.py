@@ -31,6 +31,8 @@ class SourceOutcome(BaseModel):
     applications: int
     reached_interview: int
     interview_rate: float
+    sample_sufficient: bool = False
+    confidence_note: str = "small sample — treat this rate as directional"
 
 
 class FunnelMetrics(BaseModel):
@@ -216,6 +218,12 @@ class FunnelService:
                 applications=n,
                 reached_interview=reached[src],
                 interview_rate=round(reached[src] / n, 4) if n else 0.0,
+                sample_sufficient=n >= 5,
+                confidence_note=(
+                    f"based on {n} applications"
+                    if n >= 5
+                    else f"small sample ({n}); treat this rate as directional"
+                ),
             )
             for src, n in totals.items()
         ]

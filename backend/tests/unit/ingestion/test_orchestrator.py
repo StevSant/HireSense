@@ -6,7 +6,7 @@ import pytest
 
 from hiresense.shared.adapters.event_bus.in_memory_bus import InMemoryEventBus
 from hiresense.ingestion.domain.job_embedding_indexer import JobEmbeddingIndexer
-from hiresense.ingestion.domain.models import NormalizedJob, RawJobListing
+from hiresense.ingestion.domain.models import NormalizedJob, RawJobListing, SourceFetchMetadata
 from hiresense.ingestion.domain.services import IngestionCooldownError, IngestionOrchestrator
 from hiresense.ingestion.infrastructure import InMemoryJobsRepository
 from hiresense.shared.kernel.events import DomainEvent
@@ -200,6 +200,21 @@ async def test_closes_job_missing_from_snapshot_source_after_threshold() -> None
     await orch.run()  # run 3: B missed -> missed_count 2 -> closed
     assert repo.get_by_id(b_id).status == "closed"
     assert indexer.removed[-1] == [b_id]
+
+
+@pytest.mark.asyncio
+async def test_incomplete_snapshot_never_mass_closes_missing_jobs() -> None:
+    incomplete = _raw("1").model_copy(
+        update={"fetch_metadata": SourceFetchMetadata(complete=False, warnings=["truncated"])}
+    )
+    source = ScriptedSource([[_raw("1"), _raw("2")], [incomplete], [incomplete]], snapshot=True)
+    orch = _orch(source, FakeIndexer())
+
+    await orch.run()
+    await orch.run()
+    await orch.run()
+
+    assert all(job.status == "open" for job in orch._repository.list_all())
 
 
 @pytest.mark.asyncio

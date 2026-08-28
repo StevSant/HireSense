@@ -449,10 +449,18 @@ def test_regenerate_skills(client: TestClient):
 def test_delete(client: TestClient):
     resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
     app_id = resp.json()["id"]
-    resp = client.delete(f"/applications/{app_id}")
+    resp = client.delete(f"/applications/{app_id}?confirm=true")
     assert resp.status_code == 204
     resp = client.get(f"/applications/{app_id}")
     assert resp.status_code == 404
+
+
+def test_delete_requires_explicit_confirmation(client: TestClient):
+    resp = client.post("/applications", json={"title": "X", "company": "Y", "description": "Z"})
+    app_id = resp.json()["id"]
+    resp = client.delete(f"/applications/{app_id}")
+    assert resp.status_code == 409
+    assert "confirmation" in resp.json()["detail"]
 
 
 def test_create_with_unknown_job_id_returns_404(client: TestClient):

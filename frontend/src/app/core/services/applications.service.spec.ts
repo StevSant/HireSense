@@ -4,6 +4,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { ApplicationsService } from './applications.service';
 import { ApplicationListItem } from '@core/contracts/application-list-item.model';
 import { PagedResult } from '@core/contracts/paged-result.model';
+import { ApplicationPacket } from '@core/contracts/application-packet.model';
 
 // Spelled out rather than derived from the route table, so a wrong path in
 // api-routes.ts fails here instead of agreeing with itself.
@@ -136,6 +137,42 @@ describe('ApplicationsService', () => {
         );
 
       expect(result!.items).toHaveLength(pageSize + 5);
+    });
+  });
+
+  describe('application packets', () => {
+    const packet = { id: 'packet-1', application_id: 'app-1' } as ApplicationPacket;
+
+    it('uses the packet review endpoints', () => {
+      service.getPacket('app-1').subscribe();
+      httpMock
+        .expectOne((r) => r.url === `${BASE}/app-1/packet` && r.method === 'GET')
+        .flush(packet);
+
+      service.createPacket('app-1').subscribe();
+      httpMock
+        .expectOne((r) => r.url === `${BASE}/app-1/packet` && r.method === 'POST')
+        .flush(packet);
+
+      service.approvePacket('app-1', 'packet-1').subscribe();
+      httpMock.expectOne((r) => r.url === `${BASE}/app-1/packet/packet-1/approve`).flush(packet);
+
+      service.revokePacket('app-1', 'packet-1').subscribe();
+      httpMock.expectOne((r) => r.url === `${BASE}/app-1/packet/packet-1/revoke`).flush(packet);
+
+      service.restorePacket('app-1', packet).subscribe();
+      const restore = httpMock.expectOne(
+        (r) => r.url === `${BASE}/app-1/packet/restore` && r.method === 'POST',
+      );
+      expect(restore.request.body).toEqual(packet);
+      restore.flush(packet);
+    });
+
+    it('requires explicit deletion confirmation', () => {
+      service.remove('app-1').subscribe();
+      const request = httpMock.expectOne((r) => r.url === `${BASE}/app-1`);
+      expect(request.request.params.get('confirm')).toBe('true');
+      request.flush(null);
     });
   });
 });

@@ -16,6 +16,8 @@ class DetectedSignal(BaseModel):
     message_id: str
     from_address: str
     subject: str
+    evidence_excerpt: str = ""
+    evidence_hash: str = ""
     received_at: datetime
     kind: EmailSignalKind
     company: str | None = None

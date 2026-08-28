@@ -12,6 +12,7 @@ from hiresense.applications.infrastructure import (  # noqa: F401
     ApplicationInterviewPrepOrm,
     ApplicationJobSnapshotOrm,
     ApplicationMatchOrm,
+    ApplicationPacketOrm,
 )
 from hiresense.autohunt.infrastructure import DigestOrm  # noqa: F401
 from hiresense.autopilot.infrastructure import AutopilotDraftOrm  # noqa: F401

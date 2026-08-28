@@ -18,6 +18,8 @@ class DetectedSignalOrm(Base):
     message_id: Mapped[str] = mapped_column(String(512), nullable=False, unique=True, index=True)
     from_address: Mapped[str] = mapped_column(String(320), nullable=False)
     subject: Mapped[str] = mapped_column(Text, nullable=False)
+    evidence_excerpt: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    evidence_hash: Mapped[str] = mapped_column(String(64), nullable=False, default="")
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     kind: Mapped[str] = mapped_column(String(16), nullable=False)
     company: Mapped[str | None] = mapped_column(String(256), nullable=True)

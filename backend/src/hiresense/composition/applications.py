@@ -8,6 +8,7 @@ from hiresense.applications.api.provider import ApplicationsProvider
 from hiresense.applications.domain import ApplicationService, ArtifactService
 from hiresense.applications.domain import SkillExtractor as ApplicationsSkillExtractor
 from hiresense.applications.domain.apply_service import ApplyService
+from hiresense.applications.domain.application_packet import ApplicationPacketService
 from hiresense.applications.domain.cover_letter_generator import CoverLetterGenerator
 from hiresense.applications.infrastructure import ApplicationRepository
 from hiresense.composition.shared_infra import SharedInfra
@@ -24,6 +25,7 @@ def build_applications(
     interview_prep_service: Any,
     profile_service: Any,
     portfolio_citation: Any = None,
+    claim_service: Any = None,
 ) -> ApplicationsProvider:
     s = infra.settings
     application_repo = ApplicationRepository(session_factory=infra.sync_session_factory)
@@ -49,6 +51,12 @@ def build_applications(
         compiler=s.latex_compiler,
         timeout_seconds=s.latex_timeout_seconds,
     )
+    packet_service = ApplicationPacketService(
+        repository=application_repo,
+        tracking_service=tracking_service,
+        profile_service=profile_service,
+        claim_service=claim_service,
+    )
     apply_service = ApplyService(
         repository=application_repo,
         cover_letter_generator=cover_letter_generator,
@@ -56,9 +64,11 @@ def build_applications(
         profile_service=profile_service,
         tracking_service=tracking_service,
         portfolio_citation=portfolio_citation,
+        packet_service=packet_service,
     )
     return ApplicationsProvider(
         application_service=application_service,
         artifact_service=artifact_service,
         apply_service=apply_service,
+        packet_service=packet_service,
     )

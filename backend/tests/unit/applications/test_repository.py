@@ -13,6 +13,11 @@ from hiresense.applications.domain.models import (
     ApplicationMatch,
     JobSnapshotSource,
 )
+from hiresense.applications.domain.application_packet import (
+    ApplicationPacket,
+    ApplicationPacketState,
+    ApplicationQualityReport,
+)
 from hiresense.applications.infrastructure.repository import ApplicationRepository
 from hiresense.shared.infrastructure.database import Base
 from hiresense.tracking.domain.models import ApplicationStatus
@@ -84,6 +89,27 @@ def test_create_and_get_latest_match(repo, tracked_app):
     assert latest is not None
     assert latest.overall_score == 0.8
     assert len(repo.list_matches(tracked_app.id)) == 2
+
+
+def test_application_packet_round_trip_and_approval_state(repo, tracked_app):
+    packet = repo.create_packet(
+        ApplicationPacket(
+            application_id=tracked_app.id,
+            job_snapshot_hash="a" * 64,
+            profile_hash="b" * 64,
+            verified_claim_ids=[],
+            quality_report=ApplicationQualityReport(ready=True),
+        )
+    )
+
+    fetched = repo.get_latest_packet(tracked_app.id)
+    assert fetched is not None
+    assert fetched.id == packet.id
+    assert fetched.state is ApplicationPacketState.DRAFT
+
+    approved = repo.set_packet_state(packet.id, ApplicationPacketState.APPROVED)
+    assert approved.state is ApplicationPacketState.APPROVED
+    assert approved.approved_at is not None
 
 
 def test_create_and_get_latest_optimization(repo, tracked_app):

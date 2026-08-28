@@ -10,9 +10,20 @@ from hiresense.applications.domain.models import (
     ApplicationJobSnapshot,
     ApplicationMatch,
 )
+from hiresense.applications.domain.application_packet import (
+    ApplicationPacket,
+    ApplicationPacketState,
+)
 
 
 class ApplicationRepositoryPort(Protocol):
+    def create_packet(self, packet: ApplicationPacket) -> ApplicationPacket: ...
+    def get_packet(self, packet_id: uuid.UUID) -> ApplicationPacket | None: ...
+    def get_latest_packet(self, application_id: uuid.UUID) -> ApplicationPacket | None: ...
+    def set_packet_state(
+        self, packet_id: uuid.UUID, state: ApplicationPacketState
+    ) -> ApplicationPacket: ...
+
     # Job snapshot (1:1)
     def create_snapshot(self, snapshot: ApplicationJobSnapshot) -> ApplicationJobSnapshot: ...
     def get_snapshot(self, application_id: uuid.UUID) -> ApplicationJobSnapshot | None: ...

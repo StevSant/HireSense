@@ -4,6 +4,7 @@ from hiresense.applications.infrastructure.orm import (
     ApplicationInterviewPrepOrm,
     ApplicationJobSnapshotOrm,
     ApplicationMatchOrm,
+    ApplicationPacketOrm,
 )
 from hiresense.applications.infrastructure.repository import ApplicationRepository
 
@@ -13,5 +14,6 @@ __all__ = [
     "ApplicationInterviewPrepOrm",
     "ApplicationJobSnapshotOrm",
     "ApplicationMatchOrm",
+    "ApplicationPacketOrm",
     "ApplicationRepository",
 ]

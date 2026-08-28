@@ -4,6 +4,7 @@ import uuid as uuid_mod
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse
 
 from hiresense.shared.kernel import resolve_page_limit
 from hiresense.shared.ports import LatexCompileError
@@ -11,6 +12,7 @@ from hiresense.applications.api.dependencies import (
     get_application_service,
     get_apply_service,
     get_artifact_service,
+    get_packet_service,
 )
 from hiresense.applications.api.schemas import (
     ApplicationListItemResponse,
@@ -32,6 +34,12 @@ from hiresense.applications.domain.application_service import ApplicationService
 from hiresense.applications.domain.apply_service import ApplyService
 from hiresense.applications.domain.autofill_plan_view import AutofillPlanView
 from hiresense.applications.domain.artifact_service import ArtifactService
+from hiresense.applications.domain.application_packet import (
+    ApplicationPacket,
+    ApplicationPacketNotReadyError,
+    ApplicationPacketService,
+)
+from hiresense.applications.domain.pdf_quality import PdfInspection, inspect_pdf
 from hiresense.identity.api.dependencies import enforce_expensive_rate_limit, require_auth
 from hiresense.ingestion.api.dependencies import get_job_query
 from hiresense.ingestion.domain.models import NormalizedJob
@@ -182,11 +190,98 @@ def get_application(
     return application.model_copy(update=updates)
 
 
+@router.post("/{application_id}/packet", response_model=ApplicationPacket, status_code=201)
+def create_application_packet(
+    application_id: uuid_mod.UUID,
+    service: ApplicationPacketService = Depends(get_packet_service),
+) -> ApplicationPacket:
+    """Freeze the current job/profile/artifact inputs for review."""
+    try:
+        return service.create(application_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/{application_id}/packet", response_model=ApplicationPacket | None)
+def get_application_packet(
+    application_id: uuid_mod.UUID,
+    service: ApplicationPacketService = Depends(get_packet_service),
+) -> ApplicationPacket | None:
+    return service.latest(application_id)
+
+
+@router.post("/{application_id}/packet/{packet_id}/approve", response_model=ApplicationPacket)
+def approve_application_packet(
+    application_id: uuid_mod.UUID,
+    packet_id: uuid_mod.UUID,
+    service: ApplicationPacketService = Depends(get_packet_service),
+) -> ApplicationPacket:
+    packet = service.latest(application_id)
+    if packet is None or packet.id != packet_id:
+        raise HTTPException(status_code=404, detail="Application packet not found")
+    try:
+        return service.approve(packet_id)
+    except ApplicationPacketNotReadyError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/{application_id}/packet/{packet_id}/revoke", response_model=ApplicationPacket)
+def revoke_application_packet(
+    application_id: uuid_mod.UUID,
+    packet_id: uuid_mod.UUID,
+    service: ApplicationPacketService = Depends(get_packet_service),
+) -> ApplicationPacket:
+    packet = service.latest(application_id)
+    if packet is None or packet.id != packet_id:
+        raise HTTPException(status_code=404, detail="Application packet not found")
+    try:
+        return service.revoke(packet_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/{application_id}/packet/export")
+def export_application_packet(
+    application_id: uuid_mod.UUID,
+    service: ApplicationPacketService = Depends(get_packet_service),
+) -> JSONResponse:
+    try:
+        payload = service.export_packet(application_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return JSONResponse(
+        content=payload,
+        headers={
+            "Content-Disposition": f'attachment; filename="application_packet_{application_id}.json"'
+        },
+    )
+
+
+@router.post("/{application_id}/packet/restore", response_model=ApplicationPacket, status_code=201)
+def restore_application_packet(
+    application_id: uuid_mod.UUID,
+    payload: dict,
+    service: ApplicationPacketService = Depends(get_packet_service),
+) -> ApplicationPacket:
+    try:
+        return service.restore_packet(application_id, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @router.delete("/{application_id}", status_code=204)
 def delete_application(
     application_id: uuid_mod.UUID,
+    confirm: bool = Query(False),
     service: ApplicationService = Depends(get_application_service),
 ) -> Response:
+    if not confirm:
+        raise HTTPException(
+            status_code=409,
+            detail="Deletion requires explicit confirmation (?confirm=true)",
+        )
     try:
         service.remove(application_id)
     except ValueError as exc:
@@ -349,6 +444,37 @@ async def download_cv_pdf(
     )
 
 
+@router.get("/{application_id}/quality")
+async def inspect_application_quality(
+    application_id: uuid_mod.UUID,
+    apply_service: ApplyService = Depends(get_apply_service),
+    packet_service: ApplicationPacketService = Depends(get_packet_service),
+) -> dict[str, object]:
+    """Compile and inspect both application PDFs before external submission."""
+    packet = packet_service.latest(application_id)
+    if packet is None:
+        raise HTTPException(status_code=409, detail="Create a review packet first")
+    try:
+        cv_pdf = await apply_service.compile_cv_pdf(application_id)
+        letter_pdf = await apply_service.compile_cover_letter_pdf(application_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    cv = inspect_pdf(cv_pdf)
+    letter = inspect_pdf(letter_pdf)
+    return {
+        "packet_id": packet.id,
+        "packet_state": packet.state,
+        "quality_report": packet.quality_report,
+        "cv_pdf": PdfInspection.model_validate(cv).model_dump(mode="json"),
+        "cover_letter_pdf": PdfInspection.model_validate(letter).model_dump(mode="json"),
+        "ready": packet.quality_report.ready
+        and cv.valid
+        and letter.valid
+        and cv.has_text_layer
+        and letter.has_text_layer,
+    }
+
+
 @router.get("/{application_id}/cover-letter.pdf")
 async def download_cover_letter_pdf(
     application_id: uuid_mod.UUID,
@@ -402,6 +528,8 @@ async def mark_applied(
     except InvalidStatusTransitionError as exc:
         # e.g. the tracked application is already terminal (accepted/rejected):
         # a conflict with its current state, not a missing resource.
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ApplicationPacketNotReadyError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

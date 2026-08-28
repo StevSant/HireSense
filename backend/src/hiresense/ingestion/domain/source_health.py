@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class SourceHealthStatus(str, Enum):
@@ -31,6 +31,9 @@ class SourceHealth(BaseModel):
     jobs_rejected_malformed: int = 0
     rate_limited_count: int = 0
     parse_failures: int = 0
+    parser_confidence: float | None = None
+    last_fetch_complete: bool | None = None
+    warnings: list[str] = Field(default_factory=list)
     last_error: str | None = None
 
 
@@ -45,6 +48,9 @@ class SourceRunStats(BaseModel):
     jobs_rejected_malformed: int = 0
     rate_limited_count: int = 0
     parse_failures: int = 0
+    parser_confidence: float | None = None
+    fetch_complete: bool = True
+    warnings: list[str] = Field(default_factory=list)
     error: str | None = None
     success: bool = True
 
@@ -86,10 +92,19 @@ class SourceHealthTracker:
         health.jobs_rejected_malformed = stats.jobs_rejected_malformed
         health.rate_limited_count = stats.rate_limited_count
         health.parse_failures = stats.parse_failures
+        health.parser_confidence = stats.parser_confidence
+        health.last_fetch_complete = stats.fetch_complete
+        health.warnings = list(stats.warnings)
         if stats.success and not stats.error:
             health.last_success_at = now
             health.last_error = None
-            if stats.parse_failures or stats.rate_limited_count or stats.jobs_rejected_malformed:
+            if (
+                stats.parse_failures
+                or stats.rate_limited_count
+                or stats.jobs_rejected_malformed
+                or not stats.fetch_complete
+                or (stats.parser_confidence is not None and stats.parser_confidence < 0.8)
+            ):
                 health.status = SourceHealthStatus.DEGRADED
             else:
                 health.status = SourceHealthStatus.HEALTHY

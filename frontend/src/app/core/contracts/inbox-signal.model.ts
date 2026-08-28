@@ -5,6 +5,8 @@ export interface InboxSignal {
   message_id: string;
   from_address: string;
   subject: string;
+  evidence_excerpt: string;
+  evidence_hash: string;
   received_at: string;
   kind: string;
   company: string | null;

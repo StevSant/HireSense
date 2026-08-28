@@ -12,6 +12,7 @@ import { CvOptimization } from '@core/contracts/cv-optimization.model';
 import { ApplicationInterviewPrep } from '@core/contracts/application-interview-prep.model';
 import { CoverLetter } from '@core/contracts/cover-letter.model';
 import { CoverLetterLibraryItem } from '@core/contracts/cover-letter-library-item.model';
+import { ApplicationPacket } from '@core/contracts/application-packet.model';
 
 @Injectable({ providedIn: 'root' })
 export class ApplicationsService {
@@ -59,6 +60,40 @@ export class ApplicationsService {
     return this.api.get<ApplicationAggregate>(API_ROUTES.applications.byId({ id }));
   }
 
+  getPacket(id: string): Observable<ApplicationPacket | null> {
+    return this.api.get<ApplicationPacket | null>(API_ROUTES.applications.packet({ id }));
+  }
+
+  createPacket(id: string): Observable<ApplicationPacket> {
+    return this.api.post<ApplicationPacket>(API_ROUTES.applications.packet({ id }), {});
+  }
+
+  approvePacket(id: string, packetId: string): Observable<ApplicationPacket> {
+    return this.api.post<ApplicationPacket>(
+      API_ROUTES.applications.packetApprove({ id, packetId }),
+      {},
+    );
+  }
+
+  revokePacket(id: string, packetId: string): Observable<ApplicationPacket> {
+    return this.api.post<ApplicationPacket>(
+      API_ROUTES.applications.packetRevoke({ id, packetId }),
+      {},
+    );
+  }
+
+  exportPacket(id: string): Observable<Blob> {
+    return this.api.getBlob(API_ROUTES.applications.packetExport({ id }));
+  }
+
+  restorePacket(id: string, packet: ApplicationPacket): Observable<ApplicationPacket> {
+    return this.api.post<ApplicationPacket>(API_ROUTES.applications.packetRestore({ id }), packet);
+  }
+
+  inspectQuality(id: string): Observable<Record<string, unknown>> {
+    return this.api.get<Record<string, unknown>>(API_ROUTES.applications.quality({ id }));
+  }
+
   createFromJob(jobId: string): Observable<ApplicationAggregate> {
     return this.api.post<ApplicationAggregate>(API_ROUTES.applications.root(), { job_id: jobId });
   }
@@ -79,7 +114,9 @@ export class ApplicationsService {
   }
 
   remove(id: string): Observable<void> {
-    return this.api.delete<void>(API_ROUTES.applications.byId({ id }));
+    return this.api.delete<void>(API_ROUTES.applications.byId({ id }), {
+      params: new HttpParams().set('confirm', 'true'),
+    });
   }
 
   updateSnapshot(

@@ -1,3 +1,42 @@
+.packet-review {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--border-subtle, #d8dee9);
+  border-radius: 0.75rem;
+  background: var(--surface-raised, #fff);
+}
+
+.packet-review h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.packet-review p {
+  margin: 0.35rem 0 0;
+}
+
+.packet-actions {
+  flex: 0 0 auto;
+}
+
+.packet-warnings {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--color-warning-text, #8a5a00);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 700px) {
+  .packet-review {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 .detail-header {
   display: flex;
   justify-content: space-between;

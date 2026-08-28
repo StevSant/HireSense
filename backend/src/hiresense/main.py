@@ -5,8 +5,10 @@ from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI, Request
+from fastapi import status as http_status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 from hiresense.admin.api import router as admin_router
 from hiresense.analytics.api import router as analytics_router
@@ -309,6 +311,7 @@ def create_app() -> FastAPI:
         portfolio_citation=portfolio.provider.get_citation_service()
         if portfolio is not None
         else None,
+        claim_service=claims.service,
     )
     app.include_router(applications_router)
 
@@ -383,5 +386,21 @@ def create_app() -> FastAPI:
     @app.get("/health")
     async def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/health/ready")
+    def readiness() -> dict[str, str]:
+        """Report whether the API can reach its required database dependency."""
+        try:
+            with infra.sync_session_factory() as session:
+                session.execute(text("SELECT 1"))
+        except Exception as exc:  # noqa: BLE001 - health endpoint must never leak details
+            logging.getLogger(__name__).warning("Readiness check failed: %s", type(exc).__name__)
+            from fastapi import HTTPException
+
+            raise HTTPException(
+                status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="database unavailable",
+            ) from exc
+        return {"status": "ready"}
 
     return app

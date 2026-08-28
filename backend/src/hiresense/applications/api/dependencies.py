@@ -6,6 +6,7 @@ from hiresense.applications.api.provider import ApplicationsProvider
 from hiresense.applications.domain.application_service import ApplicationService
 from hiresense.applications.domain.apply_service import ApplyService
 from hiresense.applications.domain.artifact_service import ArtifactService
+from hiresense.applications.domain.application_packet import ApplicationPacketService
 
 
 def _get_provider(request: Request) -> ApplicationsProvider:
@@ -31,3 +32,9 @@ def get_apply_service(
     provider: ApplicationsProvider = Depends(_get_provider),
 ) -> ApplyService:
     return provider.get_apply_service()
+
+
+def get_packet_service(
+    provider: ApplicationsProvider = Depends(_get_provider),
+) -> ApplicationPacketService:
+    return provider.get_packet_service()

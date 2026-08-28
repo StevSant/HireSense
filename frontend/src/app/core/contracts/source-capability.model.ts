@@ -55,6 +55,9 @@ export interface SourceHealth {
   jobs_rejected_malformed: number;
   rate_limited_count: number;
   parse_failures: number;
+  parser_confidence?: number | null;
+  last_fetch_complete?: boolean | null;
+  warnings?: string[];
   last_error: string | null;
 }
 

@@ -34,6 +34,7 @@ from hiresense.ingestion.domain.job_query_service import JobQueryService
 from hiresense.ingestion.domain.job_quality_classifier import JobQualityClassifier
 from hiresense.ingestion.domain.job_quality_verdict import JobQualityVerdict
 from hiresense.ingestion.domain.job_revalidation_service import JobRevalidationService
+from hiresense.ingestion.domain.models import RawJobListing, SourceFetchMetadata
 from hiresense.ingestion.domain.job_sort import sort_jobs
 from hiresense.ingestion.domain.opportunity import InternationalPathway, OpportunityType
 from hiresense.ingestion.domain.portal_config import load_portals_config
@@ -84,6 +85,8 @@ __all__ = [
     "SourceHealthStatus",
     "SourceHealthTracker",
     "SourceRunStats",
+    "RawJobListing",
+    "SourceFetchMetadata",
     "TRACKED_FIELDS",
     "UpsertResult",
     "detect_closures",

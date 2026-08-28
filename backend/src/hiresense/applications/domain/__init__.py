@@ -6,6 +6,14 @@ from hiresense.applications.domain.aggregate import (
     MatchView,
 )
 from hiresense.applications.domain.application_service import ApplicationService
+from hiresense.applications.domain.pdf_quality import PdfInspection, inspect_pdf
+from hiresense.applications.domain.application_packet import (
+    ApplicationPacket,
+    ApplicationPacketService,
+    ApplicationPacketNotReadyError,
+    ApplicationPacketState,
+    ApplicationQualityReport,
+)
 from hiresense.applications.domain.artifact_service import ArtifactService
 from hiresense.applications.domain.ats_field_map import build_autofill_plan
 from hiresense.applications.domain.autofill_plan_view import AutofillPlanView
@@ -28,6 +36,13 @@ __all__ = [
     "ApplicationJobSnapshot",
     "ApplicationMatch",
     "ApplicationService",
+    "PdfInspection",
+    "inspect_pdf",
+    "ApplicationPacket",
+    "ApplicationPacketService",
+    "ApplicationPacketNotReadyError",
+    "ApplicationPacketState",
+    "ApplicationQualityReport",
     "ArtifactService",
     "AutofillPlanView",
     "FieldFill",

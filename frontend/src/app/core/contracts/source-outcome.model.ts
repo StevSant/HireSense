@@ -3,4 +3,6 @@ export interface SourceOutcome {
   applications: number;
   reached_interview: number;
   interview_rate: number;
+  sample_sufficient?: boolean;
+  confidence_note?: string;
 }

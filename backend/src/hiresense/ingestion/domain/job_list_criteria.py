@@ -37,8 +37,10 @@ class JobListCriteria:
         # Normalised on both sides: criteria dates arrive naive from query
         # params while posted_date is aware, and comparing them raises.
         posted = as_utc(job.posted_date)
-        if self.date_from and (posted is None or posted < as_utc(self.date_from)):
+        date_from = as_utc(self.date_from)
+        date_to = as_utc(self.date_to)
+        if date_from is not None and (posted is None or posted < date_from):
             return False
-        if self.date_to and (posted is None or posted > as_utc(self.date_to)):
+        if date_to is not None and (posted is None or posted > date_to):
             return False
         return True

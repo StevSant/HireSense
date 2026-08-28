@@ -110,13 +110,17 @@ def filter_and_paginate(
     if params.date_from:
         date_from = as_utc(params.date_from)
         filtered = [
-            j for j in filtered if (p := as_utc(j.posted_date)) is not None and p >= date_from
+            j
+            for j in filtered
+            if date_from is not None and (p := as_utc(j.posted_date)) is not None and p >= date_from
         ]
 
     if params.date_to:
         date_to = as_utc(params.date_to)
         filtered = [
-            j for j in filtered if (p := as_utc(j.posted_date)) is not None and p <= date_to
+            j
+            for j in filtered
+            if date_to is not None and (p := as_utc(j.posted_date)) is not None and p <= date_to
         ]
 
     if params.min_score is not None:
@@ -125,11 +129,7 @@ def filter_and_paginate(
         # exemption allowed clearly irrelevant jobs to leak into the default
         # list indefinitely, especially after a score-only sort or restart.
         # Jobs with no score still pass so a profile can be added later.
-        filtered = [
-            j
-            for j in filtered
-            if j.match_score is None or j.match_score >= threshold
-        ]
+        filtered = [j for j in filtered if j.match_score is None or j.match_score >= threshold]
 
     if params.seniority_levels:
         allowed = set(params.seniority_levels)

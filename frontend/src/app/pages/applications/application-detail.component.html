@@ -66,6 +66,54 @@
       </div>
     </header>
 
+    <section class="packet-review" aria-labelledby="packet-review-title">
+      <div>
+        <h2 id="packet-review-title">Application review packet</h2>
+        @if (packet(); as reviewPacket) {
+          <p class="muted">
+            {{ reviewPacket.state | titlecase }} ·
+            {{ (reviewPacket.quality_report.skill_coverage_ratio * 100).toFixed(0) }}% skill
+            coverage
+          </p>
+          @if (reviewPacket.quality_report.warnings.length) {
+            <ul class="packet-warnings">
+              @for (warning of reviewPacket.quality_report.warnings; track warning) {
+                <li>{{ warning }}</li>
+              }
+            </ul>
+          }
+        } @else {
+          <p class="muted">
+            Freeze the current job, profile, claims, and generated artifacts for review.
+          </p>
+        }
+      </div>
+      <div class="packet-actions">
+        @if (!packet()) {
+          <button
+            class="btn-secondary"
+            type="button"
+            [disabled]="packetLoading()"
+            (click)="createPacket()"
+          >
+            {{ packetLoading() ? 'Preparing…' : 'Create review packet' }}
+          </button>
+        } @else if (packet()?.state === 'draft') {
+          <button
+            class="btn-primary"
+            type="button"
+          [disabled]="packetLoading() || !packet()?.quality_report?.ready"
+            (click)="approvePacket()"
+          >
+            {{ packetLoading() ? 'Approving…' : 'Approve packet' }}
+          </button>
+        }
+        @if (packet()) {
+          <button class="btn-secondary" type="button" (click)="exportPacket()">Export JSON</button>
+        }
+      </div>
+    </section>
+
     <nav class="tabs">
       <button [class.active]="activeTab() === 'job'" (click)="setTab('job')">Job</button>
       <button [class.active]="activeTab() === 'match'" (click)="setTab('match')">

@@ -10,7 +10,7 @@
         @if (f.by_source.length) {
           <ul class="source-list">
             @for (o of f.by_source; track o.source) {
-              <li class="source-card">
+              <li class="source-card" [title]="o.confidence_note ?? ''">
                 <div class="source-card-top">
                   <span class="source-name">{{ o.source }}</span>
                   <span class="source-apps">{{ o.applications }} tracked</span>
@@ -18,6 +18,9 @@
                 <span class="source-rate" [class.zero]="o.reached_interview === 0">
                   {{ interviewPct(o) }}% <span class="source-rate-unit">→ interview</span>
                 </span>
+                @if (o.sample_sufficient === false) {
+                  <small class="source-confidence">Directional — small sample</small>
+                }
               </li>
             }
           </ul>

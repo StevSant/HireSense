@@ -11,6 +11,7 @@ import logging
 from hiresense.shared.ports import LatexCompileError, LatexCompilerPort
 from hiresense.shared.kernel.exceptions import NotFoundError
 from hiresense.applications.domain.aggregate import CoverLetterView
+from hiresense.applications.domain.application_packet import ApplicationPacketNotReadyError
 from hiresense.applications.domain.ats_field_map import build_autofill_plan
 from hiresense.applications.domain.autofill_plan_view import AutofillPlanView
 from hiresense.applications.domain.cover_letter_generator import CoverLetterGenerator
@@ -39,6 +40,7 @@ class ApplyService:
         tracking_service: Any,
         *,
         portfolio_citation: Any = None,
+        packet_service: Any = None,
     ) -> None:
         self._repo = repository
         self._generator = cover_letter_generator
@@ -46,6 +48,7 @@ class ApplyService:
         self._profiles = profile_service
         self._tracking = tracking_service
         self._portfolio_citation = portfolio_citation
+        self._packet_service = packet_service
 
     async def generate_cover_letter(
         self,
@@ -202,6 +205,14 @@ class ApplyService:
         )
 
     async def mark_applied(self, application_id: uuid.UUID) -> None:
+        if self._packet_service is not None:
+            packet = self._packet_service.latest(application_id)
+            if packet is not None and (
+                packet.state.value != "approved" or not self._packet_service.is_current(packet)
+            ):
+                raise ApplicationPacketNotReadyError(
+                    "Approve a current application packet before marking applied"
+                )
         # Idempotent: set status=APPLIED, set applied_at if not already set.
         await self._tracking.update_status(
             application_id,

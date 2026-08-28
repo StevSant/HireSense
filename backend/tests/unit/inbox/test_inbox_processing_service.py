@@ -103,6 +103,8 @@ async def test_run_creates_matched_pending_signal():
     assert sig.state is SignalState.PENDING
     assert sig.matched_application_id is not None
     assert sig.proposed_status == ApplicationStatus.REJECTED.value
+    assert sig.evidence_excerpt == "We regret..."
+    assert len(sig.evidence_hash) == 64
 
 
 @pytest.mark.asyncio

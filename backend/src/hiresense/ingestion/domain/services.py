@@ -13,7 +13,7 @@ from hiresense.ingestion.domain.application_classifier import classify_applicati
 from hiresense.ingestion.domain.identity import identity_key
 from hiresense.ingestion.domain.job_closure_reason import JobClosureReason
 from hiresense.ingestion.domain.job_history_recorder import JobHistoryRecorder
-from hiresense.ingestion.domain.models import NormalizedJob
+from hiresense.ingestion.domain.models import NormalizedJob, RawJobListing
 from hiresense.ingestion.domain.work_authorization_facts import add_work_authorization_facts
 from hiresense.ingestion.domain.normalizer import JobNormalizer
 from hiresense.ingestion.domain.source_health import SourceHealthTracker, SourceRunStats
@@ -162,6 +162,28 @@ class IngestionOrchestrator:
                     fetched_count = len(raw_jobs)
                     run_stats.pages_fetched = getattr(source, "last_pages_fetched", 0) or 0
                     run_stats.jobs_discovered = fetched_count
+                    metadata = [getattr(raw, "fetch_metadata", None) for raw in raw_jobs]
+                    if metadata:
+                        run_stats.pages_fetched = max(
+                            run_stats.pages_fetched,
+                            max(
+                                (item.pages_fetched for item in metadata if item is not None),
+                                default=0,
+                            ),
+                        )
+                        run_stats.parser_confidence = min(
+                            (item.parser_confidence for item in metadata if item is not None),
+                            default=1.0,
+                        )
+                        run_stats.fetch_complete = all(
+                            item.complete for item in metadata if item is not None
+                        )
+                        run_stats.warnings = [
+                            warning
+                            for item in metadata
+                            if item is not None
+                            for warning in item.warnings
+                        ][:20]
                     run_stats.jobs_rejected_malformed = int(
                         getattr(source, "last_rejected_malformed", 0) or 0
                     )
@@ -169,14 +191,29 @@ class IngestionOrchestrator:
                         getattr(source, "last_rate_limited_count", 0) or 0
                     )
                     run_stats.parse_failures = int(getattr(source, "last_parse_failures", 0) or 0)
+                    if run_stats.jobs_rejected_malformed or run_stats.parse_failures:
+                        # A partial/ambiguous response must never be treated as
+                        # a complete snapshot: doing so could mass-close valid
+                        # jobs that were omitted by a broken parser.
+                        run_stats.fetch_complete = False
+                        run_stats.warnings.append(
+                            "snapshot closure skipped because the source returned malformed or unparsed listings"
+                        )
                     _metrics.jobs_fetched_total.add(fetched_count, {"source": source_name})
 
                     normalized: list[NormalizedJob] = []
                     for raw in raw_jobs:
                         try:
+                            raw = RawJobListing.model_validate(raw)
+                            raw_meta = raw.fetch_metadata.model_dump(exclude_defaults=True)
                             normalized_data = add_work_authorization_facts(
                                 normalizer.normalize(raw)
                             )
+                            if raw_meta:
+                                normalized_data["source_metadata"] = {
+                                    **dict(normalized_data.get("source_metadata") or {}),
+                                    "fetch_metadata": raw_meta,
+                                }
                         except Exception:
                             run_stats.jobs_rejected_malformed += 1
                             logger.exception(
@@ -240,7 +277,7 @@ class IngestionOrchestrator:
 
                     # Disappearance-based closure: only for snapshot sources, only after a
                     # successful fetch (errored fetches `continue` above and never reach here).
-                    if source.supports_snapshot_closure():
+                    if source.supports_snapshot_closure() and run_stats.fetch_complete:
                         closed_ids = await asyncio.to_thread(
                             self._repository.bump_missed_and_close,
                             source_name,

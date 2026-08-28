@@ -13,12 +13,17 @@ from hiresense.applications.domain.models import (
     ApplicationJobSnapshot,
     ApplicationMatch,
 )
+from hiresense.applications.domain.application_packet import (
+    ApplicationPacket,
+    ApplicationPacketState,
+)
 from hiresense.applications.infrastructure.orm import (
     ApplicationCoverLetterOrm,
     ApplicationCvOptimizationOrm,
     ApplicationInterviewPrepOrm,
     ApplicationJobSnapshotOrm,
     ApplicationMatchOrm,
+    ApplicationPacketOrm,
 )
 from hiresense.shared.infrastructure import SqlRepository
 from hiresense.tracking.infrastructure.orm import TrackedApplicationOrm
@@ -55,6 +60,21 @@ _PREP_FIELDS = (
     "negotiation_points",
     "matched_stories",
 )
+_PACKET_FIELDS = (
+    "application_id",
+    "job_snapshot_hash",
+    "profile_hash",
+    "match_id",
+    "optimization_id",
+    "cover_letter_id",
+    "verified_claim_ids",
+    "cv_content_hash",
+    "cover_letter_content_hash",
+    "quality_report",
+    "state",
+    "approved_at",
+    "revoked_at",
+)
 
 
 _ChildT = TypeVar("_ChildT")
@@ -65,6 +85,42 @@ def _orm_kwargs(model: Any, fields: tuple[str, ...]) -> dict[str, Any]:
 
 
 class ApplicationRepository(SqlRepository):
+    def create_packet(self, packet: ApplicationPacket) -> ApplicationPacket:
+        values = _orm_kwargs(packet, _PACKET_FIELDS)
+        values["state"] = packet.state.value
+        values["verified_claim_ids"] = [str(item) for item in packet.verified_claim_ids]
+        values["quality_report"] = packet.quality_report.model_dump(mode="json")
+        return self._insert(ApplicationPacketOrm(**values), ApplicationPacket.model_validate)
+
+    def get_packet(self, packet_id: uuid.UUID) -> ApplicationPacket | None:
+        return self._get_by_pk(ApplicationPacketOrm, packet_id, ApplicationPacket.model_validate)
+
+    def get_latest_packet(self, application_id: uuid.UUID) -> ApplicationPacket | None:
+        stmt = (
+            select(ApplicationPacketOrm)
+            .where(ApplicationPacketOrm.application_id == application_id)
+            .order_by(ApplicationPacketOrm.created_at.desc(), ApplicationPacketOrm.id.desc())
+            .limit(1)
+        )
+        return self._select_one(stmt, ApplicationPacket.model_validate)
+
+    def set_packet_state(
+        self, packet_id: uuid.UUID, state: ApplicationPacketState
+    ) -> ApplicationPacket:
+        from datetime import datetime, timezone
+
+        values: dict[str, object] = {"state": state.value}
+        if state is ApplicationPacketState.APPROVED:
+            values["approved_at"] = datetime.now(timezone.utc)
+        elif state is ApplicationPacketState.REVOKED:
+            values["revoked_at"] = datetime.now(timezone.utc)
+        saved = self._update_by_pk(
+            ApplicationPacketOrm, packet_id, values, ApplicationPacket.model_validate
+        )
+        if saved is None:
+            raise ValueError(f"Application packet {packet_id} not found")
+        return saved
+
     # ---- snapshots ----------------------------------------------------
 
     def create_snapshot(self, snapshot: ApplicationJobSnapshot) -> ApplicationJobSnapshot:

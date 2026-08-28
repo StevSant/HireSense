@@ -122,3 +122,35 @@ class ApplicationInterviewPrepOrm(Base):
     created_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+
+class ApplicationPacketOrm(Base):
+    """Immutable application inputs/outputs with mutable approval state."""
+
+    __tablename__ = "application_packets"
+    __table_args__ = (
+        Index("ix_application_packets_application_created", "application_id", "created_at"),
+        Index("ix_application_packets_state", "state"),
+    )
+
+    id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
+    application_id: Mapped[uuid_mod.UUID] = mapped_column(
+        Uuid, ForeignKey("tracked_applications.id", ondelete="CASCADE"), nullable=False
+    )
+    job_snapshot_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    profile_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    match_id: Mapped[uuid_mod.UUID | None] = mapped_column(Uuid, nullable=True)
+    optimization_id: Mapped[uuid_mod.UUID | None] = mapped_column(Uuid, nullable=True)
+    cover_letter_id: Mapped[uuid_mod.UUID | None] = mapped_column(Uuid, nullable=True)
+    verified_claim_ids: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    cv_content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    cover_letter_content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    quality_report: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    state: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="draft", server_default="draft"
+    )
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )

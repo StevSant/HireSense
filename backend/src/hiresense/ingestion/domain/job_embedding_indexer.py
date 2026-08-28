@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from hiresense.ingestion.domain.embedding_text import job_text, job_text_hash
@@ -96,13 +97,13 @@ class JobEmbeddingIndexer:
             )
         return indexed
 
-    async def _upsert_pending(
-        self, items: list[tuple[str, list[float], dict[str, Any]]]
-    ) -> int:
+    async def _upsert_pending(self, items: list[tuple[str, list[float], dict[str, Any]]]) -> int:
         if not items:
             return 0
 
-        bulk_upsert = getattr(self._vector_store, "upsert_many", None)
+        bulk_upsert: (
+            Callable[[list[tuple[str, list[float], dict[str, Any]]]], Awaitable[None]] | None
+        ) = getattr(self._vector_store, "upsert_many", None)
         if callable(bulk_upsert):
             try:
                 await bulk_upsert(items)

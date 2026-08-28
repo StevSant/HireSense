@@ -9,6 +9,7 @@ import { PortfolioService } from '../../core/services/portfolio.service';
 import { ApplicationAggregate } from '@core/contracts/application-aggregate.model';
 import { TrackedApplication } from '@core/contracts/tracked-application.model';
 import { PortfolioVisit } from '@core/contracts/portfolio-engagement.model';
+import { ApplicationPacket } from '@core/contracts/application-packet.model';
 import { JobTabComponent } from './components/job-tab.component';
 import { MatchTabComponent } from './components/match-tab.component';
 import { CvTabComponent } from './components/cv-tab.component';
@@ -49,6 +50,8 @@ export class ApplicationDetailComponent implements OnInit {
   activeTab = signal<TabKey>('job');
   deleting = signal(false);
   portfolioVisit = signal<PortfolioVisit | null>(null);
+  packet = signal<ApplicationPacket | null>(null);
+  packetLoading = signal(false);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -61,6 +64,7 @@ export class ApplicationDetailComponent implements OnInit {
       this.activeTab.set(tab);
     }
     this.load(id);
+    this.loadPacket(id);
     this.portfolioService
       .engagement()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -118,6 +122,74 @@ export class ApplicationDetailComponent implements OnInit {
       });
   }
 
+  loadPacket(id: string): void {
+    // Keep the detail shell resilient to lightweight host/test doubles that
+    // only implement the aggregate endpoints.
+    if (typeof this.service.getPacket !== 'function') return;
+    this.service
+      .getPacket(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (packet) => this.packet.set(packet), error: () => this.packet.set(null) });
+  }
+
+  createPacket(): void {
+    const agg = this.aggregate();
+    if (!agg) return;
+    this.packetLoading.set(true);
+    this.service
+      .createPacket(agg.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (packet) => {
+          this.packet.set(packet);
+          this.packetLoading.set(false);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Failed to create review packet');
+          this.packetLoading.set(false);
+        },
+      });
+  }
+
+  approvePacket(): void {
+    const agg = this.aggregate();
+    const packet = this.packet();
+    if (!agg || !packet) return;
+    this.packetLoading.set(true);
+    this.service
+      .approvePacket(agg.id, packet.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updated) => {
+          this.packet.set(updated);
+          this.packetLoading.set(false);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.detail ?? 'Packet is not ready for approval');
+          this.packetLoading.set(false);
+        },
+      });
+  }
+
+  exportPacket(): void {
+    const agg = this.aggregate();
+    if (!agg) return;
+    this.service
+      .exportPacket(agg.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = `application_packet_${agg.id}.json`;
+          anchor.click();
+          URL.revokeObjectURL(url);
+        },
+        error: (err) => this.error.set(err?.error?.detail ?? 'Failed to export packet'),
+      });
+  }
+
   setTab(tab: TabKey): void {
     this.activeTab.set(tab);
     // Update query param so deep links work; don't reload
@@ -131,7 +203,10 @@ export class ApplicationDetailComponent implements OnInit {
 
   reload(): void {
     const agg = this.aggregate();
-    if (agg) this.load(agg.id);
+    if (agg) {
+      this.load(agg.id);
+      this.loadPacket(agg.id);
+    }
   }
 
   updateDetails(updated: TrackedApplication): void {

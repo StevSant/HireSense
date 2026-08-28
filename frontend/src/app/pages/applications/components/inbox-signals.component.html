@@ -32,6 +32,9 @@
               }
               <span class="confidence">{{ signal.confidence | number: '1.0-0' }}% confidence</span>
             </p>
+            @if (signal.evidence_excerpt) {
+              <blockquote class="evidence">“{{ signal.evidence_excerpt }}”</blockquote>
+            }
           </div>
           <div class="actions">
             <button

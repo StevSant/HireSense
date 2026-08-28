@@ -74,7 +74,7 @@ with skill overlap and tiered LLM scoring — then helps you act on the results,
 
 - **Multi-source ingestion** — job boards (Remotive, Jobicy, Himalayas,
   WeWorkRemotely, GetOnBoard, LinkedIn, HN "Who is hiring?", Arbeitnow, The Muse,
-  Dice, CrunchBoard, Y Combinator Jobs; plus optional Adzuna and import fallbacks
+  Dice, ZipRecruiter, CrunchBoard, Y Combinator Jobs; plus optional Adzuna and import fallbacks
   for Indeed / Wellfound / Glassdoor / Monster) and company ATS portals
   (Greenhouse, Lever, Ashby, Workable, SmartRecruiters, Recruitee), deduplicated
   by stable identity with cross-source provenance.

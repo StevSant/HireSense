@@ -67,6 +67,14 @@ class JobSourcesSettings(BaseSettings):
     dice_posted_date: str = ""  # ONE | THREE | SEVEN or blank
     dice_employment_types: list[str] = []
 
+    # ZipRecruiter official Job Search MCP (read-only; no API key required).
+    ziprecruiter_mcp_url: str = "https://api.ziprecruiter.com/mcp"
+    ziprecruiter_query: str = "software engineer"
+    ziprecruiter_location: str = ""
+    ziprecruiter_country: str = ""
+    ziprecruiter_remote_only: bool = False
+    ziprecruiter_page_limit: int = 6
+
     # CrunchBoard official RSS (latest-window feed).
     crunchboard_rss_url: str = "https://www.crunchboard.com/jobs.rss"
     crunchboard_result_limit: int = 200

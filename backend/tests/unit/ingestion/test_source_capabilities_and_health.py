@@ -14,7 +14,16 @@ from hiresense.ingestion.domain.source_health import (
 
 
 def test_registry_covers_new_sources() -> None:
-    for name in ("dice", "crunchboard", "yc_jobs", "indeed", "wellfound", "glassdoor", "monster"):
+    for name in (
+        "dice",
+        "ziprecruiter",
+        "crunchboard",
+        "yc_jobs",
+        "indeed",
+        "wellfound",
+        "glassdoor",
+        "monster",
+    ):
         caps = get_source_capabilities(name)
         assert caps is not None
         assert caps.source == name

@@ -70,6 +70,7 @@ SOURCE_TIER: dict[str, int] = {
     "hn_hiring": 2,
     "crunchboard": 3,
     "dice": 3,
+    "ziprecruiter": 3,
     "adzuna": 3,
     "linkedin": 3,
     "indeed": 4,
@@ -257,6 +258,29 @@ SOURCE_CAPABILITY_REGISTRY: dict[str, SourceCapabilities] = {
         provides_technology_tags=True,
         closure_strategy="url_probe",
         limitations="Uses Dice's official MCP search_jobs tool over HTTPS JSON-RPC.",
+    ),
+    "ziprecruiter": SourceCapabilities(
+        source="ziprecruiter",
+        display_name="ZipRecruiter",
+        apply_access=ApplyAccess.UNKNOWN,
+        apply_access_note=(
+            "The listing opens on ZipRecruiter; application access can vary by posting "
+            "and may require a ZipRecruiter account."
+        ),
+        source_type=SourceType.API,
+        integration="official_api",
+        enabled_by_default=True,
+        supports_keyword_search=True,
+        supports_location_search=True,
+        supports_remote_filter=True,
+        supports_pagination=True,
+        provides_salary=True,
+        provides_company_metadata=True,
+        closure_strategy="url_probe",
+        limitations=(
+            "Uses ZipRecruiter's official read-only Job Search MCP; coverage is limited "
+            "to the public search result window and US/Canada listings."
+        ),
     ),
     "crunchboard": SourceCapabilities(
         source="crunchboard",

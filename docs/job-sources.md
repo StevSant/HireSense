@@ -11,6 +11,7 @@ portals from `portals.yml`. Capability metadata is available at
 | `dice` | Official MCP `search_jobs` | URL probe | Configure `DICE_QUERY`, remote/page limits |
 | `crunchboard` | Official `jobs.rss` | URL probe | Latest-window feed |
 | `yc_jobs` | Public Work at a Startup Inertia JSON | URL probe | Role list via `YC_JOBS_ROLES`; optional company enrich |
+| `ziprecruiter` | Official Job Search MCP | URL probe | Read-only search; up to six offsets with five results per call; configure query/location/country |
 | Existing boards | API / RSS / HTML | see capabilities | Remotive, Jobicy, Himalayas, … |
 
 ## Company portals
@@ -90,6 +91,11 @@ dir is rejected.
 4. Wire config + bootstrap branch; export from package `__init__.py`.
 5. Unit-test with FakeHttp / fixtures (no live network in default CI).
 6. Document knobs in `.env.example`.
+
+ZipRecruiter uses `ZIPRECRUITER_MCP_URL`, `ZIPRECRUITER_QUERY`,
+`ZIPRECRUITER_LOCATION`, `ZIPRECRUITER_COUNTRY`, `ZIPRECRUITER_REMOTE_ONLY`,
+and `ZIPRECRUITER_PAGE_LIMIT`. Its public MCP endpoint is read-only and does not
+require a partner API key; the public result window is intentionally bounded.
 
 ## Optional live smoke tests
 

@@ -29,6 +29,7 @@ from hiresense.ingestion.adapters.workable_adapter import WorkableAdapter
 from hiresense.ingestion.adapters.workday_adapter import WorkdayAdapter
 from hiresense.ingestion.adapters.yc_jobs import YCJobsAdapter
 from hiresense.ingestion.adapters.globant_adapter import GlobantAdapter
+from hiresense.ingestion.adapters.ziprecruiter import ZipRecruiterAdapter
 
 __all__ = [
     "AdzunaAdapter",
@@ -60,4 +61,5 @@ __all__ = [
     "WorkableAdapter",
     "WorkdayAdapter",
     "YCJobsAdapter",
+    "ZipRecruiterAdapter",
 ]

@@ -36,6 +36,7 @@ from hiresense.ingestion.domain.normalizers.weworkremotely_normalizer import (
 from hiresense.ingestion.domain.normalizers.workday_normalizer import WorkdayNormalizer
 from hiresense.ingestion.domain.normalizers.workable_normalizer import WorkableNormalizer
 from hiresense.ingestion.domain.normalizers.yc_jobs_normalizer import YCJobsNormalizer
+from hiresense.ingestion.domain.normalizers.ziprecruiter_normalizer import ZipRecruiterNormalizer
 
 __all__ = [
     "AdzunaNormalizer",
@@ -66,4 +67,5 @@ __all__ = [
     "WorkdayNormalizer",
     "WorkableNormalizer",
     "YCJobsNormalizer",
+    "ZipRecruiterNormalizer",
 ]

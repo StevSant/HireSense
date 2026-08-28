@@ -6,6 +6,7 @@ import json
 import logging
 from typing import Any
 
+from hiresense.ingestion.adapters._mcp_jsonrpc import McpJsonRpcClient, parse_jsonrpc_response
 from hiresense.ingestion.domain.models import RawJobListing
 from hiresense.shared.kernel.value_objects import SourceType
 
@@ -13,25 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 def _parse_sse_jsonrpc(text: str) -> dict[str, Any]:
-    """Extract the first JSON-RPC message from an MCP SSE or plain JSON body."""
-    text = text.strip()
-    if not text:
-        raise ValueError("Empty MCP response")
-    if text.startswith("{"):
-        data = json.loads(text)
-        if isinstance(data, dict):
-            return data
-        raise ValueError("Unexpected MCP JSON payload")
-    for line in text.splitlines():
-        line = line.strip()
-        if line.startswith("data:"):
-            payload = line[5:].strip()
-            if not payload:
-                continue
-            data = json.loads(payload)
-            if isinstance(data, dict):
-                return data
-    raise ValueError("No JSON-RPC data frame in MCP response")
+    """Backward-compatible test/helper alias for the shared MCP parser."""
+    return parse_jsonrpc_response(text)
 
 
 class DiceAdapter:
@@ -55,7 +39,7 @@ class DiceAdapter:
         employment_types: list[str] | None = None,
     ) -> None:
         self._http = http_client
-        self._mcp_url = mcp_url.rstrip("/")
+        self._mcp = McpJsonRpcClient(http_client, mcp_url)
         self._query = query
         self._location = location
         self._remote_only = remote_only
@@ -79,34 +63,18 @@ class DiceAdapter:
 
     async def _rpc(
         self, method: str, params: dict[str, Any] | None = None, *, rpc_id: int = 1
-    ) -> dict:
-        payload: dict[str, Any] = {"jsonrpc": "2.0", "id": rpc_id, "method": method}
-        if params is not None:
-            payload["params"] = params
-        response = await self._http.post(
-            self._mcp_url,
-            json=payload,
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json, text/event-stream",
-            },
-        )
-        if getattr(response, "status_code", 200) == 429:
-            self.last_rate_limited_count += 1
-        response.raise_for_status()
-        body = getattr(response, "text", None)
-        if body is None and hasattr(response, "json"):
-            data = response.json()
-            if isinstance(data, dict):
-                return data
-            raise ValueError("Unexpected MCP JSON response")
-        return _parse_sse_jsonrpc(body or "")
+    ) -> dict[str, Any]:
+        try:
+            return await self._mcp.call(method, params, rpc_id=rpc_id)
+        finally:
+            self.last_rate_limited_count = self._mcp.last_rate_limited_count
 
     async def fetch_jobs(self, filters: dict[str, Any] | None = None) -> list[RawJobListing]:
         self.last_pages_fetched = 0
         self.last_rate_limited_count = 0
         self.last_parse_failures = 0
         self.last_rejected_malformed = 0
+        self._mcp.reset_metrics()
 
         query = (filters or {}).get("search") or (filters or {}).get("q") or self._query
         location = (filters or {}).get("location") or self._location

@@ -19,6 +19,7 @@ class IngestionSettings(BaseSettings):
         "themuse",
         "dice",
         "yc_jobs",
+        "ziprecruiter",
     ]
     # NOTE: `linkedin` is a fragile guest-endpoint HTML scraper (ToS-risky,
     # breaks on markup changes and rate-limits aggressively). It's kept enabled

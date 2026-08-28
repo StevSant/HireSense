@@ -36,6 +36,7 @@ from hiresense.ingestion.adapters import (
     WorkdayAdapter,
     WorkableAdapter,
     YCJobsAdapter,
+    ZipRecruiterAdapter,
 )
 from hiresense.ingestion.api.provider import IngestionProvider
 from hiresense.ingestion.domain import (
@@ -79,6 +80,7 @@ from hiresense.ingestion.domain.normalizers import (
     WorkdayNormalizer,
     WorkableNormalizer,
     YCJobsNormalizer,
+    ZipRecruiterNormalizer,
 )
 from hiresense.ingestion.domain.quick_scoring_service import QuickScoringService
 from hiresense.ingestion.domain.source_health import SourceHealthTracker
@@ -218,6 +220,19 @@ def build_ingestion(
                 )
             )
             normalizers["yc_jobs"] = YCJobsNormalizer()
+        elif source_name == "ziprecruiter":
+            sources.append(
+                ZipRecruiterAdapter(
+                    http_client=http_client,
+                    mcp_url=s.ziprecruiter_mcp_url,
+                    query=s.ziprecruiter_query,
+                    location=s.ziprecruiter_location,
+                    country=s.ziprecruiter_country,
+                    remote_only=s.ziprecruiter_remote_only,
+                    page_limit=s.ziprecruiter_page_limit,
+                )
+            )
+            normalizers["ziprecruiter"] = ZipRecruiterNormalizer()
         elif source_name == "indeed":
             sources.append(
                 IndeedAdapter(

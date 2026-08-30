@@ -1,3 +1,50 @@
+/* --- Page heading --- */
+.page-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.25rem 0 1.25rem;
+}
+
+.page-eyebrow {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--accent);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.page-heading h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  line-height: 1.15;
+}
+
+.page-heading p {
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.result-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.result-summary strong {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
 /* --- Tabs --- */
 .tab-bar {
   display: flex;
@@ -184,6 +231,44 @@ table {
   white-space: nowrap;
 }
 
+.title-text {
+  vertical-align: middle;
+}
+
+.mobility-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.45rem;
+  padding: 0.16rem 0.45rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  vertical-align: middle;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.mobility-standard {
+  border-color: #b9e2db;
+  background: #effaf8;
+  color: #0f766e;
+}
+
+.mobility-pathway {
+  border-color: #bfd0f6;
+  background: #f0f4ff;
+  color: #315bb5;
+}
+
+.mobility-move {
+  border-color: #f2d09a;
+  background: #fff7e8;
+  color: #a15c00;
+}
+
 .date-cell {
   color: var(--text-secondary);
 }
@@ -234,6 +319,18 @@ table {
     width: auto;
     min-width: 180px;
   }
+}
+
+.results-label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  color: var(--text-muted);
+}
+
+.results-label strong {
+  color: var(--text-primary);
+  font-size: 0.9375rem;
 }
 
 /* The toggles move as one group at the end of the bar. Giving each label its
@@ -385,6 +482,61 @@ tr.closed {
 .source-badge-dice {
   background: #ecfdf5;
   color: #047857;
+}
+
+/* --- Mobility legend --- */
+.mobility-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+  margin: -0.25rem 0 0.8rem;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.legend-title {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+}
+
+.legend-item > span {
+  display: inline-grid;
+  place-items: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+}
+
+.legend-standard > span {
+  background: #e6f5f2;
+  color: #0f766e;
+}
+
+.legend-pathway > span {
+  background: #e8efff;
+  color: #315bb5;
+}
+
+.legend-move > span {
+  background: #fff1d6;
+  color: #a15c00;
+}
+
+.legend-note {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
 }
 .source-badge-ziprecruiter {
   background: #dbeafe;

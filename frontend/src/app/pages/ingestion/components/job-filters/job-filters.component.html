@@ -1,179 +1,192 @@
-<div class="filters-bar">
-  <div class="filter-item">
-    <span class="filter-label" id="filter-source-label">Source</span>
-    <app-combobox
-      labelledBy="filter-source-label"
-      placeholder="All sources"
-      emptyText="No matching source"
-      [options]="sourceOptions()"
-      [value]="filters().source ?? ''"
-      (valueChange)="onSourceChange($event)"
-    />
-  </div>
-
-  <div class="filter-item">
-    <label class="filter-label" for="filter-keyword">Keyword</label>
-    <input
-      id="filter-keyword"
-      type="text"
-      [value]="filters().keyword ?? ''"
-      (input)="onKeywordInput($event)"
-      placeholder="Search title, description..."
-      class="filter-control"
-    />
-  </div>
-
-  <div class="filter-item">
-    <label class="filter-label" for="filter-location">Job location</label>
-    <input
-      id="filter-location"
-      type="text"
-      [value]="filters().location ?? ''"
-      (input)="onLocationInput($event)"
-      placeholder="e.g. Remote, USA..."
-      class="filter-control"
-    />
-  </div>
-
-  <div class="filter-item">
-    <label class="filter-label" for="filter-skills">Skills</label>
-    <input
-      id="filter-skills"
-      type="text"
-      [value]="filters().skills ?? ''"
-      (input)="onSkillsInput($event)"
-      placeholder="Python, React..."
-      class="filter-control"
-    />
-  </div>
-
-  <div class="filter-item">
-    <label class="filter-label" for="filter-date-from">Date From</label>
-    <input
-      id="filter-date-from"
-      type="date"
-      [value]="filters().date_from ?? ''"
-      (change)="onDateFromChange($event)"
-      class="filter-control"
-    />
-  </div>
-
-  <div class="filter-item">
-    <label class="filter-label" for="filter-date-to">Date To</label>
-    <input
-      id="filter-date-to"
-      type="date"
-      [value]="filters().date_to ?? ''"
-      (change)="onDateToChange($event)"
-      class="filter-control"
-    />
-  </div>
-
-  <div class="filter-item filter-item-clear">
-    <button (click)="clearAll()" class="btn-clear">Clear all</button>
-  </div>
-</div>
-
-<div class="pathway-bar">
-  <div class="filter-item">
-    <label class="filter-label" for="filter-opportunity-type">Opportunity type</label>
-    <select
-      id="filter-opportunity-type"
-      class="filter-control filter-select"
-      [value]="filters().opportunity_type ?? ''"
-      (change)="onOpportunityTypeChange($event)"
-    >
-      <option value="">All opportunities</option>
-      <option value="internship">Internships</option>
-      <option value="entry_level">Entry-level / graduate</option>
-      <option value="full_time">Full-time</option>
-      <option value="part_time">Part-time</option>
-      <option value="contract">Contract</option>
-      <option value="temporary">Temporary</option>
-    </select>
-  </div>
-
-  <div class="filter-item">
-    <label class="filter-label" for="filter-international-pathway">International pathway</label>
-    <select
-      id="filter-international-pathway"
-      class="filter-control filter-select"
-      [value]="filters().international_pathway ?? ''"
-      (change)="onInternationalPathwayChange($event)"
-    >
-      <option value="">Any pathway</option>
-      <option value="international">Visa or worldwide remote</option>
-      <option value="visa_sponsorship">Visa sponsorship stated</option>
-      <option value="worldwide_remote">Worldwide remote</option>
-    </select>
-  </div>
-
-  <p class="pathway-note">
-    Use these filters to separate internships and roles that may support an international move.
-  </p>
-</div>
-
-<div class="location-pref-bar">
-  <div class="filter-item">
-    <label class="filter-label" for="filter-user-location">My country</label>
-    <div class="user-location-row">
+<section class="filters-shell" aria-label="Job filters">
+  <div class="filters-primary">
+    <div class="filter-item filter-item-keyword">
+      <label class="filter-label" for="filter-keyword">Search</label>
       <input
-        id="filter-user-location"
+        id="filter-keyword"
         type="text"
-        [value]="filters().user_location ?? ''"
-        (input)="onUserLocationInput($event)"
-        placeholder="e.g. Chile, USA, Spain"
+        [value]="filters().keyword ?? ''"
+        (input)="onKeywordInput($event)"
+        placeholder="Title, company, or keyword"
         class="filter-control"
       />
-      <button
-        type="button"
-        class="btn-detect"
-        (click)="useDetectedLocation()"
-        title="Detect from your browser timezone"
+    </div>
+
+    <div class="filter-item filter-item-location">
+      <label class="filter-label" for="filter-location">Job location</label>
+      <input
+        id="filter-location"
+        type="text"
+        [value]="filters().location ?? ''"
+        (input)="onLocationInput($event)"
+        placeholder="Remote, USA..."
+        class="filter-control"
+      />
+    </div>
+
+    <div class="filter-item filter-item-source">
+      <span class="filter-label" id="filter-source-label">Source</span>
+      <app-combobox
+        labelledBy="filter-source-label"
+        placeholder="All sources"
+        emptyText="No matching source"
+        [options]="sourceOptions()"
+        [value]="filters().source ?? ''"
+        (valueChange)="onSourceChange($event)"
+      />
+    </div>
+
+    <div class="filter-item filter-item-mobility">
+      <label class="filter-label" for="filter-international-pathway">Mobility route</label>
+      <select
+        id="filter-international-pathway"
+        class="filter-control filter-select"
+        [value]="filters().international_pathway ?? ''"
+        (change)="onInternationalPathwayChange($event)"
       >
-        Use my timezone
-      </button>
+        <option value="">Any route</option>
+        <option value="international">International pathway</option>
+        <option value="visa_sponsorship">Visa sponsorship</option>
+        <option value="worldwide_remote">Worldwide remote</option>
+      </select>
     </div>
-  </div>
-  <label class="strict-toggle">
-    <input
-      type="checkbox"
-      [checked]="filters().strict_location ?? false"
-      (change)="onStrictLocationChange($event)"
-    />
-    <span>Only show jobs I can apply to from my country</span>
-  </label>
-</div>
 
-<div class="seniority-bar">
-  <div class="seniority-group">
-    <span class="filter-label">Seniority</span>
-    <div class="seniority-pills">
-      @for (level of ['intern', 'junior', 'mid', 'senior', 'lead']; track level) {
-        <label class="seniority-pill" [class.active]="isSenioritySelected($any(level))">
-          <input
-            type="checkbox"
-            [checked]="isSenioritySelected($any(level))"
-            (change)="onSeniorityToggle($any(level), $event)"
-          />
-          <span>{{ level }}</span>
-        </label>
+    <button
+      type="button"
+      class="advanced-toggle"
+      [class.active]="showAdvancedFilters"
+      (click)="toggleAdvancedFilters()"
+      [attr.aria-expanded]="showAdvancedFilters"
+      aria-controls="advanced-job-filters"
+    >
+      <span>More filters</span>
+      @if (advancedFilterCount() > 0) {
+        <span class="filter-count">{{ advancedFilterCount() }}</span>
       }
-    </div>
+      <span class="advanced-chevron" aria-hidden="true">⌄</span>
+    </button>
   </div>
 
-  <div class="filter-item filter-item-narrow">
-    <label class="filter-label" for="filter-max-years">Max years experience</label>
-    <input
-      id="filter-max-years"
-      type="number"
-      min="0"
-      max="30"
-      step="1"
-      [value]="filters().max_years_experience ?? ''"
-      (input)="onMaxYearsInput($event)"
-      placeholder="e.g. 3"
-      class="filter-control"
-    />
+  @if (showAdvancedFilters) {
+    <div class="filters-advanced" id="advanced-job-filters">
+      <div class="filter-item">
+        <label class="filter-label" for="filter-skills">Skills</label>
+        <input
+          id="filter-skills"
+          type="text"
+          [value]="filters().skills ?? ''"
+          (input)="onSkillsInput($event)"
+          placeholder="Python, React..."
+          class="filter-control"
+        />
+      </div>
+
+      <div class="filter-item">
+        <label class="filter-label" for="filter-opportunity-type">Opportunity type</label>
+        <select
+          id="filter-opportunity-type"
+          class="filter-control filter-select"
+          [value]="filters().opportunity_type ?? ''"
+          (change)="onOpportunityTypeChange($event)"
+        >
+          <option value="">All opportunities</option>
+          <option value="internship">Internships</option>
+          <option value="entry_level">Entry-level / graduate</option>
+          <option value="full_time">Full-time</option>
+          <option value="part_time">Part-time</option>
+          <option value="contract">Contract</option>
+          <option value="temporary">Temporary</option>
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label class="filter-label" for="filter-date-from">Posted after</label>
+        <input
+          id="filter-date-from"
+          type="date"
+          [value]="filters().date_from ?? ''"
+          (change)="onDateFromChange($event)"
+          class="filter-control"
+        />
+      </div>
+
+      <div class="filter-item">
+        <label class="filter-label" for="filter-date-to">Posted before</label>
+        <input
+          id="filter-date-to"
+          type="date"
+          [value]="filters().date_to ?? ''"
+          (change)="onDateToChange($event)"
+          class="filter-control"
+        />
+      </div>
+
+      <div class="filter-item filter-item-experience">
+        <label class="filter-label" for="filter-max-years">Max years experience</label>
+        <input
+          id="filter-max-years"
+          type="number"
+          min="0"
+          max="30"
+          step="1"
+          [value]="filters().max_years_experience ?? ''"
+          (input)="onMaxYearsInput($event)"
+          placeholder="e.g. 3"
+          class="filter-control"
+        />
+      </div>
+
+      <div class="seniority-group">
+        <span class="filter-label">Seniority</span>
+        <div class="seniority-pills">
+          @for (level of ['intern', 'junior', 'mid', 'senior', 'lead']; track level) {
+            <label class="seniority-pill" [class.active]="isSenioritySelected($any(level))">
+              <input
+                type="checkbox"
+                [checked]="isSenioritySelected($any(level))"
+                (change)="onSeniorityToggle($any(level), $event)"
+              />
+              <span>{{ level }}</span>
+            </label>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="filters-footer">
+    <div class="location-preference">
+      <div class="filter-item location-item">
+        <label class="filter-label" for="filter-user-location">My country</label>
+        <div class="user-location-row">
+          <input
+            id="filter-user-location"
+            type="text"
+            [value]="filters().user_location ?? ''"
+            (input)="onUserLocationInput($event)"
+            placeholder="Ecuador"
+            class="filter-control"
+          />
+          <button
+            type="button"
+            class="btn-detect"
+            (click)="useDetectedLocation()"
+            title="Detect from your browser timezone"
+          >
+            Use timezone
+          </button>
+        </div>
+      </div>
+      <label class="strict-toggle">
+        <input
+          type="checkbox"
+          [checked]="filters().strict_location ?? false"
+          (change)="onStrictLocationChange($event)"
+        />
+        <span>Only show jobs I can apply to from my country</span>
+      </label>
+    </div>
+
+    <button type="button" (click)="clearAll()" class="btn-clear">Clear all</button>
   </div>
-</div>
+</section>

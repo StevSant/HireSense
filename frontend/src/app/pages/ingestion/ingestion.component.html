@@ -1,4 +1,18 @@
 <div class="page">
+  <header class="page-heading">
+    <div>
+      <span class="page-eyebrow">OPPORTUNITY INTAKE</span>
+      <h1>Find your next opportunity</h1>
+      <p>Collect, compare, and triage roles based on fit and mobility.</p>
+    </div>
+    @if (total() > 0) {
+      <div class="result-summary">
+        <strong>{{ total() | number }}</strong>
+        <span>matching opportunities</span>
+      </div>
+    }
+  </header>
+
   <!-- Tab bar -->
   <div class="tab-bar">
     <div class="tab-list">
@@ -162,6 +176,16 @@
     (filtersChange)="onFiltersChange($event)"
   />
 
+  <div class="mobility-legend" aria-label="Mobility categories">
+    <span class="legend-title">Mobility</span>
+    <span class="legend-item legend-standard"><span aria-hidden="true">⌂</span> Standard role</span>
+    <span class="legend-item legend-pathway"
+      ><span aria-hidden="true">↗</span> International pathway</span
+    >
+    <span class="legend-item legend-move"><span aria-hidden="true">✈</span> Move likely</span>
+    <span class="legend-note">Move status is inferred from work mode and your country.</span>
+  </div>
+
   <!-- Loading -->
   @if (loading() || scanning()) {
     <div class="loading-card">
@@ -184,6 +208,10 @@
   <!-- Sort bar -->
   @if (jobs().length > 0) {
     <div class="sort-bar">
+      <div class="results-label">
+        <strong>{{ total() | number }}</strong>
+        <span>opportunities</span>
+      </div>
       <div class="sort-toggles">
         <label class="toggle-label">
           <input
@@ -255,7 +283,14 @@
                 }
               </td>
               <td class="title" [title]="job.title">
-                {{ job.title || '—' }}
+                <span class="title-text">{{ job.title || '—' }}</span>
+                <span
+                  class="mobility-badge mobility-{{ mobilityKind(job) }}"
+                  [title]="mobilityTitle(job)"
+                >
+                  <span aria-hidden="true">{{ mobilityIcon(job) }}</span>
+                  {{ mobilityLabel(job) }}
+                </span>
                 @if (job.opportunity_type === 'internship') {
                   <span class="badge badge-internship">Internship</span>
                 } @else if (job.opportunity_type === 'entry_level') {

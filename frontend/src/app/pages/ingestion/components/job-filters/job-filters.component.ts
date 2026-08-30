@@ -21,6 +21,8 @@ export class JobFiltersComponent implements OnInit {
 
   filtersChange = output<JobFilters>();
 
+  showAdvancedFilters = false;
+
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Always emits exactly once, synchronously, even when there's no stored
@@ -58,6 +60,22 @@ export class JobFiltersComponent implements OnInit {
     { value: '', label: 'All sources' },
     ...this.sources().map((source) => ({ value: source, label: source })),
   ]);
+
+  advancedFilterCount = computed(() => {
+    const filters = this.filters();
+    return [
+      filters.skills,
+      filters.date_from,
+      filters.date_to,
+      filters.opportunity_type,
+      filters.seniority?.length,
+      filters.max_years_experience !== undefined,
+    ].filter(Boolean).length;
+  });
+
+  toggleAdvancedFilters(): void {
+    this.showAdvancedFilters = !this.showAdvancedFilters;
+  }
 
   onSourceChange(value: string): void {
     this.emitFilters({ source: value || undefined });

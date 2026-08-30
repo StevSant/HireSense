@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { CompanyLinkComponent } from '@core/components/company-link';
 import { PaginatorComponent } from '@core/components/paginator';
 import { SortableHeaderDirective } from '@core/components/sortable-header';
@@ -13,6 +13,8 @@ import { JobDetailPanelComponent } from './components/job-detail-panel/job-detai
 import { JobFiltersComponent } from './components/job-filters/job-filters.component';
 import { PreferenceTuningComponent } from './components/preference-tuning/preference-tuning.component';
 import { IngestionStore, IngestionTab } from './ingestion.store';
+
+type MobilityKind = 'standard' | 'pathway' | 'move';
 
 /**
  * Ingestion page — the job board / company portal browser.
@@ -31,6 +33,7 @@ import { IngestionStore, IngestionTab } from './ingestion.store';
     JobFiltersComponent,
     JobDetailPanelComponent,
     DatePipe,
+    DecimalPipe,
     FeedbackControlsComponent,
     PreferenceTuningComponent,
     SortableHeaderDirective,
@@ -199,5 +202,60 @@ export class IngestionComponent implements OnInit {
 
   connectionsCount(jobId: string): number | undefined {
     return this.store.connectionsCount(jobId);
+  }
+
+  mobilityKind(job: NormalizedJob): MobilityKind {
+    if (this.requiresMove(job)) return 'move';
+    if (this.hasInternationalPathway(job)) return 'pathway';
+    return 'standard';
+  }
+
+  mobilityLabel(job: NormalizedJob): string {
+    switch (this.mobilityKind(job)) {
+      case 'move':
+        return 'Move likely';
+      case 'pathway':
+        return 'International pathway';
+      default:
+        return 'Standard role';
+    }
+  }
+
+  mobilityIcon(job: NormalizedJob): string {
+    switch (this.mobilityKind(job)) {
+      case 'move':
+        return '✈';
+      case 'pathway':
+        return '↗';
+      default:
+        return '⌂';
+    }
+  }
+
+  mobilityTitle(job: NormalizedJob): string {
+    switch (this.mobilityKind(job)) {
+      case 'move':
+        return `This ${job.remote_modality === 'hybrid' ? 'hybrid' : 'on-site'} role appears to be outside your country. Confirm relocation requirements in the posting.`;
+      case 'pathway':
+        return 'The posting includes an international route such as visa sponsorship or worldwide remote work.';
+      default:
+        return 'No international pathway was detected for this posting.';
+    }
+  }
+
+  hasInternationalPathway(job: NormalizedJob): boolean {
+    return (job.international_pathways?.length ?? 0) > 0 || job.visa_sponsorship_available === true;
+  }
+
+  requiresMove(job: NormalizedJob): boolean {
+    const modality = job.remote_modality;
+    const userLocation = this.filters().user_location?.trim().toLowerCase();
+    const jobLocation = job.location?.trim().toLowerCase();
+
+    if (!userLocation || !jobLocation || !['hybrid', 'on_site'].includes(modality ?? '')) {
+      return false;
+    }
+
+    return !jobLocation.includes(userLocation);
   }
 }

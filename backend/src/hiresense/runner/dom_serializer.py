@@ -33,7 +33,7 @@ def _detect_captcha(soup: BeautifulSoup, raw: str) -> bool:
     if any(marker in haystack for marker in _CAPTCHA_MARKERS):
         return True
     for frame in soup.find_all("iframe"):
-        src = (frame.get("src") or "").casefold()
+        src = str(frame.get("src") or "").casefold()
         if any(marker in src for marker in _CAPTCHA_MARKERS):
             return True
     return False
@@ -132,7 +132,7 @@ def serialize_dom(html: str, *, url: str, title: str = "") -> dict:
                 in ("textarea", "select", "file", "checkbox", "radio", "submit", "button")
                 else "text",
                 "required": element.has_attr("required")
-                or (element.get("aria-required") or "").casefold() == "true",
+                or str(element.get("aria-required") or "").casefold() == "true",
                 "options": _options(element),
                 "current_value": _current_value(element),
             }

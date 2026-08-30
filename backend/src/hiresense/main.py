@@ -355,18 +355,6 @@ def create_app() -> FastAPI:
     app.state.inbox = inbox.provider
     app.include_router(inbox_router)
 
-    # --- Autopilot pipeline (Phase 4: auto-draft applications for top matches) ---
-    autopilot = build_autopilot(
-        infra,
-        applications_provider=app.state.applications_provider,
-        latest_digest=autohunt.service.latest,
-        job_query=ingestion.job_query,
-        notification_service=notifications.service,
-    )
-    if autopilot is not None:
-        app.state.autopilot = autopilot.provider
-        app.include_router(autopilot_router)
-
     # --- Submission queue (Autopilot Phase 5: auto-apply) ---
     submission = build_submission(
         infra,
@@ -378,6 +366,19 @@ def create_app() -> FastAPI:
     if submission is not None:
         app.state.submission = submission.provider
         app.include_router(submission_router)
+
+    # --- Autopilot pipeline (Phase 4: auto-draft applications for top matches) ---
+    autopilot = build_autopilot(
+        infra,
+        applications_provider=app.state.applications_provider,
+        latest_digest=autohunt.service.latest,
+        job_query=ingestion.job_query,
+        notification_service=notifications.service,
+        submission_service=submission.service if submission is not None else None,
+    )
+    if autopilot is not None:
+        app.state.autopilot = autopilot.provider
+        app.include_router(autopilot_router)
 
     # --- Scheduler (Autopilot Phase 1: self-drive the recurring pipeline) ---
     scheduler_build = build_scheduler(

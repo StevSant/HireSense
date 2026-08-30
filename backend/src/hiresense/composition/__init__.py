@@ -8,6 +8,7 @@ call in ``hiresense.main.create_app`` — no edits to unrelated wiring.
 
 from hiresense.composition.admin import AdminBuild, build_admin
 from hiresense.composition.autopilot import AutopilotBuild, build_autopilot
+from hiresense.composition.submission import SubmissionBuild, build_submission
 from hiresense.composition.inbox import InboxBuild, build_inbox
 from hiresense.composition.scheduler import SchedulerBuild, build_scheduler
 from hiresense.composition.analytics import AnalyticsBuild, build_analytics
@@ -58,6 +59,8 @@ __all__ = [
     "build_admin",
     "build_analytics",
     "build_autopilot",
+    "build_submission",
+    "SubmissionBuild",
     "build_inbox",
     "build_applications",
     "build_autohunt",

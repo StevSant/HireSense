@@ -39,8 +39,7 @@ def test_no_paid_apply_source_is_enabled_by_default() -> None:
 
     assert isinstance(default_sources, list)
     assert all(
-        source_apply_access(source) is not ApplyAccess.PAID_REQUIRED
-        for source in default_sources
+        source_apply_access(source) is not ApplyAccess.PAID_REQUIRED for source in default_sources
     )
 
 

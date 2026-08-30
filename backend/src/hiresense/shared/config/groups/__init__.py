@@ -15,6 +15,7 @@ from hiresense.shared.config.groups.portfolio import PortfolioSettings
 from hiresense.shared.config.groups.preference import PreferenceSettings
 from hiresense.shared.config.groups.research import ResearchSettings
 from hiresense.shared.config.groups.scheduling import SchedulingSettings
+from hiresense.shared.config.groups.submission import SubmissionSettings
 
 __all__ = [
     "AnalyticsSettings",
@@ -34,4 +35,5 @@ __all__ = [
     "PreferenceSettings",
     "ResearchSettings",
     "SchedulingSettings",
+    "SubmissionSettings",
 ]

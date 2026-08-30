@@ -4,7 +4,7 @@ import uuid as uuid_mod
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, Index, Integer, String, Uuid, func
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from hiresense.shared.infrastructure.database import Base
@@ -22,7 +22,11 @@ class SubmissionEventOrm(Base):
     __table_args__ = (Index("ix_submission_events_attempt_seq", "attempt_id", "seq"),)
 
     id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
-    attempt_id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, nullable=False)
+    attempt_id: Mapped[uuid_mod.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("submission_attempts.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     seq: Mapped[int] = mapped_column(Integer, nullable=False)
     kind: Mapped[str] = mapped_column(String(16), nullable=False)
     payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)

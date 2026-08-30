@@ -4,7 +4,7 @@ import uuid as uuid_mod
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, Index, Integer, String, Text, Uuid, func
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from hiresense.shared.infrastructure.database import Base
@@ -20,7 +20,11 @@ class SubmissionAttemptOrm(Base):
     )
 
     id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, primary_key=True, default=uuid_mod.uuid4)
-    application_id: Mapped[uuid_mod.UUID] = mapped_column(Uuid, nullable=False)
+    application_id: Mapped[uuid_mod.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("tracked_applications.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     job_id: Mapped[str] = mapped_column(String(128), nullable=False)
     packet_id: Mapped[uuid_mod.UUID | None] = mapped_column(Uuid, nullable=True)
     channel: Mapped[str] = mapped_column(String(32), nullable=False)

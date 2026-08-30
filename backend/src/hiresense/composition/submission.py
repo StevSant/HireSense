@@ -32,6 +32,7 @@ def build_submission(
     profile_service: Any,
     claim_service: Any = None,
     job_query: Any = None,
+    notification_service: Any = None,
 ) -> SubmissionBuild | None:
     """Wire the auto-apply submission queue, or nothing when it is disabled.
 
@@ -57,6 +58,7 @@ def build_submission(
         daily_cap=s.autopilot_submit_daily_cap,
         lease_seconds=s.submission_lease_seconds,
         max_attempts=s.submission_max_attempts,
+        notifier=notification_service,
     )
     context_builder = AttemptContextBuilder(
         profile_service=profile_service,

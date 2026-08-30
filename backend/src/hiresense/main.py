@@ -362,6 +362,7 @@ def create_app() -> FastAPI:
         profile_service=profile.service,
         claim_service=claims.service,
         job_query=ingestion.job_query,
+        notification_service=notifications.service,
     )
     if submission is not None:
         app.state.submission = submission.provider

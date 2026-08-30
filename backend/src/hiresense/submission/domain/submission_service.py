@@ -78,6 +78,7 @@ class SubmissionService:
         lease_seconds: int,
         max_attempts: int,
         clock: Callable[[], datetime] = _utcnow,
+        notifier: Any | None = None,
     ) -> None:
         self._repo = repo
         self._agent = agent
@@ -86,6 +87,7 @@ class SubmissionService:
         self._lease_seconds = lease_seconds
         self._max_attempts = max_attempts
         self._clock = clock
+        self._notifier = notifier
 
     # --- inbound -----------------------------------------------------------
 
@@ -166,7 +168,7 @@ class SubmissionService:
         await asyncio.to_thread(self._record, attempt_id, action)
 
         if isinstance(action, EscalateAction):
-            await asyncio.to_thread(
+            escalated = await asyncio.to_thread(
                 self._repo.update,
                 attempt.model_copy(
                     update={
@@ -177,6 +179,11 @@ class SubmissionService:
                     }
                 ),
             )
+            if self._notifier is not None:
+                try:
+                    await self._notifier.notify_submission_escalations([escalated])
+                except Exception:  # noqa: BLE001 - notification is best-effort
+                    logger.exception("submission: escalation notification failed")
         return action
 
     def _record(self, attempt_id: uuid.UUID, action: AgentAction) -> None:

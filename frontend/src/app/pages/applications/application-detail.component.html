@@ -102,7 +102,7 @@
           <button
             class="btn-primary"
             type="button"
-          [disabled]="packetLoading() || !packet()?.quality_report?.ready"
+            [disabled]="packetLoading() || !packet()?.quality_report?.ready"
             (click)="approvePacket()"
           >
             {{ packetLoading() ? 'Approving…' : 'Approve packet' }}

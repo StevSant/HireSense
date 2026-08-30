@@ -874,6 +874,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+agent = [
+    { name = "playwright" },
+]
 groq = [
     { name = "langchain-groq" },
 ]
@@ -915,6 +918,7 @@ requires-dist = [
     { name = "passlib", extras = ["bcrypt"], specifier = ">=1.7.4" },
     { name = "pgvector", specifier = ">=0.5.0" },
     { name = "playwright", specifier = ">=1.59.0" },
+    { name = "playwright", marker = "extra == 'agent'", specifier = ">=1.48.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.12" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.13.4" },
     { name = "pydantic-settings", specifier = ">=2.14.2" },
@@ -927,7 +931,7 @@ requires-dist = [
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.51" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.51.0" },
 ]
-provides-extras = ["groq", "ollama"]
+provides-extras = ["groq", "ollama", "agent"]
 
 [package.metadata.requires-dev]
 dev = [

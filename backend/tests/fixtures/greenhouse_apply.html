@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Apply — Senior Backend Engineer at Acme</title>
+    <style>
+      body { font-family: Helvetica, Arial, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <h1>Senior Backend Engineer</h1>
+    <p>Acme is hiring a backend engineer to work on payments infrastructure.</p>
+
+    <form id="application_form" action="/applications/new" method="post">
+      <input type="hidden" name="csrf_token" value="abc123" />
+
+      <div class="field">
+        <label for="first_name">First Name <span class="required">*</span></label>
+        <input type="text" id="first_name" name="first_name" required />
+      </div>
+
+      <div class="field">
+        <label>
+          Last Name *
+          <input type="text" name="last_name" required />
+        </label>
+      </div>
+
+      <div class="field">
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" required />
+      </div>
+
+      <div class="field">
+        <label for="phone">Phone</label>
+        <input type="tel" id="phone" name="phone" />
+      </div>
+
+      <div class="field">
+        <label for="resume">Resume/CV *</label>
+        <input type="file" id="resume" name="resume" required />
+      </div>
+
+      <div class="field">
+        <label for="cover_letter">Cover Letter</label>
+        <input type="file" id="cover_letter" name="cover_letter" />
+      </div>
+
+      <div class="field">
+        <label for="why">Why do you want to work at Acme? *</label>
+        <textarea id="why" name="why" required></textarea>
+      </div>
+
+      <div class="field">
+        <label for="sponsorship">Will you require visa sponsorship? *</label>
+        <select id="sponsorship" name="sponsorship" required>
+          <option value="">Please select</option>
+          <option value="yes">Yes</option>
+          <option value="no" selected>No</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="referral">How did you hear about us?</label>
+        <input type="text" id="referral" name="referral" />
+      </div>
+
+      <button type="submit" id="submit_app">Submit Application</button>
+    </form>
+
+    <script>
+      alert("tracking pixel fired");
+      window.dataLayer = window.dataLayer || [];
+    </script>
+  </body>
+</html>

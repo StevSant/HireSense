@@ -71,4 +71,5 @@ def build_applications(
         artifact_service=artifact_service,
         apply_service=apply_service,
         packet_service=packet_service,
+        repository=application_repo,
     )

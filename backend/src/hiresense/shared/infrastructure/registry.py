@@ -34,4 +34,8 @@ from hiresense.preference.infrastructure import FeedbackSignalOrm, PreferenceMod
 from hiresense.profile.infrastructure import ProfileOrm  # noqa: F401
 from hiresense.research.infrastructure import CompanyResearchOrm  # noqa: F401
 from hiresense.scheduler.infrastructure import JobRunOrm, JobToggleOrm  # noqa: F401
+from hiresense.submission.infrastructure import (  # noqa: F401
+    SubmissionAttemptOrm,
+    SubmissionEventOrm,
+)
 from hiresense.tracking.infrastructure import TrackedApplicationOrm  # noqa: F401

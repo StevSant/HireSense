@@ -28,6 +28,7 @@ class AutopilotPipelineService:
         job_query: Any | None = None,
         concurrency: int = 3,
         notifier: Any | None = None,
+        submission_enqueuer: Any | None = None,
     ) -> None:
         self._latest_digest = latest_digest
         self._drafter = drafter
@@ -36,6 +37,7 @@ class AutopilotPipelineService:
         self._top_n = top_n
         self._concurrency = concurrency
         self._notifier = notifier
+        self._submission_enqueuer = submission_enqueuer
         # Guards against a scheduled run and a manual run-now overlapping —
         # both paths end up calling into this same service instance.
         self._running = False
@@ -145,4 +147,14 @@ class AutopilotPipelineService:
         finalized = reserved.model_copy(
             update={"application_id": application_id, "status": status, "detail": detail}
         )
-        return await asyncio.to_thread(self._repo.finalize, finalized)
+        saved = await asyncio.to_thread(self._repo.finalize, finalized)
+
+        # Phase 5: hand the finished draft to the outbound submission queue.
+        # None unless auto-apply is enabled, which keeps Phase 4 behaviour
+        # byte-identical for anyone who has not opted in.
+        if self._submission_enqueuer is not None:
+            try:
+                await self._submission_enqueuer.enqueue_for_draft(saved)
+            except Exception:  # noqa: BLE001 - submitting is best-effort
+                logger.exception("autopilot: submission enqueue failed for job %r", job_id)
+        return saved

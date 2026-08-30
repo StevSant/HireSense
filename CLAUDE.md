@@ -71,6 +71,53 @@ Two traps when checking locally:
 - A bare `npx prettier --check "src/**/*"` flags all ~435 files on a CRLF checkout while
   passing in CI (LF). Pass `--end-of-line auto` when checking explicit paths.
 
+### Auto-apply agent (`uv run apply-agent`)
+
+Auto-apply (Autopilot Phase 5) submits applications to employer forms without you present.
+It is **off by default** — `AUTOPILOT_SUBMIT_ENABLED=false` — and when off the `/submission`
+routes are not even mounted.
+
+```bash
+# 1. Install the browser engine (optional dependency group; CI and Docker skip it)
+uv sync --extra agent
+uv run playwright install chromium
+
+# 2. Start YOUR Chrome with remote debugging, so the agent reuses your logged-in sessions
+#    Windows: "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222
+#    Linux:   google-chrome --remote-debugging-port=9222
+
+# 3. Drain the queue once (drive it from cron/Task Scheduler for a real cadence)
+uv run apply-agent
+```
+
+**Roll it out in this order — do not skip step 2.**
+
+1. `AUTOPILOT_SUBMIT_ENABLED=false` (the default): nothing changes.
+2. Enable it with `APPLY_AGENT_DRY_RUN=true`. The agent fills every field and captures
+   evidence but **never clicks submit**. Read the audit tape at
+   `GET /submission/attempts/{id}/events` for a few jobs — every field it filled, the value,
+   the confidence, and whether the value was generated or copied from your profile.
+3. Only then set `APPLY_AGENT_DRY_RUN=false`, with `AUTOPILOT_SUBMIT_DAILY_CAP=1`.
+4. Raise the cap once you trust it.
+
+**Two invariants worth knowing before you arm it:**
+
+- **Grounding is not configurable.** The agent may write prose freely, but any checkable
+  fact it asserts — a number, a date, a yes/no, a credential, a contact detail — must already
+  appear in your profile, a verified claim, or the job posting. Anything else is forced to
+  zero confidence and escalates. See `submission/domain/grounding.py`.
+- **The packet gate is unchanged.** `ApplyService.mark_applied` still refuses anything whose
+  `ApplicationPacket` is not `approved` and `is_current()`. Auto-apply did not remove that
+  gate; `PacketApprovingEnqueuer` just approves the packet when the deterministic quality
+  report passes and the match score clears `AUTOPILOT_SUBMIT_MIN_SCORE`.
+
+Anything the agent cannot ground lands in the review queue at `/submission` in the UI.
+Answers you give there are written back to `ApplyProfile.screening_answers`, so the same
+question is never asked twice — that write-back is what lets the queue drain over time.
+
+Kill it without a redeploy from the admin scheduler toggles, or by setting
+`AUTOPILOT_SUBMIT_ENABLED=false`.
+
 ### Docker
 
 ```bash

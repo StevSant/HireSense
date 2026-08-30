@@ -26,6 +26,23 @@ _LABEL_PATTERNS: dict[str, list[str]] = {
 }
 
 
+def match_canonical_key(label: str) -> str | None:
+    """Map a form field's visible label onto a canonical profile key.
+
+    The per-field counterpart to `build_autofill_plan`, for clients that walk a
+    live form rather than build a plan up front. Returns the first canonical key
+    whose label patterns appear in `label`, or None when nothing matches.
+    Exposed publicly so other modules never reach into `_LABEL_PATTERNS`.
+    """
+    haystack = (label or "").casefold()
+    if not haystack:
+        return None
+    for key, patterns in _LABEL_PATTERNS.items():
+        if any(pattern in haystack for pattern in patterns):
+            return key
+    return None
+
+
 def build_autofill_plan(ats_type: str | None, prefill: dict[str, object]) -> list[FieldFill]:
     """Turn a candidate's prefill values into per-field autofill instructions for
     an ATS form.

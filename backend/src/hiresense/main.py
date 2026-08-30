@@ -21,6 +21,7 @@ from hiresense.composition import (
     build_applications,
     build_autohunt,
     build_autopilot,
+    build_submission,
     build_cover_letter_templates,
     build_claims,
     build_identity,
@@ -61,6 +62,7 @@ from hiresense.optimization.domain import OptimizationError
 from hiresense.outreach.api import router as outreach_router
 from hiresense.network.api import router as network_router
 from hiresense.autopilot.api import router as autopilot_router
+from hiresense.submission.api import router as submission_router
 from hiresense.inbox.api import router as inbox_router
 from hiresense.notifications.api import router as notifications_router
 from hiresense.opportunities.api import router as opportunities_router
@@ -353,6 +355,19 @@ def create_app() -> FastAPI:
     app.state.inbox = inbox.provider
     app.include_router(inbox_router)
 
+    # --- Submission queue (Autopilot Phase 5: auto-apply) ---
+    submission = build_submission(
+        infra,
+        tracked,
+        profile_service=profile.service,
+        claim_service=claims.service,
+        job_query=ingestion.job_query,
+        notification_service=notifications.service,
+    )
+    if submission is not None:
+        app.state.submission = submission.provider
+        app.include_router(submission_router)
+
     # --- Autopilot pipeline (Phase 4: auto-draft applications for top matches) ---
     autopilot = build_autopilot(
         infra,
@@ -360,6 +375,7 @@ def create_app() -> FastAPI:
         latest_digest=autohunt.service.latest,
         job_query=ingestion.job_query,
         notification_service=notifications.service,
+        submission_service=submission.service if submission is not None else None,
     )
     if autopilot is not None:
         app.state.autopilot = autopilot.provider

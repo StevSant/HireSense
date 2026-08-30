@@ -167,10 +167,7 @@ async def batch_evaluate(
     if len(jobs) > max_jobs:
         raise HTTPException(
             status_code=413,
-            detail=(
-                f"Batch evaluation is limited to {max_jobs} jobs; "
-                f"received {len(jobs)}"
-            ),
+            detail=(f"Batch evaluation is limited to {max_jobs} jobs; received {len(jobs)}"),
         )
 
     profile = (

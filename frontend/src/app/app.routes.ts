@@ -105,6 +105,11 @@ export const routes: Routes = [
           import('./pages/outreach/outreach.component').then((m) => m.OutreachComponent),
       },
       {
+        path: 'submission',
+        loadComponent: () =>
+          import('./pages/submission/queue/queue.component').then((m) => m.QueueComponent),
+      },
+      {
         path: 'autohunt',
         loadComponent: () =>
           import('./pages/autohunt/autohunt.component').then((m) => m.AutohuntComponent),

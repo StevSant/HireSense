@@ -123,9 +123,7 @@ export class IngestionStore {
     );
     const healthSources = this.activeTab() === 'boards' ? boardNames : new Set<string>();
     const failing = this.sourceHealth().filter(
-      (h) =>
-        healthSources.has(h.source) &&
-        (h.status === 'failing' || h.status === 'degraded'),
+      (h) => healthSources.has(h.source) && (h.status === 'failing' || h.status === 'degraded'),
     );
     const unavailable = this.sourceCatalog().filter(
       (s) =>

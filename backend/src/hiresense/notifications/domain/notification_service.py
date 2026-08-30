@@ -9,6 +9,9 @@ from hiresense.notifications.domain.digest_email import render_digest_email
 from hiresense.notifications.domain.inbox_signals_email import render_inbox_signals_email
 from hiresense.notifications.domain.pipeline_drafts_email import render_pipeline_drafts_email
 from hiresense.notifications.domain.job_failure_email import render_job_failure_email
+from hiresense.notifications.domain.submission_escalation_email import (
+    render_submission_escalation_email,
+)
 from hiresense.shared.ports import EmailUnavailableError
 
 logger = logging.getLogger(__name__)
@@ -52,6 +55,13 @@ class NotificationService:
 
     async def notify_pipeline_drafts(self, count: int) -> bool:
         subject, body = render_pipeline_drafts_email(count)
+        return await self._safe_send(subject, body)
+
+    async def notify_submission_escalations(self, attempts: list) -> bool:
+        """Alert the candidate that auto-apply is waiting on a human answer."""
+        if not attempts:
+            return False
+        subject, body = render_submission_escalation_email(attempts)
         return await self._safe_send(subject, body)
 
     async def send_test(self) -> None:

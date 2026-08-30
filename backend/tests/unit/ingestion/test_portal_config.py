@@ -114,12 +114,7 @@ def test_filter_by_company() -> None:
 
 def test_shipped_portals_include_coderoad_greenhouse_board() -> None:
     config_path = (
-        Path(__file__).parents[3]
-        / "src"
-        / "hiresense"
-        / "ingestion"
-        / "config"
-        / "portals.yml"
+        Path(__file__).parents[3] / "src" / "hiresense" / "ingestion" / "config" / "portals.yml"
     )
     config = load_portals_config(config_path)
 

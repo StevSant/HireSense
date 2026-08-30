@@ -21,6 +21,7 @@ from hiresense.shared.config.groups import (
     PreferenceSettings,
     ResearchSettings,
     SchedulingSettings,
+    SubmissionSettings,
 )
 from hiresense.shared.config.mode import apply_mode
 from hiresense.shared.config.sources import (
@@ -47,6 +48,7 @@ class Settings(
     PortfolioSettings,
     ResearchSettings,
     OpportunitiesSettings,
+    SubmissionSettings,
 ):
     """Composed application settings — flat attribute access over all groups."""
 

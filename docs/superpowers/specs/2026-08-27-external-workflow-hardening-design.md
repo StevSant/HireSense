@@ -1,5 +1,12 @@
 # External workflow hardening design
 
+> **AMENDED 2026-08-30 by [Auto-Apply Agent](./2026-08-30-auto-apply-agent-design.md)
+> (Autopilot Phase 5).** The non-goal "Automatic submission to job portals" listed below
+> is **removed**. Automatic submission is now a shipped capability. Every other decision
+> and non-goal in this document — approval-gated side effects, untrusted external content
+> treated as data, no live portal smoke tests — remains in force and is honoured by the
+> auto-apply design.
+
 ## Goal
 
 Make HireSense's application and ingestion workflows auditable, approval-gated,

@@ -33,11 +33,19 @@ def upgrade() -> None:
         sa.Column("state", sa.String(length=16), nullable=False, server_default="draft"),
         sa.Column("approved_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("revoked_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.ForeignKeyConstraint(["application_id"], ["tracked_applications.id"], ondelete="CASCADE"),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
+        sa.ForeignKeyConstraint(
+            ["application_id"], ["tracked_applications.id"], ondelete="CASCADE"
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_application_packets_application_created", "application_packets", ["application_id", "created_at"])
+    op.create_index(
+        "ix_application_packets_application_created",
+        "application_packets",
+        ["application_id", "created_at"],
+    )
     op.create_index("ix_application_packets_state", "application_packets", ["state"])
 
 

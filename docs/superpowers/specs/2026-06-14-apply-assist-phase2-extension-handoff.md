@@ -14,6 +14,12 @@
 > manual), label-substring matching, token pasted once into the userscript
 > manager, `API_BASE` edited at the top of the script.
 
+> **AMENDED 2026-08-30 by [Auto-Apply Agent](./2026-08-30-auto-apply-agent-design.md)
+> (Autopilot Phase 5).** The "never headless auto-submit" principle stated below is
+> **withdrawn for the agent path**. HireSense now submits automatically via a local
+> browser agent, gated on per-field grounding and a confidence threshold. The userscript
+> described in this document remains shipped and unchanged as the **manual fallback**.
+
 ## Why this is a separate deliverable
 
 The extension is a Chrome/Edge **MV3** package (manifest + content script + popup)

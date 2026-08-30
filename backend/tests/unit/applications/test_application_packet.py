@@ -85,7 +85,9 @@ def test_create_packet_records_current_artifact_and_claim_versions() -> None:
             self.created = None
 
         def get_snapshot(self, _id):
-            return SimpleNamespace(description="Build Python APIs", required_skills=["Python"], source="ingested")
+            return SimpleNamespace(
+                description="Build Python APIs", required_skills=["Python"], source="ingested"
+            )
 
         def get_latest_match(self, _id):
             return SimpleNamespace(id=match_id)
@@ -108,7 +110,11 @@ def test_create_packet_records_current_artifact_and_claim_versions() -> None:
     service = ApplicationPacketService(
         repo,
         SimpleNamespace(get=lambda _id: object()),
-        SimpleNamespace(get_for_language=lambda _language: SimpleNamespace(model_dump=lambda mode: {"skills": ["Python"]})),
+        SimpleNamespace(
+            get_for_language=lambda _language: SimpleNamespace(
+                model_dump=lambda mode: {"skills": ["Python"]}
+            )
+        ),
         Claims(),
     )
 

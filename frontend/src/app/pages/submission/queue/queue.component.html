@@ -1,0 +1,80 @@
+<section class="queue">
+  <header class="queue__header">
+    <div>
+      <h1>Needs your answer</h1>
+      <p class="queue__lede">
+        Auto-apply paused these applications because it could not answer a question from your
+        profile, your verified claims, or the job posting. Nothing is submitted until you answer.
+      </p>
+    </div>
+    <button type="button" class="btn" (click)="load()" [disabled]="loading()">Refresh</button>
+  </header>
+
+  @if (error()) {
+    <p class="queue__error" role="alert">{{ error() }}</p>
+  }
+  @if (notice()) {
+    <p class="queue__notice" role="status">{{ notice() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="queue__empty">Loading…</p>
+  } @else if (attempts().length === 0) {
+    <p class="queue__empty">
+      Nothing waiting. Auto-apply is answering everything from your profile.
+    </p>
+  } @else {
+    <ul class="queue__list">
+      @for (attempt of attempts(); track attempt.id) {
+        <li class="attempt">
+          <button type="button" class="attempt__summary" (click)="toggle(attempt.id)">
+            <span class="attempt__job">{{ attempt.job_id }}</span>
+            <span class="attempt__reason">{{ attempt.escalation_reason }}</span>
+            <span class="attempt__count"> {{ attempt.escalated_fields.length }} question(s) </span>
+          </button>
+
+          @if (expandedId() === attempt.id) {
+            <div class="attempt__detail">
+              <p class="attempt__target">
+                <a [href]="attempt.target_url" target="_blank" rel="noopener noreferrer">
+                  Open the application form
+                </a>
+              </p>
+
+              @for (field of attempt.escalated_fields; track field) {
+                <label class="attempt__field">
+                  <span class="attempt__label">{{ field }}</span>
+                  <textarea
+                    rows="3"
+                    [ngModel]="answerFor(attempt.id, field)"
+                    (ngModelChange)="setAnswer(attempt.id, field, $event)"
+                    [name]="attempt.id + field"
+                  ></textarea>
+                </label>
+              }
+
+              <div class="attempt__actions">
+                <button
+                  type="button"
+                  class="btn btn--primary"
+                  [disabled]="!canResume(attempt) || busyId() === attempt.id"
+                  (click)="resume(attempt)"
+                >
+                  Save answers and retry
+                </button>
+                <button
+                  type="button"
+                  class="btn btn--ghost"
+                  [disabled]="busyId() === attempt.id"
+                  (click)="abandon(attempt)"
+                >
+                  Don't apply
+                </button>
+              </div>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

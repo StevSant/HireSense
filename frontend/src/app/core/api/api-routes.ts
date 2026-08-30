@@ -74,6 +74,12 @@ export const API_ROUTES = {
     drafts: defineRoute('/autopilot/drafts'),
     run: defineRoute('/autopilot/run'),
   },
+  submission: {
+    attempts: defineRoute('/submission/attempts'),
+    events: defineRoute('/submission/attempts/:id/events'),
+    resume: defineRoute('/submission/attempts/:id/resume'),
+    abandon: defineRoute('/submission/attempts/:id/abandon'),
+  },
   coverLetterTemplates: {
     root: defineRoute('/cover-letter-templates'),
     byId: defineRoute('/cover-letter-templates/:id'),

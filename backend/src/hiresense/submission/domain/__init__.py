@@ -11,6 +11,7 @@ from hiresense.submission.domain.agent_action import (
 from hiresense.submission.domain.agent_context import AgentContext
 from hiresense.submission.domain.answer_source import AnswerSource
 from hiresense.submission.domain.field_answer import FieldAnswer
+from hiresense.submission.domain.form_agent_service import FormAgentService
 from hiresense.submission.domain.form_field import FormField
 from hiresense.submission.domain.grounding import enforce_grounding
 from hiresense.submission.domain.page_observation import PageObservation
@@ -28,6 +29,7 @@ __all__ = [
     "EscalateAction",
     "FieldAnswer",
     "FillFieldsAction",
+    "FormAgentService",
     "FormField",
     "enforce_grounding",
     "NavigateAction",

@@ -15,7 +15,10 @@ from hiresense.applications.domain.application_packet import (
     ApplicationQualityReport,
 )
 from hiresense.applications.domain.artifact_service import ArtifactService
-from hiresense.applications.domain.ats_field_map import build_autofill_plan
+from hiresense.applications.domain.ats_field_map import (
+    build_autofill_plan,
+    match_canonical_key,
+)
 from hiresense.applications.domain.autofill_plan_view import AutofillPlanView
 from hiresense.applications.domain.field_fill import FieldFill
 from hiresense.applications.domain.models import (
@@ -47,6 +50,7 @@ __all__ = [
     "AutofillPlanView",
     "FieldFill",
     "build_autofill_plan",
+    "match_canonical_key",
     "CvOptimizationView",
     "InterviewPrepView",
     "JobSnapshotSource",

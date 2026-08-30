@@ -19,7 +19,8 @@ src/hiresense/
 │   ├── observability/ #   OpenTelemetry wiring
 │   └── config/        #   Settings
 ├── composition/       # build_<module>() wiring — the only place a concrete impl is chosen
-└── <bounded contexts> # ingestion, matching, applications, tracking, profile, …
+├── runner/           # the local auto-apply agent — an HTTP client, NOT a context
+└── <bounded contexts> # ingestion, matching, applications, submission, profile, …
 ```
 
 ## The dependency rule
@@ -84,6 +85,7 @@ form for consistency.
 | `autohunt` | One scheduled hunt run: new-since jobs → taste-rank → floor → top-N → a persisted `Digest` | yes |
 | `autopilot` | End-to-end pipeline that turns hunt results into gated drafts awaiting approval | yes |
 | `claims` | Candidate claims and the evidence backing them | yes |
+| `submission` | The outbound auto-apply queue: attempt state machine, form agent, audit tape | yes |
 | `cover_letter_templates` | Reusable opening/body/signature presets | yes |
 | `identity` | Authentication: login, password hashing, JWT issue/verify | no |
 | `inbox` | Inbound email → classified signals matched back onto tracked applications | yes |
@@ -199,6 +201,25 @@ implementation: `interview/` (`domain/models.py` `Story`, `infrastructure/orm.py
 `infrastructure/repository.py` `_to_domain()`). `research/` and `cover_letter_templates/` follow the
 same shape.
 
+### The auto-apply runner (`src/hiresense/runner/`)
+
+`runner/` is **not** a bounded context and must never be treated as one. It is a standalone
+client process (`uv run apply-agent`) that runs on the candidate's own machine and drives
+their real Chrome over CDP.
+
+Its one architectural rule: **it talks to HireSense over HTTP only and imports nothing from
+any module's `domain/`, `infrastructure/`, or `api/`.** The same arms-length relationship the
+Apply Assist userscript has. Concretely this means the LLM key, the candidate's profile, the
+verified claims, and the grounding rule all stay inside the backend — the runner ships a
+sanitized page snapshot and receives one typed action back.
+
+`BrowserDriver` (a `Protocol`) is the seam that keeps the agent loop testable without a
+browser, and that a headless/server-side driver could later implement without touching
+either the loop or the backend.
+
+Playwright is an **optional dependency group** (`uv sync --extra agent`), so neither the
+Docker image nor CI pulls a browser engine.
+
 ## Global ports & adapters
 
 Cross-cutting infrastructure that any module may depend on:
@@ -219,6 +240,11 @@ Module-level ports:
 |---|---|---|
 | `JobSourcePort` | `RemotiveAdapter`, `JobicyAdapter`, `GreenhouseAdapter`, … — **30 concrete adapters** re-exported from `ingestion.adapters` (boards, ATS portals, structured/CSV imports, and the `auto`/`scraper` fallbacks) | `ingestion/adapters/` |
 | `JobsRepositoryPort` | `JobsRepository` (SQLAlchemy), `InMemoryJobsRepository` (tests) | `ingestion/infrastructure/` |
+| `FormAnswerPort` | `LLMFormAnswerer` (over the shared `LLMPort` chain), `_NullAnswerer` (no LLM configured → everything escalates) | `submission/infrastructure/` |
+| `AnswerBankPort` | `ProfileAnswerBank` (writes resumed answers to `ApplyProfile.screening_answers`) | `submission/infrastructure/` |
+| `SubmissionRepository` | `SubmissionRepositoryImpl` | `submission/infrastructure/` |
+| `SubmissionEnqueuer` | `PacketApprovingEnqueuer` | `autopilot/infrastructure/` |
+| `BrowserDriver` | `PlaywrightDriver` (CDP to the user's own Chrome) | `runner/` |
 | `*RepositoryPort` | SQLAlchemy repository per module | `admin`, `applications`, `autohunt`, `claims`, `cover_letter_templates`, `interview`, `network`, `opportunities`, `outreach`, `portfolio`, `preference`, `profile`, `research`, `tracking` |
 
 Two contexts ship their own outbound adapters beside their repositories:

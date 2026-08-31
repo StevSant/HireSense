@@ -27,4 +27,14 @@ class BrowserDriver(Protocol):
 
     async def text(self) -> str: ...
 
+    async def challenge_present(self) -> bool:
+        """True when a captcha challenge is on the page that HTML cannot show.
+
+        `page.content()` serializes neither shadow roots nor cross-origin frame
+        contents, so a widget rendered into either is invisible to the DOM
+        serializer. The driver sits on the other side of that boundary and can
+        see both, so it answers this question instead of the serializer.
+        """
+        ...
+
     async def close(self) -> None: ...

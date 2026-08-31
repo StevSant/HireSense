@@ -36,6 +36,11 @@ class AgentLoop:
                 url=await self._driver.url(),
                 title=await self._driver.title(),
             )
+            # The serializer only sees serialized HTML. Ask the driver about the
+            # places it cannot reach -- shadow roots and cross-origin frames --
+            # so a challenge rendered there still stops the run.
+            if not observation["captcha_detected"] and await self._challenge_present():
+                observation["captcha_detected"] = True
             action = await self._client.observe(attempt_id, observation)
             kind = action.get("kind")
 
@@ -62,6 +67,19 @@ class AgentLoop:
             "failed",
             {"reason": f"Exceeded the {self._max_steps}-step ceiling without reaching submit"},
         )
+
+    async def _challenge_present(self) -> bool:
+        """Driver-side captcha check. Fails CLOSED.
+
+        A probe that cannot answer is treated as "challenge present", so the
+        attempt escalates to a human rather than proceeding to type the
+        candidate's data into a page we could not verify.
+        """
+        try:
+            return bool(await self._driver.challenge_present())
+        except Exception:  # noqa: BLE001 - unverified means escalate, not proceed
+            logger.exception("runner: challenge probe failed; escalating to be safe")
+            return True
 
     async def _perform(self, attempt: dict, action: dict) -> None:
         kind = action.get("kind")

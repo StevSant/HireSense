@@ -12,30 +12,42 @@ MAX_LABEL_CHARS = 300
 
 # Hosts that serve captcha frames. Matched against an iframe's src, never
 # against the page source at large -- see _detect_captcha.
-_CAPTCHA_FRAME_HOSTS = (
+CAPTCHA_FRAME_HOSTS = (
     "recaptcha",
     "hcaptcha",
     "turnstile",
     "funcaptcha",
     "arkoselabs",
 )
+_CAPTCHA_FRAME_HOSTS = CAPTCHA_FRAME_HOSTS
 
 # The path segment of the frame that actually presents a challenge to a human
 # ("pick every bus"). reCAPTCHA/hCaptcha always embed an `anchor` frame -- the
 # badge or checkbox -- but only inject a `bframe` when a challenge is really
 # being asked. Blocking on `anchor` would block every Greenhouse posting.
-_CHALLENGE_FRAME_PATHS = ("/bframe", "/challenge")
+CHALLENGE_FRAME_PATHS = ("/bframe", "/challenge")
+_CHALLENGE_FRAME_PATHS = CHALLENGE_FRAME_PATHS
 
 # An `anchor` frame is a passive badge for invisible/v3 reCAPTCHA, but for v2 it
 # IS the "I'm not a robot" checkbox a human has to click. The rendered size is
 # what distinguishes them, and the live Greenhouse enterprise anchor carries
 # neither, so keying on these does not regress it.
-_INTERACTIVE_FRAME_SIZES = ("size=normal", "size=compact", "frame=checkbox")
+INTERACTIVE_FRAME_SIZES = ("size=normal", "size=compact", "frame=checkbox")
+_INTERACTIVE_FRAME_SIZES = INTERACTIVE_FRAME_SIZES
 
 # Container elements a captcha library renders a visible widget into. Compared
 # by EXACT class name: `g-recaptcha-response` is the hidden textarea holding the
 # token, not a widget, and must not match.
-_CAPTCHA_WIDGET_CLASSES = frozenset({"g-recaptcha", "h-captcha", "cf-turnstile"})
+CAPTCHA_WIDGET_CLASSES = frozenset({"g-recaptcha", "h-captcha", "cf-turnstile"})
+_CAPTCHA_WIDGET_CLASSES = CAPTCHA_WIDGET_CLASSES
+
+# The same rule as a CSS selector, for the driver-side probe. The
+# `data-size="invisible"` exclusion mirrors _is_invisible(): an invisible-mode
+# container is a config artifact, not a challenge, and it is what stops every
+# reCAPTCHA-protected posting from escalating. The two detectors MUST agree.
+CAPTCHA_WIDGET_SELECTOR = ", ".join(
+    f'.{name}:not([data-size="invisible" i])' for name in sorted(CAPTCHA_WIDGET_CLASSES)
+)
 
 _PLAIN_IDENT = re.compile(r"[A-Za-z_-][A-Za-z0-9_-]*")
 

@@ -251,3 +251,46 @@ async def test_llm_returning_nothing_for_a_required_field_escalates():
     action = await _svc(answerer).next_action(observation=obs, context=_ctx())
     assert isinstance(action, EscalateAction)
     assert action.fields == ["#w"]
+
+
+async def test_page_with_no_form_at_all_says_so():
+    """A closed posting commonly 302s to the company careers index, which has no
+    inputs. Reporting 'every field is filled' about a page with no fields sends
+    the reader hunting for a bug that does not exist."""
+    obs = _obs([])
+    action = await _svc().next_action(observation=obs, context=_ctx())
+    assert isinstance(action, EscalateAction)
+    assert "no form fields were detected" in action.reason.lower()
+    assert "https://x.test/apply" in action.reason
+
+
+async def test_filled_form_missing_only_a_submit_control_keeps_the_old_message():
+    obs = _obs(
+        [
+            FormField(
+                selector="#e",
+                label="Email",
+                field_type="text",
+                required=True,
+                current_value="a@b.c",
+            )
+        ]
+    )
+    action = await _svc().next_action(observation=obs, context=_ctx(prefill={"email": "a@b.c"}))
+    assert isinstance(action, EscalateAction)
+    assert "no submit control" in action.reason.lower()
+
+
+async def test_page_with_only_a_submit_button_is_treated_as_formless():
+    """No value-bearing field exists, so there is nothing the agent failed to
+    fill. Pinned because the branch condition looks at non-submit fields only."""
+    obs = _obs([FormField(selector="#go", label="Submit Application", field_type="submit")])
+    action = await _svc().next_action(observation=obs, context=_ctx())
+    assert isinstance(action, SubmitAction)
+
+
+async def test_page_with_only_a_non_submit_button_reports_no_fields():
+    obs = _obs([FormField(selector="#x", label="Share this job", field_type="button")])
+    action = await _svc().next_action(observation=obs, context=_ctx())
+    assert isinstance(action, EscalateAction)
+    assert "no form fields were detected" in action.reason.lower()

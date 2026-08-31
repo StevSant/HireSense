@@ -183,12 +183,27 @@ class FormAgentService:
 
     def _finish(self, observation: PageObservation, context: AgentContext) -> AgentAction:
         submit = _find_submit(observation)
-        if submit is None:
+        if submit is not None:
+            return SubmitAction(selector=submit.selector, dry_run=self._dry_run)
+
+        # A page with no inputs at all is not a form the agent failed to fill.
+        # A closed posting commonly 302s to the company careers index and lands
+        # here. Saying "every field is filled" about a page with no fields sends
+        # the reader hunting for a bug that does not exist -- but the cause is
+        # not certain (the serializer may also have dropped every control), so
+        # the wording reports the observation and offers the likely cause.
+        if not any(f.field_type not in _SUBMIT_TYPES for f in observation.fields):
             return EscalateAction(
-                reason="Every field is filled but no submit control was found on the page",
+                reason=(
+                    "No form fields were detected on this page - the posting may have "
+                    f"closed or redirected ({observation.url})"
+                ),
                 fields=[],
             )
-        return SubmitAction(selector=submit.selector, dry_run=self._dry_run)
+        return EscalateAction(
+            reason="Every field is filled but no submit control was found on the page",
+            fields=[],
+        )
 
     @staticmethod
     def _escalation_reason(

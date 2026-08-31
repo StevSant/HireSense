@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from bs4 import BeautifulSoup, Comment
@@ -25,10 +26,18 @@ _CAPTCHA_FRAME_HOSTS = (
 # being asked. Blocking on `anchor` would block every Greenhouse posting.
 _CHALLENGE_FRAME_PATHS = ("/bframe", "/challenge")
 
+# An `anchor` frame is a passive badge for invisible/v3 reCAPTCHA, but for v2 it
+# IS the "I'm not a robot" checkbox a human has to click. The rendered size is
+# what distinguishes them, and the live Greenhouse enterprise anchor carries
+# neither, so keying on these does not regress it.
+_INTERACTIVE_FRAME_SIZES = ("size=normal", "size=compact", "frame=checkbox")
+
 # Container elements a captcha library renders a visible widget into. Compared
 # by EXACT class name: `g-recaptcha-response` is the hidden textarea holding the
 # token, not a widget, and must not match.
 _CAPTCHA_WIDGET_CLASSES = frozenset({"g-recaptcha", "h-captcha", "cf-turnstile"})
+
+_PLAIN_IDENT = re.compile(r"[A-Za-z_-][A-Za-z0-9_-]*")
 
 _VALUE_TYPES = ("text", "email", "tel", "url", "number", "date", "password", "search")
 _SKIP_TYPES = ("hidden", "image", "reset")
@@ -47,9 +56,16 @@ def _clean(soup: BeautifulSoup) -> None:
 
 
 def _is_invisible(element: Any) -> bool:
-    """True when a captcha container is configured not to need interaction."""
+    """True when a captcha container declares itself non-interactive.
+
+    Only `data-size` is consulted -- the correct signal for reCAPTCHA and
+    hCaptcha. Turnstile configures this via the dashboard or `data-appearance`,
+    so a non-interactive Turnstile widget is still treated as blocking. That is
+    the safe direction (over-escalate, never under-escalate), so it is left
+    alone deliberately rather than guessed at.
+    """
     size = str(element.get("data-size") or "").casefold()
-    return size in ("invisible",)
+    return size == "invisible"
 
 
 def _detect_captcha(soup: BeautifulSoup) -> bool:
@@ -87,8 +103,37 @@ def _detect_captcha(soup: BeautifulSoup) -> bool:
             continue
         if any(path in src for path in _CHALLENGE_FRAME_PATHS):
             return True
+        if any(size in src for size in _INTERACTIVE_FRAME_SIZES):
+            return True
 
     return False
+
+
+# Deep enough to walk any real form out to <body>. A React-rendered ATS page
+# can nest a control dozens of levels below the nearest ancestor id; bailing out
+# early would drop the element entirely and reinstate the "filled form with no
+# submit control" bug this fallback exists to fix.
+MAX_CSS_PATH_DEPTH = 60
+
+
+def _quote(value: str) -> str:
+    """Quote a value for use inside a CSS attribute selector."""
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
+def _id_selector(value: str) -> str:
+    """`#id` when the id is a plain CSS identifier, else a quoted attribute.
+
+    Ids and names come from the employer's page, and HTML5 permits almost any
+    character in them. Interpolating one straight into `#...` produces a
+    selector that either fails to parse (`#123abc`) or silently means something
+    else (`#a:b.c` is a compound, not an id), and a crafted value could close
+    the selector and redirect a fill to an element of the page's choosing.
+    """
+    if _PLAIN_IDENT.fullmatch(value):
+        return f"#{value}"
+    return f"[id={_quote(value)}]"
 
 
 def _css_path(element: Any) -> str | None:
@@ -105,18 +150,22 @@ def _css_path(element: Any) -> str | None:
     """
     segments: list[str] = []
     current = element
-    for _ in range(12):  # depth guard; ATS forms are nowhere near this deep
+    for _ in range(MAX_CSS_PATH_DEPTH):
         parent = current.parent
         if parent is None or getattr(parent, "name", None) is None:
             return None
 
-        siblings = [s for s in parent.find_all(current.name, recursive=False)]
-        index = siblings.index(current) + 1 if current in siblings else 1
+        # Index by identity. BeautifulSoup's Tag.__eq__ compares by value, so
+        # list.index()/`in` match the FIRST structurally-equal sibling -- two
+        # identical buttons would collapse onto one selector that silently
+        # drives the wrong control.
+        siblings = parent.find_all(current.name, recursive=False)
+        index = next((i for i, s in enumerate(siblings) if s is current), 0) + 1
         segments.append(f"{current.name}:nth-of-type({index})")
 
         parent_id = parent.get("id") if hasattr(parent, "get") else None
         if parent_id:
-            segments.append(f"#{parent_id}")
+            segments.append(_id_selector(str(parent_id)))
             break
         if parent.name in ("body", "html"):
             segments.append(parent.name)
@@ -132,11 +181,10 @@ def _selector_for(element: Any) -> str | None:
     """A stable CSS selector: id, then name, then a positional path."""
     element_id = element.get("id")
     if element_id:
-        return f"#{element_id}"
+        return _id_selector(str(element_id))
     name = element.get("name")
     if name:
-        tag = element.name
-        return f'{tag}[name="{name}"]'
+        return f"{element.name}[name={_quote(str(name))}]"
     return _css_path(element)
 
 

@@ -1,6 +1,26 @@
 from __future__ import annotations
 
+import logging
+
 from typing import Any
+
+# Frame URLs that mean a human is being challenged. Mirrors the DOM
+# serializer's rules, applied to frames the serializer cannot see.
+_CHALLENGE_FRAME_PATHS = ("/bframe", "/challenge")
+_INTERACTIVE_FRAME_SIZES = ("size=normal", "size=compact", "frame=checkbox")
+_CAPTCHA_FRAME_HOSTS = (
+    "recaptcha",
+    "hcaptcha",
+    "turnstile",
+    "funcaptcha",
+    "arkoselabs",
+)
+
+# Playwright locators pierce OPEN shadow roots, which a raw HTML dump does not.
+_WIDGET_SELECTOR = ".g-recaptcha, .h-captcha, .cf-turnstile"
+
+
+logger = logging.getLogger(__name__)
 
 
 class PlaywrightDriver:
@@ -61,6 +81,35 @@ class PlaywrightDriver:
 
     async def text(self) -> str:
         return await self._page.inner_text("body")
+
+    async def challenge_present(self) -> bool:
+        """Look where the serialized HTML cannot: frames and shadow roots.
+
+        Closes the gap the DOM serializer documents. `page.frames` enumerates
+        cross-origin children, and a Playwright locator pierces open shadow
+        roots, so a widget rendered by `grecaptcha.render()` into a custom
+        element is still found.
+
+        Best-effort: a driver error here must never abort a run, and returning
+        False just leaves detection where it was.
+        """
+        try:
+            for frame in self._page.frames:
+                src = (frame.url or "").casefold()
+                if not any(host in src for host in _CAPTCHA_FRAME_HOSTS):
+                    continue
+                if any(path in src for path in _CHALLENGE_FRAME_PATHS):
+                    return True
+                if any(size in src for size in _INTERACTIVE_FRAME_SIZES):
+                    return True
+
+            locator = self._page.locator(_WIDGET_SELECTOR)
+            for index in range(min(await locator.count(), 5)):
+                if await locator.nth(index).is_visible():
+                    return True
+        except Exception:  # noqa: BLE001 - detection is advisory, never fatal
+            logger.exception("runner: challenge detection failed")
+        return False
 
     async def close(self) -> None:
         if self._page is not None:

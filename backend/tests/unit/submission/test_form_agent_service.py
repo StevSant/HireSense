@@ -251,3 +251,31 @@ async def test_llm_returning_nothing_for_a_required_field_escalates():
     action = await _svc(answerer).next_action(observation=obs, context=_ctx())
     assert isinstance(action, EscalateAction)
     assert action.fields == ["#w"]
+
+
+async def test_page_with_no_form_at_all_says_so():
+    """A closed posting commonly 302s to the company careers index, which has no
+    inputs. Reporting 'every field is filled' about a page with no fields sends
+    the reader hunting for a bug that does not exist."""
+    obs = _obs([])
+    action = await _svc().next_action(observation=obs, context=_ctx())
+    assert isinstance(action, EscalateAction)
+    assert "no application form" in action.reason.lower()
+    assert "https://x.test/apply" in action.reason
+
+
+async def test_filled_form_missing_only_a_submit_control_keeps_the_old_message():
+    obs = _obs(
+        [
+            FormField(
+                selector="#e",
+                label="Email",
+                field_type="text",
+                required=True,
+                current_value="a@b.c",
+            )
+        ]
+    )
+    action = await _svc().next_action(observation=obs, context=_ctx(prefill={"email": "a@b.c"}))
+    assert isinstance(action, EscalateAction)
+    assert "no submit control" in action.reason.lower()

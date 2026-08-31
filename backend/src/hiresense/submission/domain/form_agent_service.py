@@ -186,16 +186,17 @@ class FormAgentService:
         if submit is not None:
             return SubmitAction(selector=submit.selector, dry_run=self._dry_run)
 
-        # A page with no inputs at all is not a form the agent failed to fill --
-        # it is not an application form. A closed posting commonly 302s to the
-        # company careers index, which lands here. Saying "every field is
-        # filled" about a page with no fields sends the reader hunting for a
-        # bug that does not exist.
+        # A page with no inputs at all is not a form the agent failed to fill.
+        # A closed posting commonly 302s to the company careers index and lands
+        # here. Saying "every field is filled" about a page with no fields sends
+        # the reader hunting for a bug that does not exist -- but the cause is
+        # not certain (the serializer may also have dropped every control), so
+        # the wording reports the observation and offers the likely cause.
         if not any(f.field_type not in _SUBMIT_TYPES for f in observation.fields):
             return EscalateAction(
                 reason=(
-                    "This page has no application form - the posting may have closed "
-                    f"or redirected ({observation.url})"
+                    "No form fields were detected on this page - the posting may have "
+                    f"closed or redirected ({observation.url})"
                 ),
                 fields=[],
             )

@@ -60,6 +60,7 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = [
     "pgvector: requires a live Postgres+pgvector DB (docker compose up db); skipped unless explicitly selected",
+    "playwright: drives a real headless browser against synthetic pages; skipped unless explicitly selected",
 ]
 
 [tool.ruff]

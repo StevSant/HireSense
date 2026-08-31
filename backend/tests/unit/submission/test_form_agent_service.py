@@ -260,7 +260,7 @@ async def test_page_with_no_form_at_all_says_so():
     obs = _obs([])
     action = await _svc().next_action(observation=obs, context=_ctx())
     assert isinstance(action, EscalateAction)
-    assert "no application form" in action.reason.lower()
+    assert "no form fields were detected" in action.reason.lower()
     assert "https://x.test/apply" in action.reason
 
 
@@ -279,3 +279,18 @@ async def test_filled_form_missing_only_a_submit_control_keeps_the_old_message()
     action = await _svc().next_action(observation=obs, context=_ctx(prefill={"email": "a@b.c"}))
     assert isinstance(action, EscalateAction)
     assert "no submit control" in action.reason.lower()
+
+
+async def test_page_with_only_a_submit_button_is_treated_as_formless():
+    """No value-bearing field exists, so there is nothing the agent failed to
+    fill. Pinned because the branch condition looks at non-submit fields only."""
+    obs = _obs([FormField(selector="#go", label="Submit Application", field_type="submit")])
+    action = await _svc().next_action(observation=obs, context=_ctx())
+    assert isinstance(action, SubmitAction)
+
+
+async def test_page_with_only_a_non_submit_button_reports_no_fields():
+    obs = _obs([FormField(selector="#x", label="Share this job", field_type="button")])
+    action = await _svc().next_action(observation=obs, context=_ctx())
+    assert isinstance(action, EscalateAction)
+    assert "no form fields were detected" in action.reason.lower()

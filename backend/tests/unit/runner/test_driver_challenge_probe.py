@@ -53,17 +53,6 @@ class _Driver:
         pass
 
 
-class _LegacyDriver(_Driver):
-    """A driver written before the probe existed."""
-
-    challenge_present = None
-
-    def __init__(self):
-        super().__init__()
-        del self.__dict__["probes"]
-        self.probes = 0
-
-
 class _Client:
     def __init__(self, actions):
         self.actions = list(actions)
@@ -103,20 +92,18 @@ async def test_clean_page_stays_clean():
     assert client.observations[0]["captcha_detected"] is False
 
 
-async def test_probe_failure_is_not_fatal():
-    """A driver error must degrade to 'no challenge', never abort the run."""
+async def test_probe_failure_fails_closed():
+    """A probe that cannot answer must escalate, not proceed.
+
+    "I could not tell whether a human is being challenged" is not the same
+    answer as "there is no challenge". Reporting the latter would let the agent
+    type the candidate's data into a page nobody verified.
+    """
     driver = _Driver(boom=True)
-    client = _Client([{"kind": "submit", "selector": "#go", "dry_run": True}])
+    client = _Client([{"kind": "escalate", "reason": "unverified", "fields": []}])
     await AgentLoop(client, driver, max_steps=3).run(_attempt())
-    assert client.observations[0]["captcha_detected"] is False
-    assert client.completed[0] == "submitted"
-
-
-async def test_driver_without_a_probe_still_works():
-    driver = _LegacyDriver()
-    client = _Client([{"kind": "submit", "selector": "#go", "dry_run": True}])
-    await AgentLoop(client, driver, max_steps=3).run(_attempt())
-    assert client.observations[0]["captcha_detected"] is False
+    assert client.observations[0]["captcha_detected"] is True
+    assert client.completed is None
 
 
 async def test_probe_is_skipped_when_the_html_already_shows_a_challenge():

@@ -32,6 +32,9 @@ class _Driver:
     async def text(self):
         return "Application submitted. Thank you."
 
+    async def challenge_present(self):
+        return False
+
     async def close(self):
         self.calls.append(("close",))
 

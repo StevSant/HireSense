@@ -69,15 +69,17 @@ class AgentLoop:
         )
 
     async def _challenge_present(self) -> bool:
-        """Driver-side captcha check, tolerant of a driver that lacks it."""
-        probe = getattr(self._driver, "challenge_present", None)
-        if probe is None:
-            return False
+        """Driver-side captcha check. Fails CLOSED.
+
+        A probe that cannot answer is treated as "challenge present", so the
+        attempt escalates to a human rather than proceeding to type the
+        candidate's data into a page we could not verify.
+        """
         try:
-            return bool(await probe())
-        except Exception:  # noqa: BLE001 - advisory signal, never fatal
-            logger.exception("runner: driver challenge probe failed")
-            return False
+            return bool(await self._driver.challenge_present())
+        except Exception:  # noqa: BLE001 - unverified means escalate, not proceed
+            logger.exception("runner: challenge probe failed; escalating to be safe")
+            return True
 
     async def _perform(self, attempt: dict, action: dict) -> None:
         kind = action.get("kind")

@@ -81,9 +81,10 @@ def test_selector_prefers_id_then_name():
     assert 'input[name="last_name"]' in selectors
 
 
-def test_captcha_is_detected_from_an_iframe():
+def test_captcha_is_detected_from_a_challenge_iframe():
+    """Only the challenge frame (`bframe`) blocks; see test_captcha_detection.py."""
     html = (
-        '<html><body><iframe src="https://www.google.com/recaptcha/api2/anchor">'
+        '<html><body><iframe src="https://www.google.com/recaptcha/api2/bframe?k=x">'
         "</iframe></body></html>"
     )
     assert serialize_dom(html, url="https://x.test")["captcha_detected"] is True
